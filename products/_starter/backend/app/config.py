@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     cookie_secure: bool = True
     session_days: int = 7
     reset_token_minutes: int = 30
+    invite_days: int = 7
     auth_rate_limit_per_minute: int = 10
 
     # AI

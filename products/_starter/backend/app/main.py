@@ -19,7 +19,7 @@ from .db import Database
 from .email import EmailSender, OutboxEmail
 from .logs import end_request_fields, request_id_var, setup_logging, start_request_fields
 from .ratelimit import RateLimiter
-from .routes import account, auth, billing, health, notes
+from .routes import account, auth, billing, health, notes, team
 
 log = logging.getLogger("app.http")
 REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{8,64}$")
@@ -97,8 +97,8 @@ def create_app(settings: Settings | None = None, *, ai: AIProvider | None = None
                        allow_methods=["GET", "POST", "PUT", "DELETE"],
                        allow_headers=["content-type", "x-requested-with", "x-request-id"])
     app.add_middleware(RequestContext)  # added last, so it runs outermost
-    for module in (health, auth, notes, billing, account):
-        app.include_router(module.router)
+    for router in (health.router, auth.router, notes.router, billing.router, account.router, team.router, team.public):
+        app.include_router(router)
     return app
 
 
