@@ -3,8 +3,9 @@ FROM python:3.12-slim AS base
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
 WORKDIR /app
 
-COPY pyproject.toml ./
-RUN pip install --upgrade pip && pip install .
+COPY requirements.txt ./
+# requirements.txt is generated with hashes (uv pip compile --generate-hashes), so every download is verified.
+RUN pip install --require-hashes -r requirements.txt
 
 COPY app ./app
 COPY migrations ./migrations
