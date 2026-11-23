@@ -56,6 +56,28 @@ The RAG angle: most enquiry questions can be answered from documents the venue a
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
+| 13 | 13 | 7 | 7 | 12 | 3 | 8 | 63 |
+
+## Validator notes (2026-11-23)
+
+**Red-flag check: none.** Not an off-limits area. WhatsApp is paid but optional and behind a mock adapter; email and web chat carry the core value. No scraping is needed because the venue supplies its own documents. Synthetic data can credibly demo the value: a fictional venue brochure, price list and calendar is enough to show grounded answers, refusals and lead capture.
+
+**Falsification findings** (all accessed 2026-11-23)
+- Strongest competitor: Mikla. Its site lists Gmail, Outlook and IMAP inbox answering, SMS, WhatsApp, web chat, phone, Instagram and Messenger, plus The Knot, WeddingWire and Zola marketplace enquiries. A free plan remains after a 14-day trial. All named case studies are in the US and no UK customers were found (https://www.mikla.ai/). The scout's "email-inbox answering" differentiator already exists.
+- Other US tools: a June 2026 roundup lists Mikla from $149/mo, VenueAI about $399 to $1,599/mo, Breezit from $199/mo and VenueX quote-only. The roundup recommends Mikla, so it is biased (https://weddinghero.ca/wedding-venue/ideas/the-best-ai-sales-assistant-receptionist-for-wedding-venues-in-2026-57). Hyperleap is verified at $40, $100 and $200/mo. It covers web chat, WhatsApp, Instagram and Messenger; email is not a reply channel, and it does not check dates (https://hyperleap.ai/agents/wedding-venues).
+- The cheapest substitute is already on: Bridebook's Instant Brochure sends the brochure and a welcome message "automatically through Bridebook messages the moment a couple enquires" (https://support.bridebook.com/en/instant-brochure).
+- A channel lock-in the file misses: since 1 May 2024, Bridebook shares couples' email addresses only with paid VenuePro plans. Everyone else replies inside Bridebook's own messaging, which has no public API, so an email or web-chat agent can't answer those enquiries (https://support.bridebook.com/en/why-cant-i-see-couples-email-addresses-anymore-on-bridebook).
+- UK venue CRMs already send instant templated replies and day 0/1/3/7 follow-ups (Moposa: https://www.moposa.com/insider-view/automate-your-wedding-enquiries-3-ways-to-speed-up-your-response-times). WedPro is listed at £175 to £395/mo in a roundup; this was seen in a search summary only (https://guidesforbrides.co.uk/business-information/crm-systems-wedding-venues-suppliers).
+- New UK pain signal, in the idea's favour: Bridebook's 2026 report (7,000+ UK couples) says "81% felt frustrated with venue responses", in its Gen Z section, and 79% booked within 4 weeks of first contact (https://partners.bridebook.com/uk/wedding-report-2026). Savills' 72% figure is Bridebook data, and its page (7 May 2026) gives no method.
+- Copy risk: Bridebook already ships AI (venue search inside ChatGPT, https://bridebook.com/uk/article/bridebook-chat-gpt) and owns the message channel, so AI-drafted replies are a small step for it. Mikla could add GBP pricing and UK directories within weeks.
+- Venue-side pain (coordinator hours, bookings lost to slow replies) is still inferred. No UK venue-side survey was found.
+
+**What would change my mind (re-score on this evidence)**
+1. UK data on the enquiry channel mix: the share reaching venues through their own website, email, Instagram or WhatsApp rather than Bridebook or Hitched messaging.
+2. A public desk check of 20 UK independent venue websites (company level, no contact): how many publish prices, and how many already run chat or instant replies.
+3. A UK price point: any UK venue paying for an AI enquiry tool, or UK venue CRM prices verified on vendor pages.
+4. Proof that Hitched or Bridebook allow third-party replies (an API or email relay), or that VenuePro venues, who do receive emails, are a large segment.
 
 ## Gate log
 - 2026-11-23: G0 spotted by scout.
+- 2026-11-23 | validator | G0→G1 | REVISE 63 | Couples' frustration is real, but Mikla and Hyperleap already sell grounded multi-channel answering, and Bridebook auto-sends brochures and keeps most of its enquiries inside its own messaging, so the UK gap is thin and unproven.

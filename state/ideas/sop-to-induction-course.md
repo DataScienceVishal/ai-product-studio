@@ -53,6 +53,29 @@ UK employers must give workers "clear instructions and information, as well as a
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
+| 8 | 11 | 6 | 6 | 13 | 2 | 8 | 54 |
+
+## Validator notes (2026-11-23)
+
+**Red-flag check: none.** Not an off-limits area, as long as the output is never presented as health-and-safety or legal advice. No paid services are needed. Synthetic data can credibly demo the value: a fictional warehouse handbook is enough to show grounded modules, questions linked to their source and redrafts when a policy changes.
+
+**Falsification findings** (all accessed 2026-11-23)
+- Strongest competitor: Mitti by SafetyCulture (formerly SC Training and EdApp). It already does the core job: "Upload a PDF, PowerPoint or Word file and let AI turn it into a structured course", "Build a quiz in seconds with AI", completion tracking and certificates. It is "Always free up to 10 users" (https://mitti.com/team-train/). Premium is $24 per seat per month billed annually, or a per-site price with unlimited users (https://mitti.com/pricing). SafetyCulture is already used in UK frontline operations, the scout's exact segment.
+- Waybook covers the governance gap the scout counts on as the moat:
+  - tests and assessments (Core plan);
+  - formal approval before publishing, and policy acknowledgements with an audit trail (Pro plan);
+  - word-level version comparison (both plans).
+  Core is $139/mo and Pro $229/mo billed annually, for 10 seats, in USD (https://www.waybook.com/pricing.md).
+- Other cheap options: Trainual generates quizzes from content (https://trainual.com/, search summary only). Connecteam's training hub is free for up to 10 users and has a prompt-based AI course creator (https://connecteam.com/employee-training-software/, search summary only).
+- Cheapest substitute: what the scout describes as today's practice, a PDF plus a signature sheet, or ChatGPT plus a Microsoft Forms quiz. HSE requires "adequate training" but its page says nothing about keeping records (https://www.hse.gov.uk/simple-health-safety/training/index.htm), so no regulation pushes buyers towards a paid tool.
+- Pain evidence is weak. The CIPD figures are from 2020 and cover learning in general. The practitioner critiques are about tool quality, not buyer pain. There are no job ads, no complaints from SMEs, and, as the scout notes, no evidence that SMEs pay for SOP-specific courses.
+- Copy risk: generating a course from a document is already a free feature. Questions traced to their source and change diffs are features an incumbent could ship in a month.
+
+**What would change my mind (re-score on this evidence)**
+1. Evidence that UK SMEs pay for site-specific induction content. Examples: agency or freelance offers priced for bespoke SME inductions, public tenders, or job ads for induction or training coordinators at firms with 20 to 250 staff in the target sectors.
+2. A head-to-head desk test on a public sample SOP. It would need to show that Mitti, Mindsmith or Trainual produce unsupported or wrong questions that need heavy editing, and that a grounding checker measurably fixes this.
+3. A narrower wedge with a legal forcing function and a buyer who already pays. Construction site inductions are one example; verify the legal duty and who pays.
 
 ## Gate log
 - 2026-11-23: G0 spotted by scout.
+- 2026-11-23 | validator | G0→G1 | REVISE 54 | SafetyCulture's Mitti already turns PDF, Word and PowerPoint files into AI courses with quizzes and tracking, free for up to 10 users, Waybook already covers approvals, acknowledgements and version history, and there is no evidence that SMEs pay for SOP-specific induction.

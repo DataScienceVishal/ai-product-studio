@@ -53,6 +53,29 @@ Sales reps' own explanations of why deals were won or lost are unreliable, and b
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
+| 10 | 12 | 8 | 6 | 12 | 3 | 8 | 59 |
+
+## Validator notes (2026-11-23)
+
+**Red-flag check: none.** Not an off-limits area, and there is no hiring or assessment decision. Email sending is paid but sits behind a mock adapter, and voice is out of the MVP. Synthetic data can credibly demo the mechanics: synthetic deals and buyer personas, adaptive follow-ups, and a tagged weekly brief. It cannot demo what decides the value, which is whether real buyers take part, and that can't be tested before selling is unlocked.
+
+**Falsification findings** (all accessed 2026-11-23)
+- Klue, a large competitive-intelligence vendor, sells its own AI Interviewer: asynchronous voice or text interviews of 2 to 5 minutes. Its FAQ says it launched for seller debriefs, but the page also describes buyer and churn interviews (https://klue.com/win-loss/ai-interviewer).
+- Clozd's HubSpot app already imports closed deals every day and invites buyers by rule. It "takes minutes to set up", has 40+ installs and needs a Clozd licence (https://ecosystem.hubspot.com/marketplace/listing/win-loss-analysis-clozd). The scout's "zero-setup CRM automation" edge therefore exists already.
+- Clozd Flex is asynchronous, takes audio or video answers, and is aimed at "mid-market and SMB" buyers (https://www.clozd.com/blog/flex-interviews-rich-insights-at-scale).
+- User Intuition charges $30 per voice interview with a $0/month Starter plan, which sets a very low price anchor (https://www.userintuition.ai/posts/win-loss-analysis-cost/). Perspective AI runs AI buyer interviews for win-loss (https://getperspective.ai/blog/best-ai-win-loss-analysis-tools-2026-8-platforms-deal-post-mortems/markdown). Diffly offers a HubSpot app with AI analysis, quote-only pricing and 10+ installs (https://ecosystem.hubspot.com/marketplace/listing/diffly, search summary only).
+- Cheapest substitute: a HubSpot deal workflow on "Closed Lost" that emails a survey, with an LLM summary on top. Survey vendors document how to set this up (https://help.survicate.com/en/articles/8015947-send-a-survey-after-a-deal-is-closed-in-hubspot, search summary only).
+- Participation: Clozd's own baselines are 20 to 30% for non-blind losses and 5 to 15% for blind interviews, and it advises sourcing 3 to 5 times the names you need (https://www.clozd.com/blog/selecting-buyers-for-post-decision-interviews, revised 20 Apr 2026). A firm closing "dozens" of deals a quarter would get only a handful of loss interviews, which undercuts the weekly-brief promise.
+- Every pain signal in the file comes from a vendor (Clozd, Klue, User Intuition). There are no independent complaints and no job ads for the manual task.
+- Market size in the target band is unclear. One UK database counts 1,886 SaaS firms with 10 to 50 staff and 166 with more than 50, while other sources differ tenfold (https://firmbase.co/resources/technology-lists/saas-using-hubspot-uk, search summary only).
+- Reach: the buyers are heads of product marketing who already compare funded incumbents. That is a hard sale for a generalist UK business partner.
+
+**What would change my mind (re-score on this evidence)**
+1. Independent, non-vendor evidence that UK or EU firms with 20 to 200 staff want win-loss but can't buy it. Examples: public community threads, or job ads for product-marketing roles at that size that list win-loss interviews.
+2. Public pricing showing that Clozd Flex, Klue AI Interviewer and Perspective have annual minimums a 50-person firm can't afford, and that User Intuition has no CRM-triggered closed-lost flow.
+3. A published completion rate of 15% or more for AI text interviews with closed-lost B2B buyers.
+4. A narrower wedge with no incumbent, backed by its own pain and price evidence. Examples: churn interviews for UK SMB SaaS, or lost-tender debriefs for UK B2B services firms.
 
 ## Gate log
 - 2026-11-23: G0 spotted by scout.
+- 2026-11-23 | validator | G0→G1 | REVISE 59 | Klue, Clozd and User Intuition already sell AI-run win-loss (Clozd even auto-invites from HubSpot), all the pain evidence comes from vendors, and a 20 to 30% response rate on lost deals leaves small firms too few interviews for a useful brief.
