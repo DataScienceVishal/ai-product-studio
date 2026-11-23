@@ -2,16 +2,19 @@
 # products/_starter/ADR/0002-azure-deploy.md, runbook in products/_starter/infra/README.md).
 # Products copy this as <slug>-deploy.yml and change the env block below.
 #
-# Manual only, for now. Every run compiles the Bicep and checks for billable environment features. It
-# deploys only when all three hold; otherwise it stops with a notice:
+# Manual only, for now. Every run compiles the Bicep and checks the compiled templates for features with a
+# fixed charge. It deploys only when all three hold; otherwise it stops with a notice:
 #   - the AZURE_CREDENTIALS secret exists (the deployer, Contributor on rg-ai-studio only);
 #   - Vishal has approved the costs in state/BUDGET.md by setting the repository variable
 #     STUDIO_AZURE_APPROVED to "yes";
-#   - the run is on main, so only reviewed code reaches the public address.
+#   - the run is on main, so only reviewed code reaches the public address. (Repository secrets are readable
+#     from any branch, so this guards against accidents only; ADR 0002, decision 8.)
 #
-# Release order: build, then scan (both before any Azure sign-in), push by digest, deploy a new revision
-# with no traffic, run migrations as a separate job, smoke-test the new revision, move all traffic to it,
-# smoke-test the public address, roll back if that fails, and retire revisions older than the previous one.
+# Release order: build, then scan (both before any Azure sign-in); read the live release, failing closed on
+# any Azure error; push by digest; deploy a new revision with no traffic (the purge job stays on the live
+# revision); migrate as a separate job; smoke-test the new revision; move all traffic to it; smoke-test the
+# public address; only then move the purge job to the new image. Any failure after traffic moved sends
+# traffic and the purge job back to the previous revision.
 name: _starter-deploy
 
 on:
@@ -27,16 +30,24 @@ on:
         type: choice
         options: [mock, stripe]
         default: mock
+      require_email_verification:
+        description: "Require a verified email for AI, checkout and invitations. Leave off while email is outbox-only: nobody can verify (ADR 0002)."
+        type: boolean
+        default: false
+      mock_checkout:
+        description: "Show the demo 'Pay (test)' button (mock billing only; it grants a paid plan for free)."
+        type: boolean
+        default: false
       setup_database:
-        description: "Create or refresh this product's database and roles (first deploy, or after a seed rotation)"
+        description: "Create or refresh this product's database and roles: first release, or after STUDIO_DB_SEED changes (README: rotating the seed)."
         type: boolean
         default: false
       deploy_shared:
-        description: "Also create or update the shared studio resources: registry, environment, logs, Postgres"
+        description: "Also create or update the shared studio resources (registry, environment, logs, Postgres). Starter only."
         type: boolean
         default: false
       rollback_to:
-        description: "Don't deploy: move all traffic back to this earlier revision (its name is in a run summary)"
+        description: "Don't deploy: move all traffic, and the purge job, back to this earlier revision (name from a run summary)"
         type: string
         default: ""
 
@@ -61,8 +72,8 @@ env:
   PG_SERVER: psql-studio-znp96r
   ENVIRONMENT: cae-studio
   PULL_IDENTITY: id-studio-acrpull
-  # The task that makes the backend serve the frontend changes these three: the image is then built from
-  # the starter root with both parts, and the smoke test also checks the HTML and its CSP.
+  # T-16 (the backend serves the frontend) changes these three: the image is then built from the starter
+  # root with both parts, and the smoke test also checks the HTML and its CSP.
   IMAGE_CONTEXT: products/_starter/backend
   DOCKERFILE: products/_starter/backend/Dockerfile
   EXPECT_SPA: "false"
@@ -80,7 +91,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Bicep compiles (no Azure sign-in needed)
+      - name: Bicep compiles, scripts parse (no Azure sign-in needed)
         working-directory: ${{ env.PRODUCT_DIR }}/infra
         run: |
           az bicep install --only-show-errors
@@ -88,13 +99,16 @@ jobs:
           az bicep build --file main.bicep --outfile "$RUNNER_TEMP/main.json"
           az bicep build-params --file shared.bicepparam --outfile "$RUNNER_TEMP/shared.parameters.json"
           az bicep build-params --file main.bicepparam --outfile "$RUNNER_TEMP/main.parameters.json"
-          bash -n smoke.sh
+          for script in *.sh; do bash -n "$script"; done
+          python3 -I -c 'import ast, sys; ast.parse(open(sys.argv[1]).read())' scram_verifier.py
 
-      - name: No billable environment features
+      - name: No features with a fixed charge
         run: |
-          # Each of these starts a flat $0.10/hour (about $73 a month) Container Apps charge (ADR 0002).
-          if grep -rnE --include='*.bicep' "maintenanceConfigurations|privateEndpoint|workloadProfileType: *'[^C]" "$PRODUCT_DIR/infra"; then
-            echo "::error::infra uses a billable Container Apps feature: a planned maintenance window, a private endpoint or a Dedicated workload profile."
+          # The compiled templates are what Azure gets, so values from parameters and modules count too.
+          bash "$PRODUCT_DIR/infra/cost-guard.sh" "$RUNNER_TEMP/shared.json" "$RUNNER_TEMP/main.json"
+          # The same words in the source, as a second net (Bicep files only, so docs can mention them).
+          if grep -rnE --include='*.bicep' "maintenanceConfigurations|privateEndpoint|vnetConfiguration|infrastructureSubnetId|workloadProfileType: *'[^C]" "$PRODUCT_DIR/infra"; then
+            echo "::error::infra mentions a feature with a fixed charge: a maintenance window, a private endpoint, a custom network or a non-Consumption workload profile (ADR 0002, decision 1)."
             exit 1
           fi
 
@@ -125,6 +139,12 @@ jobs:
     env:
       AI_PROVIDER: ${{ inputs.ai_provider }}
       BILLING_PROVIDER: ${{ inputs.billing_provider }}
+      REQUIRE_EMAIL_VERIFICATION: ${{ inputs.require_email_verification && 'true' || 'false' }}
+      MOCK_CHECKOUT_ENABLED: ${{ inputs.mock_checkout && 'true' || 'false' }}
+      # The only provider today. A real one needs approval, and then require_email_verification must be on:
+      # the app refuses to start otherwise.
+      EMAIL_PROVIDER: outbox
+      SETUP_DATABASE: ${{ inputs.setup_database && 'true' || 'false' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -183,6 +203,7 @@ jobs:
         working-directory: ${{ env.PRODUCT_DIR }}/infra
         run: |
           az bicep install --only-show-errors
+          # Also the only step that sets the server admin password, from STUDIO_DB_SEED.
           az deployment group create --resource-group "$RESOURCE_GROUP" --name studio-shared \
             --parameters shared.bicepparam --only-show-errors --output none
           echo "Shared resources are in place."
@@ -206,13 +227,14 @@ jobs:
             exit 1
           fi
 
-      - name: A first deploy needs the database set up
-        if: ${{ !inputs.setup_database }}
+      - name: Read the live release (stops on any Azure read error)
+        run: bash "$PRODUCT_DIR/infra/live-release.sh" >> "$GITHUB_ENV"
+
+      - name: A first release needs the database set up
+        if: env.FIRST_RELEASE == 'true' && !inputs.setup_database
         run: |
-          if ! az containerapp show --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" --output none 2>/dev/null; then
-            echo "::error::ca-$PRODUCT doesn't exist yet: run this first deploy with setup_database ticked."
-            exit 1
-          fi
+          echo "::error::ca-$PRODUCT has no working release yet: run this first release with setup_database ticked."
+          exit 1
 
       - name: Push the image
         run: |
@@ -228,6 +250,17 @@ jobs:
         if: inputs.setup_database
         run: |
           command -v psql > /dev/null || { sudo apt-get update -q && sudo apt-get install -y -q postgresql-client; }
+          major=$(psql --version | grep -oE '[0-9]+' | head -1)
+          if [ "${major:-0}" -lt 15 ]; then
+            echo "::error::psql ${major:-unknown} is too old: db-setup.sql needs psql 15 or later (\\getenv)."
+            exit 1
+          fi
+          # SCRAM verifiers, made here: the passwords themselves never reach the server (db-setup.sql).
+          migrator_verifier=$(python3 -I "$PRODUCT_DIR/infra/scram_verifier.py" PG_MIGRATOR_PASSWORD)
+          app_verifier=$(python3 -I "$PRODUCT_DIR/infra/scram_verifier.py" PG_APP_PASSWORD)
+          echo "::add-mask::$migrator_verifier"
+          echo "::add-mask::$app_verifier"
+          export PG_MIGRATOR_VERIFIER="$migrator_verifier" PG_APP_VERIFIER="$app_verifier"
           ip=$(curl -fsS --max-time 10 https://api.ipify.org || true)
           if ! [[ "$ip" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
             echo "::error::Couldn't read this runner's public IPv4 address."
@@ -239,11 +272,19 @@ jobs:
           export PGHOST="$PG_SERVER.postgres.database.azure.com" PGSSLMODE=verify-full \
             PGSSLROOTCERT=/etc/ssl/certs/ca-certificates.crt PGCONNECT_TIMEOUT=10
           for attempt in $(seq 1 36); do # firewall changes can take up to five minutes
-            if PGPASSWORD="$PG_ADMIN_PASSWORD" psql -X -w -U studioadmin -d postgres -tAc 'select 1' > /dev/null 2>&1; then
+            if PGPASSWORD="$PG_ADMIN_PASSWORD" psql -X -w -U studioadmin -d postgres -tAc 'select 1' > /dev/null 2> "$RUNNER_TEMP/psql.err"; then
               break
             fi
+            if grep -q "password authentication failed" "$RUNNER_TEMP/psql.err"; then
+              echo "::error::The server admin password doesn't match STUDIO_DB_SEED. Only deploy_shared sets it, so after changing the seed run with deploy_shared and setup_database both ticked (infra/README.md, rotating the seed)."
+              exit 1
+            fi
+            if grep -qiE "certificate|ssl error" "$RUNNER_TEMP/psql.err"; then
+              echo "::error::The TLS check failed for $PGHOST: $(head -c 300 "$RUNNER_TEMP/psql.err")"
+              exit 1
+            fi
             if [ "$attempt" -eq 36 ]; then
-              echo "::error::Couldn't reach $PGHOST as the server admin after 6 minutes."
+              echo "::error::Couldn't reach $PGHOST after 6 minutes: $(head -c 300 "$RUNNER_TEMP/psql.err")"
               exit 1
             fi
             sleep 10
@@ -258,17 +299,23 @@ jobs:
       - name: Remove the runner's database firewall rule
         if: always() && inputs.setup_database
         run: |
-          az postgres flexible-server firewall-rule delete --resource-group "$RESOURCE_GROUP" --server-name "$PG_SERVER" \
-            --name "gh-run-$GITHUB_RUN_ID" --yes --only-show-errors --output none 2> /dev/null || true
+          if ! az postgres flexible-server firewall-rule delete --resource-group "$RESOURCE_GROUP" --server-name "$PG_SERVER" \
+            --name "gh-run-$GITHUB_RUN_ID" --yes --only-show-errors --output none 2> "$RUNNER_TEMP/firewall.err"; then
+            if ! grep -qi "not found" "$RUNNER_TEMP/firewall.err"; then
+              echo "::warning::Couldn't remove the firewall rule gh-run-$GITHUB_RUN_ID from $PG_SERVER ($(head -c 200 "$RUNNER_TEMP/firewall.err")). Remove it by hand: az postgres flexible-server firewall-rule delete --resource-group $RESOURCE_GROUP --server-name $PG_SERVER --name gh-run-$GITHUB_RUN_ID --yes"
+            fi
+          fi
 
-      - name: Deploy the app and jobs (the new revision gets no traffic yet)
+      - name: Deploy the app and jobs (the new revision gets no traffic; the purge job stays on the live one)
         working-directory: ${{ env.PRODUCT_DIR }}/infra
         env:
-          AZURE_OPENAI_ENDPOINT: ${{ inputs.ai_provider == 'azure' && secrets.AZURE_OPENAI_ENDPOINT || '' }}
-          AZURE_OPENAI_API_KEY: ${{ inputs.ai_provider == 'azure' && secrets.AZURE_OPENAI_API_KEY || '' }}
+          # Passed whenever they exist, whichever provider this release uses, so a provider switch never
+          # removes a secret that the previous revision still reads. Only the chosen provider is wired in.
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
           AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT || 'gpt-5-mini' }}
-          BILLING_WEBHOOK_SECRET: ${{ inputs.billing_provider == 'stripe' && secrets.STARTER_BILLING_WEBHOOK_SECRET || '' }}
-          STRIPE_SECRET_KEY: ${{ inputs.billing_provider == 'stripe' && secrets.STARTER_STRIPE_SECRET_KEY || '' }}
+          BILLING_WEBHOOK_SECRET: ${{ secrets.STARTER_BILLING_WEBHOOK_SECRET }}
+          STRIPE_SECRET_KEY: ${{ secrets.STARTER_STRIPE_SECRET_KEY }}
         run: |
           if [ "$AI_PROVIDER" = "azure" ] && { [ -z "$AZURE_OPENAI_ENDPOINT" ] || [ -z "$AZURE_OPENAI_API_KEY" ]; }; then
             echo "::error::ai_provider=azure needs the AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY secrets (SETUP.md step 3)."
@@ -278,25 +325,22 @@ jobs:
             echo "::error::billing_provider=stripe needs the STARTER_BILLING_WEBHOOK_SECRET and STARTER_STRIPE_SECRET_KEY secrets."
             exit 1
           fi
-          app="ca-$PRODUCT"
-          live=$(az containerapp show --resource-group "$RESOURCE_GROUP" --name "$app" \
-            --query "properties.configuration.ingress.traffic[?weight==\`100\`] | [0].revisionName" --output tsv 2> /dev/null || true)
-          if [ -z "$live" ]; then # the first release sends traffic to "latest" rather than a revision name
-            live=$(az containerapp show --resource-group "$RESOURCE_GROUP" --name "$app" \
-              --query properties.latestReadyRevisionName --output tsv 2> /dev/null || true)
+          if [ "$FIRST_RELEASE" != "true" ] && [ -z "$LIVE_REVISION" ]; then
+            echo "::error::No live revision was read, so the release stops." # live-release.sh should have stopped already
+            exit 1
           fi
           host="$PG_SERVER.postgres.database.azure.com"
           tls="sslmode=verify-full&sslrootcert=/etc/ssl/certs/ca-certificates.crt"
-          export LIVE_REVISION="$live"
           export REVISION_SUFFIX="r${GITHUB_RUN_NUMBER}a${GITHUB_RUN_ATTEMPT}-${GITHUB_SHA::7}"
           export DATABASE_URL_APP="postgresql+psycopg://${DB_NAME}_app:${PG_APP_PASSWORD}@${host}:5432/${DB_NAME}?${tls}"
           export DATABASE_URL_MIGRATE="postgresql+psycopg://${DB_NAME}_migrator:${PG_MIGRATOR_PASSWORD}@${host}:5432/${DB_NAME}?${tls}"
           az bicep install --only-show-errors
+          # LIVE_REVISION and PURGE_* come from live-release.sh; on a first release they are empty, so the
+          # only revision takes the traffic and the purge job gets this release's image.
           az deployment group create --resource-group "$RESOURCE_GROUP" \
             --name "$PRODUCT-r$GITHUB_RUN_NUMBER-a$GITHUB_RUN_ATTEMPT" --parameters main.bicepparam \
             --query properties.outputs --output json --only-show-errors > "$RUNNER_TEMP/outputs.json"
           {
-            echo "LIVE_REVISION=$live"
             echo "CANDIDATE=$(jq -r .candidateRevision.value "$RUNNER_TEMP/outputs.json")"
             echo "APP_FQDN=$(jq -r .appFqdn.value "$RUNNER_TEMP/outputs.json")"
           } >> "$GITHUB_ENV"
@@ -313,7 +357,7 @@ jobs:
             case "$status" in
               Succeeded) echo "Migrations applied."; exit 0 ;;
               Failed|Stopped|Degraded)
-                echo "::error::Migration $execution ended '$status'. Its output is in log-studio (ContainerAppConsoleLogs for $job)."
+                echo "::error::Migration $execution ended '$status'. Alembic runs all pending migrations in one transaction, so the schema is unchanged. Its output is in log-studio (ContainerAppConsoleLogs for $job)."
                 exit 1 ;;
             esac
             sleep 10
@@ -336,27 +380,41 @@ jobs:
             --revision-weight "$CANDIDATE=100" "$LIVE_REVISION=0" --only-show-errors --output none
 
       - name: Smoke-test the public address
+        id: public
         run: bash "$PRODUCT_DIR/infra/smoke.sh" "https://$APP_FQDN"
 
-      - name: Roll back to the previous revision
-        if: failure() && steps.shift.outcome != 'skipped' && env.LIVE_REVISION != '' && env.CANDIDATE != ''
+      - name: Point the purge job at the new release (only now that it has passed)
+        id: promote
+        run: bash "$PRODUCT_DIR/infra/purge-job.sh" follow "$CANDIDATE"
+
+      - name: Roll back traffic and the purge job to the previous revision
+        # Also when someone cancels the run halfway.
+        if: (failure() || cancelled()) && steps.shift.outcome != 'skipped' && env.LIVE_REVISION != '' && env.CANDIDATE != ''
         run: |
           az containerapp ingress traffic set --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
             --revision-weight "$LIVE_REVISION=100" "$CANDIDATE=0" --only-show-errors --output none
+          if ! bash "$PRODUCT_DIR/infra/purge-job.sh" follow "$LIVE_REVISION"; then
+            echo "::error::The purge job couldn't be pointed back at $LIVE_REVISION. Run this workflow with rollback_to=$LIVE_REVISION."
+          fi
           az containerapp revision deactivate --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
             --revision "$CANDIDATE" --only-show-errors --output none || true
-          echo "::error::$CANDIDATE failed after traffic moved, so all traffic is back on $LIVE_REVISION."
+          echo "::error::$CANDIDATE failed after traffic moved, so all traffic, and the purge job, are back on $LIVE_REVISION. The database keeps this release's migrations (ADR 0002, decision 9)."
+          if [ "$SETUP_DATABASE" = "true" ]; then
+            echo "::warning::This run set up the database. If STUDIO_DB_SEED changed, $LIVE_REVISION holds the old password and can't open new database connections: fix forward with another release."
+          fi
 
       - name: Retire a new revision that never got traffic
-        if: failure() && steps.shift.outcome == 'skipped' && env.LIVE_REVISION != '' && env.CANDIDATE != ''
+        if: (failure() || cancelled()) && steps.shift.outcome == 'skipped' && env.LIVE_REVISION != '' && env.CANDIDATE != ''
         run: |
           az containerapp revision deactivate --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
             --revision "$CANDIDATE" --only-show-errors --output none || true
-          echo "::error::The release stopped before traffic moved; $LIVE_REVISION still serves everyone."
+          echo "::error::The release stopped before traffic moved. $LIVE_REVISION still serves everyone, and the purge job still runs its image."
 
       - name: Retire revisions older than the previous one
         # The previous revision stays active with 0% traffic, at no cost while it has no replicas, so a
         # rollback is instant. Anything older is deactivated: it can be re-activated with rollback_to.
+        # A failure here doesn't undo a release that passed.
+        continue-on-error: true
         run: |
           for rev in $(az containerapp revision list --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
               --query "[?properties.active].name" --output tsv); do
@@ -369,13 +427,16 @@ jobs:
 
       - name: Summary
         if: always()
+        env:
+          PROMOTED: ${{ steps.promote.outcome }}
         run: |
           {
             echo "### Deploy of $PRODUCT"
             echo "- Address: https://${APP_FQDN:-not deployed}"
             echo "- New revision: ${CANDIDATE:-none} (image ${IMAGE:-not pushed})"
-            echo "- Previous revision, still active for a quick rollback: ${LIVE_REVISION:-none (first deploy)}"
-            echo "- AI provider: $AI_PROVIDER; billing provider: $BILLING_PROVIDER"
+            echo "- Previous revision, still active for a quick rollback: ${LIVE_REVISION:-none (first release)}"
+            echo "- Purge job moved to the new image: ${PROMOTED:-not reached}"
+            echo "- AI: $AI_PROVIDER; billing: $BILLING_PROVIDER; email verification: $REQUIRE_EMAIL_VERIFICATION; mock checkout: $MOCK_CHECKOUT_ENABLED"
           } >> "$GITHUB_STEP_SUMMARY"
 
   rollback:
@@ -415,6 +476,7 @@ jobs:
         run: |
           current=$(az containerapp show --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
             --query "properties.configuration.ingress.traffic[?weight==\`100\`] | [0].revisionName" --output tsv)
+          echo "PREVIOUS=$current" >> "$GITHUB_ENV"
           weights=("$TARGET=100")
           if [ -n "$current" ] && [ "$current" != "$TARGET" ]; then weights+=("$current=0"); fi
           az containerapp ingress traffic set --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
@@ -422,8 +484,17 @@ jobs:
           fqdn=$(az containerapp show --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
             --query properties.configuration.ingress.fqdn --output tsv)
           bash "$PRODUCT_DIR/infra/smoke.sh" "https://$fqdn"
+
+      - name: Point the purge job at the same revision
+        run: bash "$PRODUCT_DIR/infra/purge-job.sh" follow "$TARGET"
+
+      - name: Summary
+        if: always()
+        run: |
           {
-            echo "### Rolled back $PRODUCT"
-            echo "- All traffic now goes to $TARGET (was ${current:-unknown})."
-            echo "- The database schema was not rolled back: migrations must stay backward compatible (ADR 0002)."
+            echo "### Rollback of $PRODUCT to $TARGET"
+            echo "- Traffic was on: ${PREVIOUS:-unknown}. Check the steps above for the result."
+            echo "- The purge job follows the revision that serves traffic (purge-job.sh)."
+            echo "- The database schema is NOT rolled back. It stays on the newest migration, which the older code"
+            echo "  must still work with (ADR 0002, decision 9: expand first, contract in a later release)."
           } >> "$GITHUB_STEP_SUMMARY"

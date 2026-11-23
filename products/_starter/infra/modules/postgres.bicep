@@ -42,7 +42,7 @@ resource server 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
       tier: 'P4'
     }
     backup: {
-      backupRetentionDays: 7 // deleted rows stay restorable for 7 days: DATA.md must say so
+      backupRetentionDays: 7 // deleted rows stay in backups for up to 7 days (DATA.md says so)
       geoRedundantBackup: 'Disabled'
     }
     highAvailability: {
@@ -54,15 +54,40 @@ resource server 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
   }
 }
 
-// TLS 1.3 only, Microsoft's "best configuration". require_secure_transport is already on by default.
-resource tlsMinimum 'Microsoft.DBforPostgreSQL/flexibleServers/configurations@2024-08-01' = {
+// Server parameters (all dynamic: no restart). The port is reachable from Azure addresses (ADR 0002,
+// decision 5), so every sign-in attempt is logged, and the server keeps its logs for download.
+var serverParameters = [
+  {
+    name: 'ssl_min_protocol_version'
+    value: 'TLSv1.3' // Microsoft's "best configuration"; require_secure_transport is on by default
+  }
+  {
+    name: 'log_connections'
+    value: 'on' // the default, pinned: logs each attempt with its source address, and failed sign-ins
+  }
+  {
+    name: 'log_error_verbosity'
+    value: 'terse' // no DETAIL lines, which can quote row values such as an email in a unique-key error
+  }
+  {
+    name: 'logfiles.download_enable'
+    value: 'on' // keep server logs for download; they stay out of log-studio and its daily cap
+  }
+  {
+    name: 'logfiles.retention_days'
+    value: '7' // the maximum Azure allows
+  }
+]
+
+@batchSize(1) // the server accepts one change at a time
+resource serverSettings 'Microsoft.DBforPostgreSQL/flexibleServers/configurations@2024-08-01' = [for setting in serverParameters: {
   parent: server
-  name: 'ssl_min_protocol_version'
+  name: setting.name
   properties: {
-    value: 'TLSv1.3'
+    value: setting.value
     source: 'user-override'
   }
-}
+}]
 
 resource azureServices 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = if (allowAzureServices) {
   parent: server
@@ -72,7 +97,7 @@ resource azureServices 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@
     endIpAddress: '0.0.0.0'
   }
   dependsOn: [
-    tlsMinimum // the server accepts one change at a time
+    serverSettings // after the parameters, for the same reason
   ]
 }
 

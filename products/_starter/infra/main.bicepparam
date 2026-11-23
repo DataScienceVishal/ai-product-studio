@@ -12,6 +12,14 @@ param aiProvider = readEnvironmentVariable('AI_PROVIDER', 'fake')
 param azureOpenAiEndpoint = readEnvironmentVariable('AZURE_OPENAI_ENDPOINT', '')
 param azureOpenAiDeployment = readEnvironmentVariable('AZURE_OPENAI_DEPLOYMENT', 'gpt-5-mini')
 param billingProvider = readEnvironmentVariable('BILLING_PROVIDER', 'mock')
+param mockCheckoutEnabled = readEnvironmentVariable('MOCK_CHECKOUT_ENABLED', 'false') == 'true'
+param requireEmailVerification = readEnvironmentVariable('REQUIRE_EMAIL_VERIFICATION', 'true') == 'true'
+param emailProvider = readEnvironmentVariable('EMAIL_PROVIDER', 'outbox')
+
+// The purge job stays on the live revision's image and email settings until the release passes.
+param purgeImage = readEnvironmentVariable('PURGE_IMAGE', '')
+param purgeRequireEmailVerification = readEnvironmentVariable('PURGE_REQUIRE_EMAIL_VERIFICATION', '')
+param purgeEmailProvider = readEnvironmentVariable('PURGE_EMAIL_PROVIDER', '')
 
 // Secrets: read from the workflow's environment at deploy time, sent to Azure as secure parameters, and
 // never written to a file in the repository.

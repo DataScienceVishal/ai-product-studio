@@ -4,18 +4,19 @@ Why it looks like this, with costs and sources: `../ADR/0002-azure-deploy.md`. T
 
 ```
    you ──► GitHub Actions: _starter-deploy (manual)
-              1 build image ─► 2 scan (Trivy) ─► 3 sign in to Azure ─► 4 push by digest
-              5 deploy main.bicep: new revision, 0% traffic
-              6 migration job (alembic upgrade head)
-              7 smoke-test the new revision ─► 8 move 100% traffic ─► 9 smoke-test the public URL
-                                                    └── fails? traffic goes back to the old revision
+              1 build image ─► 2 scan (Trivy) ─► 3 sign in to Azure ─► 4 read the live release (stop on errors)
+              5 push by digest ─► 6 deploy main.bicep: new revision at 0% traffic, purge job unchanged
+              7 migration job (alembic upgrade head)
+              8 smoke-test the new revision ─► 9 move 100% traffic ─► 10 smoke-test the public URL
+              11 only now: the purge job gets the new image
+                    └── fails after step 9? traffic AND the purge job go back to the old revision
 
    rg-ai-studio, uksouth
      shared.bicep (once)                          main.bicep (every release, per product)
      ├─ cae-studio          Container Apps env    ├─ ca-<slug>             web app, scales 0 to 1
      ├─ acrstudioznp96r     registry (Basic)      ├─ caj-<slug>-migrate    migrations, run by the workflow
-     ├─ id-studio-acrpull   pulls images          └─ caj-<slug>-purge      retention purge, daily 03:17 UTC
-     ├─ log-studio          logs, 30 days
+     ├─ id-studio-acrpull   pulls images          └─ caj-<slug>-purge      retention purge, daily 03:17 UTC,
+     ├─ log-studio          logs, 30 days                                  on the live revision's image
      └─ psql-studio-znp96r  Postgres B1ms ── database <db>, roles <db>_migrator and <db>_app
 ```
 
@@ -27,6 +28,10 @@ Why it looks like this, with costs and sources: `../ADR/0002-azure-deploy.md`. T
 | `modules/postgres.bicep` | the shared Postgres server, used by `shared.bicep` |
 | `main.bicep`, `main.bicepparam` | one product: web app, migration job, purge job. Deployed on every release |
 | `db-setup.sql`, `db-grants.sql` | create a product's database and its two roles (run by the workflow) |
+| `scram_verifier.py` | turns a password into the SCRAM verifier `db-setup.sql` sends, so no password reaches the server |
+| `live-release.sh` | reads what a release starts from; any Azure read error stops the release |
+| `purge-job.sh` | keeps the purge job on the image and email settings of the revision that serves traffic |
+| `cost-guard.sh` | refuses compiled templates with features that have a fixed charge |
 | `smoke.sh` | the release smoke test; also runs against a local server with `--local` |
 | `../../../.github/workflows/_starter-deploy.yml` | the only way anything here reaches Azure |
 
@@ -62,7 +67,9 @@ Nothing here costs money until step 4. Do the steps only after approving the cos
    az role assignment create --assignee-object-id <principal id> --assignee-principal-type ServicePrincipal \
      --role AcrPull --scope /subscriptions/<sub>/resourceGroups/rg-ai-studio/providers/Microsoft.ContainerRegistry/registries/acrstudioznp96r
    ```
-6. **Run the workflow again** with only **setup_database** ticked. This is the first real release.
+6. **Run the workflow again** with only **setup_database** ticked. This is the first real release. Its only
+   revision takes traffic as soon as it is ready, a minute before its migration has run, so for that minute
+   the API answers errors. Harmless before anyone uses it; later releases never do this.
 
 ## Releasing
 
@@ -71,25 +78,57 @@ Nothing here costs money until step 4. Do the steps only after approving the cos
   _starter-deploy.yml` and `gh run view <id> --log`.
 - Inputs:
   - `ai_provider`: `fake` (default, no cost) or `azure`. `azure` needs the `AZURE_OPENAI_*` secrets from
-    SETUP.md step 3 and spends tokens, capped at 100,000 a day.
+    SETUP.md step 3. It spends tokens, capped at 100,000 a day for all tenants together.
   - `billing_provider`: `mock` (default) or `stripe`, which is test mode only and needs the
     `STARTER_BILLING_WEBHOOK_SECRET` and `STARTER_STRIPE_SECRET_KEY` secrets.
-  - `setup_database`: tick it on a product's first release, or after `STUDIO_DB_SEED` changes.
-  - `deploy_shared`: only when `shared.bicep` changes. Shared changes can cost money, so ask first.
-- The run summary shows the public address, the new revision, the image digest and the previous revision.
+  - `require_email_verification`: off by default **while email is outbox-only**, because nobody can receive
+    the link. On, a demo can only sign up and write notes. Off, it can also use the AI, check out and invite
+    (invitation links can't be delivered either). Turn it on, and keep it on, as soon as a real email provider
+    exists: the app then refuses to start without it.
+  - `mock_checkout`: shows the demo "Pay (test)" button. Off by default: it gives a paid plan away (with the
+    trial's AI allowance).
+  - `setup_database`: tick it on a product's first release, or when rotating the seed (below).
+  - `deploy_shared`: only when `shared.bicep` changes, and only from the starter's workflow. Shared changes
+    can cost money, so ask first.
+- The run summary shows the public address, the new revision, the image digest, the previous revision and
+  whether the purge job moved to the new image.
 
 **Rule for migrations:** each migration must work with the code of the release before it. Add columns
-first and drop them in a later release. A rollback moves traffic; it never downgrades the database.
+first and drop them in a later release. A rollback moves traffic and the purge job; it never changes the
+database. If a migration fails, Alembic rolls back all of that release's migrations together, so the schema
+stays as it was.
 
 ## Rolling back
 
-- Automatic: if the new revision fails its public smoke test, traffic goes back to the previous revision in
-  the same run. If anything fails before that, traffic never moved.
+- Automatic: if anything fails after traffic moved (the public smoke test, the traffic move itself, or moving
+  the purge job), traffic and the purge job go back to the previous revision in the same run. If anything
+  fails before that, traffic never moved and the purge job was never changed.
 - By hand: run the workflow with `rollback_to` set to a revision name from an earlier run summary, such as
-  `ca-starter--r12a1-1a2b3c4`. It re-activates that revision, smoke-tests it, then moves all traffic to it.
-- The previous revision stays active with 0% traffic, which costs nothing while it has no replicas. It is
-  reachable at its own revision address until the next release. After a security fix, release once more so
-  the vulnerable revision is retired.
+  `ca-starter--r12a1-1a2b3c4`. It re-activates that revision, smoke-tests it, moves all traffic to it, then
+  points the purge job at its image.
+- The database stays on the newest migration either way (the rule above).
+- The previous revision stays active with 0% traffic, which costs nothing while it has no replicas. Until the
+  next release it is reachable at its own revision address, and it keeps its own in-process rate-limit
+  counters, so it is a second bucket for anyone who knows that address. After a security fix, release once
+  more so the vulnerable revision is retired.
+
+## Rotating the database seed
+
+Every database password comes from `STUDIO_DB_SEED`. The server admin password is set only by `deploy_shared`,
+and each product's role passwords only by `setup_database`.
+
+1. Vishal replaces the `STUDIO_DB_SEED` secret.
+2. Run the **starter's** workflow with **deploy_shared** and **setup_database** both ticked. The admin password
+   changes first, then the starter's roles, then its release goes out with the new passwords.
+3. Run every other product's workflow with **setup_database** ticked. Until it runs, a product keeps working
+   on its old passwords.
+
+During each run, the revision being replaced can't open new database connections once its roles have the
+new password, so expect a few minutes of errors. Revisions released before the rotation can't be rolled back
+to afterwards: they hold the old passwords.
+
+If the admin password and the seed disagree, the database step stops at once with "The server admin password
+doesn't match STUDIO_DB_SEED": run step 2 again.
 
 ## Making a product from the starter
 
@@ -109,11 +148,25 @@ allowance and $23.20 without it, for the shared pieces plus one product. Each pr
 Container Apps free grant (about 100 active hours a month at 0.5 vCPU and 1 GiB).
 
 Rules the templates keep. Breaking one changes the bill:
-- The environment has only the Consumption profile: no Dedicated profile, private endpoint or planned
-  maintenance window, each of which costs about $73 a month. The workflow checks for them.
+- The environment has only the literal Consumption profile and no network of its own: no Dedicated or GPU
+  profile, private endpoint or planned maintenance window (each about $73 a month), and no custom network
+  (about $25.55 a month). `cost-guard.sh` checks the compiled templates on every run.
 - Postgres stays B1ms with 32 GB and autogrow off: the free allowance covers exactly that.
 - The web app scales to zero, with at most one replica.
 - The logs keep 30 days, capped at 0.1 GB a day.
+
+## Reading the logs
+
+- **App and jobs:** `log-studio`, tables `ContainerAppConsoleLogs` (what the code prints) and
+  `ContainerAppSystemLogs` (revisions, probes, image pulls). The ingress's HTTP access log is deliberately
+  not collected: it would store client IPs and full URLs, including sign-in tokens from email links.
+- **Database sign-ins:** Postgres logs every connection attempt and every failed sign-in, and keeps the files
+  for 7 days. They stay on the server, so a flood of failed attempts can't use up `log-studio`'s daily cap:
+  ```bash
+  az postgres flexible-server server-logs list --resource-group rg-ai-studio --server-name psql-studio-znp96r
+  az postgres flexible-server server-logs download --resource-group rg-ai-studio --server-name psql-studio-znp96r --name <file>
+  grep "password authentication failed" <file>   # the "connection received" line with the same session id has the address
+  ```
 
 ## When something goes wrong
 
@@ -124,25 +177,33 @@ Rules the templates keep. Breaking one changes the bill:
 | "deploys run from main only" notice | dispatched on another branch | merge after review, then run on `main` |
 | `MissingSubscriptionRegistration` | resource providers not registered | setup step 2 |
 | "can't pull images yet" | AcrPull not granted | setup step 5 |
-| "doesn't exist yet: run this first deploy with setup_database" | first release of a product | tick `setup_database` |
+| "couldn't read ca-<slug> ... instead of guessing" | an Azure error (throttling, an expired sign-in) | run it again; nothing was changed |
+| "no revision ... has 100% of the traffic" | traffic was split by hand | `rollback_to` the revision that should serve, then release |
+| "has no working release yet: run this first release with setup_database" | first release of a product | tick `setup_database` |
+| "The server admin password doesn't match STUDIO_DB_SEED" | the seed changed without `deploy_shared` | rotating the seed, step 2 |
 | Trivy fails | a fixable HIGH or CRITICAL vulnerability in the image | rebuild later (new base image), or add the CVE id to `<product>/.trivyignore` with a comment saying why |
-| Migration job `Failed` | a migration error; the old revision still serves | read `ContainerAppConsoleLogs` in `log-studio`, fix, release again |
+| Migration job `Failed` | a migration error; the old revision still serves and the schema is unchanged | read `ContainerAppConsoleLogs` in `log-studio`, fix, release again |
+| "The purge job couldn't be pointed back" | an Azure error during a rollback | run `rollback_to` with the revision that serves traffic |
 | `/healthz` answers `"db":"down"` | wrong database password, or the server is stopped | re-run with `setup_database`; start the server |
 | A name "is already in use" | someone else owns `acrstudioznp96r` or `psql-studio-znp96r` | change the suffix in `shared.bicepparam`, `main.bicep` and the workflow env |
 | A charge named "Environment Management Hour" | a Dedicated profile, private endpoint or maintenance window got added | remove it; see ADR decision 1 |
+| "Couldn't remove the firewall rule gh-run-..." warning | an Azure error after a database setup | delete the rule with the command in the warning |
 
 ## Checks you can run without Azure
 
 ```bash
 # against a local server (see the starter README): skips the https-only checks
 bash products/_starter/infra/smoke.sh --local http://127.0.0.1:8000
+# a compiled template (az bicep build --file main.bicep --outfile main.json)
+bash products/_starter/infra/cost-guard.sh main.json
 ```
 
-The workflow's first job compiles all four Bicep files on every run, even without credentials. Nothing here
-has run against Azure yet: the first real run is the real test of the templates.
+The workflow's first job compiles all four Bicep files and runs `cost-guard.sh` on every run, even without
+credentials. Nothing here has run against Azure yet: the first real run is the real test of the templates.
 
 ## At handover
 
 The business deploys `shared.bicep` into its own subscription with an Owner account, setting
-`GRANT_PULL_ROLE=true` so the AcrPull role is created too. It then deploys `main.bicep`. With a real budget,
-switch Postgres to private networking and move secrets to Key Vault (ADR decisions 5 and 6).
+`GRANT_PULL_ROLE=true` so the AcrPull role is created too. It then deploys `main.bicep`. Before any real
+customer data arrives, Postgres must move to private networking or passwordless sign-in (T-18), and secrets
+should move to Key Vault (ADR decisions 5 and 6).

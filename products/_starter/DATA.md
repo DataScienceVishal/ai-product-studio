@@ -18,7 +18,17 @@ review before launch.
 | `ai_usage` | tenant id, token counts | per-customer caps, the studio-wide daily AI budget, cost | 400 days; on account deletion the tenant link is cleared but the counts stay, so the global budget still counts them | purge job |
 
 **Logs** hold request ids, tenant ids and user ids, never emails, names, note text, tokens or SQL parameters
-(see `app/logs.py`). Database error messages are reduced to their SQLSTATE code.
+(see `app/logs.py`). Database error messages are reduced to their SQLSTATE code. When deployed (ADR 0002):
+- The app's and jobs' console output and the platform's system logs go to Log Analytics (`log-studio`). They are
+  kept 30 days, then deleted.
+- The ingress's HTTP access log is not collected. It would hold client IP addresses and full URLs, including the
+  tokens in email links.
+- The Postgres server logs each connection attempt: the database role, and the address it came from (the app's
+  Azure address, or whoever tried to connect). It keeps these files 7 days, for spotting attacks on the database.
+  Error details that could quote row values are switched off.
+
+**Backups:** the database keeps 7 days of backups for point-in-time restore. A deleted row stays in them until
+they expire, up to 7 days after the deletion.
 
 **Processors.** Before launch, list them in the privacy notice with each one's terms:
 - Microsoft Azure: hosting and database, UK region.
@@ -26,7 +36,8 @@ review before launch.
 - The payment provider (Stripe test mode until `unlock selling`).
 - An email provider, once one is approved.
 
-**Run the purge daily:** `python -m app.maintenance purge`, for example as a scheduled Container Apps job (T-7).
+**Run the purge daily:** `python -m app.maintenance purge`. Deployed, it is the scheduled job `caj-<slug>-purge`
+(03:17 UTC). It runs the same image and email settings as the web revision that serves traffic.
 
 **Subject requests:**
 - Owners: Settings → Download my data (`GET /api/account/export`).

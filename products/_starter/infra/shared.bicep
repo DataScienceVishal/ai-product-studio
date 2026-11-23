@@ -80,6 +80,8 @@ resource cae 'Microsoft.App/managedEnvironments@2025-07-01' = {
   }
 }
 
+// Two named categories, never the 'allLogs' group: that group also turns on ContainerAppHTTPLogs, the ingress
+// access log, which stores client IPs and full URLs with query strings (sign-in tokens from email links).
 resource caeLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: 'to-log-studio'
   scope: cae
@@ -87,7 +89,11 @@ resource caeLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
     workspaceId: logs.id
     logs: [
       {
-        categoryGroup: 'allLogs' // container console output and system logs
+        category: 'ContainerAppConsoleLogs' // what the apps and jobs print: request ids, not personal data
+        enabled: true
+      }
+      {
+        category: 'ContainerAppSystemLogs' // revisions, replicas, probes, image pulls
         enabled: true
       }
     ]
