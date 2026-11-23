@@ -35,7 +35,7 @@ A team of Claude Code agents that finds, validates and builds sellable AI produc
 | `prompts/` | the two prompts you paste into the scheduled tasks |
 | `scripts/` | `tg.py` (Telegram), `studio.py` (modes, run log, status) and `azure_spend.py` (daily spend report, run by `.github/workflows/azure-spend.yml`) |
 | `state/` | board, decisions, questions, hurdles, budget, ideas, inbox |
-| `products/` | the products themselves |
+| `products/` | the products themselves; `products/_starter` is the template every product copies |
 
 ## Telegram commands
 
