@@ -123,3 +123,35 @@ def test_api_only_when_there_is_no_build(settings, tmp_path):
             r = client.get("/login")
             assert r.status_code == 404 and r.json()["error"] == "not_found"
             assert client.get("/livez").status_code == 200
+
+
+def _own_header_routes(app):
+    from fastapi.responses import JSONResponse
+    own = {"Cache-Control": "public, max-age=999", "Content-Security-Policy": "default-src *"}
+    app.add_api_route("/api/_own", lambda: JSONResponse({"ok": 1}, headers=own), methods=["GET"])
+    app.add_api_route("/hook/_own", lambda: JSONResponse({"ok": 1}, headers=own), methods=["GET"])
+
+
+def test_api_and_other_routes_cannot_keep_their_own_cache_or_csp(settings, dist):
+    """M7: only the SPA module's own responses keep Cache-Control/CSP; /api and any other route get the defaults."""
+    settings.frontend_dist = str(dist)
+    settings.env = "prod"
+    app = create_app(settings)
+    _own_header_routes(app)
+    with TestClient(app) as client:
+        for path in ("/api/_own", "/hook/_own"):
+            r = client.get(path)
+            assert r.status_code == 200
+            assert r.headers["cache-control"] == "no-store", path
+            assert r.headers["content-security-policy"] != "default-src *", path
+        assert client.get("/login").headers["content-security-policy"] == HTML_CSP
+        assert "immutable" in client.get("/assets/index-abc123.js").headers["cache-control"]
+
+
+def test_assets_do_not_follow_symlinks(web, dist, tmp_path):
+    """M8: a symlink inside assets/ must not expose a file (or directory) outside it."""
+    (dist / "assets" / "leak.txt").symlink_to(tmp_path / "secret.txt")
+    (dist / "assets" / "leakdir").symlink_to(tmp_path, target_is_directory=True)
+    for path in ("/assets/leak.txt", "/assets/leakdir/secret.txt"):
+        r = web.get(path)
+        assert r.status_code == 404 and "top secret" not in r.text, path

@@ -69,6 +69,9 @@ jobs:
           curl -fsS http://127.0.0.1:8000/ | grep -q '<div id="root">'
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/nope)" = 404
           docker rm -f starter-ci
+      - name: Container logs (on failure)
+        if: failure()
+        run: docker logs starter-ci || true
 
   frontend:
     runs-on: ubuntu-latest

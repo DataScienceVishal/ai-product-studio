@@ -25,6 +25,7 @@ log = logging.getLogger("app.spa")
 HTML_CSP = ("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; "
             "frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
 IMMUTABLE = "public, max-age=31536000, immutable"
+OWN_HEADERS = "spa.own_headers"  # scope key: set only by responses this module produced; RequestContext honours it
 
 
 class ImmutableStatic(StaticFiles):
@@ -32,6 +33,7 @@ class ImmutableStatic(StaticFiles):
         response = await super().get_response(path, scope)
         if response.status_code in (200, 304):
             response.headers["Cache-Control"] = IMMUTABLE
+            scope[OWN_HEADERS] = True
         return response
 
 
@@ -55,6 +57,7 @@ def install(app: FastAPI, dist: str) -> bool:
     def fallback(request: Request) -> Response | None:
         if request.method not in ("GET", "HEAD") or _is_reserved(request.url.path):
             return None
+        request.scope[OWN_HEADERS] = True
         headers = {"Cache-Control": "no-cache", "Content-Security-Policy": HTML_CSP}
         return Response(b"" if request.method == "HEAD" else html, media_type="text/html", headers=headers)
 

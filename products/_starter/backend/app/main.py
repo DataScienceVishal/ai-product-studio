@@ -119,7 +119,7 @@ class RequestContext:
         self.app = app
         self.headers = SECURITY_HEADERS + ([HSTS] if hsts else []) + ([API_CSP] if strict_csp else [])
         self.names = {name for name, _ in self.headers}
-        self.spa_own = {b"cache-control", b"content-security-policy"}  # the frontend sets its own, outside /api
+        self.spa_own = {b"cache-control", b"content-security-policy"}  # only responses the SPA module marked (index.html, /assets)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -134,7 +134,7 @@ class RequestContext:
             nonlocal status, response_started
             if message["type"] == "http.response.start":
                 status, response_started = message["status"], True
-                own = set() if scope.get("path", "").startswith("/api") else self.spa_own
+                own = self.spa_own if scope.get(spa.OWN_HEADERS) else set()
                 headers = [h for h in message.get("headers", []) if h[0].lower() not in self.names - own]
                 kept = {h[0].lower() for h in headers}
                 extra = [h for h in self.headers if h[0] not in kept]
