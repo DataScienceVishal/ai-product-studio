@@ -2,7 +2,7 @@
 
 Ordered by score, then build feasibility. The validator keeps this current.
 
-Updated 2026-11-23 (T-4 complete; T-11 round 2 first half scored, second half in progress). No idea has passed G1 (70+) yet.
+Updated 2026-11-23 (T-4 and T-11 complete: 25 scored, 0 PASS, 2 KILL). No idea has passed G1 (70+) yet.
 
 | Rank | Slug | Stage | Score | One-line pitch | Next step |
 |---|---|---|---|---|---|
@@ -24,7 +24,24 @@ Updated 2026-11-23 (T-4 complete; T-11 round 2 first half scored, second half in
 | — | nhs-supplier-scope3-crp-pack | G0 (REVISE) | 57 | Builds an NHS-format carbon reduction plan from a supplier's ledger | Park until NHS publishes the 2028 product-footprint method. Ceiling about 60 |
 | — | uk-cbam-import-ledger | G0 (REVISE) | 56 | Per-import ledger, £50k threshold tests and a return pack for UK CBAM from 2027 | Park: most importers fall under the threshold. Ceiling about 62 |
 | — | ppt-recycled-content-ledger | merged | 51 | Plastic Packaging Tax recycled-content ledger | Merged into pepr-packaging-data-pipeline |
+| — | merchant-whatsapp-order-desk | G0 (REVISE) | 56 | Turns tradespeople's WhatsApp messages and photographed lists into draft sales orders in the merchant's ERP | Desk check SalesApe, Klipboard and Otis pages and the BisTrack/Merlin import formats; consider merging with wholesale-email-order-entry-sage |
+| — | vet-cma-compliance-desk | G0 (REVISE) | 53 | Builds the CMA price list from a practice system's export and monitors the estimate and complaint duties | Cheap desk check: does anyone charge vets for CMA monitoring? Otherwise park |
+| — | agency-whatsapp-timesheet-desk | G0 (REVISE) | 53 | Reads temps' timesheet photos, matches them to bookings and produces a payroll file | Park: Bullhorn Amplify Extract already does this |
+| — | haulier-whatsapp-pod-matcher | G0 (REVISE) | 51 | Matches drivers' proof-of-delivery photos to jobs and invoices | Park low; a second failure kills it |
+| — | skip-hire-phone-booking-desk | G0 (REVISE) | 44 | AI phone agent that takes skip bookings into the firm's system | Park; needs a paid telephony provider and skip-specific evidence |
 
 Killed (in `killed/`): homestay-rate-copilot-india (38), bali-villa-rate-copilot (39). Both fail the data red flag: their value needs booking and market data the studio can't lawfully get.
 
 **Pattern:** every idea lost most of its points on Competition (1 to 5 out of 10; four of the UK batch scored 1). By late 2026 incumbents ship "AI over your documents" as a standard or free feature, so a gap has to be checked on the competitor's own product pages, and the stronger wedges are ones incumbents can't easily follow: a regulatory deadline, deep domain workflow, a channel they don't serve, or liability they won't take.
+
+**Round 2 (T-11).** Neither thesis beat round 1:
+- Regulation-driven data ideas averaged 58.
+- Channel and closed-system ideas averaged 51:
+  - Meta now sells its own AI agent on WhatsApp.
+  - The "closed" systems had APIs.
+  - Vertical incumbents ship the channel feature.
+  - A free practitioner-made tool closed the vet gap within weeks.
+- Lessons for the next scout:
+  - Check the channel owner's own AI and free community tools, as well as competitors' own pages.
+  - Any idea whose value depends on a paid service (telephony, WhatsApp) loses most of its demo in mock mode.
+

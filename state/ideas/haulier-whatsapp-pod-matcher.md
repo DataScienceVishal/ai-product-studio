@@ -52,7 +52,37 @@ Photos are skewed, handwritten, multi-page and signed in varying ways. Matching 
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
-| pending | pending | pending | pending | pending | pending | pending | pending |
+| 8 | 9 | 6 | 7 | 11 | 2 | 8 | 51 |
+
+## Validator notes (2026-11-23)
+
+**Red-flag check: none.**
+- Not an off-limits area. There is some personal data: driver numbers, consignee names and signatures.
+- Synthetic data can credibly demo the value. About 200 generated POD images (handwriting fonts, skew, missing signatures) and a synthetic job list are enough to show match rate and exception precision.
+- Mock mode keeps nearly all of the value, because the value is the reading and matching. Intake can be email, an upload, or an export of the drivers' WhatsApp group.
+- Live WhatsApp intake is allowed. Meta's terms (last modified 23 September 2026) ban AI only where it is the "primary (rather than incidental or ancillary) functionality". They also bar using WhatsApp data to train models except for the business's "exclusive use" (https://www.facebook.com/legal/Meta-Terms-for-WhatsApp-Business-Platform). Live intake still needs Meta verification and approval, and since 1 October 2026 service replies beyond 1,000 a month are billed (https://developers.facebook.com/docs/whatsapp/pricing).
+
+**Falsification findings** (all accessed 2026-11-23)
+- **Small hauliers can already buy ePOD with invoicing cheaply**, which undercuts the "no TMS" premise:
+  - HaulierMagic: £99 per office user and £15 per driver device a month, with ePOD and invoicing from completed jobs (https://www.capterra.co.uk/software/1045110/hauliermagic, search summary only).
+  - MyTrucking UK: £35 a month for one vehicle and £20 for each extra vehicle (https://mytrucking.com/uk/, search summary only; the page returned 403).
+  - Maxoptra: Track & Trace with ePOD for £35 per vehicle a month on a 24-month agreement (https://www.theaccessgroup.com/en-gb/route-optimisation-software/resources/pricing/, search summary only).
+  - Track-POD: $29 per vehicle a month billed annually (https://www.capterra.co.uk/software/178880/track-pod, search summary only).
+- **The AI part is a free template.** n8n's public "Automated proof of delivery with GPT-4 Vision & ERP/Invoice integration" template checks the delivery photo and signature, posts verified deliveries to the ERP and creates an invoice with a POD reference. It is listed "Use for free" (https://n8n.io/workflows/10496-automated-proof-of-delivery-with-gpt-4-vision-and-erpinvoice-integration/).
+- **The OCR vendors, checked on their own pages:**
+  - Klippa extracts names, signatures, PO numbers, quantities and dates. It can "confirm signatures and timestamps", flag mismatched signatures, and connect by API or SDK to a TMS or ERP. It has no WhatsApp or email intake and no published price (https://www.klippa.com/en/ocr/logistics-documents/proofs-of-delivery/).
+  - V7 Go validates signatures, cross-references delivery details against invoices and flags exceptions. It is aimed at freight auditors and AP teams and has no published price (https://www.v7labs.com/automations/proof-of-delivery-verification).
+  - Neither packages WhatsApp intake or a Sage 50 hand-off, so the scout's narrow gap is confirmed. But they or any ePOD app could add a WhatsApp number within a month.
+- **The pain evidence is still weak and not specific to PODs.** A UK government study found 31% of businesses blamed disputed invoices for paying suppliers late, across all sectors (https://assets.publishing.service.gov.uk/media/688a089a6478525675738ff9/late_payments_research_impact_on_uk_economy.pdf, search summary only). The only haulage-specific figures come from a secondary statistics site that cites the RHA (search summary only, unverified).
+- **Reach is good.** The Traffic Commissioners' operator licence records are open data under the Open Government Licence, with authorised vehicle numbers, so firms with 5 to 50 vehicles can be filtered (https://data.gov.uk/dataset/traffic-commissioners-goods-and-public-service-vehicle-operator-licence-records). Use company-level fields only, because the records also name transport managers.
+
+**What would change my mind (re-score on this evidence)**
+1. An independent source showing that missing or unsigned PODs delay haulage payment: an RHA or Logistics UK survey, or Small Business Commissioner case data.
+2. Evidence that a large share of small hauliers, or their subcontractor drivers, won't install ePOD apps. For example, reviews complaining about driver-app adoption, or networks whose subcontractors sit outside the app.
+3. Vendor pages for HaulierMagic, MyTrucking and Track-POD showing they can't take subcontractor PODs from WhatsApp or email and match them to Sage 50 jobs.
+
+With all three I'd expect the high 50s. Low priority; a second failure kills it.
 
 ## Gate log
 - 2026-11-23: G0 written by scout (round 2, second half). Scout's own view: weakest of the five on competition; keep only if the validator finds a stronger pain source.
+- 2026-11-23 | validator | G0→G1 | REVISE 51 | Easiest build of the five and synthetic PODs demo it well, but small hauliers can already buy ePOD with invoicing from about £15 to £35 a vehicle a month, n8n gives away a GPT-vision POD verification template, Klippa and V7 already read PODs and check signatures, and every pain signal is a vendor blog or a single job ad.

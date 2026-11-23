@@ -27,3 +27,10 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Recommended: A, because it matches the plan in CLAUDE.md, and B or C can be switched on later
 - If no answer: A after 12 hours (reversible)
 
+## Q-3 (status: open)
+- Decision: 25 ideas have been scored and none has reached the 70-point G1 bar (best: pEPR packaging data at 68). What should the studio do while pEPR's evidence comes in?
+- Context: pEPR is 2 points short. The validator thinks it reaches about 73 if competitor pages confirm the spec-sheet gap (T-13, desk research, can start now) and an extraction benchmark hits 90% (T-14, needs your Azure OpenAI setup). The shared product starter is nearly through its review gates.
+- Options: A) Start specification work on pEPR now (customer profile, core flow, MVP scope, architecture and cost), with no product code until G1 passes B) Keep the rules as they are: only desk research and new scouting until an idea passes C) Lower the G1 bar to 65 for the first product, so pEPR (68) and the restaurant margin copilot (66) can go ahead now
+- Recommended: A, because the spec work is cheap and reversible, it makes the product buildable the day the benchmark passes, and it keeps the 70-point bar intact
+- If no answer: A after 12 hours (reversible)
+

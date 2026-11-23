@@ -52,7 +52,51 @@ Handwritten hours, breaks and client signatures on photos, matched against messy
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
-| pending | pending | pending | pending | pending | pending | pending | pending |
+| 11 | 10 | 7 | 7 | 10 | 3 | 5 | 53 |
+
+## Validator notes (2026-11-23)
+
+**Red-flag check: none.**
+- Not an off-limits area. It isn't a hiring or assessment product, but its output sets people's pay.
+- Synthetic data can credibly demo the value: 300 generated timesheet images with varied handwriting, a bookings CSV and the expected payroll file are enough to show hours accuracy and the exception rate. Real handwriting variety stays unproven until a pilot.
+- The output route is free. Sage 50 Payroll imports timesheet payments from CSV (File > Data Import > Timesheet Payments), as TimeKeeper and Workforce document (https://help.timekeeper.co.uk/en/article/importing-into-sage50-payroll-1ni7a1f/ and https://help.workforce.com/en/articles/6992690-sage-50-uk, search summary only).
+- Mock mode keeps the reading and matching but loses the in-chat chasing, which is half the pitch. Live chasing needs:
+  - the WhatsApp Business Platform, which means Meta verification and approval;
+  - worker opt-in;
+  - paid utility templates. Since 1 October 2026, utility messages in an open window and service messages beyond 1,000 a month are charged (https://developers.facebook.com/docs/whatsapp/pricing).
+- **WhatsApp rules.** The AI here is ancillary, so Meta's AI-provider ban doesn't apply.
+  - Meta's terms (last modified 23 September 2026) bar using the chat data to train models except for the agency's "exclusive use" (https://www.facebook.com/legal/Meta-Terms-for-WhatsApp-Business-Platform).
+  - The Business Messaging Policy requires a human escalation path and opt-in (https://whatsappbusiness.com/policy/).
+
+**Risk deductions (personal data at scale): 5/10.**
+- -3 for personal data at scale: hundreds of temps' names, phone numbers, hours, pay, signatures and sometimes client sites.
+- -2 because the output sets pay, and underpaying a worker is the agency's legal problem (https://www.gov.uk/employment-agencies-and-businesses/agency-workers).
+- The design needs worker opt-in and a privacy notice, no ID images, short image retention and processor terms.
+- Never add face matching. Zoho Workerly's photo check-in compares temps' photos with their profile photos (https://help.zoho.com/portal/en/kb/workerly/timesheets/photo-logging-for-temps/articles/zoho-workerly-photo-logging), and doing that would make this biometric data.
+
+**Falsification findings** (all accessed 2026-11-23)
+- **The dominant incumbent is building this exact product.** Bullhorn's Amplify Extract "scans timesheet images, emails, and text messages". It:
+  - extracts hours, candidate, client, placement and week-ending date into a "Pending Review queue";
+  - texts workers to submit their hours and accepts natural-language replies;
+  - is "currently in early access" (https://www.bullhorn.com/blog/timesheet-automation/, 18 September 2026).
+
+  Its channels are SMS and email, not WhatsApp, a gap Bullhorn could close within a month.
+- **The build is routine.** Nexora Staffing (EITS) takes timesheets "from web, mobile, WhatsApp or email forward", reads handwriting and outputs payroll-ready data (https://eitserv.tech/en/staffing-timesheet-ai). Its country pages are Latin American, so it isn't a UK competitor.
+- **The UK small-agency tools sell an app instead.**
+  - Logezy confirms the pain: "If your agency is still collecting timesheets via WhatsApp photos, email attachments, or paper forms, you already know the problem". Its fix is a candidate app with e-signature and bulk approval. The page shows no AI, names no payroll system and gives no price (https://www.logezy.com/product/timesheets/).
+  - TempBuddy uses app selfie clock-ins and e-signed timesheets (https://www.sourceforge.net/software/product/TempBuddy, search summary only).
+  - Vincere's timesheets page still returns 403 (https://www.vincere.io/recruitment-timesheets), so it is unverified.
+- **How common WhatsApp collection is remains unmeasured.** Every source that describes it is a vendor.
+- **Reach:** REC has more than 3,000 member businesses and a public member directory listing their sectors (https://rec.uk.com/jobseekers, search summary only).
+
+**What would change my mind (re-score on this evidence)**
+1. An independent measure of how many small UK agencies collect timesheets as photos or WhatsApp messages: an REC or APSCo survey, or trade press with figures.
+2. Amplify Extract's scope and price (does it take WhatsApp, and can small customers get it?), plus evidence that most small UK agencies don't use Bullhorn.
+3. Logezy, Vincere and TempBuddy pages showing no photo reading and no WhatsApp intake.
+4. A data-protection outline the security agent accepts before G2: opt-in, no ID images, image retention of 30 days or less, and a deletion path.
+
+With all four I'd expect about 60.
 
 ## Gate log
 - 2026-11-23: G0 written by scout (round 2, second half). Scout's view: second weakest on competition and risk; keep only if the validator finds how common WhatsApp collection is.
+- 2026-11-23 | validator | G0→G1 | REVISE 53 | The pain is real and weekly, but Bullhorn's Amplify Extract (early access, September 2026) already reads timesheet images and texts into a review queue and chases workers by text, Logezy could add WhatsApp within a month, mock mode loses the chasing that sells it, and hundreds of workers' pay data pull the risk score down to 5.

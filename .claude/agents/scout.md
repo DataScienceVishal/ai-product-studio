@@ -22,6 +22,8 @@ Before you write an idea (lessons from the first 15, all of which lost on Compet
   - a market they ignore that the studio can still reach. Selling goes through a UK business, so non-UK ideas need a named channel.
 - Check every competitor gap you claim on that competitor's own product, help and pricing pages, and cite them. Reviews and marketing summaries aren't enough.
 - Say how the value could be demoed with public or synthetic data. If it can't be, the idea fails the data red flag.
+- Also check the channel owner's own AI (for example Meta's agent on WhatsApp) and free tools made by practitioners or the community. Round 2 lost ideas to both.
+- If the value depends on a paid service (telephony, WhatsApp), say how much of the demo survives in mock mode.
 
 Rules
 - Public sources only. Cite the URL and access date for every claim. Never invent numbers; label estimates and show the method.
