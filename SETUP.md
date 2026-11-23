@@ -54,6 +54,8 @@ Copy the JSON the last command prints. Then in GitHub open the repo's **Settings
 | `AZURE_OPENAI_API_KEY` | your Azure OpenAI key |
 | `AZURE_OPENAI_DEPLOYMENT` | your deployment name, such as `gpt-5-mini` |
 
+Optional: also add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` here as Actions secrets (the same values as step 5). The daily `azure-spend` workflow then pings you the first time spend passes 50%, 75% and 95% of the $80 cap. Without them it still writes the figures to `state/BUDGET.md` every morning.
+
 If `create-for-rbac` fails with a permissions error (some university tenants block it), skip `AZURE_CREDENTIALS`. The team will log a hurdle and suggest another deploy route.
 
 If Cost Management offers **Budgets** for your subscription, add one for $80 with email alerts at 50%, 75% and 95%. Either way, Azure for Students switches off when the credit runs out, so it can't overspend.

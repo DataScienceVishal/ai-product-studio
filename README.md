@@ -33,7 +33,7 @@ A team of Claude Code agents that finds, validates and builds sellable AI produc
 | `.claude/agents/` | the 10 specialists, 4 of them checkers (validator, reviewer, qa, security) |
 | `playbooks/` | detailed rules: pipeline, sellable bar, Telegram, safety, engineering, briefs |
 | `prompts/` | the two prompts you paste into the scheduled tasks |
-| `scripts/` | `tg.py` (Telegram) and `studio.py` (modes, run log, status) |
+| `scripts/` | `tg.py` (Telegram), `studio.py` (modes, run log, status) and `azure_spend.py` (daily spend report, run by `.github/workflows/azure-spend.yml`) |
 | `state/` | board, decisions, questions, hurdles, budget, ideas, inbox |
 | `products/` | the products themselves |
 
