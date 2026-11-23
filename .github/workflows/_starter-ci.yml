@@ -127,3 +127,33 @@ jobs:
           name: e2e-logs
           path: ${{ runner.temp }}/e2e
           retention-days: 7
+
+  infra:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BICEP_VERSION: v0.32.4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the pinned Bicep CLI (compile only, no Azure login)
+        run: az bicep install --version "$BICEP_VERSION"
+      - name: Compile the templates and parameter files
+        working-directory: products/_starter/infra
+        run: |
+          out="$RUNNER_TEMP/bicep"
+          mkdir -p "$out"
+          az bicep version
+          az bicep build --file shared.bicep --outdir "$out"
+          az bicep build --file main.bicep --outdir "$out"
+          az bicep build-params --file shared.bicepparam --outfile "$out/shared.parameters.json"
+          az bicep build-params --file main.bicepparam --outfile "$out/main.parameters.json"
+      - name: Cost guard on the compiled templates
+        run: bash products/_starter/infra/cost-guard.sh "$RUNNER_TEMP/bicep/shared.json" "$RUNNER_TEMP/bicep/main.json"
+      - name: Script syntax
+        working-directory: products/_starter/infra
+        run: |
+          for f in *.sh; do bash -n "$f"; done
+          python3 -I -m py_compile scram_verifier.py
