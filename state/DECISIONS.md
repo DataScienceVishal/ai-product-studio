@@ -10,3 +10,8 @@ Append only. One line per decision:
 2026-11-23T11:36:09Z | 20261123T111240Z-run-b15e | Starter deploy (Bicep + Container Apps) deferred to the architect, with cost estimates in BUDGET.md before anything is created | no Azure credentials yet, and the registry and Postgres choice costs money | yes | T-6
 2026-11-23T11:36:09Z | 20261123T111240Z-run-b15e | Product code is on vishal/blissful-cray-v1s3ys instead of p/_starter/T-6 | this session may push only to that branch | yes | session limits
 2026-11-23T11:37:58Z | 20261123T111240Z-run-b15e | Added T-7 (starter deploy design) and T-8 (starter gaps), and queued Q-1 about merging this branch to main | found while building T-6; scheduled runs start from main | yes | T-6
+2026-11-23T11:38:32Z | 20261123T111240Z-run-b15e | G0→G1 REVISE 66: restaurant-margin-copilot | Jelly already sells AI invoice capture and margin alerts to UK independents; closest to 70 | yes | gate (validator)
+2026-11-23T11:38:32Z | 20261123T111240Z-run-b15e | G0→G1 REVISE 65: mtd-quarterly-prep | strongest pain in the batch, but Dext Solo already covers statement extraction and client prompts | yes | gate (validator)
+2026-11-23T11:38:32Z | 20261123T111240Z-run-b15e | G0→G1 REVISE 63: wedding-venue-enquiry-agent | Bridebook auto-replies, and shares couples' emails only with paid venues; Mikla has a free plan | yes | gate (validator)
+2026-11-23T11:38:32Z | 20261123T111240Z-run-b15e | G0→G1 REVISE 59: b2b-win-loss-interviewer | Klue, Clozd and User Intuition already sell AI win-loss interviews | yes | gate (validator)
+2026-11-23T11:38:32Z | 20261123T111240Z-run-b15e | G0→G1 REVISE 54: sop-to-induction-course | SafetyCulture's Mitti turns documents into AI courses, free for up to 10 users | yes | gate (validator)
