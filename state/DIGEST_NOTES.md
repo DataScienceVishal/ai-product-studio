@@ -16,3 +16,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - [_starter] Full CI passed on GitHub, including the browser end-to-end test and the production image build.
 - [ideas] pEPR (68) parked: Repackd, a UK self-serve tool, already sells spec-sheet extraction, recyclability ratings and fee simulation from £299/month. Q-4 asks which customers round 3 should scout among; your friend's business's own customers would give the studio a channel incumbents can't copy.
 - [_starter] Security gate PASSED (8 of 8 sections) after three rounds of fixes. The code review's fourth pass is running; when it passes, the starter is done and products can be built from it.
+- [_starter] T-6 DONE: the product starter passed both gates (code review and security). Every future product starts from it. It reaches main when you merge the branch (Q-1).

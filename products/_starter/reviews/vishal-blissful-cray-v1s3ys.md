@@ -647,3 +647,64 @@ run now stops at the trial's daily cap: 5 × 503, then 429s, with 31,000 tokens 
 
 Fix B4 with its tests. If `d051954` is the fix, I'll re-run the purge probe and the suite on it, plus a quick
 review of its other changes. Everything else in this pass can become board tasks.
+
+## Re-review 3 (2026-11-23)
+
+- Tree: `95360d8`, in a clean detached worktree. It contains `d051954` (B4/R13 and the security re-test 2 items),
+  `b0f72ae` (e2e.sh) and `95360d8` (the re-review 2 minor items). `3b66b5b` and `f074262` (T-7) were left to their
+  own reviewer. The commits after `95360d8` don't touch the starter's code.
+- Own workspace again: `starter_rev_test`, `starter_rev_e2e`, ports 8400 and 4473.
+
+### Verdict: PASS
+
+B4 is fixed, and so is everything left open from re-review 2 except the N1 remainder and a few small items. Every
+blocker from the four passes (C1 to C8, B1 to B4) is now fixed, reproduced and guarded by a test I
+mutation-checked. CI is green, and the security re-test 3 passed. The remaining items below are follow-ups for a
+board task, not blockers.
+
+### What I ran
+
+| Check | Result |
+|---|---|
+| Backend tests at `95360d8` | 144 passed, 1 warning, 27.1 s |
+| Migrations | `upgrade`, `check`, `downgrade base`, `upgrade` and `check` all clean. 0006 applied to existing data backfills `last_sign_in_at` for old users; old usage rows get `trial = false` |
+| Frontend `tsc -b`, `vite build` | clean; JS 248.56 kB (76.63 kB gzip) |
+| `e2e.sh` on 8400/4473 | `E2E PASS: core flow`, including the wrong-password step. No server processes were left 3 s after exit (the process-group kill works). A busy port is refused |
+| Mutations | 19 on a scratch copy. 18 caught, including the coordinator's five: AI slots, the "would cross" monthly cap, the in-flight limit, a lapsed period, and the 404 reload. P4 survives (below) |
+| CI run 45227833791 (push, `95360d8`) | backend and frontend green: 144 tests, alembic check, pip-audit "No known vulnerabilities found", docker build done, npm audit 0. e2e skipped (branch push) |
+
+### Status
+
+| Item | Status | Proof |
+|---|---|---|
+| B4 | Fixed | My purge probe on six accounts. With the default config (outbox), the CLI doesn't run the account rule at all and all six are kept. With `purge(..., unverified_after_days=30)`, as it would run once real email exists, only two go: unverified with no sign-in for 31 days, and unverified never signed in. Kept: the paying tenant with a Stripe customer, the verified one, the 10-day-old one, and the unverified one who signed in 2 days ago. Mutations P1 (outbox gate), P2 (paying exclusion) and P3 (sign-in condition) are each caught |
+| Account deleted mid-summary | Fixed | 3 rounds: 404 and 404 each time, no unhandled errors (before: 6 × 500) |
+| Wiring tests | Fixed | Mutations H, J, L and M are each caught by their new endpoint test |
+| Hash slots | Better; N1 remainder open | 200 concurrent logins: 129 checked, 71 got 503 `busy` with `Retry-After: 5`, and nothing failed. Measured with curl from a separate process: `/livez` max 1.2 s (CPU) and `/healthz` 5.0 s (was 5.7 s). Logins waiting up to 3 s for a slot still hold worker threads, so other requests queue behind them during a burst |
+| Retry-After on `ai_busy`, ASCII-only signature timestamps | Fixed | `t=\xb2` now gets 400 (was 500). Mutations V and S caught |
+| Docs | Fixed | `.env.example` sets `MOCK_CHECKOUT_ENABLED=false` with a comment, and the README lists the new settings |
+| Trial pool, sign-up caps, no retry after a post-send timeout, mock plans on trial caps | Work as described | Mutations T, W, X and U caught. My empty-answer run stops at the trial's daily cap. At cap − 1, 0 of 15 concurrent calls got through |
+
+The earlier probes still hold: B2's 45-call case (`/livez` 67 ms, `/healthz` 161 ms), N2 (0 of 40 stale wins), N3
+(409), B1 in the browser, the verify-email flow while signed out, and link tokens removed from the address bar.
+
+### Follow-ups (board task, before any product reaches G4)
+
+- **N1 remainder:** take hash capacity before a worker thread is assigned, for example an async dependency with an
+  `anyio` limiter, or a try-acquire that answers 503 at once. Then a login burst can't queue `/healthz` and other
+  requests behind it.
+- **P4:** nothing fails if login stops recording `last_sign_in_at` (`routes/auth.py`), and the purge's
+  live-account guard depends on it. Add a test that login moves it, or an end-to-end purge test: an old,
+  unverified owner signs in and survives.
+- **Sign-up caps (a trade-off):** `new_trials_per_day = 200` together with `signups_per_ip_per_day = 20` means
+  about 10 IPs can close sign-ups for everyone for the rest of the UTC day. That's right for the $80 credit now;
+  revisit before G4. The count also scans `tenants`, which has no `created_at` index.
+- **`scripts/e2e.sh`:**
+  - the port check runs after the e2e database is dropped and recreated, so a refused run leaves it empty (it
+    happened to me). Move the check first;
+  - the trap is still set only after both servers start;
+  - `[ -d dist ] ||` reuses a stale build.
+- **Carried over:**
+  - `README.md:51-53` still has the old prod-guard text;
+  - `?next=/%5C…` leaves a signed-in user on /login (not a redirect);
+  - actions are pinned by tag, not SHA.
