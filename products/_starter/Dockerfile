@@ -1,13 +1,14 @@
 # One image for Azure Container Apps: the built React app and the FastAPI backend that serves it (ADR 0002,
 # decision 2). Build context is products/_starter. Runs as a non-root user; migrations run as a separate step.
-FROM node:22-slim AS frontend
+# Base images are pinned by digest; Dependabot (.github/dependabot.yml) proposes refreshes weekly.
+FROM node:22-slim@sha256:e9f565d32859f0cbfb52125eafe8be39390f24dac302dc3cdf566e8ba3ab21ee AS frontend
 WORKDIR /build
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --ignore-scripts --no-audit --no-fund
 COPY frontend/ ./
 RUN npm run build
 
-FROM python:3.12-slim AS runtime
+FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 \
     TRUST_PROXY_HEADERS=true FRONTEND_DIST=/app/static
 WORKDIR /app

@@ -328,7 +328,10 @@ enough), with one retry. It costs about 450 vCPU-seconds a month, inside the fre
 - Trivy 0.76.2, pinned by digest, fails the release on fixable HIGH or CRITICAL vulnerabilities. It reads a
   saved image tarball rather than the Docker socket, before any Azure sign-in, so it can't see credentials.
   A justified exception goes in `<product>/.trivyignore`.
-- Not yet: pinning `FROM python:3.12-slim` by digest, and actions by commit SHA (T-19).
+- Both base images (`node:22-slim`, `python:3.12-slim`) are pinned by digest; `.github/dependabot.yml` proposes
+  digest refreshes weekly (patch-level only: new Node majors and Python minors are ignored). Each product
+  copied from the starter needs its own Dependabot docker entry.
+- Not yet: actions by commit SHA (T-30), and the `postgres:16` CI service image, which Dependabot doesn't scan.
 
 ## What a deployed demo can do (email is outbox-only)
 
