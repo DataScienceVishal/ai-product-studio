@@ -60,6 +60,52 @@ A comment in the Xero thread (Jarvin Ong, 11 November 2026) promotes his own pro
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
+| 11 | 6 | 7 | 6 | 10 | 5 | 7 | **52** |
+
+## Validator notes (2026-11-23)
+
+**Verdict: REVISE (park).** The gap is real. Calxa (Xero UK listing) says nothing about funds, SOFA, SORP or restricted funds, and TaxCalc Charity Accounts works at year end (funds and activities, "SORP-compliant", from £87 a year, but it needs Accounts Production). So no in-year tool that codes transactions to funds from grant terms was found. But the idea fails on Pay and on how essential the AI is:
+- Small charities on Xero are the most price-sensitive buyers the studio has scored. Xero itself is discounted for charities, and the year-end tool costs from £87 a year.
+- Charities with many restricted grants, the ones the saving matters to, tend to buy dedicated fund ledgers such as Access Financials (from £139 per user a month, minimum five users) and leave Xero.
+- The hard part of fund allocation is splitting salaries and shared costs across funds. That depends on timesheets and board decisions, not on anything written in the grant agreement or the bank line. Reading 5 to 20 grant letters a year is a short job.
+- A practitioner guide already shows a bookkeeper how to do this with a general chatbot: give it the fund list and grant terms, and it proposes a fund and a reason for each bank line.
+
+How each score was reached:
+- **Pain 11/20.** The charity-reporting thread has 51 votes and is still "Submitted" (status page 17 March 2023). Workarounds: Excel SoFA, tracking-category prefixes, paying an accountant to convert reports (thread re-read 2026-11-23). SORP 2026 applies from 1 January 2026 periods. But the pain sits mainly at year end, where TaxCalc already plays. The "charity mode" refusal quote (about 103 votes) is still unverified: the page returned 404 again on 2026-11-23.
+- **Pay 6/20.** Anchors: TaxCalc Charity Accounts from £87 a year (an accountant tool). Generic bookkeeper rates are £20 to £50 an hour or £100 to £500 a month (Xero UK guide, via search; not charity-specific). Access Financials from £139 per user a month, minimum five users (Access Group, via search). No charity paying for in-year fund coding was found.
+- **AI 7/15.** Turning free-text grant conditions into a fund register is real LLM work. The rest is not: coding transactions can mostly be done with Xero bank rules and tracking categories once the register exists, and Xero JAX auto-reconciliation (beta; a paid AI add-on on UK Simple and Ignite plans) already predicts coding. Substitutes: a general chatbot used with the grant terms, or Cheetah custom reports.
+- **Reach 6/10.** Buyers are findable through the Charity Commission register (171,885 charities at end of September 2026), the ICAEW charity community, Charity Digital and the Xero App Store. The real buyer is the charity accountant or bookkeeper, and the studio's partner sector is unknown. Many charity accountants use TaxCalc or Sage already.
+- **Build 10/15.** The Xero API, tracking categories and a demo company are free. But Xero tracking does not cover the balance sheet, so fund balances and carried-forward reserves must be computed outside Xero and kept reconciled. A SORP 2026 SOFA template plus fund rollforward in four weeks is tight.
+- **Competition 5/10.** TaxCalc (year end), Calxa (programme budgets and tracking-category reports, 4.98 from 145 reviews, nothing on funds), Cheetah (custom reports), dedicated ledgers (Access, Liberty, Iplicit, Pegasus), and general chatbots. The in-year, grant-driven slot is open but narrow. TaxCalc or Calxa could add rules-based in-year fund tagging in about a month.
+- **Risk 7/10.** Charity accounts are regulated, and a wrong restriction causes a breach of trust and audit findings, so the tool must draft only with a named human sign-off. This is accounting, not legal advice, although interpreting grant conditions is close to contract reading. Donor names in bank lines and Gift Aid data mean moderate personal data.
+
+How I tried to kill it:
+- Read the Calxa and Calxa Xero UK listings and the TaxCalc page on their own sites.
+- Re-read the Xero idea thread.
+- Searched for AI fund-coding tools and Xero JAX.
+- No direct competitor was found, which is why this is REVISE, not KILL.
+
+What would move it to 70+ (all needed):
+1. Pay: three or more published fees from UK charity bookkeepers or independent examiners that price restricted-fund allocation or SOFA preparation separately, at £300 a year or more per charity. Or a vendor charging £30 a month or more for in-year fund tracking on Xero.
+2. AI: a desk sample of 10 public UK grant agreements (National Lottery Community Fund, council grants, trusts) showing that the restriction terms are varied and hard to parse, and that applying them changes how transactions are coded beyond simple project tags.
+3. Segment: evidence that a practice-side buyer (a bookkeeper with 10 or more Xero charity clients) exists in numbers, for example from Xero advisor directory filters or ICAEW charity community membership.
+4. A repeat check that TaxCalc, Calxa and Xero JAX have not added fund tagging.
+
+Without these, the ceiling is about 60. If the second attempt fails, kill it.
+
+Sources (all accessed 2026-11-23):
+- TaxCalc Charity Accounts, own page: https://www.taxcalc.com/products/charity-accounts (from £87 a year; add-on to Accounts Production; unlimited funds and activities; "SORP-compliant")
+- Calxa, Xero UK listing: https://apps.xero.com/uk/app/calxa (Not-for-Profit Reporting tag; tracking-category reports; no funds, SORP or SOFA; 30-day trial; no GBP price)
+- Calxa's own not-for-profit page: https://www.calxa.com/not-for-profit-reporting (returned 404)
+- Xero charity-reporting idea, re-read: https://productideas.xero.com/forums/967127-practice-tools/suggestions/45838657-reports-support-for-charity-reporting
+- Xero "charity mode" idea (returned 404 again): https://productideas.xero.com/forums/939198-for-small-businesses/suggestions/44960911-organisation-settings-charity-mode
+- Access Financials pricing, via search summary: https://www.theaccessgroup.com/en-gb/finance/sectors/charities-not-for-profit/best-accounting-software-for-charities/
+- Xero UK bookkeeper rates guide, via search summary: https://www.xero.com/uk/resources/small-business-guides/bookkeeping/hire-bookkeeper/
+- Practitioner guide to the AI fund-coding substitute (search result): https://sagnikbhattacharya.com/blog/nonprofit-ai-bookkeeping-restricted-funds
+- Xero JAX auto bank reconciliation, UK: https://www.xero.com/uk/campaign/auto-bank-reconciliation/
+- Charity Commission, July to September 2026 data (171,885 charities): https://www.gov.uk/government/publications/charity-commission-casework-and-registrations-data-2026-to-2027/casework-and-registrations-data-july-to-september-2026
+- Not checked: the Charity Commission income-band page returned 403, so the count of charities under £100k is unknown, and Sage and QuickBooks marketplaces were not browsed for fund add-ons.
 
 ## Gate log
 - 2026-11-23: G0 written by scout (T-27). Add-on check run; TaxCalc covers year-end SOFA, in-year fund coding from grant terms not found.
+- 2026-11-23: Validator (T-28) scored 52/100. REVISE (park): the in-year gap holds (Calxa has no fund features, TaxCalc works at year end from £87 a year), but Pay is weak, the AI is mostly one-off reading of grant terms, and a general chatbot is a working substitute. A second failure kills it.

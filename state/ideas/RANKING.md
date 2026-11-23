@@ -2,7 +2,7 @@
 
 Ordered by score, then build feasibility. The validator keeps this current.
 
-Updated 2026-11-23 (T-4, T-11 and T-22 complete: 30 scored, 0 PASS, 2 KILL). No idea has passed G1 (70+) yet. Ties are broken by the Build score.
+Updated 2026-11-23 (T-4, T-11, T-22 and T-28 complete: 32 scored, 0 PASS, 3 KILL). No idea has passed G1 (70+) yet. Ties are broken by the Build score.
 
 | Rank | Slug | Stage | Score | One-line pitch | Next step |
 |---|---|---|---|---|---|
@@ -29,13 +29,14 @@ Updated 2026-11-23 (T-4, T-11 and T-22 complete: 30 scored, 0 PASS, 2 KILL). No 
 | 21 | letting-agent-repair-triage | G0 (REVISE) | 53 | Triages tenant repair messages and photos, drafts contractor and landlord messages, keeps an Awaab's Law log | Park until the government's response to the private-rented Awaab's Law consultation (closes 18 Dec 2026) |
 | 22 | agency-whatsapp-timesheet-desk | G0 (REVISE) | 53 | Reads temps' timesheet photos, matches them to bookings and produces a payroll file | Park: Bullhorn Amplify Extract already does this |
 | 23 | rates-2026-valuation-check-workbench | G0 (REVISE) | 53 | Compares each site's 2026 rateable value with similar properties on the Valuation Office list and drafts the Check case with the evidence | Park: Rightly Rated, BusinessRateChecker and RateRight already sell comparables checks and evidence packs. Ceiling about 58 |
-| 24 | haulier-whatsapp-pod-matcher | G0 (REVISE) | 51 | Matches drivers' proof-of-delivery photos to jobs and invoices | Park low; a second failure kills it |
-| 25 | sme-multisite-energy-bill-checker | G0 (REVISE) | 51 | Recomputes each meter's energy invoice from the contract rates and published charges, and drafts queries on likely overcharges | Park: no forcing function; brokers give SME bill validation away |
-| 26 | surface-water-drainage-rebate-evidence | G0 (REVISE) | 45 | Measures roofs and hard surfaces from open map data to support surface-water drainage rebate claims | Park; a second failure kills it |
-| 27 | skip-hire-phone-booking-desk | G0 (REVISE) | 44 | AI phone agent that takes skip bookings into the firm's system | Park; needs a paid telephony provider and skip-specific evidence |
+| 24 | charity-fund-coder-for-xero | G0 (REVISE) | 52 | Codes a charity's Xero transactions to restricted and unrestricted funds during the year, from its grant agreements | Park (ceiling about 60): TaxCalc does the year-end SOFA, Access fund ledgers serve grant-heavy charities, shared-cost allocation can't come from grant text, and a chatbot with the grant terms is a substitute |
+| 25 | haulier-whatsapp-pod-matcher | G0 (REVISE) | 51 | Matches drivers' proof-of-delivery photos to jobs and invoices | Park low; a second failure kills it |
+| 26 | sme-multisite-energy-bill-checker | G0 (REVISE) | 51 | Recomputes each meter's energy invoice from the contract rates and published charges, and drafts queries on likely overcharges | Park: no forcing function; brokers give SME bill validation away |
+| 27 | surface-water-drainage-rebate-evidence | G0 (REVISE) | 45 | Measures roofs and hard surfaces from open map data to support surface-water drainage rebate claims | Park; a second failure kills it |
+| 28 | skip-hire-phone-booking-desk | G0 (REVISE) | 44 | AI phone agent that takes skip bookings into the firm's system | Park; needs a paid telephony provider and skip-specific evidence |
 | — | ppt-recycled-content-ledger | merged | 51 | Plastic Packaging Tax recycled-content ledger | Merged into pepr-packaging-data-pipeline |
 
-Killed (in `killed/`): homestay-rate-copilot-india (38), bali-villa-rate-copilot (39). Both fail the data red flag: their value needs booking and market data the studio can't lawfully get.
+Killed (in `killed/`): homestay-rate-copilot-india (38), bali-villa-rate-copilot (39), margin-scheme-dealer-desk (45: VAT Margin already sells margin-scheme VAT for non-vehicle resellers at £25-£79 a month). Both fail the data red flag: their value needs booking and market data the studio can't lawfully get.
 
 **Pattern:** every idea lost most of its points on Competition (1 to 5 out of 10; four of the UK batch scored 1). By late 2026 incumbents ship "AI over your documents" as a standard or free feature, so a gap has to be checked on the competitor's own product pages, and the stronger wedges are ones incumbents can't easily follow: a regulatory deadline, deep domain workflow, a channel they don't serve, or liability they won't take.
 
@@ -61,3 +62,6 @@ Killed (in `killed/`): homestay-rate-copilot-india (38), bali-villa-rate-copilot
   - keep the 70 bar;
   - run a ten-minute "<problem> tool 2026" search before writing any G0 file (it would have stopped both rates ideas);
   - look for incumbent refusals, such as help docs and idea forums where a widely used tool says it won't do a costly job, rather than new regulation.
+
+**Round 4 (T-27, T-28): incumbent refusals.** The scout dropped 9 of 11 candidates at the add-on check; the 2 written scored 45 (killed) and 52.
+- Lesson: a refusal shows a gap in one incumbent, not an empty market. Search for the job itself ("margin scheme software"), not only "<incumbent> add-on".
