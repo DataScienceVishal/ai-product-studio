@@ -5,6 +5,9 @@
   rows in `state/BUDGET.md`.
 - Reviewer, 2026-11-23. Nothing was deployed: no Azure CLI, no Bicep and no credentials here. I checked the files
   against Microsoft's docs and ran local tests on an export of `f074262`.
+- While I worked, the branch moved on to `6736c3c` (T-6 fixes, board and ideas). None of those commits touches a T-7
+  file, so this review applies to the head as well. One of them, `d051954`, fixes R13 and R15 in the app. That changes
+  how serious issue I1 is, and I re-tested it on `6736c3c`.
 
 ## Verdict: CHANGES
 
@@ -12,64 +15,21 @@ The design is careful and mostly right. Every resource type and API version exis
 SQL role split works as described, smoke.sh catches every failure I tried, and every price matches Microsoft's
 Retail Prices API.
 
-Three things must change before this merges:
+Two things must change before this merges:
 
-1. **C1. With the shipped defaults, the daily purge deletes every demo account on day 31.** The security gate flagged
-   these defaults for T-7, and the final commit doesn't address them. (I reproduced it.)
-2. **C2. The purge job gets the new image before the release has passed.** A failed release or a rollback leaves the
-   data-deleting job on code that never passed the smoke test.
-3. **C3. `allLogs` also turns on the ingress HTTP access logs**, which hold client IPs and full URLs with query strings.
-   That contradicts the ADR and DATA.md.
+1. **C1. The daily purge job gets the new image before the release has passed.** If a release fails or is rolled back,
+   the job that deletes data runs code that never passed the smoke test. A rollback never reverts it.
+2. **C2. `categoryGroup: 'allLogs'` also turns on the ingress HTTP access logs.** They hold client IPs and full URLs
+   with query strings, which contradicts the ADR and DATA.md. Once T-16 serves the frontend, sign-in tokens from email
+   links would land in Log Analytics.
 
-All three are small changes in T-7's own files.
+Both are small changes in T-7's own files. Next in importance is I1: the deploy defaults that the security gate flagged
+for T-7. At `f074262` they made the purge delete every demo account on day 31. `d051954` has since stopped that in the
+app, but the template bug and a demo that can't use AI are still there.
 
 ## Critical issues (fix before merge)
 
-### C1. Deploy defaults: the purge deletes live demo accounts, and the demo can't use AI
-- **Where:**
-  - `infra/main.bicep:247-258`: `jobSettings`/`jobEnv` never pass `REQUIRE_EMAIL_VERIFICATION` to the jobs, so the
-    purge job always uses the app default (`true`).
-  - `infra/main.bicep:48`: `requireEmailVerification = true`.
-  - `infra/main.bicep:45`: `mockCheckoutEnabled = true`.
-  - ADR decisions 6, 10 and 11 say nothing about any of this.
-- **Why it matters:**
-  - Email is outbox-only, so no owner can ever verify. `maintenance.py` deletes every tenant whose owner is unverified
-    and older than 30 days (SECURITY.md R13, still open).
-  - SECURITY.md re-test 2, "For T-7", listed exactly these defaults: `requireEmailVerification = true` (R13),
-    `mockCheckoutEnabled = true` (R15) and the 100,000 budget (R12).
-- **Evidence:** I ran `python -m app.maintenance purge` with the job environment exactly as main.bicep builds it, as
-  the app role, after migrations had run as the migrator. The seed was an unverified owner, 31 days old, with a
-  session created an hour earlier.
-
-  | Job environment | Result |
-  |---|---|
-  | A. main.bicep defaults | `"unverified_accounts": 1`. Tenant and live session gone. |
-  | B. Web app deployed with `requireEmailVerification=false` | The same deletion, because the job's env doesn't change. |
-  | C. Job given `REQUIRE_EMAIL_VERIFICATION=false` | Nothing purged. Tenant and session kept. |
-
-  Live, with main.bicep's web env (`ENV=prod`, app role), a new owner can sign up and write notes. But all of these
-  answer `403 email_not_verified`, and the link only reaches the in-memory outbox:
-  - `POST /api/notes/{id}/summarize`
-  - `/api/billing/checkout`
-  - `/api/team/invitations`
-
-  So the deployed demo can't show the AI feature. And if someone turns verification off to make it usable, the
-  `mockCheckoutEnabled = true` default gives anyone with the URL a free Pro plan. One such tenant can then use the
-  whole daily AI budget (R15). The app's default for mock checkout is `false` (R3 fix); the deploy turns it back on.
-- **Fix:**
-  1. In `jobSettings`, set `REQUIRE_EMAIL_VERIFICATION` for the jobs explicitly.
-     - Until R13's app fix lands, use `'false'`, with a comment: with outbox-only email nobody can verify, so the
-       unverified purge must not run. This fails safe: unverified accounts are kept.
-     - After R13 lands, pass the web app's value.
-  2. `param mockCheckoutEnabled bool = false`. Add a workflow input `mock_checkout` (default false), the same way as
-     `ai_provider`.
-  3. ADR: add a short "what a deployed demo can do" note. With outbox email, choose per demo:
-     - verification on: sign-up and notes only;
-     - verification off: AI works for anyone with the URL, cost is capped by `AI_GLOBAL_DAILY_TOKENS`, and R12 applies.
-
-     Optionally add `require_email_verification` as a workflow input.
-
-### C2. The purge and migration jobs get the new image before the release has passed
+### C1. The purge and migration jobs get the new image before the release has passed
 - **Where:**
   - `infra/main.bicep:415-460`: the purge job's `image: image` is at line 445.
   - Workflow: the deploy step (`_starter-deploy.yml:264-302`) updates the web app and both jobs in one deployment.
@@ -78,32 +38,36 @@ All three are small changes in T-7's own files.
   - Jobs have no revisions. After the deploy step, `caj-starter-purge` runs the new image at the next 03:17 UTC run,
     whether or not the migration ran or the smoke test passed.
   - If the migration fails, the new code runs against the old schema.
-  - If a release is rolled back because the new code is wrong, the purge, which deletes rows as the app role every day,
-    keeps running the wrong code. `rollback_to` doesn't revert it.
-  - This breaks ADR decision 9's promise that only code that passed gets to run.
+  - If a release is rolled back because its code is wrong, the purge keeps running the wrong code, and it deletes
+    rows as the app role every day. `rollback_to` doesn't revert it.
+  - This breaks ADR decision 9's promise ("a new revision gets traffic only after it passes") for the one component
+    that destroys data.
 - **Fix:** promote the purge job only after the public smoke test passes, and roll it back with the web app.
-  - Add a `purgeImage` parameter. Its default is the live revision's image, which the workflow already knows from
-    `az containerapp revision show --query properties.template.containers[0].image`.
+  - Add a `purgeImage` parameter. Its default is the live revision's image, which the workflow can read with
+    `az containerapp revision show --query "properties.template.containers[0].image"`.
   - Add a final step after the public smoke test: `az containerapp job update -n caj-$PRODUCT-purge --image "$IMAGE"`.
   - In both rollback paths, set the purge image back to the target revision's image.
   - The migration job can stay as it is: it only runs when the workflow starts it.
 
-### C3. `categoryGroup: 'allLogs'` also ships ingress HTTP access logs (client IPs, full URLs)
+### C2. `categoryGroup: 'allLogs'` also ships ingress HTTP access logs (client IPs, full URLs)
 - **Where:**
   - `infra/shared.bicep:90`: the comment says "container console output and system logs".
   - It contradicts ADR decision 11 (`0002-azure-deploy.md:222` "console and system logs", `:228` "Logs hold ids,
     not personal data") and `DATA.md:20` ("never emails, names, note text, tokens").
 - **Why it matters:**
-  - `allLogs` is every category. For `microsoft.app/managedenvironments` that includes `ContainerAppHTTPLogs`.
-    Microsoft: "The ingress layer emits these logs when HTTP logging is enabled through diagnostic settings."
+  - `allLogs` is every category. For `microsoft.app/managedenvironments` that includes `ContainerAppHTTPLogs`
+    (Microsoft's supported-logs list). Microsoft: "The ingress layer emits these logs when HTTP logging is enabled
+    through diagnostic settings."
   - Microsoft's table reference for `ContainerAppHTTPLogs` says the `Path` column "may contain query string parameters
     that include sensitive values such as authentication tokens", and `XForwardedFor` "contains end-user client IP
     addresses; treat as personally identifiable information".
-  - The starter's email links carry tokens in the query string: `/verify-email?token=`, `/reset-password?token=` and
-    `/accept-invite?token=`. Once T-16 serves the SPA from this origin, they pass through the ingress. Reset tokens
-    (30 minutes), verification tokens (48 hours) and invitation tokens (7 days) would then sit in `log-studio` for
-    30 days, readable by anything with log access, including the deployer service principal.
-  - Client IPs and user agents for every request are personal data that DATA.md and the privacy notice don't list.
+  - The starter's email links carry tokens in the query string (`auth.py:97`, `auth.py:192`, `team.py:87`):
+    `/verify-email?token=`, `/reset-password?token=` and `/accept-invite?token=`. Once T-16 serves the SPA from this
+    origin, these GETs pass through the ingress. Reset tokens (30 minutes), verification tokens (48 hours) and
+    invitation tokens (7 days) would then sit in `log-studio` for 30 days. Anything with log access could read them,
+    including the deployer service principal.
+  - From the first request, client IPs and user agents are stored for 30 days. DATA.md and the privacy notice don't
+    list them.
   - Every bot request also counts against the 0.1 GB daily cap. When the cap is hit, the rest of the day's console
     logs are lost, and those are the logs the runbook points to for migration failures.
 - **Fix:** name the two categories instead of the group:
@@ -116,7 +80,50 @@ All three are small changes in T-7's own files.
 
 ## Important (fix before the first real deploy)
 
-### I1. A transient Azure read error turns a release into a "first deploy" with no gate
+### I1. The deploy defaults the security gate flagged for T-7 are unchanged
+- **Where:**
+  - `infra/main.bicep:247-258`: `jobSettings`/`jobEnv` never pass `REQUIRE_EMAIL_VERIFICATION` to the jobs, so the
+    purge job always uses the app default (`true`), whatever the web app runs with.
+  - `infra/main.bicep:48`: `requireEmailVerification = true`.
+  - `infra/main.bicep:45`: `mockCheckoutEnabled = true`.
+  - SECURITY.md re-test 2, "For T-7", listed these defaults. The ADR doesn't mention them.
+- **Evidence at `f074262`:** I ran `python -m app.maintenance purge` with the job environment exactly as main.bicep
+  builds it, as the app role, after migrations had run as the migrator. The seed was an unverified owner, 31 days old,
+  with a session created an hour earlier.
+
+  | Job environment | Result |
+  |---|---|
+  | A. main.bicep defaults | `"unverified_accounts": 1`. Tenant and live session gone. |
+  | B. Web app deployed with `requireEmailVerification=false` | The same deletion, because the job's env doesn't change. |
+  | C. Job given `REQUIRE_EMAIL_VERIFICATION=false` | Nothing purged. |
+
+- **At the branch head (`6736c3c`, after `d051954`):**
+  - The app now purges unverified accounts only when real email is sent.
+  - The same seed, 40 days old and never signed in, was kept with both job environments.
+  - So with outbox email, no data is lost. What remains is still worth fixing:
+    1. **The job ignores the web app's setting.** Once a real email provider exists (paid, so approval first), a
+       deployment that doesn't require verification would still have its unverified accounts purged after 30 days
+       without a sign-in.
+    2. **A deployed demo can't show the AI.** Live, with main.bicep's web env (`ENV=prod`, app role), a new owner can
+       sign up and write notes. But all of these answer `403 email_not_verified`, and the link only reaches the
+       in-memory outbox:
+       - `POST /api/notes/{id}/summarize`;
+       - `/api/billing/checkout`;
+       - `/api/team/invitations`.
+
+       The same gates are still at the head (`notes.py:103`, `deps.py:51`).
+    3. **Mock checkout is on by default.** The app's default is `false` (R3 fix), and the deploy turns it back on
+       without saying why. Since `d051954`, mock plans get the trial allowance (R15), so the cost risk is gone. It is
+       still a free "paid" plan for anyone once verification is off.
+- **Fix:**
+  - Give the jobs the web app's `REQUIRE_EMAIL_VERIFICATION`. Move the two values into a shared variable.
+  - `param mockCheckoutEnabled bool = false`. Add a workflow input `mock_checkout` (default false).
+  - Add a "what a deployed demo can do" note to the ADR. With outbox email, choose per demo:
+    - verification on: sign-up and notes only;
+    - verification off (`require_email_verification` as a workflow input): AI works for anyone with the URL, capped by
+      `AI_GLOBAL_DAILY_TOKENS` and the trial share.
+
+### I2. A transient Azure read error turns a release into a "first deploy" with no gate
 - **Where:** `_starter-deploy.yml:282-287`. Both `az containerapp show` calls end in `2> /dev/null || true`.
 - **Why it matters:** if both reads fail, for example on throttling or a token refresh:
   - `LIVE_REVISION` is empty, so main.bicep uses `latestRevision: true`.
@@ -126,7 +133,7 @@ All three are small changes in T-7's own files.
   - Decide "first deploy" with an existence check that tells `ResourceNotFound` apart from other errors.
   - If the app exists and no live revision can be read, fail the run.
 
-### I2. The seed-rotation procedure doesn't work as documented
+### I3. The seed-rotation procedure doesn't work as documented
 - **Where:**
   - `infra/README.md:77`: "tick it ... after `STUDIO_DB_SEED` changes".
   - Workflow input description, line 31.
@@ -142,7 +149,7 @@ All three are small changes in T-7's own files.
     used for rollback afterwards.
   - Make the wait loop stop at once, with a clear message, when psql's stderr says `password authentication failed`.
 
-### I3. The billable-feature guard is weaker than the ADR says
+### I4. The billable-feature guard is weaker than the ADR says
 - **Where:** `_starter-deploy.yml:93-99`. The ADR (`:49`, `:233`) says "the workflow refuses any template that does".
 - **What the grep misses:**
   - a custom network (`vnetConfiguration`, `infrastructureSubnetId`): the $25.55 a month the ADR itself identifies;
@@ -154,7 +161,7 @@ All three are small changes in T-7's own files.
 
   Or soften the ADR's wording.
 
-### I4. Switching provider between releases deletes a secret that the live and rollback revisions still use
+### I5. Switching provider between releases deletes a secret that the live and rollback revisions still use
 - **Where:** `infra/main.bicep:226-244`. Secrets exist only for the chosen provider.
 - **Why it matters:**
   - A release that switches `ai_provider` from azure to fake, or `billing_provider` from stripe to mock, removes
@@ -196,7 +203,7 @@ All three are small changes in T-7's own files.
    it is ready, before the migration job runs, so it answers 500s for a minute. That's harmless before launch; say so
    in the README.
 8. **ADR accuracy:**
-   - The "$0.20 a day" cap (`:172`) isn't strict while R14 is open: a retry can record 2× an estimate.
+   - The "$0.20 a day" cap (`:172`) assumed R14's double recording. `d051954` fixes R14, so re-check the wording.
    - The "Microsoft's November 2026 update recommends azure-monitor" claim (`:223`) isn't on the cited log-options
      page, which calls Log Analytics the default. Cite the real source or drop the claim.
 9. **Smaller items:**
@@ -235,13 +242,13 @@ rule, on these conditions:
 |---|---|---|
 | First run (`deploy_shared` + `setup_database`) | The shared resources are created. The run stops at the AcrPull check and prints the exact command | yes, as the runbook says |
 | First release (`setup_database`) | Database and roles are created (tested). Revision 1 takes traffic before migrating. No rollback exists | yes (suggestion 7) |
-| Normal release | Zero-traffic candidate, then migrate, smoke the candidate, shift traffic, smoke the public address, retire older revisions | yes, except the jobs (C2) |
-| Failed migration | Alembic runs all migrations in one transaction (env.py), so the schema is unchanged. The candidate is deactivated and the old revision keeps serving | yes, except purge (C2) |
-| Failed candidate smoke test | The shift is skipped (`outcome == 'skipped'`) and the candidate is deactivated | yes, except purge (C2) |
-| Failed public smoke test | Traffic goes back to the live revision and the candidate is deactivated | yes, except purge (C2) |
-| Re-run | New tag and suffix (attempt number). The live revision is re-read from Azure | yes, except I1 |
-| `rollback_to` | The input is regex-checked and passed through env (no injection). Then activate, smoke, shift, smoke | yes, except C2 and I4 |
-| Seed rotation | Not as documented | no (I2) |
+| Normal release | Zero-traffic candidate, then migrate, smoke the candidate, shift traffic, smoke the public address, retire older revisions | yes, except the jobs (C1) |
+| Failed migration | Alembic runs all migrations in one transaction (env.py), so the schema is unchanged. The candidate is deactivated and the old revision keeps serving | yes, except purge (C1) |
+| Failed candidate smoke test | The shift is skipped (`outcome == 'skipped'`) and the candidate is deactivated | yes, except purge (C1) |
+| Failed public smoke test | Traffic goes back to the live revision and the candidate is deactivated | yes, except purge (C1) |
+| Re-run | New tag and suffix (attempt number). The live revision is re-read from Azure | yes, except I2 |
+| `rollback_to` | The input is regex-checked and passed through env (no injection). Then activate, smoke, shift, smoke | yes, except C1 and I5 |
+| Seed rotation | Not as documented | no (I3) |
 
 ## Verified correct (evidence)
 
@@ -251,15 +258,15 @@ rule, on these conditions:
 |---|---|
 | Resource types and API versions exist | yes: all 9, from Microsoft's "all versions" pages (table below) |
 | Secure parameters never in outputs | yes: no output in either template carries one |
-| Container Apps secrets referenced correctly | yes: every `secretRef` has a matching secret, and jobs get only their own database URL |
+| Container Apps secrets referenced correctly | yes: every `secretRef` has a matching secret, and jobs get only their own database URL. See I5 |
 | AcrPull through the managed identity | yes: `registries[].identity` is the resource id. `lifecycle: None` is Microsoft's documented setting for "a managed identity that is only used for ACR image pull" (apps and jobs). The workflow checks the role assignment |
-| Jobs | yes: the manual migration job (no retry, 600 s) and the scheduled purge (`17 3 * * *`, one retry). The image problem is C2 |
+| Jobs | yes: the manual migration job (no retry, 600 s) and the scheduled purge (`17 3 * * *`, one retry). The image problem is C1 |
 | HTTPS only | yes: `allowInsecure: false` ("HTTP connections are automatically redirected to HTTPS"), checked by smoke.sh |
 | Probes | yes: `/livez` for startup and liveness, `/healthz` for readiness. See suggestion 6 |
 | At most one replica | yes: `@minValue(1) @maxValue(1)` |
 | Prod validator | yes, live: the web app (port 8600), `alembic upgrade head` and the purge job all start with `ENV=prod` and main.bicep's env, with `TRUST_PROXY_HEADERS` from the image |
 | Postgres module | yes: v16, B1ms, 32 GB P4, autogrow off, 7-day backups, TLS 1.3, the 0.0.0.0 rule ("does the equivalent of Allow public access from any Azure service"). The admin password meets Azure's complexity rules and contains no 3-character part of `studioadmin` |
-| Workflow guards | yes: `workflow_dispatch` only, credentials present, `STUDIO_AZURE_APPROVED == yes`, `refs/heads/main`. See I3 and suggestion 1 |
+| Workflow guards | yes: `workflow_dispatch` only, credentials present, `STUDIO_AZURE_APPROVED == yes`, `refs/heads/main`. See I4 and suggestion 1 |
 | Order of steps | build, scan (from a tarball, before sign-in), push by digest, zero-traffic revision, migrate, smoke, shift, smoke, rollback |
 | Secrets in logs or on command lines | none found. Passwords travel in env (`PGPASSWORD=` prefix, `\getenv`, `readEnvironmentVariable`) and are masked before `GITHUB_ENV`. Only labels and names go on argv. On a forced auth failure, the app log has 0 lines with the password |
 | `runner` context in job-level env | not used. actionlint 1.7.12: 0 errors (shellcheck isn't installed, so I read the `run:` blocks by hand) |
@@ -275,7 +282,7 @@ rule, on these conditions:
 | `Microsoft.DBforPostgreSQL/flexibleServers`, `/configurations`, `/firewallRules` | 2024-08-01 | yes | version `'16'`, `authConfig`, `storage.autoGrow`, `network.publicNetworkAccess` |
 | `Microsoft.OperationalInsights/workspaces` | 2023-09-01 | yes | |
 | `Microsoft.ManagedIdentity/userAssignedIdentities` | 2023-01-31 | yes | |
-| `Microsoft.Insights/diagnosticSettings` | 2021-05-01-preview | yes | categories: see C3 |
+| `Microsoft.Insights/diagnosticSettings` | 2021-05-01-preview | yes | categories: see C2 |
 | `Microsoft.Authorization/roleAssignments` | 2022-04-01 | yes | |
 
 **CLI flags** match the current az reference:
@@ -323,7 +330,8 @@ The ADR's claims are right, including the new-customer caveat. Vishal's "Free se
 `derive()`:
 - Both scripts run twice cleanly.
 - The setup refuses when a password variable is unset.
-- Five migrations ran as the migrator under the job env, and all tables are migrator-owned. A re-run was a no-op.
+- Five migrations ran as the migrator under the job env at `f074262` (six at `6736c3c`), and all tables are
+  migrator-owned. A re-run was a no-op.
 - The app role has DML on every table. The purge ran as the app role.
 - 8 of 8 DDL attempts were refused, including temp tables, schemas and functions.
 - Another product's roles get CONNECT refused.
@@ -352,7 +360,8 @@ rejected.
 
 ## Method and gaps
 
-- I tested an export of `f074262` in the session scratchpad.
+- I tested exports of `f074262` and, for I1, `6736c3c`, in the session scratchpad. I never used the shared working
+  tree. Another agent had uncommitted changes in it while I worked; I didn't touch them.
 - Every database and role was prefixed `t7rev_` and dropped afterwards. The test servers on 8600 and 4673 are stopped.
 - Not tested: real ARM validation (no Bicep CLI or credentials), real Container Apps ingress, ACR pulls, and Azure's
   Postgres admin role (simulated with a `CREATEDB CREATEROLE` role).
