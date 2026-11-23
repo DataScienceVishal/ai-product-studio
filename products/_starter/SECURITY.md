@@ -1,5 +1,7 @@
 # Security and privacy gate: product starter (T-6)
 
+> **Latest: re-test on 2026-11-23 at `ce1fa5b`: FAIL, 2 of 8 sections (LLM features, infrastructure). Urgent: none, because nothing is deployed.** The three first-gate Highs are fixed. There is one new High: R1, the global AI budget forgets deleted accounts. See [Re-test (2026-11-23)](#re-test-2026-11-23) at the end. The first-gate report below is unchanged.
+
 **Gate result: FAIL.** 3 of 8 sections pass (authorization, secrets, dependencies). 5 fail: auth and sessions, input
 handling, LLM features, privacy, infrastructure. Products must not copy the starter until the High and Medium items
 below are fixed and re-tested.
@@ -561,3 +563,324 @@ Low dependency hygiene (section 6) can ride along with task 2 or T-7.
   - Prices come from third-party trackers, because the Azure pricing page didn't render.
 
 **Re-test to flip this gate:** after the five tasks land, re-run T1, T4b, T5, T6, T7, T13 and T18 plus the full backend suite, and update this file. Each fixed section turns PASS only with fresh output.
+
+---
+
+## Re-test (2026-11-23)
+
+**Result: FAIL, 2 of 8 sections** (LLM features, infrastructure). 6 pass: auth and sessions, authorization, input
+handling, secrets, dependencies, privacy. All three first-gate Highs are fixed. There is one new High: the global AI
+budget forgets deleted accounts, so the control added to protect the $80 of credit can be bypassed. Products must not
+copy the starter until R1 to R4 below are fixed and re-tested.
+
+**Urgent: none.** Nothing is deployed (`state/BUDGET.md` lists no Azure resources), and none of the 49 commits on any
+ref holds a live secret. Nobody needs to ping Vishal.
+
+| | |
+|---|---|
+| Tested | Starter code at `ce1fa5b`, exported read-only with `git archive`. The branch head is now `a9b9e19`, and `git diff --stat ce1fa5b a9b9e19 -- products/_starter` shows only `NEXT.md`. The fixes are in `5a4b765` (C1–C8 and the Highs), `ed84b1a` (the Mediums), `cd9b216` (frontend, DRAFT notice and terms) and `7ab92be` (CI, DATA.md). The ids `76c29fc` and `7ea1d7c` given in the brief don't exist in this repository. |
+| Suite | 113/113 pass on my own database `starter_sec2_test` (21 s). |
+| Live tests | The API ran on 127.0.0.1:8500 with the Dockerfile's uvicorn flags (`--no-proxy-headers`), on my own database `starter_sec2_app`. The in-process runs used the real `AzureOpenAI` adapter with a mock transport, so nothing reached Azure or Stripe. Port 4573 served only a slow fake Azure endpoint for T22. Both databases were dropped and every server stopped afterwards. |
+| Not changed | No product code, no state-changing git, nothing in `reviews/`. Only the banner at the top of this file and this section. |
+
+### Results by section
+
+| # | Section | First gate | Re-test | Evidence in one line |
+|---|---|---|---|---|
+| 1 | Auth and sessions | FAIL | **PASS** | Hashing memory is capped (peak 357 MiB at 60 parallel logins; it was 733 MiB at 24). Pre-hijacking is blocked on every default path. Reset timing is 4.7 ms against 4.4 ms. Only 1 of 8 racing confirms wins, and each address gets 3 resets an hour. Lows only. |
+| 2 | Authorization | PASS | **PASS** | 48/48 live checks: the 29 from the first gate, plus 19 new ones on member export and leaving, verification binding and the webhook. |
+| 3 | Input handling | FAIL | **PASS** | 413 at 1,000,001 bytes, by Content-Length and chunked. 150 MB uploads keep peak RSS at 95 MiB or less (it was 1,331 MiB). 19 forged cross-site requests created nothing. |
+| 4 | LLM features | FAIL | **FAIL** | Billed tokens are now counted. But the global budget forgets deleted accounts (R1, High), one trial can use it up for everyone (R2), and slow calls still starve the request threads (R4). |
+| 5 | Secrets | PASS | **PASS** | 49 commits on all refs: 0 known-format tokens. Only placeholders and local Postgres credentials. |
+| 6 | Dependencies | PASS | **PASS** | pip-audit (PyPI and OSV, runtime and dev, plus the installed venv) and npm audit (frontend and e2e): 0 known vulnerabilities. |
+| 7 | Privacy | FAIL | **PASS** | DB errors log only the SQLSTATE. Purge and member removal leave nothing behind. Members can export their data and leave. The DRAFT notice and terms exist. The wording gaps are Low. |
+| 8 | Infrastructure | FAIL | **FAIL** | Proxy headers and webhook secrets are fixed, and prod sends HSTS and CSP. But mock checkout is on by default in prod and hands out Pro for free (R3, Medium). |
+
+### Answers to the brief's specific questions
+
+- **Do any routes escape the pure-ASGI `BodyLimit` and `CsrfGuard`?** No.
+  - All 27 OpenAPI operations were listed. Every unsafe one is under `/api/`, and the webhook is the only exemption.
+  - Path tricks that skip the guard (`//api/notes`, `/API/notes`, `/./api/notes`) match no route and get 404.
+  - The body limit applies to every route that reads a body. Routes that don't read one answer without reading it.
+- **Can the global AI lock be abused to deny service?** The advisory lock is held only for the reservation itself (two sums and an insert), so nobody can sit on it. The denial of service comes from three other places:
+  - using up the shared daily budget (R2);
+  - holding the request threads (R4);
+  - on a large table, the cost of the sum the lock serialises (R8).
+- **Can the verify-email change still leave an attacker's account verified?** Not on any default path (T4c a, b, e).
+  - The reset flow does verify the account, but it also signs the attacker out and replaces the password, so the victim owns it.
+  - The one remaining route is cookie tossing from a compromised sibling subdomain (R7).
+- **The BackgroundTasks reset sender:** no new issue.
+  - It runs after the 202, with its own DB session.
+  - The per-address cap is checked before the lookup for every address, so the cap reveals nothing.
+  - Failures are logged with scrubbed errors.
+- **Does `MOCK_CHECKOUT_ENABLED=true` in prod open free upgrades?** Yes (R3). A verified owner, or any owner once verification is turned off, gets Pro with 2,000,000 tokens a month. The plan never expires and survives the switch to Stripe.
+
+### What the fixes closed (first-gate ids)
+
+| Id | Was | Now | Evidence |
+|---|---|---|---|
+| C1 | High | Fixed | T18-A: 6 empty answers. 117,030 tokens billed and 117,030 counted; the 7th call gets `429 ai_cap_reached`. T18-B: calls that time out after sending count an estimate (43,806 tokens for 3 calls). |
+| I1 / A2 | High | Fixed | T1: with `--no-proxy-headers` and `TRUST_PROXY_HEADERS=false`, 12 sign-ups with random `X-Forwarded-For` gave `[201 ×10, 429, 429]`. T1b(b) emulates Container Apps ingress (spoofed entries plus the appended peer) and gave the same. Prod refuses to start without `TRUST_PROXY_HEADERS=true`. Residue: R6. |
+| D1 | High | Fixed | T5: sign-up and note writes under a table lock hit the statement timeout (500). Both ERROR lines end `OperationalError: database error (sqlstate 57014); details hidden`. Across the 305 log lines written by then, the email, its local part, `$argon2`, the company name and the note text appear nowhere. The only log keys are ids, message, level, method, path, status, timings and the scrubbed error. |
+| A3 | Medium | Fixed | T7: peak RSS 95 → 353 / 354 / 357 MiB for 8 / 24 / 60 parallel logins. It was 539 MiB at 8 and 733 MiB at 24. |
+| A1 | Medium | Fixed on default paths | T4c:<br>(a) the victim ignores the email: invite `403 email_not_verified`;<br>(b) the victim opens the link while signed out: `401`;<br>(e) the victim opens it while signed in to another account of their own: `400 invalid_verification_link`.<br>In each case the attacker's account stays unverified and the planted member reads nothing. In (c), `REQUIRE_EMAIL_VERIFICATION=false`, the chain still works if an invitation can be delivered. Today it can't, because the outbox delivers nothing, and the validator refuses `false` once real email exists. Residue: R7. |
+| A5 (reset) | Low | Fixed | T11: the 202 takes a median 4.7 ms for 30 existing addresses and 4.4 ms for 30 unknown ones. The background task created all 30 links. |
+| A6 (reset, invites) | Low | Fixed | T11: after one request in the timing run, the same address from different IPs got `[202, 202, 429, 429, 429]`. That held for existing and unknown addresses alike, and with upper case and spaces. Invites are capped at 50 a day and 50 pending per tenant (tests). |
+| Reset race | Review | Fixed | T11: 8 simultaneous confirms of one link gave one 204 and seven 400s. |
+| A7 | Low | Fixed | `delete-account` and `delete-me` allow 5 attempts a minute per user. |
+| B1 / I2 | Medium | Fixed | T6, with peak RSS reset (`clear_refs`) before each case:<br>- a declared 150 MB body gets 413 at once;<br>- 150 MB chunked to login, sign-up and notes gets 413, with peak RSS at 95 MiB or less;<br>- 50 MB to the webhook gets 413;<br>- exactly 1,000,000 bytes gets 422 (it reaches validation), and 1,000,001 gets 413, both ways;<br>- a duplicate `Content-Length` gets 400 from uvicorn.<br>Routes that don't read a body (404, 405, 401, CORS preflight, missing CSRF header) answer without reading it. |
+| CSRF (global) | Review | Holds | T8 sent a session cookie and no `X-Requested-With`. These got 403: `/api/notes` with a trailing slash, `/api/../api/notes`, `%6E` and `%2F` encodings, an absolute-form target, PATCH, a query string and a fragment, form-encoded, text/plain, an empty header, account DELETE, logout and mock complete. `//api/notes`, `/API/notes` and `/./api/notes` skip the guard but match no route (404), and lower-case `post` gets 400. No notes were created, and the session still worked. Preflights from `evil.example` and `null` get no `Access-Control-Allow-Origin`. |
+| B2 | Low | Fixed | T21: CR/LF in a company name is stored as a space, and invitations lose `scheme://` and `www.` links. Residue: R9. |
+| B3 | Low | Fixed | Checkout allows 10 a minute per tenant, and mock sessions are capped at 1,000 (tests). |
+| I3 (webhook) | Medium | Fixed | T13, with no sign-in: webhooks signed with the old public constant, `""`, `whsec_test_contract`, `secret` or `changeme` get `400 invalid_signature`. An empty `v1` gets 400 and 300 kB gets 413. The tenant stayed `trial/trialing`. Unless set, the secret is random per process; it must be 32+ characters, and start `whsec_` with Stripe. |
+| I3 (mock checkout) | Medium | **Open, and now in prod too** | R3. |
+| D2 | Low | Fixed | The outbox logs only "email queued", with no subjects. |
+| D3 | Medium | Fixed | T17: `python -m app.maintenance purge` removed exactly the seeded old rows (`{"sessions": 1, "password_resets": 1, "email_verifications": 1, "invitations": 1, "billing_events": 1, "ai_usage": 1}`). It kept the live session, the fresh reset link, the pending invitation, the 20-day-old usage and the new event. After "remove member" there were 0 users, 0 invitations and 0 reset rows for the leaver. |
+| D4 | Medium | Fixed | T3 N1–N16:<br>- `/me/export` holds only the caller's profile and notes;<br>- owners can't use `DELETE /me` (422), and a wrong password gets 401;<br>- after a member leaves, their session gets 401 and 0 rows remain for them; their note is kept with the author cleared.<br>Deletion closes the provider customer first and deletes nothing if that fails (`test_account_deletion_closes_the_provider_customer_first`, `test_account_deletion_fails_closed_when_the_provider_fails`, `test_stripe_close_deletes_the_customer`). |
+| D5 | Medium | Fixed as DRAFT | Sign-up links to the DRAFT terms and privacy notice, and both pages say "DRAFT for review. Not legal advice." Content gaps: R11. |
+| I4 | Low | Partly | Prod sends `strict-transport-security: max-age=31536000; includeSubDomains` and `content-security-policy: default-src 'none'; frame-ancestors 'none'`, and docs and OpenAPI are 404 (T19). Still open: `server: uvicorn`, no Permissions-Policy or COOP, and the SPA host is undecided (T-7). |
+| C2 | Medium | Partly | A global daily budget exists, but see R1 and R2. Trial AI still doesn't need a verified email. |
+| C3 | Low | Partly | R5. |
+| C4 | Low | Partly (25 s deadline) | R4, now Medium with evidence. |
+| Other Lows | Low | Unchanged | A4: no per-account lockout.<br>A5: the invite oracle (`409 email_taken`), which now needs a verified owner.<br>A8: see R7.<br>A9: tokens stay in browser history.<br>I6: `e2e.sh:19` drops any database it's given.<br>Dependency hygiene: actions pinned by tag, and the base image isn't pinned by digest. |
+
+### Open findings, in fix order
+
+| Id | Severity | Issue | Section |
+|---|---|---|---|
+| R1 | **High** | The global daily AI budget forgets deleted accounts | LLM |
+| R2 | Medium | One unverified trial can pause AI for every tenant, because reservations under-estimate by up to 12× | LLM |
+| R3 | Medium | Mock checkout is on by default in prod and hands out paid plans that never expire | Infra |
+| R4 | Medium | Slow AI calls hold the request threads that serve `/livez` and login | LLM |
+| R5 | Low | Delimiter escaping misses tag variants | LLM |
+| R6 | Low | The image bakes in `TRUST_PROXY_HEADERS=true`, and only the first `X-Forwarded-For` line is read | Infra |
+| R7 | Low | No `__Host-` prefix: a tossed cookie lets the victim verify the attacker's account | Auth |
+| R8 | Low | The global budget query scans the whole table inside the global lock | LLM |
+| R9 | Low | Email abuse leftovers: verification resend allows 3 a minute, and invitations can carry bare domains | Auth, Input |
+| R10 | Low | Limiter eviction drops hourly counters | Auth |
+| R11 | Low | Privacy wording and retention gaps | Privacy |
+
+#### R1 (High) The global daily budget forgets deleted accounts
+- **Cause:**
+  - `tokens_today_all_tenants` sums `ai_usage`, and `ai_usage.tenant_id` is `ON DELETE CASCADE` (`app/models.py:97`; live constraint `FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE`). Deleting an account deletes its spend.
+  - `settle()` also drops the usage of calls still running when the account is deleted (`app/ai.py:206`).
+- **Evidence, T18-C:** the global budget was 500,000 (the default), and a second tenant summarised between rounds.
+  - Four trial accounts in turn each summarised a 20,000-character note until `429 ai_cap_reached`, then deleted themselves (204).
+  - The other tenant got 200 every time.
+  - The 4 rounds billed 664,240 tokens, more than the whole budget. The day's recorded total rose by only 12,200: the other tenant's own calls.
+- **Why it matters:** AI needs no verified email (`routes/notes.py:92-105` doesn't check it), and sign-up allows 10 a minute per IP.
+  - Each cycle (sign up, one burst as in R2, delete) bills about 1.06M tokens, roughly $0.29. Prices: gpt-5-mini Global, $0.25 per 1M input and $2.00 per 1M output, from third-party trackers.
+  - From one IP that is up to about $2.90 a minute. In practice the deployment's tokens-per-minute quota caps it: at 1M TPM, the $80 credit lasts about 5 hours.
+  - The credit also pays for hosting, so draining it stops every studio product.
+- **Fix:**
+  1. Keep spend after deletion, and index it by day. In the model: `tenant_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("tenants.id", ondelete="SET NULL"))` plus `Index("ix_ai_usage_created", "created_at")`. Migration 0005:
+     ```python
+     op.alter_column("ai_usage", "tenant_id", nullable=True)
+     op.drop_constraint("ai_usage_tenant_id_fkey", "ai_usage", type_="foreignkey")
+     op.create_foreign_key("ai_usage_tenant_id_fkey", "ai_usage", "tenants", ["tenant_id"], ["id"], ondelete="SET NULL")
+     op.create_index("ix_ai_usage_created", "ai_usage", ["created_at"])
+     ```
+     The rows then hold only counts and a dead id, which is not personal data. In DATA.md, change the `ai_usage` row to "unlinked from the account when it is deleted; purged after 400 days".
+  2. `settle()` then still finds the reservation after its tenant is deleted, so no usage is lost.
+  3. Test: tenant A summarises, then deletes its account. `tokens_today_all_tenants` is unchanged, and tenant B at the budget still gets `503 ai_budget_reached`.
+
+#### R2 (Medium) One unverified trial can pause AI for every tenant
+- **Cause:**
+  - `estimate_tokens` assumes 3 characters per token (`app/ai.py:61-63`), counting code points. gpt-5-mini uses `o200k_base` (per tiktoken 0.14.0). Measured on 20,000 characters, against an estimate of 6,666: English 4,666 tokens, CJK 14,736, emoji 43,332, Linear B 80,000 (12× the estimate).
+  - `reserve()` refuses only once usage has already reached the cap (`ai.py:187`). Parallel calls each reserve 7,976 tokens and pass.
+- **Evidence:**
+  - T18-D: 20 simultaneous summaries on a fresh trial (cap 100,000), with 3 s of model latency. 13 ran and 7 got `ai_cap_reached`. The provider billed 1,059,565 tokens, 10.6× the trial cap. All of it was recorded afterwards.
+  - T18-E: the same burst from one unverified trial, against the shipped budget of 500,000. After it, another tenant's summary got `503 ai_budget_reached`, and AI stays off for every tenant until UTC midnight. When the trial deleted its account, the other tenant's next summary worked again (R1).
+- **Fix:**
+  1. Make the estimate an upper bound. Byte-level BPE never produces more tokens than UTF-8 bytes:
+     ```python
+     def estimate_tokens(system: str, user: str, max_output_tokens: int) -> int:
+         return len(system.encode()) + len(user.encode()) + 16 + max_output_tokens  # +16 for message framing
+     ```
+  2. In `reserve()`, refuse when `tokens_today_all_tenants(db) + estimate > global_daily_cap`, so the shared budget can't be overshot. Keep the rule that a tenant's last call may end slightly over its own cap.
+  3. Trials:
+     - Refuse AI with `403 email_not_verified` while `require_email_verification` is on and the user is unverified. This is the part of the C2 fix that wasn't done.
+     - Give trialing tenants a daily cap, for example `ai_trial_daily_tokens = 25_000`.
+     - Stop trials once the day passes half the global budget, so paying tenants keep the rest.
+  4. Allow at most 2 AI calls in flight per tenant per replica, and answer the rest with `429 ai_busy` (see R4).
+  5. Tighten sign-up to 5 an hour and 20 a day per IP, on top of the 10 a minute.
+  6. Tests:
+     - A Linear B note's estimate is at least its UTF-8 length.
+     - With the MockTransport and 3 s latency, at most 2 of 20 parallel calls run on a fresh trial.
+     - A trial can't push the day past half the budget.
+
+#### R3 (Medium) Mock checkout is on by default in prod and hands out paid plans
+- **Cause:**
+  - `mock_checkout_enabled: bool = True` (`app/config.py:64`), the validator accepts it with `ENV=prod`, and `BILLING_PROVIDER` defaults to `mock`.
+  - Mock-paid tenants get the full plan allowance (`app/billing.py:46`). For Pro that is 2,000,000 tokens a month, 4× the global daily budget.
+  - `has_access("active", ...)` never looks at the period end (`billing.py:289`).
+- **Evidence, T19:** `ENV=prod`, an https base URL, secure cookies and trusted proxy headers, with every other value at its default.
+  - A new owner verifies their own address, chooses Pro and presses "Pay (test)": `200 {'plan': 'pro', 'status': 'active'}`, stored with `provider=mock`.
+  - With `REQUIRE_EMAIL_VERIFICATION=false`, the same works with no verification at all. In outbox-only prod no verification email ever arrives, so owners can't invite or check out until that flag is turned off. The shipped setup pushes operators to turn it off.
+  - `has_access` takes no period end, so an `active` row stays usable forever (`has_access('active', None)` is `True`).
+- **After `unlock selling`:** once a product switches to Stripe, mock rows stay `active/pro` for good. `checkout` then answers `409 already_subscribed`, because `provider_ref` is set (`routes/billing.py:43`). Every demo upgrade becomes a free Pro account that can't even buy.
+- **Fix:**
+  1. `mock_checkout_enabled: bool = False`. `.env.example` and `e2e.sh` set it to true for local dev and tests. In `_safe_settings`, add `if self.mock_checkout_enabled and self.billing_provider != "mock": raise ValueError(...)`.
+  2. In `summarize`, use `plan = PLANS["trial"] if sub.provider == "mock" else PLANS.get(sub.plan, PLANS["trial"])`, so a demo upgrade never raises the AI allowance.
+  3. In `has_access`, when `status == "active"`, also require `current_period_end is None or current_period_end > now`. Mock sessions already set 30 days.
+  4. On the switch to a real provider, treat `sub.provider == "mock"` as not subscribed:
+     - `has_access` returns false (402) when `settings.billing_provider != "mock"`;
+     - `checkout` checks `sub.provider == request.app.state.billing.name` before refusing with `already_subscribed`.
+  5. Tests:
+     - Prod settings with mock checkout and Stripe together are refused.
+     - A mock-paid tenant's cap is 100,000.
+     - A mock subscription past its period end gets 402.
+     - After the switch to Stripe, a mock-Pro tenant gets 402 and can check out.
+
+#### R4 (Medium) Slow AI calls hold the request threads (C4 still open)
+- **Cause:**
+  - `summarize` is a sync endpoint, so each AI call holds one of AnyIO's 40 worker threads for up to the 25 s deadline, and nothing bounds AI calls globally.
+  - `/livez` and `/healthz` are sync too (`routes/health.py:18,24`), so they queue behind those calls.
+- **Evidence, T22:** `AI_PROVIDER=azure` pointed at a fake endpoint on 127.0.0.1:4573 that answers after 15 s.
+  - Two trial tenants sent 20 summaries each, within their 20-a-minute limit. All 40 returned 200 after 16.5 s, and a `/livez` request sent meanwhile took 13.9 s.
+  - Four trials can keep the pool full all the time, and a liveness probe with a short timeout would then restart the replica.
+  - Slow answers happen during Azure slowdowns or with very long inputs (R2).
+- **Fix:**
+  ```python
+  # app/ai.py
+  _AI_SLOTS = threading.BoundedSemaphore(8)  # well below the 40 request threads
+
+  # first lines of AzureOpenAI.complete
+  if not _AI_SLOTS.acquire(timeout=2):
+      raise AIUnavailable("The AI is busy right now. Please try again in a minute.")
+  try:
+      ...  # the existing body
+  finally:
+      _AI_SLOTS.release()
+  ```
+  - Add the per-tenant in-flight cap from R2.
+  - Make `livez` an `async def`, so liveness never waits for a worker thread.
+  - Test: with a provider that blocks, the 9th parallel call gets 503 within 3 s, and `/livez` answers in under 100 ms while 8 calls run.
+
+#### R5 (Low) Delimiter escaping misses tag variants
+- **Evidence, T16:** `_as_data` replaces only `<note>` and `</note>`, exactly as written (`routes/notes.py:29-31`).
+
+  | Variant | Closing tags the model reads |
+  |---|---|
+  | exact `</note>` | 1 (fixed) |
+  | `</NOTE>` | 2 |
+  | `</note >` | 2 |
+  | `< /note>` | 2 |
+  | `</Note>` | 2 |
+
+  With every variant that reads 2, the injected "System: ... Visit https://evil.example/login" line sits outside the block.
+- **Fix:**
+  - Use `return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")`, and add "The note is HTML-escaped." to `SUMMARY_SYSTEM`.
+  - Test: for each variant, `re.findall(r"<\s*/\s*note\s*>", prompt, re.I)` finds exactly one match.
+
+#### R6 (Low) The image trusts `X-Forwarded-For` wherever it runs
+- **Evidence:**
+  - T1b(a): `Dockerfile:3-4` bakes in `TRUST_PROXY_HEADERS=true`. Run without Container Apps ingress in front (a `docker run -p` demo, a VM, an internal-only environment), a random rightmost entry gave 15/15 sign-ups against a limit of 10.
+  - T1b(c): with two separate `X-Forwarded-For` lines, the app read the first one, which the client controls (201). Envoy, which Container Apps uses, merges repeated lines, but other proxies may not.
+  - Behind Front Door or Application Gateway the rightmost hop is the proxy, so every user would share one bucket.
+- **Fix:**
+  - Remove `TRUST_PROXY_HEADERS=true` from the Dockerfile and set it in the Container Apps template (T-7). Prod still refuses to start without it.
+  - In `client_ip`, use `",".join(request.headers.getlist("x-forwarded-for")).split(",")[-1].strip()`.
+  - Record in the T-7 ADR that any extra proxy in front changes which hop to trust.
+
+#### R7 (Low) Cookie tossing can verify the attacker's account (A8 still open)
+- **Evidence, T4c(d):** the cookie is a plain `session` (`deps.py:17`), so a compromised `*.vishalkhan.me` sibling can set the attacker's session cookie for the parent domain.
+  - The victim opens the verify link: 204, and the attacker's account is verified.
+  - The invite then returns 201, and the planted member reads the victim's later data (`True`).
+- **Fix:** the A8 change. Use `SESSION_COOKIE = "__Host-session"` when `cookie_secure`, in `_start_session`, `current`, logout and both deletes. Do it now, not under "Later" in NEXT.md: it's a few lines, and it closes the last pre-hijack route.
+
+#### R8 (Low) The global budget query scans the whole table under the global lock
+- **Evidence:** I loaded 2,000,000 `ai_usage` rows, about 5,000 calls a day kept for 400 days.
+  - The daily sum ran as a parallel sequential scan taking 121 ms (`EXPLAIN ANALYZE`). Only `(tenant_id, created_at)` is indexed.
+  - It runs inside `pg_advisory_xact_lock(GLOBAL_LOCK)`, so AI reservations across all tenants serialise at about 8 a second.
+  - Each waiting request holds one of the 10 pooled connections, and logins then wait up to the 10 s pool timeout.
+- **Fix:** the `created_at` index in R1, or a daily totals table updated in `reserve` and `settle`.
+
+#### R9 (Low) Email abuse leftovers
+- **Evidence, T21:**
+  - A planted account can ask for 3 verification emails a minute (`routes/auth.py:259`). 4 emails reached the victim's address in the first minute, which adds up to 180 an hour once real email exists.
+  - `email_safe` keeps bare domains. The invitation subject was "You're invited to Acme Payroll: action needed, pay at evil.example/pay or bit.", and mail clients turn `evil.example/pay` into a link.
+- **Fix:**
+  - `limiter.check(f"verify-resend:{me.user.id}", 3, 3600)`.
+  - In `email_safe`, also drop `\b[\w-]+(\.[\w-]+)+(/\S*)?`.
+  - Give each real email adapter a daily send cap per recipient.
+
+#### R10 (Low) Limiter eviction drops hourly counters
+- **Evidence, T2b,** with a patched clock: an address hits the hourly reset cap (`[True, True, True, False]`) and is still blocked 61 s later. After 50,000 other keys with the usual 60 s window, it gets 3 more reset emails that hour.
+  - `_evict` judges idleness by the window of the call that triggered eviction (`ratelimit.py:37-40`).
+  - Filling the map takes about 2,500 IP-minutes, so this is a correctness flaw rather than an easy attack.
+- **Fix:** store each key's window with its deque, and treat a key as idle only after its own window.
+
+#### R11 (Low) Privacy wording and retention gaps
+- **Help text against Microsoft's page.** I checked `app.tsx:360` against "Data, privacy, and security for Foundry Models sold by Azure" (learn.microsoft.com, change log 17 November 2026) and its abuse-monitoring page. The Help text is accurate as far as it goes: Microsoft says prompts aren't available to other customers or to OpenAI, and aren't used to train models. But it leaves out two things Microsoft states:
+  - prompts and completions flagged by abuse monitoring may be stored and reviewed by authorised Microsoft employees;
+  - with a Global deployment, prompts "may be processed in any geography where the relevant model ... is deployed". Data Zone deployments cover the US or the EU, which doesn't include the UK.
+- **Suggested Help text:** "Only the note you ask it to summarise. It goes to Microsoft's Azure OpenAI service, which doesn't use it to train models and doesn't share it with OpenAI or other customers. Microsoft's automated abuse checks may keep a flagged request, and authorised Microsoft staff may review it. It may be processed outside the UK." Drop the last sentence only if T-7 picks a UK regional deployment.
+- **DRAFT notice gaps** (`pages/legal.tsx`, correctly marked DRAFT, not legal advice). It doesn't yet cover:
+  - who the controller is and how to contact them, with a grievance contact for India (DPDP);
+  - lawful bases;
+  - the Azure OpenAI transfer and the abuse-monitoring storage;
+  - the right to complain to the ICO;
+  - log retention (30 days in T-7);
+  - breach handling;
+  - that the service isn't for under-18s.
+- **Sign-up wording** (`auth.tsx:47`): "agree to the ... privacy notice" should read "agree to the Terms and confirm you've read the Privacy notice". Store `terms_version` and `terms_accepted_at`.
+- **Retention:**
+  - Unverified accounts are never purged, so an account opened with someone else's address keeps that address indefinitely. Delete unverified owners, with their tenant, after 30 days with no sign-in.
+  - The owner export leaves out pending invitations.
+
+### Board tasks to open (one per FAIL)
+
+This re-test wrote only this file. The Studio Lead should open:
+1. **starter: AI budget integrity (LLM FAIL).** *High.*
+   - R1: keep spend after deletion, and index it by day.
+   - R2: byte-based estimate, a strict global check, verified email and a daily cap for trials, a per-tenant in-flight cap, and a sign-up throttle.
+   - R4: an AI semaphore and an async `/livez`.
+   - R5: full escaping.
+   - R8: comes with R1.
+2. **starter: demo billing safe in prod (Infra FAIL).** *Medium.*
+   - R3: default off, a validator rule, the trial allowance for mock plans, a period-end check, and switch-over handling.
+   - R6: the Dockerfile and `getlist`.
+   - The rest of I4: `--no-server-header`, Permissions-Policy and COOP.
+   - I6: the `e2e.sh` guard.
+3. **starter: auth and privacy Lows.** No FAIL; these can ride with task 1 or T-7.
+   - R7 (`__Host-` cookie), R9, R10 and R11.
+   - A4 (lockout), A5 (invite oracle) and A9 (`history.replaceState`).
+   - Actions pinned by SHA, and the base image by digest.
+
+**To flip the gate:** re-run T18-C/D/E, T19 and T22 plus the suite. LLM features turns PASS when R1, R2 and R4 show fresh passing output, and infrastructure when R3 does.
+
+### How the re-test was run, and gaps
+- **Harness:** each party saw only its own inbox: the harness swapped a known token's hash into the row the app created. Where a run needed many accounts, the API trusted proxy headers and the harness sent a random rightmost `X-Forwarded-For`. That played no part in authorization. The scripts are in the session scratchpad and aren't kept.
+- **Tests:**
+
+  | Test | What it does |
+  |---|---|
+  | T1, T1b | Per-IP limits: direct, behind emulated ingress, and with two header lines |
+  | T2b | Limiter eviction with a patched clock |
+  | T3 | 48 tenancy and role checks |
+  | T4c | Pre-hijack scenarios a to e |
+  | T5 | A table lock plus the statement timeout, then a log search |
+  | T6 | Body sizes, with peak RSS reset by `clear_refs` |
+  | T7 | 8, 24 and 60 parallel logins |
+  | T8 | CSRF tricks and preflights |
+  | T11 | Reset timing (n=30 each), caps and the race |
+  | T13 | Forged webhooks |
+  | T16 | Delimiter variants |
+  | T17 | Purge and member-removal residue |
+  | T18 A–E | Billing of failed calls, the deletion bypass, parallel overshoot, budget exhaustion |
+  | T19 | Prod settings with mock billing |
+  | T21 | Email text and resend rate |
+  | T22 | Threadpool starvation with a slow provider |
+  | Global sum | `EXPLAIN ANALYZE` on 2M rows |
+
+- **Tools:**
+  - pip-audit 2.10.1 in a scratch venv (`--require-hashes --disable-pip`, PyPI and OSV). The installed venv matches all 39 pins.
+  - npm 10.9.9 `npm audit` on copies of the lockfiles (frontend 107 packages, e2e 2).
+  - tiktoken 0.14.0 for `o200k_base`.
+- **Gaps:**
+  - No real Azure OpenAI, Stripe or Container Apps ingress: their behaviour was mocked or emulated.
+  - No browser run.
+  - Prices are third-party tracker figures.
+  - Model latency in T18-D/E and T22 is simulated.
+  - The R1 cost rate depends on the deployment's quota, which T-7 will set.
