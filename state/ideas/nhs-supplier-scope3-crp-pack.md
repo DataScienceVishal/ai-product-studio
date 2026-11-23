@@ -57,7 +57,69 @@ Demo with public or synthetic data: a synthetic 120-employee facilities company 
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| 12 | 13 | 6 | 7 | 11 | 1 | 7 | 57 |
+
+## Validator notes (2026-11-23)
+
+**Red-flag check: none.**
+- Not an off-limits area. The product handles suppliers' business emissions data, not health data.
+- No paid service or scraping is needed. The DESNZ conversion factors are free, and email runs through the mock adapter.
+- Public and synthetic data can credibly demo the value. A synthetic ledger for a 120-employee facilities firm plus the public conversion factors is enough to show the inventory, the category screening log and a draft plan.
+- Legal risk: the supplier publishes the emissions and targets, and its board approves them. Misleading environmental claims are a legal exposure for the supplier (my inference; legal review needed). Sign-off design:
+  - The tool drafts figures and justifications, each citing its factor source.
+  - The board approves, and the supplier publishes.
+  - No "meets NHS requirements" wording appears without legal review.
+
+**Forcing function: confirmed, with corrections**
+- The NHS Net Zero Supplier Roadmap (June 2026, PDF read):
+  - From April 2027: "new proportionate requirements for suppliers to publicly report targets, emissions and publish a Carbon Reduction Plan for all of their relevant global scope 1, 2 and 3 emissions".
+  - From April 2028: product-level carbon footprinting, with the scope and method still to be set.
+- The NHS long-read returned an empty page on three tries. Pinsent Masons (11 June 2026, fetched) quotes the guidance:
+  - It covers new procurements after 1 April 2027 of £5m a year and above "including VAT", plus "all new framework contracts where proportionate". That settles the scout's VAT question.
+  - Suppliers must commit to net zero by 2050; 2045 is only encouraged. Seedling's "2045" is the NHS's own target, not the supplier requirement.
+- On the 15 categories, the guidance asks for "all relevant" Scope 3 categories. Screening all 15 and justifying omissions comes from Penningtons and the NHS market sounding (search summaries). Under PPN 006, a plan that leaves out a scope without explanation fails.
+- The scout missed one point: the £5m plan rule has applied since April 2023 and was extended proportionately to all new procurements from April 2024 (roadmap). So suppliers in the 2027 tier mostly already publish a plan. The 2027 change widens Scope 3 and the reporting boundary; it doesn't create a new buyer.
+
+**Falsification findings**
+- **Seedling** is the strongest competitor (own site, fetched).
+  - It has a free "Seedling Starter" tier and says "Get prepared for government and NHS bids".
+  - It has already published an article, "What counts as relevant Scope 3 for a 2027 NHS Carbon Reduction Plan?", so it markets this exact wedge.
+  - Each client gets a dedicated carbon specialist, and it claims "500+ businesses".
+- **Gaia** (own pricing page):
+  - Start-Up £300, Pro £650 and Enterprise £1,500 a month, ex VAT.
+  - All plans cover the 15 Scope 3 categories.
+  - Pro adds the PPN 006 plan, Xero, QuickBooks and Sage integrations, and supplier surveys. There is a free trial.
+- **ClimatePartner** (own NHS page): "all relevant scope 3 categories", over 50,000 emission factors, an "audit-ready CRP" on the government template, board-level documentation and annual refreshes.
+- **Cheap tools** (search summaries): Sage Earth £9 a month for Sage users, EcoHedge Express £97 a month, Certified Carbon £199 a year, and Seedling at £80 to £290 a month on listings.
+- **Consultancies:** TeamEnergy sells NHS plan consultancy and Evergreen support (fetched); Valpak and Auditel also sell services.
+- **Cheapest substitute:** Seedling's free tier, or the government plan template with spend data from the accountant.
+- **What an incumbent could add in a month:** a 15-category screening log with justification text and a board-approval step. Seedling and Gaia already have most of it.
+- **Job ads are weak** (search summaries): a Vita Health Group Sustainability Officer for a Scope 3 supplier-engagement project, and a Sopra Steria net zero manager for NHS SBS. I found none from mid-size NHS suppliers hiring for plan work.
+
+**Scoring rationale**
+- **Pain 12.** The rule binds from April 2027 and Scope 3 is genuinely hard. But most in-scope suppliers already have a plan and a provider, and the 2028 product-footprint step is undefined.
+- **Pay 13.** Many paid tools and consultancies exist, but the low end runs from free to £9 a month.
+- **AI 6.** Spend-based Scope 3 classification is commoditised (Sage Earth, Xero apps), and justification text is easy to generate.
+- **Reach 7.** Suppliers can be found through NHS framework award lists, Contracts Finder and Find a Tender.
+- **Build 11.** Straightforward on the default stack.
+- **Competition 1.** At least six products already target NHS or PPN 006 plans.
+- **Risk 7.** Public carbon claims, and buyers may demand assurance.
+
+**What would change my mind**
+Only a segment the carbon tools don't serve, backed by evidence. For example: primes that must collect subcontractor and product-level data for the April 2028 step, once NHS publishes the method, plus own-page checks showing that Seedling, Gaia and ClimatePartner have no subcontractor data-request workflow. Even then I'd expect a ceiling of about 60. Recommend parking it.
+
+**Sources** (all accessed 2026-11-23)
+- https://www.england.nhs.uk/greenernhs/wp-content/uploads/sites/51/2026/06/nhs-net-zero-supplier-roadmap-june-2026.pdf (PDF read)
+- https://www.england.nhs.uk/long-read/2027-nhs-carbon-reduction-plan-requirements-for-the-procurement-of-nhs-goods-services-and-works/ (empty on fetch; search excerpts only)
+- https://www.pinsentmasons.com/out-law/news/nhs-england-net-zero-requirements-suppliers (fetched)
+- https://www.penningtonslaw.com/insights/enhanced-carbon-reduction-plan-requirements-for-nhs-suppliers-time-to-get-ready/ (search summary)
+- https://www.teamenergy.com/discover/insights/market-briefings/nhs-carbon-reduction-plan-requirements-2027-suppliers/ (fetched)
+- https://seedling.earth/ (fetched)
+- https://gaiacompany.io/carbon-accounting-software/pricing/ (fetched)
+- https://www.climatepartner.com/en/nhs-carbon-reduction-plan (fetched)
+- https://www.compareyourfootprint.com/en-au/blog/sage-earth-vs-dedicated-carbon-accounting-software, https://netzerocompare.com/software/ecohedge and https://www.capterra.com/p/10036555/Certified-Carbon/ (search summaries)
+- https://www.scope.org.uk/jobboard/sustainability-officer-190226 and https://onestopesg.com/esg-jobs/net-zero-and-sustainability-manager-ftc (search summaries)
 
 ## Gate log
 - 2026-11-23 scout round 2: G0 file written. Own-page checks: Gaia (full), Seedling (search summary of own pages only). NHS primary page and roadmap PDF did not load; validator to read them.
+- 2026-11-23 | validator | G0→G1 | REVISE 57 | The April 2027 rule is real (£5m a year including VAT, all relevant Scope 3), but Seedling (free tier, NHS 2027 content), Gaia (from £300 a month, all 15 categories, PPN 006 plans) and ClimatePartner already sell it, and most in-scope suppliers have had a plan since 2023.
