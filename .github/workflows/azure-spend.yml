@@ -32,7 +32,7 @@ jobs:
       STUDIO_RESOURCE_GROUP: rg-ai-studio
       STUDIO_SPEND_SINCE: "2026-11-01"
       STUDIO_SPEND_CAP: "80"
-      SAVED: ${{ runner.temp }}/spend
+      # Saved Azure responses live in "$RUNNER_TEMP/spend". (The runner context isn't allowed in job-level env.)
     steps:
       - uses: actions/checkout@v4
 
@@ -54,7 +54,7 @@ jobs:
         if: env.HAS_AZURE == 'true'
         run: |
           set -o pipefail
-          python3 scripts/azure_spend.py report --save-dir "$SAVED" | tee spend.txt
+          python3 scripts/azure_spend.py report --save-dir "$RUNNER_TEMP/spend" | tee spend.txt
           summary=$(head -n 1 spend.txt)
           status=$(grep '^STATUS ' spend.txt | awk '{print $2}' || true)
           level=$(grep '^ALERT ' spend.txt | awk '{print $2}' || true)
@@ -97,7 +97,7 @@ jobs:
             git rebase --abort 2>/dev/null || true
             git fetch -q origin main
             git reset -q --hard origin/main
-            python3 scripts/azure_spend.py report --from-dir "$SAVED" > /dev/null
+            python3 scripts/azure_spend.py report --from-dir "$RUNNER_TEMP/spend" > /dev/null
             commit || exit 0
             sleep $((attempt * 5))
           done
