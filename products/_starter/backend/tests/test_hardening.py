@@ -1,5 +1,6 @@
 """Regression tests for the T-6 review and security findings (C1 to C8 and the security gate's High items)."""
 import json
+from pathlib import Path
 import threading
 import time
 import uuid
@@ -198,7 +199,7 @@ def test_client_ip_uses_only_the_rightmost_hop_and_only_when_trusted():
 
 
 def test_the_image_does_not_let_uvicorn_trust_forwarded_headers():
-    dockerfile = open("Dockerfile").read()
+    dockerfile = (Path(__file__).resolve().parents[2] / "Dockerfile").read_text()  # the root image (T-16)
     assert "--no-proxy-headers" in dockerfile and "forwarded-allow-ips" not in dockerfile
     assert "TRUST_PROXY_HEADERS=true" in dockerfile
 
