@@ -1,4 +1,4 @@
-"""Health check for Azure Container Apps probes and uptime checks."""
+"""Probes: /livez for liveness (no DB), /healthz for readiness and the Docker HEALTHCHECK (checks the DB)."""
 from __future__ import annotations
 
 import logging
@@ -12,6 +12,12 @@ from .. import __version__
 
 log = logging.getLogger("app.health")
 router = APIRouter(tags=["health"])
+
+
+@router.get("/livez")
+def livez():
+    """Liveness: the process is up. No database, so a busy pool never gets the replica restarted."""
+    return {"status": "ok", "version": __version__}
 
 
 @router.get("/healthz")

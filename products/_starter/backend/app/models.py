@@ -76,7 +76,9 @@ class Subscription(Base):
     trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     current_period_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     provider: Mapped[str] = mapped_column(String(20), nullable=False)
-    provider_ref: Mapped[str | None] = mapped_column(String(255))
+    provider_ref: Mapped[str | None] = mapped_column(String(255))  # the provider's subscription id
+    provider_customer: Mapped[str | None] = mapped_column(String(255))  # the provider's customer id
+    last_event_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # ignore older events
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow,
                                                  nullable=False)
 

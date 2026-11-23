@@ -31,4 +31,4 @@ class OutboxEmail:
     def send(self, to: str, subject: str, body: str) -> None:
         self.sent.append(Message(to, subject, body))
         del self.sent[:-self.limit]
-        log.info("email queued", extra={"subject": subject})
+        log.info("email queued")

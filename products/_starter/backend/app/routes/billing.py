@@ -36,7 +36,12 @@ def plans():
 
 
 @router.post("/checkout", dependencies=[Depends(require_csrf_header)])
-def checkout(data: CheckoutIn, request: Request, me: Current = Depends(verified_owner)):
+def checkout(data: CheckoutIn, request: Request, me: Current = Depends(verified_owner), db: Session = Depends(get_db)):
+    request.app.state.limiter.check(f"checkout:{me.tenant.id}", 10)
+    sub = subscription_of(db, me.tenant.id)
+    db.commit()  # don't hold a transaction while the payment provider is called
+    if sub.status == "active" and sub.provider_ref:
+        raise AppError(409, "already_subscribed", "You already have an active plan. To change it, contact support.")
     plan = PLANS.get(data.plan)
     if plan is None or plan.id == "trial":
         raise AppError(422, "unknown_plan", "Choose one of the listed plans.")
@@ -52,7 +57,8 @@ def checkout(data: CheckoutIn, request: Request, me: Current = Depends(verified_
 
 
 def apply_update(db: Session, update: BillingUpdate, provider: str) -> bool:
-    """Apply a provider event once. Returns False if this event id was already applied."""
+    """Apply a provider event once, in order. Returns False if this event id was already applied.
+    An event older than the last one applied is recorded as seen but changes nothing."""
     db.add(BillingEvent(id=update.event_id))
     try:
         db.flush()
@@ -63,6 +69,10 @@ def apply_update(db: Session, update: BillingUpdate, provider: str) -> bool:
     if sub is None:  # the tenant deleted their account; keep the event id, change nothing
         db.commit()
         return True
+    if update.occurred_at and sub.last_event_at and update.occurred_at < sub.last_event_at:
+        db.commit()  # stale (arrived out of order): keep the event id, ignore its content
+        log.info("stale billing event ignored")
+        return True
     sub.status = update.status
     if update.plan in PLANS:
         sub.plan = update.plan
@@ -70,6 +80,10 @@ def apply_update(db: Session, update: BillingUpdate, provider: str) -> bool:
         sub.offer = update.offer
     if update.provider_ref:
         sub.provider_ref = update.provider_ref
+    if update.customer_ref:
+        sub.provider_customer = update.customer_ref
+    if update.occurred_at:
+        sub.last_event_at = update.occurred_at
     if update.current_period_end:
         sub.current_period_end = update.current_period_end
     sub.provider = provider
@@ -111,7 +125,7 @@ async def webhook(request: Request, db: Session = Depends(get_db)):
 def mock_complete(session_id: str, request: Request, me: Current = Depends(owner), db: Session = Depends(get_db)):
     """Dev and demo only: pretend the customer paid. Goes through the same signed webhook path."""
     billing = request.app.state.billing
-    if not isinstance(billing, MockBilling) or request.app.state.settings.env == "prod":
+    if not isinstance(billing, MockBilling) or not request.app.state.settings.mock_checkout_enabled:
         raise AppError(404, "not_found", "Not available.")
     session = billing.sessions.get(session_id)
     if session is None or session["tenant_id"] != str(me.tenant.id):

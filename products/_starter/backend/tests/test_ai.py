@@ -78,9 +78,23 @@ def test_ai_calls_are_rate_limited_per_tenant(app, owner):
 
 # --- Azure OpenAI provider, against a fake transport -------------------------------------------
 
-def _azure(handler) -> AzureOpenAI:
-    return AzureOpenAI("https://res.openai.azure.com/", "gpt-5-mini", "proxy-injected",
-                       client=httpx.Client(transport=httpx.MockTransport(handler)))
+class FakeClock:
+    def __init__(self):
+        self.now = 0.0
+
+    def __call__(self):
+        return self.now
+
+
+def _azure(handler, retries=1, deadline=25.0, clock=None) -> AzureOpenAI:
+    clock = clock or FakeClock()
+
+    def sleep(seconds):
+        clock.now += seconds
+
+    return AzureOpenAI("https://res.openai.azure.com/", "gpt-5-mini", "proxy-injected", retries=retries,
+                       deadline=deadline, client=httpx.Client(transport=httpx.MockTransport(handler)),
+                       sleep=sleep, clock=clock)
 
 
 def _ok(text="A summary.", prompt=12, completion=7):
@@ -106,29 +120,57 @@ def test_azure_request_shape_and_parsing():
 
 def test_azure_retries_throttling_then_succeeds():
     responses = iter([httpx.Response(429, headers={"retry-after": "1"}), httpx.Response(503), _ok()])
-    assert _azure(lambda _: next(responses)).complete("s", "u").text == "A summary."
+    assert _azure(lambda _: next(responses), retries=2).complete("s", "u").text == "A summary."
 
 
-def test_azure_gives_up_with_friendly_error():
-    with pytest.raises(AIUnavailable):
-        _azure(lambda _: httpx.Response(500)).complete("s", "u")
-
-
-def test_azure_transport_errors_retry_then_fail():
+def test_azure_gives_up_with_friendly_error_after_the_configured_retries():
     calls = []
 
     def handler(request):
         calls.append(1)
-        raise httpx.ConnectTimeout("timed out", request=request)
+        return httpx.Response(500)
 
     with pytest.raises(AIUnavailable):
-        _azure(handler).complete("s", "u")
-    assert len(calls) == 4  # first try plus three retries
+        _azure(handler, retries=1).complete("s", "u")
+    assert len(calls) == 2
 
 
-def test_azure_bad_credentials_and_empty_answers():
+def test_azure_respects_one_overall_deadline():
+    clock = FakeClock()
+
+    def slow(request):
+        clock.now += 20.0  # each attempt takes 20 s
+        return httpx.Response(503)
+
+    with pytest.raises(AIUnavailable):
+        _azure(slow, retries=5, deadline=25.0, clock=clock).complete("s", "u")
+    assert clock.now <= 25.0 + 20.0  # never starts an attempt after the deadline
+
+
+def test_connection_errors_cost_nothing_but_timeouts_after_sending_are_counted():
+    def refuse(request):
+        raise httpx.ConnectError("refused", request=request)
+
+    with pytest.raises(AIUnavailable) as refused:
+        _azure(refuse).complete("s", "u", max_output_tokens=500)
+    assert (refused.value.input_tokens, refused.value.output_tokens) == (0, 0)
+
+    def timeout(request):
+        raise httpx.ReadTimeout("slow", request=request)
+
+    with pytest.raises(AIUnavailable) as timed_out:
+        _azure(timeout, retries=1).complete("s" * 30, "u" * 30, max_output_tokens=500)
+    assert timed_out.value.output_tokens == 1000 and timed_out.value.input_tokens > 0  # two sent attempts
+
+
+def test_empty_answers_carry_the_billed_usage():
+    empty = httpx.Response(200, json={"choices": [{"message": {"content": ""}, "finish_reason": "length"}],
+                                      "usage": {"prompt_tokens": 5000, "completion_tokens": 1200}})
+    with pytest.raises(AIUnavailable, match="ran out of room") as error:
+        _azure(lambda _: empty).complete("s", "u")
+    assert (error.value.input_tokens, error.value.output_tokens) == (5000, 1200)
+
+
+def test_bad_credentials_are_a_friendly_error():
     with pytest.raises(AIUnavailable, match="configured"):
         _azure(lambda _: httpx.Response(401)).complete("s", "u")
-    empty = httpx.Response(200, json={"choices": [{"message": {"content": ""}, "finish_reason": "length"}], "usage": {}})
-    with pytest.raises(AIUnavailable, match="ran out of room"):
-        _azure(lambda _: empty).complete("s", "u")

@@ -23,7 +23,9 @@ PASSWORD = "correct horse battery"
 @pytest.fixture(scope="session")
 def database():
     db = Database(TEST_DB)
-    Base.metadata.drop_all(db.engine)
+    with db.engine.begin() as conn:  # a clean schema, whatever another branch left behind
+        conn.execute(text("DROP SCHEMA public CASCADE"))
+        conn.execute(text("CREATE SCHEMA public"))
     Base.metadata.create_all(db.engine)
     yield db
     db.dispose()

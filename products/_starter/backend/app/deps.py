@@ -45,6 +45,7 @@ def current(request: Request, db: Session = Depends(get_db)) -> Current:
     if user is None or tenant is None:
         raise AppError(401, "not_signed_in", "Please sign in.")
     bind(tenant_id=str(tenant.id), user_id=str(user.id))
+    db.commit()  # end the read transaction; with expire_on_commit=False the objects stay usable
     return Current(user=user, tenant=tenant, session=row)
 
 

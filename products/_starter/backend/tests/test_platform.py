@@ -94,17 +94,36 @@ def test_account_deletion_removes_only_that_tenant(new_client, database):
     assert b.get("/api/notes").json()["total"] == 1
 
 
-def test_prod_settings_refuse_unsafe_defaults():
+GOOD_PROD = dict(env="prod", app_base_url="https://app.example.com", cors_origins=["https://app.example.com"],
+                 trust_proxy_headers=True)
+
+
+def test_prod_settings_refuse_unsafe_values():
+    Settings(**GOOD_PROD)  # the safe baseline is accepted
+    unsafe = {
+        "BILLING_WEBHOOK_SECRET": dict(billing_webhook_secret=""),
+        "at least 32": dict(billing_webhook_secret="short"),
+        "whsec_": dict(billing_provider="stripe", billing_webhook_secret="x" * 40),
+        "CORS_ORIGINS": dict(cors_origins=["*"]),
+        "APP_BASE_URL": dict(app_base_url="http://app.example.com"),
+        "COOKIE_SECURE": dict(cookie_secure=False),
+        "TRUST_PROXY_HEADERS": dict(trust_proxy_headers=False),
+        "AZURE_OPENAI_ENDPOINT": dict(ai_provider="azure"),
+    }
+    for message, change in unsafe.items():
+        with pytest.raises(ValueError, match=message):
+            Settings(**(GOOD_PROD | change))
+    with pytest.raises(ValueError, match="APP_BASE_URL"):
+        Settings(**(GOOD_PROD | {"app_base_url": "https://localhost"}))
+
+
+def test_empty_webhook_secret_is_refused_in_every_environment():
     with pytest.raises(ValueError, match="BILLING_WEBHOOK_SECRET"):
-        Settings(env="prod")
-    with pytest.raises(ValueError, match="COOKIE_SECURE"):
-        Settings(env="prod", billing_webhook_secret="real", cookie_secure=False)
-    with pytest.raises(ValueError, match="AZURE_OPENAI_ENDPOINT"):
-        Settings(env="prod", billing_webhook_secret="real", ai_provider="azure")
+        Settings(env="dev", billing_webhook_secret="")
 
 
 def test_prod_hides_api_docs(settings):
-    prod = create_app(settings.model_copy(update={"env": "prod", "billing_webhook_secret": "real"}))
+    prod = create_app(settings.model_copy(update=GOOD_PROD))
     with TestClient(prod, base_url="https://testserver") as client:
         assert client.get("/api/docs").status_code == 404
     prod.state.db.dispose()

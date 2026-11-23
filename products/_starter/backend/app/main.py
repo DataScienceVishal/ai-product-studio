@@ -32,6 +32,61 @@ SECURITY_HEADERS = [
 ]
 
 
+class BodyTooLarge(Exception):
+    pass
+
+
+class BodyLimit:
+    """Pure ASGI: refuse request bodies over `limit` bytes, by Content-Length or while streaming.
+
+    Reading stops as soon as the limit is passed. FastAPI turns errors raised while it parses a body into
+    its own 400, so once the limit is crossed we replace whatever response the app starts with our 413."""
+
+    BODY = b'{"error":"too_large","message":"That request is too large."}'
+
+    def __init__(self, app: ASGIApp, limit: int):
+        self.app, self.limit = app, limit
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        declared = dict(scope.get("headers") or []).get(b"content-length", b"")
+        if declared.isdigit() and int(declared) > self.limit:
+            await self._refuse(send)
+            return
+        received, exceeded, refused = 0, False, False
+
+        async def limited_receive() -> Message:
+            nonlocal received, exceeded
+            message = await receive()
+            if message["type"] == "http.request":
+                received += len(message.get("body", b""))
+                if received > self.limit:
+                    exceeded = True
+                    raise BodyTooLarge()
+            return message
+
+        async def guarded_send(message: Message) -> None:
+            nonlocal refused
+            if not exceeded:
+                await send(message)
+            elif not refused:
+                refused = True
+                await self._refuse(send)
+
+        try:
+            await self.app(scope, limited_receive, guarded_send)
+        except BodyTooLarge:
+            if not refused:
+                await self._refuse(send)
+
+    async def _refuse(self, send: Send) -> None:
+        await send({"type": "http.response.start", "status": 413,
+                    "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(self.BODY)).encode())]})
+        await send({"type": "http.response.body", "body": self.BODY})
+
+
 class RequestContext:
     """Pure ASGI middleware: request id, access log, security headers, and a last-resort 500."""
 
@@ -86,13 +141,15 @@ def create_app(settings: Settings | None = None, *, ai: AIProvider | None = None
     app = FastAPI(title=settings.app_name, version=__version__, lifespan=lifespan, docs_url=docs,
                   redoc_url=None, openapi_url=None if settings.env == "prod" else "/api/openapi.json")
     app.state.settings = settings
-    app.state.db = Database(settings.database_url, settings.db_statement_timeout_ms)
+    app.state.db = Database(settings.database_url, settings.db_statement_timeout_ms,
+                            settings.db_idle_in_transaction_timeout_ms, settings.db_pool_size, settings.db_max_overflow)
     app.state.limiter = RateLimiter()
     app.state.ai = ai or build_provider(settings)
     app.state.billing = billing_provider or build_billing(settings)
     app.state.email = email or OutboxEmail()
 
     errors.install(app)
+    app.add_middleware(BodyLimit, limit=settings.max_body_bytes)
     app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_credentials=True,
                        allow_methods=["GET", "POST", "PUT", "DELETE"],
                        allow_headers=["content-type", "x-requested-with", "x-request-id"])

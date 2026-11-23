@@ -24,8 +24,8 @@ class RateLimiter:
         """Record a hit. Returns None if allowed, else seconds until the next hit is allowed."""
         now = time.monotonic()
         with self._lock:
-            if len(self._hits) >= self._max_keys:  # bound memory under a flood of new keys
-                self._hits.clear()
+            if key not in self._hits and len(self._hits) >= self._max_keys:
+                self._evict(now, window_seconds)
             hits = self._hits.setdefault(key, deque())
             while hits and now - hits[0] >= window_seconds:
                 hits.popleft()
@@ -33,6 +33,17 @@ class RateLimiter:
                 return max(0.0, window_seconds - (now - hits[0]))
             hits.append(now)
             return None
+
+    def _evict(self, now: float, window_seconds: float) -> None:
+        """Bound memory without unblocking anyone: drop keys with no recent hits, then the keys with the
+        fewest hits. A flood of new keys has one hit each, so a blocked key (many hits) survives it."""
+        idle = [k for k, hits in self._hits.items() if not hits or now - hits[-1] >= window_seconds]
+        for key in idle:
+            del self._hits[key]
+        if len(self._hits) >= self._max_keys:
+            ranked = sorted(self._hits.items(), key=lambda item: (len(item[1]), item[1][-1]))
+            for key, _ in ranked[:len(self._hits) - int(self._max_keys * 0.9)]:
+                del self._hits[key]
 
     def check(self, key: str, limit: int, window_seconds: float = 60.0) -> None:
         wait = self.hit(key, limit, window_seconds)

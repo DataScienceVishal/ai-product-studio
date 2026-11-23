@@ -10,6 +10,7 @@ import json
 import logging
 import re
 import sys
+import traceback
 from datetime import datetime, timezone
 
 request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("request_id", default="-")
@@ -51,8 +52,23 @@ class JsonFormatter(logging.Formatter):
             if key not in _STANDARD and not key.startswith("_"):
                 entry[key] = "[redacted]" if _SENSITIVE.search(key) else value
         if record.exc_info:
-            entry["error"] = self.formatException(record.exc_info)
+            entry["error"] = safe_exception(record.exc_info)
         return json.dumps(entry, default=str)
+
+
+def safe_exception(exc_info) -> str:
+    """Stack trace plus a message that can't carry personal data. Database errors can quote row values
+    (for example 'Key (email)=(...) already exists'), so for those only the type and SQLSTATE are kept."""
+    kind, error, tb = exc_info
+    if error is None:
+        return ""
+    stack = "".join(traceback.format_tb(tb))
+    orig = getattr(error, "orig", None)  # SQLAlchemy wraps the driver's error
+    sqlstate = getattr(orig, "sqlstate", None) or getattr(error, "sqlstate", None)
+    is_db_error = sqlstate is not None or type(error).__module__.startswith(("sqlalchemy", "psycopg"))
+    if is_db_error:
+        return f"{stack}{kind.__name__}: database error (sqlstate {sqlstate or 'unknown'}); details hidden"
+    return f"{stack}{kind.__name__}: {error}"
 
 
 def setup_logging(level: str = "INFO") -> None:

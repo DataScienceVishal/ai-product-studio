@@ -12,7 +12,7 @@ from ..ai import tokens_this_month
 from ..db import get_db
 from ..deps import SESSION_COOKIE, Current, current, owner, require_csrf_header, subscription_of
 from ..errors import AppError
-from ..models import Note, User
+from ..models import Note, Tenant, User
 from ..security import verify_password
 
 log = logging.getLogger("app.account")
@@ -49,12 +49,22 @@ def usage(me: Current = Depends(current), db: Session = Depends(get_db)):
 def delete_account(data: DeleteIn, request: Request, me: Current = Depends(owner),
                    db: Session = Depends(get_db)) -> Response:
     """Deletes the tenant and, by cascade, every user, session, note and usage row it owns."""
+    request.app.state.limiter.check(f"delete-account:{me.user.id}", 5)
     if data.confirm != "DELETE":
         raise AppError(422, "confirm_required", 'Type DELETE to confirm.')
     if not verify_password(me.user.password_hash, data.password):
         raise AppError(401, "invalid_credentials", "That password isn't right.")
     tenant_id = str(me.tenant.id)
-    db.delete(me.tenant)  # same session as `owner` (FastAPI caches get_db per request)
+    sub = subscription_of(db, me.tenant.id)
+    customer, subscription = sub.provider_customer, sub.provider_ref
+    db.commit()  # no transaction open while the payment provider is called
+    if customer or subscription:
+        try:  # stop billing and remove their details at the provider first; if that fails, delete nothing
+            request.app.state.billing.close(customer, subscription)
+        except AppError:
+            raise AppError(503, "billing_unavailable", "We couldn't cancel your subscription with the payment "
+                           "provider, so nothing was deleted. Please try again in a few minutes.") from None
+    db.delete(db.get(Tenant, me.tenant.id))  # rows cascade: users, sessions, notes, usage, invitations
     db.commit()
     log.info("tenant deleted", extra={"deleted_tenant_id": tenant_id})
     response = Response(status_code=204)
