@@ -1,17 +1,8 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { reply, stubFetch, ME } from "./test-utils";
 import App from "./App";
-import { SESSION_ENDED, type Me } from "./api";
-
-const ME: Me = {
-  user: { id: "u1", email: "a@example.com", role: "owner", email_verified: true },
-  tenant: { id: "t1", name: "Acme" },
-  subscription: { plan: "trial", status: "trialing", offer: null, trial_ends_at: null, current_period_end: null },
-};
-
-function reply(status: number, body?: unknown): Response {
-  return new Response(body === undefined ? null : JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-}
+import { SESSION_ENDED } from "./api";
 
 let fetchMock: ReturnType<typeof vi.fn>;
 const signedOut = () => fetchMock.mockImplementation(async () => reply(401, { error: "not_signed_in", message: "Sign in." }));
@@ -19,11 +10,9 @@ const signedIn = () => fetchMock.mockImplementation(async (path: string) =>
   path === "/api/auth/me" ? reply(200, ME) : reply(200, { notes: [], plans: [], members: [], invitations: [] }));
 
 beforeEach(() => {
-  fetchMock = vi.fn();
-  vi.stubGlobal("fetch", fetchMock);
+  fetchMock = stubFetch();
   vi.spyOn(console, "warn").mockImplementation(() => {});
 });
-afterEach(() => vi.unstubAllGlobals());
 
 describe("App routing when signed out", () => {
   it.each(["/", "/billing", "/billing/done", "/settings", "/team", "/billing/mock-checkout"])("sends %s to /login", async (path) => {

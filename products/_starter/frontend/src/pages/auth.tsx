@@ -8,7 +8,8 @@ export function safeNext(): string {
   if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return "/";
   try {
     const url = new URL(next, window.location.origin); // what the browser would actually resolve
-    return url.origin === window.location.origin ? url.pathname + url.search : "/";
+    // Dot segments normalise away ("/.//evil" -> "//evil"), which is protocol-relative: refuse that too.
+    return url.origin === window.location.origin && !url.pathname.startsWith("//") ? url.pathname + url.search : "/";
   } catch {
     return "/";
   }

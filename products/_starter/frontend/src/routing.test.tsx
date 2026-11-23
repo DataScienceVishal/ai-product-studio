@@ -37,6 +37,10 @@ describe("safeNext (?next= redirect after sign-in)", () => {
     " //evil.example",
     "/\t/evil.example",
     "/\n/evil.example",
+    "/.//evil.example",
+    "/x/..//evil.example",
+    "/%2e//evil.example",
+    "/\t/evil.example//x",
     "",
   ])("rejects %j and falls back to home", (next) => {
     at(`/login?next=${encodeURIComponent(next)}`);
@@ -44,10 +48,12 @@ describe("safeNext (?next= redirect after sign-in)", () => {
   });
 
   it("never resolves outside the current origin, whatever is passed", () => {
-    for (const next of ["//evil.example", "/\\evil.example", "https://evil.example", "/\t/evil.example", "/%2F/evil.example", "/%5Cevil.example"]) {
+    for (const next of ["//evil.example", "/\\evil.example", "https://evil.example", "/\t/evil.example", "/%2F/evil.example", "/%5Cevil.example",
+      "/.//evil.example", "/x/..//evil.example", "/%2e//evil.example", "/\t/evil.example//x"]) {
       at(`/login?next=${encodeURIComponent(next)}`);
-      const url = new URL(safeNext(), window.location.origin);
-      expect(url.origin).toBe(window.location.origin);
+      const target = safeNext();
+      expect(target.startsWith("//")).toBe(false);
+      expect(new URL(target, window.location.origin).origin).toBe(window.location.origin);
     }
   });
 });

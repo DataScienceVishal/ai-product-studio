@@ -1,41 +1,29 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Me } from "../api";
+import { reply, stubFetch, makeMe } from "../test-utils";
 import { Billing, BillingDone, MockCheckout } from "./app";
-
-const me = (over: Partial<Me["subscription"]> = {}, role = "owner"): Me => ({
-  user: { id: "u1", email: "a@example.com", role, email_verified: true },
-  tenant: { id: "t1", name: "Acme" },
-  subscription: { plan: "trial", status: "trialing", offer: null, trial_ends_at: null, current_period_end: null, ...over },
-});
-
-function reply(status: number, body?: unknown): Response {
-  return new Response(body === undefined ? null : JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-}
 
 const PLANS = { plans: [{ id: "pro", name: "Pro", price_pence: 4900, currency: "gbp", interval: "month", ai_monthly_tokens: 1000000 }] };
 
 let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
-  fetchMock = vi.fn();
-  vi.stubGlobal("fetch", fetchMock);
+  fetchMock = stubFetch();
 });
 afterEach(() => {
   vi.useRealTimers();
-  vi.unstubAllGlobals();
 });
 
 describe("Billing", () => {
   it("lists plans with formatted prices and token allowance", async () => {
     fetchMock.mockResolvedValue(reply(200, PLANS));
-    render(<Billing me={me()} refresh={vi.fn()} />);
+    render(<Billing me={makeMe()} refresh={vi.fn()} />);
     expect(await screen.findByText("£49.00")).toBeTruthy();
     expect(screen.getByText(/1,000,000 AI tokens a month/)).toBeTruthy();
   });
 
   it("only owners can choose a plan", async () => {
     fetchMock.mockResolvedValue(reply(200, PLANS));
-    render(<Billing me={me({}, "member")} refresh={vi.fn()} />);
+    render(<Billing me={makeMe({}, "member")} refresh={vi.fn()} />);
     const button = await screen.findByRole("button", { name: "Choose Pro" });
     expect((button as HTMLButtonElement).disabled).toBe(true);
   });
@@ -43,7 +31,7 @@ describe("Billing", () => {
   it("a mock checkout goes to the in-app test page with the session id encoded", async () => {
     fetchMock.mockResolvedValueOnce(reply(200, PLANS));
     fetchMock.mockResolvedValueOnce(reply(200, { checkout_id: "mock_a&b", url: "https://unused.example" }));
-    render(<Billing me={me()} refresh={vi.fn()} />);
+    render(<Billing me={makeMe()} refresh={vi.fn()} />);
     fireEvent.change(screen.getByLabelText(/offer code/i), { target: { value: "EARLY50" } });
     fireEvent.click(await screen.findByRole("button", { name: "Choose Pro" }));
     await waitFor(() => expect(window.location.pathname).toBe("/billing/mock-checkout"));
@@ -56,7 +44,7 @@ describe("Billing", () => {
   it("sends offer_code null when no code is typed", async () => {
     fetchMock.mockResolvedValueOnce(reply(200, PLANS));
     fetchMock.mockResolvedValueOnce(reply(200, { checkout_id: "mock_1", url: "x" }));
-    render(<Billing me={me()} refresh={vi.fn()} />);
+    render(<Billing me={makeMe()} refresh={vi.fn()} />);
     fireEvent.click(await screen.findByRole("button", { name: "Choose Pro" }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     expect(JSON.parse(fetchMock.mock.calls[1][1].body).offer_code).toBeNull();
@@ -65,7 +53,7 @@ describe("Billing", () => {
   it("shows the server error when checkout fails", async () => {
     fetchMock.mockResolvedValueOnce(reply(200, PLANS));
     fetchMock.mockResolvedValueOnce(reply(400, { error: "bad_offer", message: "That offer code isn't valid." }));
-    render(<Billing me={me()} refresh={vi.fn()} />);
+    render(<Billing me={makeMe()} refresh={vi.fn()} />);
     fireEvent.click(await screen.findByRole("button", { name: "Choose Pro" }));
     expect((await screen.findByRole("alert")).textContent).toBe("That offer code isn't valid.");
   });
@@ -113,14 +101,14 @@ describe("MockCheckout (billing return)", () => {
 
 describe("BillingDone (/billing/done)", () => {
   it("shows success once the subscription is active", () => {
-    render(<BillingDone me={me({ plan: "pro", status: "active" })} refresh={vi.fn()} />);
+    render(<BillingDone me={makeMe({ plan: "pro", status: "active" })} refresh={vi.fn()} />);
     expect(screen.getByRole("status").textContent).toMatch(/you're on the pro plan/i);
   });
 
   it("polls refresh every 2s while waiting, then gives up with a clear message after 15 tries", async () => {
     vi.useFakeTimers();
     const refresh = vi.fn().mockResolvedValue(undefined);
-    render(<BillingDone me={me()} refresh={refresh} />);
+    render(<BillingDone me={makeMe()} refresh={refresh} />);
     expect(screen.getByText(/confirming your payment/i)).toBeTruthy();
     for (let i = 0; i < 15; i++) await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
     expect(refresh).toHaveBeenCalledTimes(15);
