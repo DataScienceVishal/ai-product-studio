@@ -1,7 +1,7 @@
 # Homestay rate copilot (India)
 
 - slug: homestay-rate-copilot-india
-- stage: G0
+- stage: killed
 - market and segment: India. Independent homestays, small villas and guesthouses with roughly 1 to 15 rooms in leisure markets (Goa, Kerala, Himachal, Uttarakhand, Rajasthan heritage towns) that sell through a mix of OTAs, Airbnb, travel agents and direct WhatsApp bookings, with no revenue manager on staff.
 - one-line pitch: A WhatsApp-first nightly rate advisor, in English, Hindi and regional languages, that learns each property's demand from its own booking history and local event calendars and sends "set tomorrow-to-90-days rates to X" suggestions the owner approves with one tap, priced for a 4-room homestay rather than a 50-room hotel.
 
@@ -52,6 +52,66 @@ Small Indian homestay and villa owners mostly set one flat rate, or a crude peak
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
+| 7 | 7 | 5 | 2 | 7 | 3 | 7 | 38 |
+
+**Verdict: KILL** on a red flag: the core value can't be shown without real customer data the studio can't get. (validator, 2026-11-23)
+
+### Validator notes (2026-11-23)
+
+Spot-checks
+- PriceLabs holds. It charges USD 9.99 per listing a month for "rest of the world" (India not named) and USD 19.99 in the US, UK, EU and Australia. It also shows a USD 14.49 headline plan, a 1%-of-revenue option and a 30-day free trial.
+- The Goa supply figures hold: 8,841 average active listings, up 16% year on year and 46% over two years. But bnbcalc still contradicts itself on ADR (Rs 10K vs Rs 7,527) and occupancy (28% vs 45%).
+- The Business Today anecdote is weaker than it looks. The owner is an actress and brand founder pricing a luxury villa, not a typical 1 to 15 room homestay. The revenue-manager job ads are for multi-property operators, not the target segment.
+
+Falsification
+- Free substitutes sit inside the channels these owners already use. Airbnb Smart Pricing is free and built in. Booking.com Analytics and Opportunity Centre is free to every partner and compares against a peer group, a custom set of 10 competitors, or the local market. Both use platform market data the studio can never have.
+- Indian incumbents already bundle pricing for small properties:
+  - eZee Centrix lists dynamic pricing at about USD 20 to 47 a month (aggregator).
+  - AxisRooms sells revenue management that uses competitor rates and demand.
+  - Eazee Stay lists Rs 1,000 a month for up to 4 rooms (aggregator, unverified).
+  - WhatsApp-first homestay tools (OpenStays, DigiStay) already pitch "smart pricing".
+- Copyable in a month: PriceLabs or a channel manager could add WhatsApp alerts, Hindi explanations and a state festival calendar. The "pooled data" moat needs many customers first. Pooling non-public competitor prices is also the pattern the US DOJ restricted in RealPage (settlement announced 24 Nov 2025).
+- Why buyers won't switch:
+  - The 40% offline segment is the least software-ready.
+  - Online owners already get free suggestions.
+  - Changing rates on several OTAs by hand is friction, and automatic write-back needs channel-manager partner integrations.
+
+Data red flag: could synthetic or public data credibly demo the value? No.
+- Public data: Inside Airbnb lists no Indian city (I checked the full list). Goa short-let data (AirDNA, AirROI, bnbcalc) is commercial. The one open booking dataset I found (Antonio, de Almeida and Nunes 2019: 119,390 bookings at two Portuguese hotels) can test a forecaster. It can't test a price recommendation, because it has no controlled price changes.
+- Synthetic data can demo the workflow. But any revenue-lift number would only grade the studio's own simulator.
+- Market rates need OTA scraping (forbidden) or a paid feed (needs approval and costs far more than the budget). Without them, a cold-start 4-room property gets a festival-and-season rule table. A spreadsheet, Airbnb or Booking.com already gives that.
+
+Studio limits
+- Reach scores 2: the seller is a UK business with no Indian network, and the buyers are fragmented and use regional languages on WhatsApp.
+- WhatsApp is the core channel and stays a mock until approved.
+- The software can be built in four weeks, but its value can't be proven in that time.
+
+Kill reason: The product's value is the claim that its nightly rates beat the owner's flat rate, and the studio can't show that credibly. There is no public booking or market data for Indian homestays, OTA scraping is forbidden, and paid market feeds are out of budget. Synthetic backtests would only grade the studio's own simulator. Meanwhile, Airbnb and Booking.com already give the online part of the segment free, market-aware pricing. The offline part is the hardest to reach and the least ready for software, especially for a UK-based seller.
+
+Lessons
+- For pricing and forecasting ideas, ask "whose demand data and whose market data, and is it lawful and free?" before scoring pain.
+- "Pooled data across customers" is not a moat at G0. It needs customers first, and pooling competitor price data carries antitrust risk.
+- Non-UK segments that work in regional languages score low on reach while the seller is a UK business.
+
+What would revive it
+- A lawful market-data route that is free or approved, for example an official partner API through a channel-manager partnership.
+- After selling unlock, 10+ consenting properties sharing anonymised booking history, so a backtest is real.
+- An India sales channel.
+- Or reuse Vishal's RL-pricing edge in a UK segment where the customer's own transaction data is enough to show lift.
+
+Sources checked (accessed 2026-11-23)
+- https://hello.pricelabs.co/pricing/
+- https://www.bnbcalc.com/markets/in/goa
+- https://businesstoday.in/latest/trends/story/reality-hit-me-because-parul-gulati-on-why-her-rs40000-a-night-goa-airbnb-dream-fell-short-548336-2026-08-10
+- https://insideairbnb.com/get-the-data/ (full city list read; no India or Indonesia)
+- https://www.airbnb.com/resources/hosting-homes/a/what-is-smart-pricing-594 (search summary)
+- https://news.booking.com/bookingcoms-analytics-and-opportunity-centre (search summary)
+- https://www.axisrooms.com/dynamic-pricing/
+- https://www.capterra.in/software/141727/ezee-centrix and https://www.capterra.com/p/10049868/Eazee-Stay/ (search snippets, unverified)
+- https://index.dodopayments.com/openstays-direct-booking-engine and https://digistay.co.in/about-us (search snippets)
+- https://repositorio.iscte-iul.pt/handle/10071/16929 (hotel booking demand dataset)
+- https://www.justice.gov/opa/pr/justice-department-requires-realpage-end-sharing-competitively-sensitive-information-and (search summary)
 
 ## Gate log
 - 2026-11-23: G0 spotted by scout.
+- 2026-11-23 | validator | G0→G1 | KILL 38 | Red flag: the value (rates that beat the owner's flat rate) can't be shown without booking histories and market rates the studio can't lawfully get, while Airbnb and Booking.com already give online homestays free market-aware pricing.

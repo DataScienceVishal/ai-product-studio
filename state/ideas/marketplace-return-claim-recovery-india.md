@@ -53,6 +53,56 @@ Marketplaces settle in batches (Meesho about every 15 days per search results), 
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
+| 12 | 13 | 6 | 3 | 10 | 4 | 6 | 54 |
+
+**Verdict: REVISE** (54, no red flag). (validator, 2026-11-23)
+
+### Validator notes (2026-11-23)
+
+Spot-checks
+- eVanik holds:
+  - Plans run from Rs 10,000 (500 orders), Rs 18,000 (1,000) and Rs 27,000 (3,000) up to Rs 1,90,000, all excluding 18% GST. The page's "/mo" figure is the total divided by three, so these look quarterly.
+  - It advertises "Automatic Claims for Reimbursements" and covers Amazon MTR and Settlement v2, Flipkart STL and Meesho Payouts.
+  - There is no Hindi or regional-language mention. "10,000+ sellers" and "Rs 1,098 Cr+ recovered" are self-reported.
+- Flipkart SPF: claims for damaged, defective or wrong returns must be made within 14 days of the return. Missing products get 120 days via a ticket. (Source: an undated FAQ PDF.)
+- Meesho's window conflicts with this file. A Meesho spokesperson told Inc42 that claims can be raised only "within 7 days of receiving the returns" (Jan 2023), not the 30 days the scout cited.
+
+Falsification
+- The platform is closing part of the leak itself. Meesho's blog says mismatched returns are now stopped before they reach the supplier, and "automated compensation and proactive debits" prevent many claims. That is a company claim with no figures.
+- The small-seller price point is already served:
+  - Vinculum: Rs 799 a month for up to 1,000 orders (search result; the vendor page returned 404).
+  - Deepecom: Rs 1,000 a month, covering 2 marketplaces with Tally sync.
+  - ReconPe: a free plan.
+  - Invi: "ready to claim" reports for Meesho, Flipkart and Amazon.
+  - UniReco is for enterprise sellers only, but already tracks claim windows.
+- Cheapest substitute: Excel plus the marketplace payment dashboards, or the Rs 20,000 to 35,000 a month e-commerce executive who also runs listings.
+- Copyable in a month: LLM claim drafts in Hindi or Gujarati, and WhatsApp upload. The adapter-library moat is what eVanik and Vinculum already maintain.
+- Why buyers won't switch: claims are mostly rejected for missing physical proof (unboxing video, photos), which software can't create.
+- Regulatory traps: reports carry end-customer names, addresses and phone numbers at scale (DPDP). Automating portal logins would break marketplace terms; the file already excludes it.
+
+Data red flag: none. Synthetic report files built to the documented layouts can credibly demo matching, rate-card checks and claim drafting, because that logic is deterministic. Getting the formats exactly right is a build risk: the Meesho supplier help page on payments returned 403.
+
+Studio limits
+- Reach scores 3: the buyers are cluster sellers working in Hindi and Gujarati over WhatsApp, and the UK-based seller has no Indian channel.
+- The build fits four weeks for two marketplaces. No paid services are needed if web upload is the default and WhatsApp stays a mock.
+
+What would change my mind
+1. Public evidence that recoverable leakage for sellers with 30 to 1,000 orders a day is still about 1% of GMV or more after Meesho's automated interception. Seller case studies with figures or trade press would do.
+2. Column-level public documentation, or sample files, for Meesho, Flipkart and Amazon.in order, return and settlement reports.
+3. A verified gap against Vinculum and eVanik. For example, public reviews showing small sellers still miss the 7-day and 14-day windows with those tools. Or confirmation that none of them offers Hindi or Gujarati, WhatsApp intake or deadline alerts.
+4. A realistic route for a UK-based seller to reach Indian marketplace sellers, such as a self-serve app-store listing or a reseller. Without this, reach limits the score to the low 60s even if items 1 to 3 come through.
+
+Sources checked (accessed 2026-11-23)
+- https://www.evanik.ai/reconciliation
+- https://cdn.pixelbin.io/v2/noisy-leaf-04a452/original/Marketplace-Content-University/MCU-Images/SPF/Flipkart-SPF-FAQs.pdf (search summary)
+- https://inc42.com/buzz/meesho-sellers-protest-change-return-policy/
+- https://www.meesho.io/blog/when-the-wrong-thing-comes-back-how-meesho-stopped-putting-the-burden-on-sellers (403 when fetched; search summary)
+- https://vinculumgroup.com/?p=24895 (search summary; 404 when fetched)
+- https://www.itechguides.com/products/deepecom/ and https://www.capterra.com/p/10049122/ReconPe/ (search summaries)
+- https://invi.ai/?p=596 (search summary)
+- https://support.unicommerce.com/index.php/knowledge-base/unireco/ (search summary)
+- https://www.gonukkad.com/blog/affordable-marketplace-settlement-reconciliation-for-small-seller (lists 8 tools, no prices)
 
 ## Gate log
 - 2026-11-23: G0 spotted by scout.
+- 2026-11-23 | validator | G0→G1 | REVISE 54 | Real pain and proven spend, but the small-seller price point is already served (Vinculum Rs 799 a month, eVanik claim automation), Meesho is automating wrong-return compensation itself, and a UK-based seller has no route to Indian cluster sellers.

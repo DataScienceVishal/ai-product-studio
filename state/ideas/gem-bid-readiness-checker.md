@@ -50,6 +50,59 @@ Government bid documents are long, and bids are often rejected on technicalities
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
+| 10 | 11 | 7 | 3 | 12 | 3 | 7 | 53 |
+
+**Verdict: REVISE** (53, no red flag). (validator, 2026-11-23)
+
+### Validator notes (2026-11-23)
+
+Spot-checks
+- The segment holds. More than 11 lakh MSEs are registered, and they won over 51 lakh orders worth Rs 2.36 lakh crore in FY26 (PIB factsheet; GeM CEO, April 2026). MSEs took 47.1% of FY26 GMV (Devdiscourse).
+- GeM bids are shorter and more structured than the pitch implies. I read a public 2026 GeM bid (GEM/2026/B/7203534, 7 pages, Hindi and English):
+  - It has fixed fields for "Document required from seller": experience criteria, past performance, bidder turnover, certificate requested in ATC, OEM authorisation and OEM turnover.
+  - It also has fixed fields for minimum turnover, OEM turnover, years of experience, MSE relaxation, EMD amount, ePBG, and MSE and MII preference.
+  - After those come free-text "Buyer Added Bid Specific Terms and Conditions" and linked specification and GTC files. The AI work is in that buyer-added text (ATC), the linked specifications and the corrigenda.
+- MSE status is checked through GeM's link to the Udyam database (GeM training material; Parliament answer, March 2025). So "expired MSE certificate" is less of a failure mode than this file says. The buyer still grants the EMD exemption bid by bid.
+
+Falsification
+- Competitors:
+  - Tenders Agent: a free plan with 3 AI summaries a month, then ₹2,999 to ₹29,999 a year with AI eligibility checks (Capterra and GetApp).
+  - BidShakti: eligibility checks, Go/No-Go and a bid pack. Listed prices conflict, from USD 2 to 49 a month.
+  - Zelmier: covers 250+ portals.
+  - Tender247: agentic AI and a national celebrity campaign (Oct 2026), so it is well funded.
+- Cheapest substitute: paste the bid PDF into a general AI chatbot and ask for the checklist, or read the "Document required from seller" field on page 2 of every bid.
+- Copyable in a month: a document vault with expiry dates and a gap check against the criteria that incumbents already extract.
+- Why buyers won't switch: small sellers often buy a bundled consultant who handles registration, catalogue and bidding (Fiverr and IndiaMART listings). A checker covers only part of that job.
+- Neither the scout nor I found public data on how often bids are rejected.
+- Regulatory traps:
+  - The output must not read as legal advice on eligibility.
+  - A false "ready" costs a bid, so findings need clause citations and human sign-off.
+  - Company folders can hold directors' Aadhaar and PAN, which the vault must mask or reject.
+  - Bids name consignee officers, which is personal data.
+
+Data red flag: none. Buyer organisations host public GeM bid PDFs (a Delhi department, IIT Kanpur, NITI Aayog, GIC Re), so the studio can build a real evaluation set without automating any portal. Download a small set by hand from sites that allow it, and stay off GeM's bidplus site (its robots.txt returned 503).
+
+Studio limits
+- The build is the easiest in this batch: RAG plus OCR on the default stack, and cheap on tokens.
+- Reach scores 3. GeM sellers are reachable online and many work in English, but a UK-based seller has no presence there. With rivals charging from ₹2,999 a year, paid customer acquisition is hard to make pay.
+
+What would change my mind
+1. Public data on the share of GeM bids rejected at technical evaluation for document reasons, from CAG or GeM reports, RTI disclosures, or counts of High Court writs.
+2. Public docs, demo videos or reviews showing that Tenders Agent, BidShakti and Tender247 don't check the bidder's own documents (validity dates, turnover against criteria, OEM authorisation scope, corrigenda). No sign-ups, because creating accounts is on the ask-first list.
+3. A head-to-head on 30+ public bids with their ATC and corrigenda, where the checker finds mandatory conditions that a plain general-LLM prompt misses (95% or better recall on mandatory items).
+4. A route to GeM sellers for a UK-based seller. Without items 2 and 3, competition and AI advantage stay low and the score can't get near 70.
+
+Sources checked (accessed 2026-11-23)
+- https://hjbhabhaiti.delhi.gov.in/sites/default/files/hjbhabhaiti/tender/gem-bidding-8945415.pdf (read directly)
+- https://pib.gov.in/FactsheetDetails.aspx?Id=150812 (search summary)
+- https://www.devdiscourse.com/article/law-order/3863894-gem-surpasses-184-lakh-crore-gmv-emerges-as-backbone-of-indias-digital-public-procurement-ecosystem (search summary)
+- https://lms.gem.gov.in/resources/upload/webinar_archive/archived_webinar_4Mf5_5VRu.pdf (search summary: MSE checks through Udyam)
+- https://www.commerce.gov.in/wp-content/uploads/2025/03/LS-USQ-No.2860-dated.-18.03.2025.pdf (search summary)
+- https://www.capterra.com/p/10056461/Tenders-Agent/pricing/ and https://www.getapp.com/all-software/a/tenders-agent/ (search summaries; pages returned 403)
+- https://sourceforge.net/software/product/BidShakti/ and https://www.saasworthy.com/product/bidshakti/pricing (prices conflict)
+- https://india.entrepreneur.com/?p=100307 (Tender247, Oct 2026)
+- https://yourstory.com/ai-story/government-tender-bidding-zelmier-ai-procurement (search summary)
 
 ## Gate log
 - 2026-11-23: G0 spotted by scout.
+- 2026-11-23 | validator | G0→G1 | REVISE 53 | Easy to build on public bid PDFs, but GeM bids are short and largely structured, several AI tender tools already sell eligibility checks at ₹2,999 to ₹29,999 a year, a general chatbot is a near-free substitute, and a UK-based seller can't reach Indian MSEs.

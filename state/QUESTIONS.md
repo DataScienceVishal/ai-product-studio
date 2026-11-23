@@ -20,3 +20,10 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Recommended: A, because the branch only adds to main (no conflicts) and the scheduled runs need it to work at all
 - If no answer: waits (needs you on GitHub)
 
+## Q-2 (status: open)
+- Decision: Does the studio have any way to sell outside the UK (India, Indonesia or elsewhere)?
+- Context: The validator scored every India and Indonesia idea 2 or 3 out of 10 on reach, because selling goes through your friend's UK business. Without a channel there, those ideas can't reach the 70-point bar however good the evidence gets.
+- Options: A) No: prioritise UK and English-speaking ideas, and keep non-UK ideas parked B) Yes: I (Vishal) can sell in India myself, so score Indian ideas with that channel C) Yes, through a partner I'll name
+- Recommended: A, because it matches the plan in CLAUDE.md, and B or C can be switched on later
+- If no answer: A after 12 hours (reversible)
+
