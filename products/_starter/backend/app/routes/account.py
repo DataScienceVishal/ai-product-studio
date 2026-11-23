@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from ..ai import tokens_this_month
 from ..db import get_db
-from ..deps import SESSION_COOKIE, Current, current, owner, subscription_of
+from ..deps import Current, current, owner, session_cookie, subscription_of
 from ..errors import AppError
 from ..models import Invitation, Note, Tenant, User
 from ..security import verify_password
@@ -68,7 +68,7 @@ def delete_account(data: DeleteIn, request: Request, me: Current = Depends(owner
     db.commit()
     log.info("tenant deleted", extra={"deleted_tenant_id": tenant_id})
     response = Response(status_code=204)
-    response.delete_cookie(SESSION_COOKIE, path="/", secure=request.app.state.settings.cookie_secure,
+    response.delete_cookie(session_cookie(request.app.state.settings), path="/", secure=request.app.state.settings.cookie_secure,
                            httponly=True, samesite="lax")
     return response
 
@@ -100,7 +100,7 @@ def delete_me(data: DeleteIn, request: Request, me: Current = Depends(current), 
     db.commit()
     log.info("member left", extra={"left_user_id": str(me.user.id)})
     response = Response(status_code=204)
-    response.delete_cookie(SESSION_COOKIE, path="/", secure=request.app.state.settings.cookie_secure,
+    response.delete_cookie(session_cookie(request.app.state.settings), path="/", secure=request.app.state.settings.cookie_secure,
                            httponly=True, samesite="lax")
     return response
 

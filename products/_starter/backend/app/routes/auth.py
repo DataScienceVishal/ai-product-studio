@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from ..billing import PLANS
 from ..db import get_db
-from ..deps import SESSION_COOKIE, Current, current, subscription_of
+from ..deps import Current, current, session_cookie, subscription_of
 from ..errors import AppError
 from ..logs import bind
 from ..models import AuthSession, EmailVerification, PasswordReset, Subscription, Tenant, User
@@ -80,7 +80,7 @@ def _start_session(request: Request, response: Response, db: Session, user: User
     token = new_token()
     expires = datetime.now(timezone.utc) + timedelta(days=settings.session_days)
     db.add(AuthSession(user_id=user.id, token_hash=token_hash(token), expires_at=expires))
-    response.set_cookie(SESSION_COOKIE, token, max_age=settings.session_days * 86400, httponly=True,
+    response.set_cookie(session_cookie(settings), token, max_age=settings.session_days * 86400, httponly=True,
                         secure=settings.cookie_secure, samesite="lax", path="/")
 
 
@@ -168,12 +168,12 @@ def login(data: SignIn, request: Request, response: Response, db: Session = Depe
 
 @router.post("/logout", status_code=204)
 def logout(request: Request, db: Session = Depends(get_db)) -> Response:
-    token = request.cookies.get(SESSION_COOKIE)
+    token = request.cookies.get(session_cookie(request.app.state.settings))
     if token:
         db.execute(delete(AuthSession).where(AuthSession.token_hash == token_hash(token)))
         db.commit()
     response = Response(status_code=204)
-    response.delete_cookie(SESSION_COOKIE, path="/", secure=request.app.state.settings.cookie_secure,
+    response.delete_cookie(session_cookie(request.app.state.settings), path="/", secure=request.app.state.settings.cookie_secure,
                            httponly=True, samesite="lax")
     return response
 

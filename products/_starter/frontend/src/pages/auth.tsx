@@ -5,7 +5,13 @@ import { Alert, AuthLayout, Button, Field, Link, navigate, takeToken } from "../
 /** Where to go after signing in: a same-site path from ?next=, otherwise home. */
 function safeNext(): string {
   const next = new URLSearchParams(window.location.search).get("next") ?? "";
-  return next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return "/";
+  try {
+    const url = new URL(next, window.location.origin); // what the browser would actually resolve
+    return url.origin === window.location.origin ? url.pathname + url.search : "/";
+  } catch {
+    return "/";
+  }
 }
 
 function useSubmit<T>(action: () => Promise<T>, onDone: (result: T) => void) {

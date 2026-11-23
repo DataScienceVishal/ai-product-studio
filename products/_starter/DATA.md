@@ -6,8 +6,8 @@ review before launch.
 
 | Table | Personal data | Why | Kept until | Deleted by |
 |---|---|---|---|---|
-| `tenants` | company name | the customer account | account deletion; accounts whose owner never verified their email are removed after 30 days when verification is required | owner: Settings → Delete account; purge job |
-| `users` | email, role, argon2 password hash | sign-in | account deletion, or the member leaves or is removed | owner (whole account or a member), member (themselves) |
+| `tenants` | company name | the customer account | account deletion; once real email is sent and verification is required, accounts whose owner never verified, hasn't signed in for 30 days and has no payment-provider customer are removed | owner: Settings → Delete account; purge job |
+| `users` | email, role, argon2 password hash, last sign-in time | sign-in; the sign-in time protects active accounts from the purge | account deletion, or the member leaves or is removed | owner (whole account or a member), member (themselves) |
 | `auth_sessions` | link to a user, hashed token | staying signed in | expiry (7 days), sign-out, password reset | purge job; sign-out; cascade |
 | `password_resets` | link to a user, hashed token | password reset | 7 days after use or expiry | purge job; cascade |
 | `email_verifications` | link to a user, hashed token | proving the address | 7 days after use or expiry | purge job; cascade |

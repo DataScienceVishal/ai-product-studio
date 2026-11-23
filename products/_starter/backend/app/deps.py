@@ -14,7 +14,10 @@ from .logs import bind
 from .models import AuthSession, Subscription, Tenant, User
 from .security import token_hash
 
-SESSION_COOKIE = "session"
+def session_cookie(settings) -> str:
+    """__Host- binds the cookie to this exact host over HTTPS (no Domain, Path=/), so a sibling subdomain
+    can't plant one. Browsers only accept the prefix on Secure cookies, so plain local http uses "session"."""
+    return "__Host-session" if settings.cookie_secure else "session"
 
 
 @dataclass
@@ -25,7 +28,7 @@ class Current:
 
 
 def current(request: Request, db: Session = Depends(get_db)) -> Current:
-    token = request.cookies.get(SESSION_COOKIE)
+    token = request.cookies.get(session_cookie(request.app.state.settings))
     if not token:
         raise AppError(401, "not_signed_in", "Please sign in.")
     row = db.scalar(select(AuthSession).where(AuthSession.token_hash == token_hash(token)))

@@ -29,7 +29,7 @@ def test_session_cookie_is_httponly_secure_lax(new_client):
 
 def test_only_hashes_are_stored(owner, database):
     client, _ = owner
-    token = client.cookies.get("session")
+    token = client.cookies.get("__Host-session")
     with database.sessions() as db:
         row = db.scalar(select(AuthSession))
         user = db.scalar(select(User))
@@ -71,11 +71,11 @@ def test_login_failures_look_the_same(owner, new_client):
 def test_login_then_logout_revokes_the_session(owner, new_client):
     client = new_client()
     assert client.post("/api/auth/login", json={"email": "OWNER@acme.test", "password": PASSWORD}).status_code == 200
-    token = client.cookies.get("session")
+    token = client.cookies.get("__Host-session")
     assert client.get("/api/auth/me").status_code == 200
     assert client.post("/api/auth/logout").status_code == 204
     replay = new_client()
-    replay.cookies.set("session", token, domain="testserver")
+    replay.cookies.set("__Host-session", token, domain="testserver")
     assert replay.get("/api/auth/me").status_code == 401
 
 

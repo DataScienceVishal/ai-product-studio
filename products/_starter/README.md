@@ -48,9 +48,10 @@ Security findings and their status are in `SECURITY.md`; the code review is in `
 
 ## Configuration
 
-Environment variables only; names are in `.env.example`. In production (`ENV=prod`) the app refuses to start
-with the dev webhook secret, with insecure cookies, or with `AI_PROVIDER=azure` and no endpoint. API docs are
-hidden in production.
+Environment variables only; names are in `.env.example`. The app refuses to start with an empty or short
+webhook secret, a non-`whsec_` secret with Stripe, or `*` in CORS_ORIGINS. In production (`ENV=prod`) it also
+needs an https APP_BASE_URL that isn't localhost, COOKIE_SECURE and TRUST_PROXY_HEADERS true, and an
+AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
 
 | Variable | Meaning |
 |---|---|

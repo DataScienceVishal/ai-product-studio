@@ -20,6 +20,13 @@ from app.ratelimit import client_ip
 from .conftest import PASSWORD, TEST_DB, sign_up
 
 
+@pytest.fixture
+def selling_unlocked(monkeypatch):
+    """Simulates the configuration after `unlock selling`: live Stripe plans are paid, so not trial-limited."""
+    import app.routes.notes as notes
+    monkeypatch.setattr(notes, "LIMITED_PROVIDERS", {"mock"})
+
+
 # --- C1: no pooled connection is held while the AI works ----------------------------------------
 
 class PoolWatchingAI(FakeAI):
@@ -148,7 +155,7 @@ def _make_paying(database):
         db.commit()
 
 
-def test_the_global_daily_budget_stops_all_tenants(app, owner, database):
+def test_the_global_daily_budget_stops_all_tenants(app, owner, database, selling_unlocked):
     client, _ = owner
     _make_paying(database)
     app.state.settings.ai_global_daily_tokens = 1_000
@@ -564,7 +571,7 @@ def test_token_estimate_is_an_upper_bound_by_bytes():
     assert estimate_tokens("ab", "cd", 10) == 14
 
 
-def test_calls_that_would_cross_the_global_budget_are_refused(app, owner, database):
+def test_calls_that_would_cross_the_global_budget_are_refused(app, owner, database, selling_unlocked):
     client, _ = owner
     _make_paying(database)
     note = client.post("/api/notes", json={"title": "Big", "body": "y" * 3000}).json()
@@ -785,7 +792,7 @@ def test_a_summary_of_old_text_is_not_saved_onto_an_edited_note(app, owner, data
 
 # --- security re-test 2: R12, R13, R15 -----------------------------------------------------------------
 
-def test_trials_share_half_the_global_budget_and_paying_tenants_keep_theirs(app, new_client, outbox, database):
+def test_trials_share_half_the_global_budget_and_paying_tenants_keep_theirs(app, new_client, outbox, database, selling_unlocked):
     from .conftest import verify_email
     app.state.settings.ai_global_daily_tokens = 20_000  # trials may use 10,000 together
     with database.sessions() as db:
@@ -889,7 +896,7 @@ def test_summarize_goes_through_the_ai_slots(app, owner, database):
     assert (row.feature, row.input_tokens, row.output_tokens) == ("note_summary:failed", 0, 0)
 
 
-def test_summarize_refuses_a_call_that_would_cross_the_monthly_cap(owner, database):
+def test_summarize_refuses_a_call_that_would_cross_the_monthly_cap(owner, database, selling_unlocked):
     client, _ = owner
     _paying(database)
     with database.sessions() as db:
@@ -914,7 +921,7 @@ def test_summarize_enforces_the_in_flight_limit(owner, database):
     assert response.status_code == 429 and response.json()["error"] == "ai_in_progress"
 
 
-def test_summarize_respects_a_lapsed_paid_period(owner, database):
+def test_summarize_respects_a_lapsed_paid_period(owner, database, selling_unlocked):
     client, _ = owner
     _paying(database, current_period_end=datetime.now(timezone.utc) - timedelta(days=10))
     note = client.post("/api/notes", json={"title": "Lapsed"}).json()
@@ -953,4 +960,36 @@ def test_a_full_hash_queue_answers_503_with_retry_after(new_client, monkeypatch)
     finally:
         security._hash_slots.release()
     assert response.status_code == 503 and response.headers["retry-after"] == "5"
+
+
+# --- T-21: the starter's Low follow-ups ---------------------------------------------------------------
+
+def test_login_records_the_sign_in_time(owner, new_client, database):
+    with database.sessions() as db:
+        db.execute(update(User).values(last_sign_in_at=datetime.now(timezone.utc) - timedelta(days=40)))
+        db.commit()
+    assert new_client().post("/api/auth/login", json={"email": "owner@acme.test", "password": PASSWORD}).status_code == 200
+    with database.sessions() as db:
+        user = db.scalar(select(User))
+    assert datetime.now(timezone.utc) - user.last_sign_in_at < timedelta(minutes=1)  # the purge relies on this
+
+
+def test_stripe_test_mode_plans_get_trial_limits_until_selling_unlocks(owner, database):
+    client, _ = owner
+    with database.sessions() as db:
+        tenant = db.scalar(select(Tenant))
+        db.execute(update(Subscription).values(status="active", plan="pro", provider="stripe"))
+        db.add(AIUsage(tenant_id=tenant.id, feature="x", model="fake", input_tokens=29_500, output_tokens=0))
+        db.commit()
+    note = client.post("/api/notes", json={"title": "Test card"}).json()
+    response = client.post(f"/api/notes/{note['id']}/summarize")
+    assert response.status_code == 429 and response.json()["error"] == "ai_daily_cap_reached"
+
+
+def test_session_cookie_uses_the_host_prefix_when_secure(new_client, app):
+    from app.deps import session_cookie
+    response = new_client().post("/api/auth/signup", json={"company_name": "H", "email": "h@acme.test", "password": PASSWORD})
+    cookie = response.headers["set-cookie"]
+    assert cookie.startswith("__Host-session=") and "Path=/" in cookie and "Domain" not in cookie
+    assert session_cookie(type("S", (), {"cookie_secure": False})()) == "session"  # plain http in local dev
 
