@@ -6,6 +6,7 @@ here="$(cd "$(dirname "$0")/.." && pwd)"
 db_url="${E2E_DATABASE_URL:-postgresql+psycopg://studio:studio@localhost:5432/starter_e2e}"
 python="${PYTHON:-$here/backend/.venv/bin/python}"
 logs="${E2E_LOG_DIR:-$(mktemp -d)}"
+mkdir -p "$logs"
 api_port="${E2E_API_PORT:-8000}"
 web_port="${E2E_WEB_PORT:-4173}"
 

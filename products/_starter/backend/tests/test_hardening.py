@@ -863,3 +863,94 @@ def test_purge_command_does_nothing_to_accounts_while_email_is_the_outbox(monkey
     maintenance.main()
     assert captured["days"] is None  # the outbox can't deliver verification links, so no one is purged for it
 
+
+# --- re-review 2: the protections wired into summarize, and small fixes -------------------------------
+
+def _paying(database, **values):
+    with database.sessions() as db:
+        db.execute(update(Subscription).values(status="active", plan="starter", provider="stripe", **values))
+        db.commit()
+
+
+def test_summarize_goes_through_the_ai_slots(app, owner, database):
+    from app.ai import AISlots
+    client, _ = owner
+    app.state.ai_slots = AISlots(1)
+    note = client.post("/api/notes", json={"title": "Busy"}).json()
+    app.state.ai_slots._slots.acquire()  # every slot taken
+    try:
+        response = client.post(f"/api/notes/{note['id']}/summarize")
+    finally:
+        app.state.ai_slots._slots.release()
+    assert response.status_code == 503 and response.json()["error"] == "ai_busy"
+    assert response.headers["retry-after"] == "10"
+    with database.sessions() as db:
+        row = db.scalar(select(AIUsage))
+    assert (row.feature, row.input_tokens, row.output_tokens) == ("note_summary:failed", 0, 0)
+
+
+def test_summarize_refuses_a_call_that_would_cross_the_monthly_cap(owner, database):
+    client, _ = owner
+    _paying(database)
+    with database.sessions() as db:
+        tenant = db.scalar(select(Tenant))
+        db.add(AIUsage(tenant_id=tenant.id, feature="x", model="fake", input_tokens=499_950, output_tokens=0))
+        db.commit()
+    note = client.post("/api/notes", json={"title": "Over by a little"}).json()
+    response = client.post(f"/api/notes/{note['id']}/summarize")
+    assert response.status_code == 429 and response.json()["error"] == "ai_cap_reached"
+
+
+def test_summarize_enforces_the_in_flight_limit(owner, database):
+    client, _ = owner
+    with database.sessions() as db:
+        tenant = db.scalar(select(Tenant))
+        for _ in range(2):
+            db.add(AIUsage(tenant_id=tenant.id, feature="note_summary:reserved", model="pending",
+                           input_tokens=10, output_tokens=0))
+        db.commit()
+    note = client.post("/api/notes", json={"title": "Third"}).json()
+    response = client.post(f"/api/notes/{note['id']}/summarize")
+    assert response.status_code == 429 and response.json()["error"] == "ai_in_progress"
+
+
+def test_summarize_respects_a_lapsed_paid_period(owner, database):
+    client, _ = owner
+    _paying(database, current_period_end=datetime.now(timezone.utc) - timedelta(days=10))
+    note = client.post("/api/notes", json={"title": "Lapsed"}).json()
+    response = client.post(f"/api/notes/{note['id']}/summarize")
+    assert response.status_code == 402 and response.json()["error"] == "plan_required"
+
+
+def test_summary_of_a_note_whose_account_is_deleted_meanwhile_is_a_404(app, owner):
+    client, _ = owner
+    note = client.post("/api/notes", json={"title": "Gone with the account"}).json()
+
+    class AccountDeletingAI(FakeAI):
+        def complete(self, system, user, max_output_tokens=1200):
+            with app.state.db.sessions() as db:
+                db.execute(text("DELETE FROM tenants"))
+                db.commit()
+            return super().complete(system, user, max_output_tokens)
+
+    app.state.ai = AccountDeletingAI()
+    assert client.post(f"/api/notes/{note['id']}/summarize").status_code == 404
+
+
+def test_signature_timestamps_must_be_ascii_digits():
+    payload = b"{}"
+    with pytest.raises(InvalidSignature):
+        verify(payload, "t=\u00b2,v1=00", "s" * 40)
+
+
+def test_a_full_hash_queue_answers_503_with_retry_after(new_client, monkeypatch):
+    import app.security as security
+    monkeypatch.setattr(security, "_hash_slots", threading.BoundedSemaphore(1))
+    monkeypatch.setattr(security, "HASH_WAIT_SECONDS", 0.1)
+    security._hash_slots.acquire()  # the only slot is busy
+    try:
+        response = new_client().post("/api/auth/login", json={"email": "x@acme.test", "password": "whatever pass"})
+    finally:
+        security._hash_slots.release()
+    assert response.status_code == 503 and response.headers["retry-after"] == "5"
+

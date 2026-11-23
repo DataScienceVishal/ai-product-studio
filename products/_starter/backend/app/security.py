@@ -10,7 +10,8 @@ from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatc
 
 _hasher = PasswordHasher()  # argon2id with the library's current recommended parameters
 # Each hash or check uses about 64 MiB. Bounding concurrency bounds memory: extra requests wait their turn.
-_hash_slots = threading.BoundedSemaphore(4)
+_hash_slots = threading.BoundedSemaphore(2)  # each argon2 run uses 4 lanes; 2 x 4 suits a 0.5-1 vCPU container
+HASH_WAIT_SECONDS = 3.0  # then a 503 with Retry-After, instead of queueing request threads
 # Verified against when the email is unknown, so a miss takes as long as a wrong password.
 _DUMMY_HASH = _hasher.hash("timing-equaliser-not-a-real-password")
 
@@ -32,9 +33,10 @@ class _Slot:
     """A hashing slot, or a friendly 503 if none frees up soon (so waiting requests don't pile up)."""
 
     def __enter__(self):
-        if not _hash_slots.acquire(timeout=10):
+        if not _hash_slots.acquire(timeout=HASH_WAIT_SECONDS):
             from .errors import AppError
-            raise AppError(503, "busy", "We're busy right now. Please try again in a moment.")
+            raise AppError(503, "busy", "We're busy right now. Please try again in a moment.",
+                           headers={"Retry-After": "5"})
 
     def __exit__(self, *exc):
         _hash_slots.release()

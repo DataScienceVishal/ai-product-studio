@@ -94,7 +94,8 @@ def summarize(note_id: uuid.UUID, request: Request, me: Current = Depends(curren
     """Reserve budget, release the DB connection, call the AI, then write results in a new short transaction.
     No transaction (and no pooled connection) is held while the model works."""
     settings = request.app.state.settings
-    request.app.state.limiter.check(f"ai:{me.tenant.id}", settings.ai_rate_limit_per_minute)
+    tenant_id = me.tenant.id  # kept as a value: the objects are expired after the AI call
+    request.app.state.limiter.check(f"ai:{tenant_id}", settings.ai_rate_limit_per_minute)
     note = _get(db, me, note_id)
     sub = subscription_of(db, me.tenant.id)
     if not has_access(sub.status, sub.trial_ends_at, current_period_end=sub.current_period_end):
@@ -123,7 +124,9 @@ def summarize(note_id: uuid.UUID, request: Request, me: Current = Depends(curren
         raise
     settle(db, reservation, "note_summary", result.input_tokens, result.output_tokens, result.model)
     db.expire_all()  # sessions keep objects across commits (expire_on_commit=False): force a fresh read
-    note = _get(db, me, note_id)  # reload: it may have been edited or deleted while the AI worked
+    note = db.scalar(select(Note).where(Note.tenant_id == tenant_id, Note.id == note_id))
+    if note is None:  # deleted (or its whole account deleted) while the AI worked
+        raise AppError(404, "not_found", "That note doesn't exist.")
     if (note.title, note.body) != version:
         raise AppError(409, "note_changed", "The note changed while the AI was working. Summarise it again.")
     note.summary = result.text[:4000]

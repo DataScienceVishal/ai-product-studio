@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import re
 import time
 import uuid
 from dataclasses import dataclass
@@ -103,7 +104,7 @@ def verify(payload: bytes, header: str, secret: str, tolerance: int = 300) -> No
     parts = [p.split("=", 1) for p in (header or "").split(",") if "=" in p]
     timestamps = [v for k, v in parts if k == "t"]
     signatures = [v for k, v in parts if k == "v1"]
-    if not timestamps or not signatures or not timestamps[0].isdigit():
+    if not timestamps or not signatures or not re.fullmatch(r"[0-9]{1,12}", timestamps[0]):  # ASCII digits only
         raise InvalidSignature()
     ts = int(timestamps[0])
     if abs(time.time() - ts) > tolerance:

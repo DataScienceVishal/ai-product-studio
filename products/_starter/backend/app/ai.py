@@ -74,7 +74,8 @@ class AISlots:
 
     def __enter__(self):
         if not self._slots.acquire(timeout=2.0):
-            raise AppError(503, "ai_busy", "The AI is busy with other requests. Please try again in a moment.")
+            raise AppError(503, "ai_busy", "The AI is busy with other requests. Please try again in a moment.",
+                           headers={"Retry-After": "10"})
         return self
 
     def __exit__(self, *exc) -> None:

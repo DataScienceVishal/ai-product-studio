@@ -62,7 +62,11 @@ hidden in production.
 | `AI_PROVIDER` | `fake` (default) or `azure` |
 | `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_KEY` | the key is a placeholder in cloud runs; the network secret injects the real one |
 | `BILLING_PROVIDER` | `mock` (default) or `stripe` (test keys only; live keys are refused) |
-| `BILLING_WEBHOOK_SECRET`, `STRIPE_SECRET_KEY` | webhook signing secret; Stripe test key |
+| `BILLING_WEBHOOK_SECRET`, `STRIPE_SECRET_KEY` | leave the secret unset with mock billing (a random one is made); with Stripe, its `whsec_` value and a test key |
+| `MOCK_CHECKOUT_ENABLED` | `false` (default); `true` only for demos, where "Pay (test)" grants a plan with trial-sized AI allowances |
+| `AI_GLOBAL_DAILY_TOKENS`, `AI_TRIAL_SHARE` | studio-wide AI budget per UTC day (default 500,000), and the share all free trials may use together (0.5) |
+| `AI_CONCURRENT_CALLS`, `AI_CALLS_PER_TENANT_AT_ONCE` | at most 8 AI calls at once per process, 2 per customer |
+| `SIGNUPS_PER_IP_PER_DAY`, `NEW_TRIALS_PER_DAY` | sign-up limits: 20 a day per IP, 200 new trials a day in total |
 
 ## Making a product from it
 
