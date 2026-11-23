@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api, ApiError, type Me } from "../api";
 import { Alert, AuthLayout, Button, Field, Link, navigate } from "../ui";
 
@@ -115,3 +115,26 @@ export function ResetPassword() {
     </AuthLayout>
   );
 }
+
+export function VerifyEmail({ onVerified }: { onVerified: () => Promise<void> }) {
+  const token = new URLSearchParams(window.location.search).get("token") ?? "";
+  const [state, setState] = useState<"working" | "done" | "failed">("working");
+  const [error, setError] = useState<string | null>(null);
+  const started = useRef(false); // StrictMode runs effects twice in dev; the link is single-use
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    if (!token) { setState("failed"); setError("This link is incomplete."); return; }
+    api("/api/auth/verify-email", { method: "POST", body: { token } })
+      .then(async () => { setState("done"); await onVerified(); })
+      .catch((err: ApiError) => { setState("failed"); setError(err.message); });
+  }, [token, onVerified]);
+  return (
+    <AuthLayout title="Confirm your email">
+      {state === "working" && <p className="text-slate-600">Checking your link…</p>}
+      {state === "done" && <Alert kind="success">Thanks, your email is confirmed. <Link to="/">Continue</Link></Alert>}
+      {state === "failed" && <Alert>{error}</Alert>}
+    </AuthLayout>
+  );
+}
+

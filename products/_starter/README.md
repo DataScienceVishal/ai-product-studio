@@ -33,7 +33,7 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 
 | What | Command | Where it runs |
 |---|---|---|
-| Backend unit and API tests (56) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
+| Backend unit and API tests (74) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
 | Migrations match the models | `alembic upgrade head && alembic check` | every push |
 | Frontend type check and build | `cd frontend && npm run build` | every push (CI `frontend`) |
 | Browser end-to-end core flow | `./scripts/e2e.sh` | pushes to main and manual runs (CI `e2e`) |
@@ -53,6 +53,7 @@ hidden in production.
 | `DATABASE_URL` | Postgres URL (`postgresql+psycopg://...`) |
 | `APP_BASE_URL`, `CORS_ORIGINS` | where the frontend lives; only these origins may call the API |
 | `COOKIE_SECURE` | `true` everywhere except local http |
+| `REQUIRE_EMAIL_VERIFICATION` | `true` (default) makes owners verify their email before inviting or checking out; `false` only where no real email is sent |
 | `TRUST_PROXY_HEADERS` | `true` behind Azure Container Apps ingress, so rate limits see the real client IP |
 | `AI_PROVIDER` | `fake` (default) or `azure` |
 | `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_KEY` | the key is a placeholder in cloud runs; the network secret injects the real one |

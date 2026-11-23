@@ -13,7 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..deps import Current, current, owner, require_csrf_header
+from ..deps import Current, current, owner, require_csrf_header, verified_owner
 from ..errors import AppError
 from ..logs import bind
 from ..models import Invitation, Tenant, User
@@ -54,7 +54,7 @@ def team(me: Current = Depends(current), db: Session = Depends(get_db)):
 
 
 @router.post("/invitations", status_code=201)
-def invite(data: InviteIn, request: Request, me: Current = Depends(owner), db: Session = Depends(get_db)):
+def invite(data: InviteIn, request: Request, me: Current = Depends(verified_owner), db: Session = Depends(get_db)):
     settings = request.app.state.settings
     request.app.state.limiter.check(f"invite:{me.tenant.id}", 20)
     if db.scalar(select(User.id).where(User.email == data.email)) is not None:
@@ -109,7 +109,7 @@ def accept(data: AcceptIn, request: Request, response: Response, db: Session = D
     if problem:
         raise AppError(422, "weak_password", problem)
     user = User(tenant_id=invitation.tenant_id, email=invitation.email, password_hash=hash_password(data.password),
-                role=invitation.role)
+                role=invitation.role, email_verified_at=now)  # the invite link proved they control the inbox
     db.add(user)
     invitation.accepted_at = now
     try:

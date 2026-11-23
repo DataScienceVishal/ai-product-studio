@@ -4,7 +4,7 @@ from sqlalchemy import update
 
 from app.models import Invitation
 
-from .conftest import sign_up
+from .conftest import link_token, sign_up
 
 MEMBER_PASSWORD = "member passphrase 1"
 
@@ -12,7 +12,7 @@ MEMBER_PASSWORD = "member passphrase 1"
 def _invite(owner_client, outbox, email="member@acme.test"):
     response = owner_client.post("/api/team/invitations", json={"email": email})
     assert response.status_code == 201, response.text
-    return response.json(), outbox.sent[-1].body.split("token=")[1].split()[0]
+    return response.json(), link_token(outbox, "accept-invite")
 
 
 def _accept(client, token, password=MEMBER_PASSWORD):
@@ -78,7 +78,8 @@ def test_cannot_invite_an_existing_account(owner, new_client, outbox):
     owner_client, _ = owner
     sign_up(new_client(), email="taken@beta.test", company="Beta")
     response = owner_client.post("/api/team/invitations", json={"email": "taken@beta.test"})
-    assert response.status_code == 409 and outbox.sent == []
+    assert response.status_code == 409
+    assert not any("/accept-invite?token=" in m.body for m in outbox.sent)
 
 
 def test_email_registered_after_invite_cannot_accept(owner, new_client, outbox):
@@ -113,7 +114,7 @@ def test_removing_a_member_signs_them_out(owner, new_client, outbox):
 def test_invite_email_link_and_weak_password(owner, new_client, outbox, settings):
     owner_client, _ = owner
     _, token = _invite(owner_client, outbox)
-    message = outbox.sent[-1]
+    message = [m for m in outbox.sent if "/accept-invite?token=" in m.body][-1]
     assert message.to == "member@acme.test" and "Acme Ltd" in message.subject
     assert f"{settings.app_base_url}/accept-invite?token=" in message.body
     weak = _accept(new_client(), token, password="short")

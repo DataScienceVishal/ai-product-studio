@@ -9,7 +9,7 @@ Last updated 2026-11-23 by run 20261123T111240Z-run-b15e.
   AI adapter (fake and Azure OpenAI v1) with retries and a monthly cap per plan, billing adapter (mock and
   Stripe test mode only) with signed, idempotent webhooks, data export and account deletion, JSON logs with
   request and tenant ids, security headers including noindex, health check, rate limits.
-- 56 backend tests pass against Postgres 16. A mutation check showed the tenancy test fails when the tenant
+- 74 backend tests pass against Postgres 16. A mutation check showed the tenancy test fails when the tenant
   filter is removed.
 - Frontend: React 19, TypeScript, Vite 8, Tailwind 4. Type check clean, build about 74 kB gzipped.
 - The browser end-to-end test (`scripts/e2e.sh`) passes: sign-up, sample data, AI summary, checkout with
@@ -18,6 +18,10 @@ Last updated 2026-11-23 by run 20261123T111240Z-run-b15e.
 - Team (T-8 part 1): owners invite members by single-use, expiring email links; members can't use billing,
   export or deletion; removing a member ends their sessions. 10 backend tests, plus a browser check of the
   invite, accept and remove flow (a scratch harness, since the invite link lives in the email outbox).
+- Email verification (T-8 part 2): a link at sign-up (48 hours, single use, resend rate-limited); owners must
+  verify before inviting or checking out when REQUIRE_EMAIL_VERIFICATION=true (the default). Accepting an invite
+  or resetting a password also verifies. Outbox-only demos switch the gate off, because no real email is sent.
+  74 backend tests; e2e still passes. `scripts/e2e.sh` takes E2E_API_PORT and E2E_WEB_PORT.
 
 ## Left to do
 
@@ -26,7 +30,7 @@ Last updated 2026-11-23 by run 20261123T111240Z-run-b15e.
    (GHCR vs ACR Basic, about $5 a month) and the Postgres choice (Flexible Server B1ms vs a container), write
    the monthly estimates in `state/BUDGET.md`, and ask Vishal if one resource passes $10 a month. Needs
    `AZURE_CREDENTIALS`, which isn't set yet (see HURDLES).
-3. **Gaps to close before G4 products:** email verification; Redis-backed rate
+3. **Gaps to close before G4 products:** Redis-backed rate
    limits for more than one replica; a frontend unit test setup. (uvicorn's startup lines now go
    through the JSON logger too.)
 4. **Watch:** Starlette warns that its test client prefers `httpx2`. Installing it was blocked (unverified

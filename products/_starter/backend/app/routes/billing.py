@@ -12,7 +12,7 @@ from starlette.concurrency import run_in_threadpool
 
 from ..billing import OFFERS, PLANS, BillingUpdate, MockBilling, sign
 from ..db import get_db
-from ..deps import Current, owner, require_csrf_header, subscription_of
+from ..deps import Current, owner, require_csrf_header, subscription_of, verified_owner
 from ..errors import AppError
 from ..models import BillingEvent, Subscription
 
@@ -36,7 +36,7 @@ def plans():
 
 
 @router.post("/checkout", dependencies=[Depends(require_csrf_header)])
-def checkout(data: CheckoutIn, request: Request, me: Current = Depends(owner)):
+def checkout(data: CheckoutIn, request: Request, me: Current = Depends(verified_owner)):
     plan = PLANS.get(data.plan)
     if plan is None or plan.id == "trial":
         raise AppError(422, "unknown_plan", "Choose one of the listed plans.")

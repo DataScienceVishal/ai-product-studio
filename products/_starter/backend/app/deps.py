@@ -54,6 +54,13 @@ def owner(me: Current = Depends(current)) -> Current:
     return me
 
 
+def verified_owner(request: Request, me: Current = Depends(owner)) -> Current:
+    """Owner actions that send email or take payment need a verified address (stops invite spam)."""
+    if request.app.state.settings.require_email_verification and me.user.email_verified_at is None:
+        raise AppError(403, "email_not_verified", "Please verify your email address first. Check your inbox, or resend the link.")
+    return me
+
+
 def subscription_of(db: Session, tenant_id) -> Subscription:
     sub = db.scalar(select(Subscription).where(Subscription.tenant_id == tenant_id))
     if sub is None:  # every tenant gets one at sign-up; this guards against bad data

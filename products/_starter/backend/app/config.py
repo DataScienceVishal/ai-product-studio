@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     session_days: int = 7
     reset_token_minutes: int = 30
     invite_days: int = 7
+    verify_hours: int = 48
+    # Owners must verify their email before inviting people or checking out. Turn off only where no real
+    # email leaves the system (local dev, tests, outbox-only demos): no email, no spam risk.
+    require_email_verification: bool = True
     auth_rate_limit_per_minute: int = 10
 
     # AI

@@ -83,6 +83,7 @@ export function Dashboard({ me }: { me: Me }) {
 
   return (
     <div className="space-y-6">
+      <VerifyBanner me={me} />
       <TrialBanner me={me} />
       {error && <Alert>{error}</Alert>}
       <Card title="New note">
@@ -119,6 +120,23 @@ export function Dashboard({ me }: { me: Me }) {
         )}
       </Card>
     </div>
+  );
+}
+
+function VerifyBanner({ me }: { me: Me }) {
+  const [sent, setSent] = useState<string | null>(null);
+  if (me.user.email_verified) return null;
+  const resend = async () => {
+    try {
+      setSent((await api<{ status: string }>("/api/auth/verify-email/resend", { method: "POST" })).status);
+    } catch (err) {
+      setSent(errorText(err));
+    }
+  };
+  return (
+    <Alert kind="info">
+      Please confirm your email address: we sent you a link. {sent ?? <button className="underline" onClick={resend}>Send it again</button>}
+    </Alert>
   );
 }
 

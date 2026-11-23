@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { api, ApiError, type Me } from "./api";
 import { Billing, Dashboard, Help, MockCheckout, Settings } from "./pages/app";
-import { ForgotPassword, ResetPassword, SignIn, SignUp } from "./pages/auth";
+import { ForgotPassword, ResetPassword, SignIn, SignUp, VerifyEmail } from "./pages/auth";
 import { AcceptInvite, Team } from "./pages/team";
 import { Link, navigate, usePath } from "./ui";
 
-const PUBLIC = new Set(["/login", "/signup", "/forgot-password", "/reset-password", "/accept-invite", "/help"]);
+const PUBLIC = new Set(["/login", "/signup", "/forgot-password", "/reset-password", "/accept-invite", "/verify-email", "/help"]);
 
 export default function App() {
   const path = usePath();
@@ -32,6 +32,7 @@ export default function App() {
   if (path === "/forgot-password") return <ForgotPassword />;
   if (path === "/reset-password") return <ResetPassword />;
   if (path === "/accept-invite") return <AcceptInvite onSignedIn={setMe} />;
+  if (path === "/verify-email") return <VerifyEmail onVerified={refresh} />;
   if (!me) return path === "/help" ? <Shell><Help /></Shell> : null;
 
   const signOut = async () => {

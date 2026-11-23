@@ -5,7 +5,7 @@ from sqlalchemy import select, update
 from app.models import AuthSession, PasswordReset, Subscription, User
 from app.security import token_hash
 
-from .conftest import PASSWORD, sign_up
+from .conftest import PASSWORD, link_token, sign_up
 
 
 def test_signup_creates_owner_tenant_and_trial(new_client, database):
@@ -98,8 +98,9 @@ def test_password_reset_flow(owner, new_client, outbox):
     old_client, _ = owner
     client = new_client()
     assert client.post("/api/auth/password-reset/request", json={"email": "owner@acme.test"}).status_code == 202
-    assert len(outbox.sent) == 1
-    token = outbox.sent[0].body.split("token=")[1].split()[0]
+    resets = [m for m in outbox.sent if "/reset-password?token=" in m.body]
+    assert len(resets) == 1 and resets[0].to == "owner@acme.test"
+    token = link_token(outbox, "reset-password")
     new_password = "a brand new passphrase"
     assert client.post("/api/auth/password-reset/confirm",
                        json={"token": token, "new_password": new_password}).status_code == 204
@@ -111,16 +112,17 @@ def test_password_reset_flow(owner, new_client, outbox):
 
 
 def test_reset_for_unknown_email_looks_the_same_and_sends_nothing(new_client, outbox):
+    before = len(outbox.sent)
     response = new_client().post("/api/auth/password-reset/request", json={"email": "ghost@acme.test"})
     assert response.status_code == 202
-    assert outbox.sent == []
+    assert len(outbox.sent) == before
 
 
 def test_newer_reset_link_replaces_older_one(owner, new_client, outbox):
     client = new_client()
     client.post("/api/auth/password-reset/request", json={"email": "owner@acme.test"})
     client.post("/api/auth/password-reset/request", json={"email": "owner@acme.test"})
-    first = outbox.sent[0].body.split("token=")[1].split()[0]
+    first = [m for m in outbox.sent if "/reset-password?token=" in m.body][0].body.split("token=")[1].split()[0]
     response = client.post("/api/auth/password-reset/confirm", json={"token": first, "new_password": "a brand new passphrase"})
     assert response.status_code == 400
 
@@ -128,7 +130,7 @@ def test_newer_reset_link_replaces_older_one(owner, new_client, outbox):
 def test_expired_reset_link_is_refused(owner, new_client, outbox, database):
     client = new_client()
     client.post("/api/auth/password-reset/request", json={"email": "owner@acme.test"})
-    token = outbox.sent[0].body.split("token=")[1].split()[0]
+    token = link_token(outbox, "reset-password")
     with database.sessions() as db:
         db.execute(update(PasswordReset).values(expires_at=datetime.now(timezone.utc) - timedelta(seconds=1)))
         db.commit()

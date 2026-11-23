@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -92,8 +93,24 @@ def sign_up(client: TestClient, email: str = "owner@acme.test", company: str = "
     return response.json()
 
 
+def link_token(outbox: OutboxEmail, path: str) -> str:
+    """Token from the newest email whose link goes to /<path>?token=..."""
+    for message in reversed(outbox.sent):
+        match = re.search(rf"/{path}\?token=(\S+)", message.body)
+        if match:
+            return match.group(1)
+    raise AssertionError(f"no /{path} email in the outbox")
+
+
+def verify_email(client: TestClient, outbox: OutboxEmail) -> None:
+    response = client.post("/api/auth/verify-email", json={"token": link_token(outbox, "verify-email")})
+    assert response.status_code == 204, response.text
+
+
 @pytest.fixture
-def owner(new_client):
+def owner(new_client, outbox):
+    """A signed-up owner whose email is verified, as most owner actions need."""
     client = new_client()
-    me = sign_up(client)
-    return client, me
+    sign_up(client)
+    verify_email(client, outbox)
+    return client, client.get("/api/auth/me").json()

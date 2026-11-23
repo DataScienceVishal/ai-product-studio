@@ -1,7 +1,7 @@
 // Small API client: same-origin cookies, the CSRF header on every request, friendly errors.
 
 export type Me = {
-  user: { id: string; email: string; role: string };
+  user: { id: string; email: string; role: string; email_verified: boolean };
   tenant: { id: string; name: string };
   subscription: { plan: string; status: string; offer: string | null; trial_ends_at: string | null; current_period_end: string | null };
 };

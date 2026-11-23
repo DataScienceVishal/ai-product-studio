@@ -17,7 +17,7 @@ from ..db import get_db
 from ..deps import SESSION_COOKIE, Current, current, require_csrf_header, subscription_of
 from ..errors import AppError
 from ..logs import bind
-from ..models import AuthSession, PasswordReset, Subscription, Tenant, User
+from ..models import AuthSession, EmailVerification, PasswordReset, Subscription, Tenant, User
 from ..ratelimit import client_ip
 from ..security import (hash_password, needs_rehash, new_token, password_problem, token_hash,
                         verify_password)
@@ -60,6 +60,10 @@ class ResetRequest(BaseModel):
     email: str = Field(max_length=254)
 
 
+class VerifyIn(BaseModel):
+    token: str = Field(min_length=20, max_length=200)
+
+
 class ResetConfirm(BaseModel):
     token: str = Field(min_length=20, max_length=200)
     new_password: str = Field(max_length=256)
@@ -80,10 +84,26 @@ def _start_session(request: Request, response: Response, db: Session, user: User
                         secure=settings.cookie_secure, samesite="lax", path="/")
 
 
+def send_verification(request: Request, db: Session, user: User) -> None:
+    """Email a fresh verification link; older unused links stop working."""
+    settings = request.app.state.settings
+    now = datetime.now(timezone.utc)
+    db.execute(update(EmailVerification).where(EmailVerification.user_id == user.id, EmailVerification.used_at.is_(None))
+               .values(used_at=now))
+    token = new_token()
+    db.add(EmailVerification(user_id=user.id, token_hash=token_hash(token),
+                             expires_at=now + timedelta(hours=settings.verify_hours)))
+    db.commit()
+    link = f"{settings.app_base_url.rstrip('/')}/verify-email?token={token}"
+    request.app.state.email.send(user.email, "Confirm your email address",
+                                 f"Confirm this address for your account (valid for {settings.verify_hours} hours): {link}")
+
+
 def me_payload(db: Session, user: User, tenant: Tenant) -> dict:
     sub = subscription_of(db, tenant.id)
     return {
-        "user": {"id": str(user.id), "email": user.email, "role": user.role},
+        "user": {"id": str(user.id), "email": user.email, "role": user.role,
+                 "email_verified": user.email_verified_at is not None},
         "tenant": {"id": str(tenant.id), "name": tenant.name},
         "subscription": {"plan": sub.plan, "status": sub.status, "offer": sub.offer,
                          "trial_ends_at": sub.trial_ends_at.isoformat() if sub.trial_ends_at else None,
@@ -115,6 +135,7 @@ def signup(data: SignUp, request: Request, response: Response, db: Session = Dep
     db.commit()
     bind(tenant_id=str(tenant.id), user_id=str(user.id))
     log.info("signed up")
+    send_verification(request, db, user)
     return me_payload(db, user, tenant)
 
 
@@ -187,8 +208,35 @@ def reset_confirm(data: ResetConfirm, request: Request, db: Session = Depends(ge
         raise AppError(422, "weak_password", problem)
     user = db.get(User, row.user_id)
     user.password_hash = hash_password(data.new_password)
+    user.email_verified_at = user.email_verified_at or now  # the link proved they control the inbox
     row.used_at = now
     db.execute(delete(AuthSession).where(AuthSession.user_id == user.id))  # sign out everywhere
     db.commit()
     log.info("password reset", extra={"user_id": str(user.id)})
     return Response(status_code=204)
+
+
+@router.post("/verify-email", status_code=204)
+def verify_email(data: VerifyIn, request: Request, db: Session = Depends(get_db)) -> Response:
+    """Works without being signed in, so the link can be opened on another device."""
+    _limit(request, f"verify:{client_ip(request)}")
+    now = datetime.now(timezone.utc)
+    row = db.scalar(select(EmailVerification).where(EmailVerification.token_hash == token_hash(data.token)))
+    if row is None or row.used_at is not None or row.expires_at <= now:
+        raise AppError(400, "invalid_verification_link", "This link has expired or was already used. Sign in to get a new one.")
+    user = db.get(User, row.user_id)
+    user.email_verified_at = user.email_verified_at or now
+    row.used_at = now
+    db.commit()
+    log.info("email verified", extra={"user_id": str(user.id)})
+    return Response(status_code=204)
+
+
+@router.post("/verify-email/resend", status_code=202)
+def resend_verification(request: Request, me: Current = Depends(current), db: Session = Depends(get_db)):
+    request.app.state.limiter.check(f"verify-resend:{me.user.id}", 3)
+    if me.user.email_verified_at is not None:
+        return {"status": "Your email is already verified."}
+    send_verification(request, db, me.user)
+    return {"status": "We've sent a new link. It works for 48 hours."}
+
