@@ -24,8 +24,8 @@ Last updated 2026-11-23 by run 20261123T111240Z-run-b15e.
    the monthly estimates in `state/BUDGET.md`, and ask Vishal if one resource passes $10 a month. Needs
    `AZURE_CREDENTIALS`, which isn't set yet (see HURDLES).
 3. **Gaps to close before G4 products:** invitations and member roles; email verification; Redis-backed rate
-   limits for more than one replica; uvicorn's own startup lines aren't JSON (pass a log config); a frontend
-   unit test setup.
+   limits for more than one replica; a frontend unit test setup. (uvicorn's startup lines now go
+   through the JSON logger too.)
 4. **Watch:** Starlette warns that its test client prefers `httpx2`. Installing it was blocked (unverified
    package), so we stay on httpx. Revisit only if Starlette's docs confirm it.
 

@@ -61,5 +61,8 @@ def setup_logging(level: str = "INFO") -> None:
     root = logging.getLogger()
     root.handlers[:] = [handler]
     root.setLevel(level.upper())
-    for noisy in ("uvicorn.access",):  # our middleware writes the access line
-        logging.getLogger(noisy).disabled = True
+    for name in ("uvicorn", "uvicorn.error"):  # route uvicorn's own lines through the JSON handler
+        server_log = logging.getLogger(name)
+        server_log.handlers.clear()
+        server_log.propagate = True
+    logging.getLogger("uvicorn.access").disabled = True  # our middleware writes the access line
