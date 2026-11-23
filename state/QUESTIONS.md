@@ -51,3 +51,10 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - If no answer: waits (spending money is on the ask-first list)
 - Answer: A (Telegram reply "2A" to the 23:05 digest, 23:00:09Z). Create the shared resources when a product reaches G3. Still needed from Vishal at that point: the one-time steps in products/_starter/infra/README.md (check Free services, AZURE_CREDENTIALS, STUDIO_DB_SEED, and the STUDIO_AZURE_APPROVED=yes variable, which agents can't set).
 
+
+## Q-6 (status: open)
+- Decision: 35 ideas scored across five scouting rounds and none reached the 70-point bar; how should the studio get to a first product?
+- Context: Every round fails the same way: by late 2026 the vertical system vendors (or an AI-native rival) already sell "AI over your documents" for each niche, so Competition scores 1-5. Desk research alone can't prove the gaps that remain. Best parked ideas: restaurant margin copilot 66, MTD quarterly prep 65, holiday-pay look-back audit 63.
+- Options: A) Keep scouting, but only ideas where the studio can collect evidence itself (public datasets, open APIs, published case law/complaints), and accept slower progress B) Build the best parked idea anyway as a "better, cheaper, UK-small-business" entrant (restaurant margin copilot vs Jelly at £129/site), using the shared starter, and let a demo to your friend be the evidence C) Tell us your friend's business sector and customers, so round 6 starts from a channel incumbents can't copy (re-asks Q-4 A)
+- Recommended: C, because Reach and Competition are what sink every idea and a real channel fixes both; B is the fallback if you'd rather not share it
+- If no answer: A after 12 hours (reversible)
