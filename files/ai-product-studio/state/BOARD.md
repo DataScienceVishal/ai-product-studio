@@ -1,0 +1,15 @@
+# Board
+
+One line per task:
+`- [status] T-<n> | <product, idea or studio> | <task> | claimed-by: <run id or -> @ <UTC> | updated: <UTC>`
+
+Status is one of todo, doing, review, blocked, done. Move done items older than 7 days to `state/archive/`. New task ids continue from the highest one used.
+
+## Tasks
+
+- [todo] T-1 | studio | First-run check: send Vishal a short hello with tg.py, pull, confirm the expected environment variables exist (names only), make one tiny Azure OpenAI call through the network secret, check whether the AZURE_CREDENTIALS Actions secret exists if the API allows it, and report results in DIGEST_NOTES.md and HURDLES.md | claimed-by: - | updated: -
+- [todo] T-2 | studio | Build a GitHub Actions workflow that reports month-to-date Azure spend for rg-ai-studio daily, and use it to keep state/BUDGET.md current | claimed-by: - | updated: -
+- [todo] T-3 | ideas | Scout 15 candidate problems across markets: Vishal's four seed directions plus at least 11 others; one idea file each | claimed-by: - | updated: -
+- [todo] T-4 | ideas | Validate and score every G0 idea; write state/ideas/RANKING.md | claimed-by: - | updated: -
+- [todo] T-5 | ideas | Take the top 2 ideas through G2 (spec, architecture, cost) | claimed-by: - | updated: -
+- [todo] T-6 | studio | Build products/_starter (see playbooks/engineering.md) and get reviewer and security PASS | claimed-by: - | updated: -
