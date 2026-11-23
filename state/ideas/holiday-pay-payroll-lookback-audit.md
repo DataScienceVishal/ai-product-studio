@@ -190,6 +190,74 @@ Items 2 to 5 together give exactly 70 (16+14+8+7+12+6+7). The idea passes only i
 - https://findajob.dwp.gov.uk/details/17028627 (search summary)
 - https://www.eca.co.uk/news/2026/feb/holiday-pay-why-electrical-contractors-should-review-it-now (search result title only)
 
+## Evidence pass T-23 (2026-11-23)
+
+All pages accessed 2026-11-23 by desk research. "Search summary" means the claim comes from a search-engine summary and was not read on the page. No injection attempts seen in fetched pages.
+
+### 1. Kill test (validator item 6): KILL-TEST DOES NOT FAIL on what could be read, with gaps
+
+No page I could read documents a whole-payroll history, arrears or holiday-pay recalculation report that lists past underpayments. Absence is shown by pages that describe the feature set and omit it, so it is "not documented", not "confirmed absent".
+
+| Product | What its own page says | Look-back / arrears report? | Link |
+|---|---|---|---|
+| Staffology Payroll | Report purpose: "View an employees average holiday pay rate." Run by choosing a Tax Year and Month. Page does not say it identifies underpayments or covers all employees. | Not documented | https://help.staffology.co.uk/payroll/reports/payruns/average-holiday-pay.htm (fetched) |
+| IRIS Holiday Pay Module (Earnie) | Will "automatically calculate and pay the 52-week average weekly earnings as part of the payroll run"; chooses pay elements; excludes zero-pay periods. Page mentions no history, back-calculation, arrears or audit report. No price (book a demo). | Not documented | https://www.iris.co.uk/?p=5352 (fetched) |
+| IRIS Earnie help | CSV template for importing average holiday pay history; "Average Weekly Earnings" report shows periods used; "Recalculate" applies to the current run (search summary, pages not read: hol-reports page returned 404) | Not documented (forward only) | https://help-iris.co.uk/payroll/earnieiq/modules/holiday/hol-options.htm and https://help-iris.co.uk/payroll/every/leave-and-absence/holidays/average-holiday/pay-history-for-average.htm (search summary) |
+| Employment Hero UK | Solutions page describes 52-week averaging and says "We can help you manage leave policies tailored to each employee type"; no arrears or recalculation report, no price. Help article: 52 Week Average report per pay and leave category, fed by an imported data file (search summary). Six-year records blog mentions no audit feature. | Not documented | https://employmenthero.com/uk/solutions/holiday-pay-calculation/ (fetched); https://employmenthero.com/uk/blog/six-year-records-rule-holiday-pay-compliance/ (fetched); https://help.employmenthero.com/hc/en-gb/articles/17426656620815-52-Week-Average-Holiday-Pay (403 on fetch; search summary) |
+| PayFit UK | Help article says PayFit supports accrual and rolled-up methods and has "a feature that can be used to calculate ... using an average of their pay or hours over the previous 52 weeks"; no look-back report mentioned | Not documented (search summary only; page not read) | https://support.payfit.com/en/articles/152943-calculating-holiday-pay-and-entitlement-for-irregular-workers |
+| Moorepay | Software and bureau marketing: "audit logs" and PAS accreditation; no holiday pay audit product found. Its holiday pay guide carries a note that it predates the April 2024 rules. | None found | https://www.moorepay.co.uk/blog/how-to-calculate-holiday-pay-an-employers-guide/ and https://www.moorepay.co.uk/payroll-bureau/ (search summary only; not read) |
+| Sage 50 Payroll | No official help page found. Community threads only: Sage staff "could only point to the 52-week report"; users say it is inaccurate for irregular hours input. | None found | https://communityhub.sage.com/gb/sage-50-payroll/f/general-discussion/263645/52-weekly-average-for-holiday-pay (search summary) |
+| Other holiday-specific vendors | Workforce.com "automated leave averaging": calculates hours and pay for staff without fixed hours from existing data; page "doesn't say" it audits past holiday pay; no price. Weightmans "Calculate - Holiday Pay": guided or lawyer-led service; fixed fee, amount not stated; back-calculation not addressed. | Not documented | https://www.workforce.com/uk/software/automated-leave-averaging ; https://www.weightmans.com/products/calculate-holiday-pay (both fetched) |
+
+Fair Work Agency (FWA) holiday pay calculator: NOT SHIPPED as of 2026-11-23, as far as I can find.
+- The delivery plan (updated 21 August 2026) lists "a holiday pay calculator" among year-1 tools, described as one of the "simpler tools" for workers and businesses, next to an online payslip explainer. Scope not stated, so whether it takes a whole payroll is unknown. Source: https://www.gov.uk/government/publications/fair-work-agency-delivery-plan-for-2026-to-2027/fair-work-agency-delivery-plan-2026-to-2027 (fetched). The summary of the plan's own words was returned by the fetch tool, not copied from the page, so re-read before quoting.
+- A search for a launched FWA calculator returned only Australian Fair Work Ombudsman tools and the gov.uk holiday entitlement calculator, which is one worker at a time. No UK FWA calculator page found.
+- The consultation floats "a more detailed calculator or self-assessment tool" (validator read, p.23). CIPP's response asks for "calculators, self-assessment tools" and "worked examples" (https://www.cipp.org.uk/resources/news/holiday-pay-consultation-response-available.html, fetched). So a free government tool is likely, and a whole-workforce version is plausible. Re-check on the gov.uk FWA pages before any re-score.
+
+Open kill-test gaps: Sage and Moorepay have no readable official page; PayFit, IRIS help and Employment Hero help are search summaries only. A human with product access (not us, no trials allowed) would settle these.
+
+### 2. Pay evidence (item 2)
+
+Published prices found for bureau charges on holiday pay calculations, no published software price for a look-back:
+| Price point | Source | Accessed |
+|---|---|---|
+| DCK Payroll Solutions fee list, effective 1 April 2025: "Additional salary, holiday pay calculations, uplifts, AEO's etc" is a separately charged line at £73.50 per hour (ex VAT). Master file changes £7.50 per person; extra payroll employees £7.35 each. | https://greatandlittlehampdenparishcouncil.gov.uk/wp-content/uploads/2026/04/DCK-Fee-List-2025-26.pdf (PDF read) | 2026-11-23 |
+| PSSG outsourced services price list from 1 April 2024: "Average / Enhanced Holiday Pay Calculations - non-standard (not processed via the Supplier's software)" is a separate additional charge, "Price on application via Change Control Process" (no figure). The same list shows the scale of other extras: payroll re-run £100 (up to 100 employees), £200 (101 to 300). Note: file is hosted on a cintra.co.uk domain with PSSG branding; supplier identity as shown on the PDF is PSSG. | https://marketing.cintra.co.uk/hubfs/OSS/OSS%20PRICE%20LIST%20April%202024%20V1.3.pdf (PDF read) | 2026-11-23 |
+| Irwin Mitchell: £1,500 + VAT fixed fee for a holiday pay review (20 March 2024; validator fetched) | https://www.irwinmitchell.com/news-and-insights/expert-comment/post/102j36k/have-you-budgeted-for-increased-holiday-pay-costs | validator, 2026-11-23 |
+| Muckle HR audit £500 to £1,500 + VAT (general HR audit, not holiday-only) | https://www.muckle-llp.com/files/pdf/Mi-HR-Auditv2.pdf | scout, 2026-11-23 |
+| One-off spreadsheet template £13.99 (substitute cost, low end) | https://payhip.com/b/Jhkud (search summary) | 2026-11-23 |
+
+Reading: the two bureau list prices show holiday pay calculation is already billed as an extra, one at £73.50 an hour. Neither is a software price. Estimate of the hours implied by a 60-worker look-back, for scale only: unverified, no method data. I found no published price for holiday pay look-back software, so item 2 is met for "bureau price lists that charge extra" (two found) but not for software.
+
+### 3. Pain evidence (item 3)
+
+- Job adverts: NOT FOUND. Two searches (standard and extended) returned no UK advert naming 52-week reference periods, 12.07% or rolled-up calculations. Closest: a DWP-listed payroll officer role requiring staff to calculate holiday payments, overtime and pension (https://findajob.dwp.gov.uk/details/17437892, search summary; not read, does not name the methods). Treat the job-ad signal as still missing. Do not use it for scoring.
+- CIPP: ran a holiday pay call for input (closed 11 September 2026; page quote: "Holiday pay remains one of the most complex areas of employment rights and payroll administration"; https://www.cipp.org.uk/resources/news/have-your-say-holiday-pay-compliance.html, fetched, dated 25 August 2026; the page holds no survey data). Its consultation response (24 September 2026) says: "difficulties remain around interpreting and applying the rules in practice", cites "manual calculations and payroll software limitations" as practical difficulties, and notes respondents "showing a strong preference for a two-year period" over six years (https://www.cipp.org.uk/resources/news/holiday-pay-consultation-response-available.html, fetched). No workload figures or sample size given. This is qualitative pain evidence from the payroll professionals' own body, not a workload survey. It also signals pushback on the six-year window.
+- Practitioner data gap: Armstrong Watson (July 2026) says payroll providers "are unlikely to hold details around annual leave", which are "employment records, rather than payroll data", and that multiple systems plus spreadsheets are common. Implication for the product: a payroll export alone is not enough; HR leave data must be joined in (https://www.armstrongwatson.co.uk/news/2026/07/holiday-pay-compliance-and-closing-data-gap, fetched). This weakens "upload a payroll export, get the arrears list" and should go into the Build and AI reasoning.
+- Survey (consultancy.uk, search summary): 61% of employers use bespoke software, 33% rely on software defaults, 11% calculate by hand. Sample size unknown (https://www.consultancy.uk/news/44907/holiday-pay-crackdown-approaches-with-half-of-employers-open-to-errors).
+
+Government response to the consultation: NOT PUBLISHED. The gov.uk page says the consultation closed at 11:59pm on 22 September 2026, "We are analysing your feedback" and "Visit this page again soon to download the outcome" (https://www.gov.uk/government/consultations/make-work-pay-holiday-pay-compliance-and-enforcement, fetched).
+
+What is confirmed and what is not, from the consultation document (validator read) plus the delivery plan:
+- Six-year claim period: PROPOSED, not final. Only for non-compliance after 18 December 2025. CIPP and others push back. The six-year records duty (regulation 16B, from 6 April 2026) is law; the six-year claim window is not.
+- Penalties (200% of arrears, cap £20,000 per worker, minimum £100 per case): PROPOSED only, no response yet.
+- Enforcement start: "Holiday pay enforcement is expected to begin in 2027" (delivery plan, updated 21 August 2026). No date. Law-firm and vendor pieces say "from 2027" and "April 2027" (Baker McKenzie); the April 2027 date is not in the primary source I read.
+
+### 4. Other products doing whole-workforce holiday pay look-back
+
+Searches run: "holiday pay look-back tool 2026 payroll historic underpayment report"; "holiday pay audit software UK upload payroll data check underpaid holiday pay workers 2026". No UK product found that takes a whole payroll and lists past holiday pay underpayments. Nearest equivalents:
+- New Zealand: Inland Revenue built a Holidays Act remediation tool that recalculates every instance of leave across the remediation period (https://ird.govt.nz/topics/holiday-act-remediation-payments-for-former-employees), and third-party calculators exist (https://www.calculate.co.nz/holidays-act-remediation-calculator.php, one describes output as a scoping estimate). This is a useful precedent: a state-driven remediation wave created a market for per-employee, per-pay-period recalculation. Not UK, and the NZ government itself supplied a tool, which is also the risk if the FWA does the same.
+- Human services: SafeRec (per-payslip audits), Weightmans guided service, Limelite HR reviews (all from earlier notes).
+- Free substitutes: paiyroll template, Odoo module, payslipcheck.co.uk and moonworkers.co.uk calculators (search results only; titles seen, not read).
+Caveat: search finds only what is indexed. A small bureau tool or a Big Four internal tool would not show.
+
+### Re-score view (scout opinion; validator decides)
+- Item 6 kill test: not failed on readable pages, but the FWA calculator is the main unknown (planned, scope unstated) and 4 of 8 vendors rest on search summaries. Competition stays near 6, not 2.
+- Item 2 (Pay to 14): partly met. Two bureau price lists charging extra for holiday pay calculations (£73.50 an hour; a separate line with price on application), plus £1,500 + VAT reviews. No published software price. I would call it a 13, not 14.
+- Item 3 (Pain to 16): not met. No job advert, no CIPP workload figure, and no government response. Pain evidence from CIPP is qualitative. The six-year window is under challenge.
+- Items 4 and 5 are not touched by this pass. Armstrong Watson's data-gap point suggests Build and AI scoring should assume joining HR leave data, so Build may fall rather than rise.
+- Net: a re-score now would not reach 70. Worth re-checking when the government response is published and the FWA calculator scope is known; those two events decide whether urgency is real and whether the gap survives.
+
 ## Gate log
 - 2026-11-23 scout round 3 (T-22): G0 drafted. Job-ad signal missing, flagged.
 - 2026-11-23 | validator | G0→G1 | REVISE 63 | Best of round 3, and the first idea with an incumbent gap confirmed on the vendors' own pages: BrightPay, Xero, Moneysoft and Sage 50 don't calculate holiday pay amounts, and no product documents a whole-workforce look-back. But FWA enforcement has no start date, the FWA is building its own free holiday pay calculator, and its look-back starts only at 18 Dec 2025. The core is a deterministic engine, and holding workers' pay and absence data cuts Risk to 5.
