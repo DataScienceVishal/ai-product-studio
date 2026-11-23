@@ -87,6 +87,8 @@ jobs:
           cache: npm
           cache-dependency-path: products/_starter/frontend/package-lock.json
       - run: npm ci
+      - name: Unit tests (vitest, jsdom, fetch mocked)
+        run: npm test
       - run: npm run build
       - name: Known vulnerabilities in shipped dependencies
         run: npm audit --omit=dev --audit-level=high
