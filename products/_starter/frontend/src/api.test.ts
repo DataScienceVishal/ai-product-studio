@@ -1,18 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { reply, stubFetch } from "./test-utils";
 import { api, ApiError, formatPrice, SESSION_ENDED } from "./api";
-
-function reply(status: number, body?: unknown): Response {
-  return new Response(body === undefined ? null : JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-}
 
 let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
-  fetchMock = vi.fn();
-  vi.stubGlobal("fetch", fetchMock);
+  fetchMock = stubFetch();
 });
 afterEach(() => {
   vi.useRealTimers();
-  vi.unstubAllGlobals();
 });
 
 describe("api: request shape", () => {

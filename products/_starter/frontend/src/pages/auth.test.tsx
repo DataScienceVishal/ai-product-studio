@@ -1,25 +1,13 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Me } from "../api";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { reply, stubFetch, ME } from "../test-utils";
 import { AcceptInvite } from "./team";
 import { ForgotPassword, ResetPassword, SignIn, SignUp, VerifyEmail } from "./auth";
 
-const ME: Me = {
-  user: { id: "u1", email: "a@example.com", role: "owner", email_verified: true },
-  tenant: { id: "t1", name: "Acme" },
-  subscription: { plan: "trial", status: "trialing", offer: null, trial_ends_at: null, current_period_end: null },
-};
-
-function reply(status: number, body?: unknown): Response {
-  return new Response(body === undefined ? null : JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-}
-
 let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
-  fetchMock = vi.fn();
-  vi.stubGlobal("fetch", fetchMock);
+  fetchMock = stubFetch();
 });
-afterEach(() => vi.unstubAllGlobals());
 
 const type = (label: string | RegExp, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } });
 const lastBody = () => JSON.parse(fetchMock.mock.calls.at(-1)![1].body);
