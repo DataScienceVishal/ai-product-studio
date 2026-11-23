@@ -268,7 +268,7 @@ export function Settings({ me, onDeleted }: { me: Me; onDeleted: () => void }) {
     }
   };
 
-  if (me.user.role !== "owner") return <Card title="Settings"><p>Only the account owner can manage these settings.</p></Card>;
+  if (me.user.role !== "owner") return <MemberSettings onDeleted={onDeleted} />;
   return (
     <div className="space-y-6">
       {error && <Alert>{error}</Alert>}
@@ -288,10 +288,76 @@ export function Settings({ me, onDeleted }: { me: Me; onDeleted: () => void }) {
   );
 }
 
+function MemberSettings({ onDeleted }: { onDeleted: () => void }) {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const download = async () => {
+    try {
+      const data = await api("/api/account/me/export");
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+      Object.assign(document.createElement("a"), { href: url, download: "my-data.json" }).click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(errorText(err));
+    }
+  };
+  const leave = async (event: FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await api("/api/account/me", { method: "DELETE", body: { password, confirm } });
+      onDeleted();
+      navigate("/login");
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="space-y-6">
+      {error && <Alert>{error}</Alert>}
+      <Card title="Your data">
+        <p className="mb-3 text-slate-700">Download your profile and the notes you wrote. Billing and company settings belong to the account owner.</p>
+        <Button variant="secondary" onClick={download}>Download my data</Button>
+      </Card>
+      <Card title="Leave this team">
+        <form onSubmit={leave} className="space-y-4">
+          <p className="text-slate-700">This deletes your sign-in. Notes you wrote stay with the company.</p>
+          <Field id="leave-password" label="Your password" type="password" value={password} onChange={setPassword} autoComplete="current-password" required />
+          <Field id="leave-confirm" label="Type DELETE to confirm" value={confirm} onChange={setConfirm} required />
+          <Button type="submit" variant="danger" busy={busy} disabled={confirm !== "DELETE" || !password}>Leave and delete my sign-in</Button>
+        </form>
+      </Card>
+    </div>
+  );
+}
+
+export function BillingDone({ refresh, me }: { refresh: () => Promise<void>; me: Me }) {
+  const [waited, setWaited] = useState(0);
+  const active = me.subscription.status === "active";
+  useEffect(() => {
+    if (active || waited >= 15) return;
+    const timer = setTimeout(async () => { await refresh(); setWaited((w) => w + 1); }, 2000);
+    return () => clearTimeout(timer);
+  }, [active, waited, refresh]);
+  return (
+    <Card title="Payment">
+      {active ? <Alert kind="success">You're on the {me.subscription.plan} plan. Thank you!</Alert>
+        : waited >= 15 ? <Alert>We haven't had confirmation from the payment provider yet. Check Billing again in a few minutes.</Alert>
+        : <p className="text-slate-700">Confirming your payment…</p>}
+      <p className="mt-4"><Link to="/">Back to your notes</Link></p>
+    </Card>
+  );
+}
+
 export function Help() {
   const faqs = [
     ["Is my data shared with other companies?", "No. Each company's data is kept separate, and other customers can't see it."],
-    ["What does the AI see?", "Only the note you ask it to summarise, sent to our AI provider for that one request."],
+    ["What does the AI see?", "Only the note you ask it to summarise. It is sent to Microsoft's Azure OpenAI service, which processes it under Microsoft's data-protection terms. Other customers never see it."],
     ["How do I cancel?", "You can delete your account and all its data from Settings at any time."],
     ["Is this a real payment?", "Not yet. The starter runs in test mode, so no money is taken."],
   ];

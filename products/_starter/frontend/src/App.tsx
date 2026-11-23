@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { api, ApiError, type Me } from "./api";
-import { Billing, Dashboard, Help, MockCheckout, Settings } from "./pages/app";
+import { api, ApiError, SESSION_ENDED, type Me } from "./api";
+import { Billing, BillingDone, Dashboard, Help, MockCheckout, Settings } from "./pages/app";
+import { Privacy, Terms } from "./pages/legal";
 import { ForgotPassword, ResetPassword, SignIn, SignUp, VerifyEmail } from "./pages/auth";
 import { AcceptInvite, Team } from "./pages/team";
-import { Link, navigate, usePath } from "./ui";
+import { Alert, Link, navigate, usePath } from "./ui";
 
-const PUBLIC = new Set(["/login", "/signup", "/forgot-password", "/reset-password", "/accept-invite", "/verify-email", "/help"]);
+const PUBLIC = new Set(["/login", "/signup", "/forgot-password", "/reset-password", "/accept-invite", "/verify-email", "/help", "/privacy", "/terms"]);
 
 export default function App() {
   const path = usePath();
@@ -20,6 +21,13 @@ export default function App() {
     }
   }, []);
   useEffect(() => { void refresh(); }, [refresh]);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => { // any 401 from the API (expired session, removed member) ends the session here too
+    const ended = () => { setMe(null); navigate("/login"); };
+    window.addEventListener(SESSION_ENDED, ended);
+    return () => window.removeEventListener(SESSION_ENDED, ended);
+  }, []);
 
   useEffect(() => {
     if (me === null && !PUBLIC.has(path)) navigate("/login");
@@ -32,18 +40,27 @@ export default function App() {
   if (path === "/forgot-password") return <ForgotPassword />;
   if (path === "/reset-password") return <ResetPassword />;
   if (path === "/accept-invite") return <AcceptInvite onSignedIn={setMe} />;
-  if (path === "/verify-email") return <VerifyEmail onVerified={refresh} />;
-  if (!me) return path === "/help" ? <Shell><Help /></Shell> : null;
+  if (path === "/verify-email") return <VerifyEmail me={me} onVerified={refresh} />;
+  if (path === "/privacy" || path === "/terms" || (!me && path === "/help")) {
+    return <Shell me={me ?? undefined}>{path === "/privacy" ? <Privacy /> : path === "/terms" ? <Terms /> : <Help />}</Shell>;
+  }
+  if (!me) return null;
 
   const signOut = async () => {
-    await api("/api/auth/logout", { method: "POST" }).catch(() => undefined);
-    setMe(null);
-    navigate("/login");
+    try {
+      await api("/api/auth/logout", { method: "POST" });
+      setMe(null);
+      navigate("/login");
+    } catch {
+      setNotice("We couldn't sign you out. Check your connection and try again."); // the cookie is still valid
+    }
   };
 
   return (
     <Shell me={me} onSignOut={signOut}>
+      {notice && <div className="mb-4"><Alert>{notice}</Alert></div>}
       {path === "/billing" ? <Billing me={me} refresh={refresh} />
+        : path === "/billing/done" ? <BillingDone me={me} refresh={refresh} />
         : path === "/billing/mock-checkout" ? <MockCheckout refresh={refresh} />
         : path === "/settings" ? <Settings me={me} onDeleted={() => setMe(null)} />
         : path === "/team" ? <Team me={me} />

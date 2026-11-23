@@ -16,6 +16,10 @@ export class ApiError extends Error {
 }
 
 const TIMEOUT_MS = 30_000;
+// Requests where a 401 is an expected answer, not "your session ended".
+const AUTH_PATHS = ["/api/auth/me", "/api/auth/login", "/api/auth/signup", "/api/invitations/accept",
+  "/api/auth/password-reset/request", "/api/auth/password-reset/confirm"];
+export const SESSION_ENDED = "session-ended";
 
 export async function api<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
   const controller = new AbortController();
@@ -29,13 +33,19 @@ export async function api<T>(path: string, options: { method?: string; body?: un
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
       signal: controller.signal,
     });
-  } catch {
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new ApiError(0, "timeout", "The server took too long to answer. Please try again.");
+    }
     throw new ApiError(0, "network", "Can't reach the server. Check your connection and try again.");
   } finally {
     clearTimeout(timer);
   }
   if (response.status === 204) return undefined as T;
   const data = await response.json().catch(() => ({}));
+  if (response.status === 401 && !AUTH_PATHS.includes(path)) {
+    window.dispatchEvent(new Event(SESSION_ENDED)); // expired session or removed member: back to sign-in
+  }
   if (!response.ok) {
     throw new ApiError(response.status, data.error ?? "error", data.message ?? "Something went wrong.", data.fields ?? []);
   }

@@ -2,6 +2,12 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api, ApiError, type Me } from "../api";
 import { Alert, AuthLayout, Button, Field, Link, navigate } from "../ui";
 
+/** Where to go after signing in: a same-site path from ?next=, otherwise home. */
+function safeNext(): string {
+  const next = new URLSearchParams(window.location.search).get("next") ?? "";
+  return next.startsWith("/") && !next.startsWith("//") ? next : "/";
+}
+
 function useSubmit<T>(action: () => Promise<T>, onDone: (result: T) => void) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +43,9 @@ export function SignUp({ onSignedIn }: { onSignedIn: (me: Me) => void }) {
         <Field id="email" label="Work email" type="email" value={email} onChange={setEmail} autoComplete="email" required />
         <Field id="password" label="Password" type="password" value={password} onChange={setPassword}
           autoComplete="new-password" hint="At least 10 characters." required />
+        <p className="text-sm text-slate-600">
+          By creating an account you agree to the <Link to="/terms">terms</Link> and <Link to="/privacy">privacy notice</Link> (both DRAFT).
+        </p>
         <Button type="submit" busy={busy} className="w-full">Create account</Button>
         <p className="text-sm">Already have an account? <Link to="/login">Sign in</Link></p>
       </form>
@@ -49,7 +58,7 @@ export function SignIn({ onSignedIn }: { onSignedIn: (me: Me) => void }) {
   const [password, setPassword] = useState("");
   const { busy, error, submit } = useSubmit(
     () => api<Me>("/api/auth/login", { method: "POST", body: { email, password } }),
-    (me) => { onSignedIn(me); navigate("/"); },
+    (me) => { onSignedIn(me); navigate(safeNext()); },
   );
   return (
     <AuthLayout title="Sign in">
@@ -116,19 +125,29 @@ export function ResetPassword() {
   );
 }
 
-export function VerifyEmail({ onVerified }: { onVerified: () => Promise<void> }) {
+export function VerifyEmail({ me, onVerified }: { me: Me | null; onVerified: () => Promise<void> }) {
   const token = new URLSearchParams(window.location.search).get("token") ?? "";
   const [state, setState] = useState<"working" | "done" | "failed">("working");
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false); // StrictMode runs effects twice in dev; the link is single-use
   useEffect(() => {
-    if (started.current) return;
+    if (!me || started.current) return; // verifying needs the account the email was sent to
     started.current = true;
     if (!token) { setState("failed"); setError("This link is incomplete."); return; }
     api("/api/auth/verify-email", { method: "POST", body: { token } })
       .then(async () => { setState("done"); await onVerified(); })
       .catch((err: ApiError) => { setState("failed"); setError(err.message); });
-  }, [token, onVerified]);
+  }, [me, token, onVerified]);
+  if (!me) {
+    const next = encodeURIComponent(window.location.pathname + window.location.search);
+    return (
+      <AuthLayout title="Confirm your email">
+        <p className="text-slate-700">Sign in to the account this email was sent to, and we'll confirm it straight away.</p>
+        <p className="mt-4"><Link to={`/login?next=${next}`}>Sign in to confirm</Link></p>
+        <p className="mt-2 text-sm text-slate-600">Didn't sign up? You can ignore the email; nothing happens without your sign-in.</p>
+      </AuthLayout>
+    );
+  }
   return (
     <AuthLayout title="Confirm your email">
       {state === "working" && <p className="text-slate-600">Checking your link…</p>}
