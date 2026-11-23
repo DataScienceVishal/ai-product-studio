@@ -141,7 +141,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/e2e"
           E2E_LOG_DIR="$RUNNER_TEMP/e2e" products/_starter/scripts/e2e.sh
       - if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-logs
           path: ${{ runner.temp }}/e2e
