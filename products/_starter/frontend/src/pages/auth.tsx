@@ -3,7 +3,7 @@ import { api, ApiError, type Me } from "../api";
 import { Alert, AuthLayout, Button, Field, Link, navigate, takeToken } from "../ui";
 
 /** Where to go after signing in: a same-site path from ?next=, otherwise home. */
-function safeNext(): string {
+export function safeNext(): string {
   const next = new URLSearchParams(window.location.search).get("next") ?? "";
   if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return "/";
   try {
