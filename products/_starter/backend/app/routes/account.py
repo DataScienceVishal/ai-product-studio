@@ -13,7 +13,7 @@ from ..db import get_db
 from ..deps import Current, current, owner, session_cookie, subscription_of
 from ..errors import AppError
 from ..models import Invitation, Note, Tenant, User
-from ..security import verify_password
+from ..security import hash_capacity, verify_password
 
 log = logging.getLogger("app.account")
 router = APIRouter(prefix="/api/account", tags=["account"])
@@ -45,7 +45,7 @@ def usage(me: Current = Depends(current), db: Session = Depends(get_db)):
     return {"ai_tokens_this_month": tokens_this_month(db, me.tenant.id)}
 
 
-@router.delete("", status_code=204)
+@router.delete("", status_code=204, dependencies=[Depends(hash_capacity)])
 def delete_account(data: DeleteIn, request: Request, me: Current = Depends(owner),
                    db: Session = Depends(get_db)) -> Response:
     """Deletes the tenant and, by cascade, every user, session, note and usage row it owns."""
@@ -85,7 +85,7 @@ def export_me(me: Current = Depends(current), db: Session = Depends(get_db)):
                               for n in notes]}
 
 
-@router.delete("/me", status_code=204)
+@router.delete("/me", status_code=204, dependencies=[Depends(hash_capacity)])
 def delete_me(data: DeleteIn, request: Request, me: Current = Depends(current), db: Session = Depends(get_db)) -> Response:
     """A member removes themselves and their sign-in. Notes they wrote stay with the company (author cleared)."""
     request.app.state.limiter.check(f"delete-me:{me.user.id}", 5)

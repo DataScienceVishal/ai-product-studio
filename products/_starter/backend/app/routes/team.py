@@ -19,7 +19,7 @@ from ..errors import AppError
 from ..logs import bind
 from ..models import Invitation, Tenant, User
 from ..ratelimit import client_ip
-from ..security import hash_password, new_token, password_problem, token_hash
+from ..security import hash_capacity, hash_password, new_token, password_problem, token_hash
 from .auth import Email, _start_session, me_payload
 
 log = logging.getLogger("app.team")
@@ -117,7 +117,7 @@ def remove_member(user_id: uuid.UUID, me: Current = Depends(owner), db: Session 
     return Response(status_code=204)
 
 
-@public.post("/accept", status_code=201)
+@public.post("/accept", status_code=201, dependencies=[Depends(hash_capacity)])
 def accept(data: AcceptIn, request: Request, response: Response, db: Session = Depends(get_db)):
     request.app.state.limiter.check(f"accept:{client_ip(request)}", request.app.state.settings.auth_rate_limit_per_minute)
     problem = password_problem(data.password)

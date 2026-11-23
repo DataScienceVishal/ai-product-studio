@@ -19,7 +19,7 @@ from ..errors import AppError
 from ..logs import bind
 from ..models import AuthSession, EmailVerification, PasswordReset, Subscription, Tenant, User
 from ..ratelimit import client_ip
-from ..security import (hash_password, needs_rehash, new_token, password_problem, token_hash,
+from ..security import (hash_capacity, hash_password, needs_rehash, new_token, password_problem, token_hash,
                         verify_password)
 
 log = logging.getLogger("app.auth")
@@ -111,7 +111,7 @@ def me_payload(db: Session, user: User, tenant: Tenant) -> dict:
     }
 
 
-@router.post("/signup", status_code=201)
+@router.post("/signup", status_code=201, dependencies=[Depends(hash_capacity)])
 def signup(data: SignUp, request: Request, response: Response, db: Session = Depends(get_db)):
     settings = request.app.state.settings
     _limit(request, f"signup:{client_ip(request)}")
@@ -146,7 +146,7 @@ def signup(data: SignUp, request: Request, response: Response, db: Session = Dep
     return me_payload(db, user, tenant)
 
 
-@router.post("/login")
+@router.post("/login", dependencies=[Depends(hash_capacity)])
 def login(data: SignIn, request: Request, response: Response, db: Session = Depends(get_db)):
     email = data.email.strip().lower()
     _limit(request, f"login-ip:{client_ip(request)}", f"login-email:{email}")
@@ -219,7 +219,7 @@ def reset_request(data: ResetRequest, request: Request, background: BackgroundTa
     return {"status": "If that email has an account, we've sent a reset link."}
 
 
-@router.post("/password-reset/confirm", status_code=204)
+@router.post("/password-reset/confirm", status_code=204, dependencies=[Depends(hash_capacity)])
 def reset_confirm(data: ResetConfirm, request: Request, db: Session = Depends(get_db)) -> Response:
     _limit(request, f"reset-confirm:{client_ip(request)}")
     problem = password_problem(data.new_password)

@@ -3,14 +3,20 @@ from __future__ import annotations
 
 import hashlib
 import secrets
+import asyncio
 import threading
+import weakref
+from collections.abc import AsyncIterator
+
+import anyio
 
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 
+HASH_SLOTS = 2
 _hasher = PasswordHasher()  # argon2id with the library's current recommended parameters
 # Each hash or check uses about 64 MiB. Bounding concurrency bounds memory: extra requests wait their turn.
-_hash_slots = threading.BoundedSemaphore(2)  # each argon2 run uses 4 lanes; 2 x 4 suits a 0.5-1 vCPU container
+_hash_slots = threading.BoundedSemaphore(HASH_SLOTS)  # each argon2 run uses 4 lanes; 2 x 4 suits a 0.5-1 vCPU container
 HASH_WAIT_SECONDS = 3.0  # then a 503 with Retry-After, instead of queueing request threads
 # Verified against when the email is unknown, so a miss takes as long as a wrong password.
 _DUMMY_HASH = _hasher.hash("timing-equaliser-not-a-real-password")
@@ -29,14 +35,47 @@ def password_problem(password: str) -> str | None:
     return None
 
 
+def _busy():
+    from .errors import AppError
+    return AppError(503, "busy", "We're busy right now. Please try again in a moment.", headers={"Retry-After": "5"})
+
+
+# Hashing capacity is taken in async code, before the request is given a worker thread, so a login burst
+# waits on the event loop (cheap) instead of parking up to 40 threadpool threads and starving /healthz.
+# One limiter per event loop (a limiter belongs to the loop it is first used on).
+_limiters: "weakref.WeakKeyDictionary" = weakref.WeakKeyDictionary()
+
+
+def _limiter() -> anyio.CapacityLimiter:
+    loop = asyncio.get_running_loop()  # the app runs on asyncio (uvicorn)
+    limiter = _limiters.get(loop)
+    if limiter is None:
+        limiter = _limiters[loop] = anyio.CapacityLimiter(HASH_SLOTS)
+    return limiter
+
+
+async def hash_capacity() -> AsyncIterator[None]:
+    """FastAPI dependency for routes that hash or verify a password. List it BEFORE any dependency that
+    opens a database session, so no pooled connection is held while waiting. Waits at most
+    HASH_WAIT_SECONDS for a slot, then answers the friendly 503 without ever occupying a worker thread.
+    The slot is held until the request is done, so the argon2 call in the route finds a slot free."""
+    limiter = _limiter()
+    with anyio.move_on_after(HASH_WAIT_SECONDS) as scope:
+        await limiter.acquire()
+    if scope.cancelled_caught:
+        raise _busy()
+    try:
+        yield
+    finally:
+        limiter.release()
+
+
 class _Slot:
-    """A hashing slot, or a friendly 503 if none frees up soon (so waiting requests don't pile up)."""
+    """Backstop for callers that did not take hash_capacity first: a hashing slot, or a friendly 503 if none frees up soon (so waiting requests don't pile up)."""
 
     def __enter__(self):
         if not _hash_slots.acquire(timeout=HASH_WAIT_SECONDS):
-            from .errors import AppError
-            raise AppError(503, "busy", "We're busy right now. Please try again in a moment.",
-                           headers={"Retry-After": "5"})
+            raise _busy()
 
     def __exit__(self, *exc):
         _hash_slots.release()

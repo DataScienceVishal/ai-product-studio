@@ -4,6 +4,12 @@ Last updated 2026-11-23 by run 20261123T111240Z-run-b15e.
 
 ## Status
 
+- T-15 async-login slice (branch p/_starter/T-15-async-login), done: hashing capacity is now taken on the event
+  loop (`security.hash_capacity`, an async dependency on login, signup, reset-confirm, accept-invite and both
+  account deletes) before a worker thread is assigned; waiters cost no thread and get the same 503 busy with
+  Retry-After: 5 after HASH_WAIT_SECONDS. The thread semaphore stays as a backstop. New
+  tests/test_async_hash_capacity.py (mutation-checked); two unused test variables removed. 209 backend tests
+  (208 pass, 1 skip: frontend not built). Left: nothing from this slice.
 - T-15 cookies slice (branch p/_starter/T-15-cookies), done: tests that the cookie clears on logout, owner
   account deletion and member leave carry the same Secure, HttpOnly, SameSite and Path=/ as the set (secure and
   plain-http modes, mutation-checked); a test tying LIMITED_PROVIDERS to the live-key refusal; the CLIENT_ROUTES
