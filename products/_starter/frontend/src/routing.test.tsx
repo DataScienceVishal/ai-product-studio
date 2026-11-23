@@ -1,6 +1,6 @@
 import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { Link, navigate, takeToken, usePath } from "./ui";
+import { Link, navigate, normalise, takeToken, usePath } from "./ui";
 import { safeNext } from "./pages/auth";
 
 const at = (url: string) => window.history.replaceState({}, "", url);
@@ -103,5 +103,19 @@ describe("history router", () => {
     render(<Link to="/team">Team</Link>);
     expect(fireEvent.click(screen.getByText("Team"), mods)).toBe(true);
     expect(window.location.pathname).toBe("/");
+  });
+});
+
+describe("normalise (trailing slashes)", () => {
+  it.each([
+    ["/", "/"],
+    ["//", "/"],
+    ["///", "/"],
+    ["", "/"],
+    ["/verify-email/", "/verify-email"],
+    ["/verify-email//", "/verify-email"],
+    ["/billing/done", "/billing/done"],
+  ])("normalises %j to %j", (input, expected) => {
+    expect(normalise(input)).toBe(expected);
   });
 });

@@ -19,7 +19,7 @@ export function takeToken(): string {
   return token;
 }
 
-const normalise = (p: string) => (p.length > 1 ? p.replace(/\/+$/, "") : p); // /verify-email/ is /verify-email
+export const normalise = (p: string) => p.replace(/\/+$/, "") || "/"; // /verify-email/ is /verify-email
 
 export function usePath(): string {
   const [path, setPath] = useState(normalise(window.location.pathname));
