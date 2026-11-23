@@ -128,3 +128,52 @@ Live probe (prod settings, uvicorn on 8700):
 | M9: no CSP on the HTML | caught (2) |
 | M10: `'unsafe-inline'` in `script-src` | caught (2) |
 | M11: fallback on 405 as well | survived, equivalent today (no GET-less route outside `/api`) |
+
+## Re-review (6935565, e135114): PASS
+
+- Commits: 6935565 fixes C1 and e135114 has the follow-ups; both verified with `git log`. Diff:
+  `git diff e74e752 e135114 -- products/_starter .github`. Reviewed on a `git archive` export of e135114, with
+  database `starter_rev16` and ports 8700/4700.
+- **C1 fixed.** `test_hardening.py:202` now reads `Path(__file__).resolve().parents[2] / "Dockerfile"`. A sanity
+  mutation that points it at another file makes the test fail, so it really reads the root Dockerfile.
+- **C2 closed.** The fix went forward on `main` with no force-push. The hurdle is logged as closed in
+  `state/HURDLES.md` (2026-11-23T22:18:23Z), with the rule that the full suite must pass on the exact tree before
+  any push to main.
+- **S1 done, and the design is sound.** `RequestContext` keeps a response's own Cache-Control and CSP only when
+  `scope["spa.own_headers"]` is set (`main.py:137`). Only `spa.fallback` and `ImmutableStatic` on a 200 or 304 set
+  that flag. It is a server-side scope key, so a client can't set it with a header. It works because Starlette
+  passes the same scope dict through the middleware, the Mount and `Request`, and the tests prove that end to end.
+  Every other route, inside `/api` or not, now gets `no-store` and the API CSP back.
+- **S2, S3 and S7 done.** `test_api_and_other_routes_cannot_keep_their_own_cache_or_csp` and
+  `test_assets_do_not_follow_symlinks` are added, and the CI image job has an `if: failure()` docker logs step
+  (`|| true`, so the step can't mask the real failure).
+- **Still open, not blocking:** S4 (HEAD Content-Length 0), S5 (soft 404s), S6 (base images not digest-pinned)
+  and S8 (`/assets` 307). Track them as a small starter task if wanted.
+
+| Check | Result |
+|---|---|
+| Backend suite on the export (own DB) | 179 passed, 1 skipped (no frontend build). After `vite build`: **180 passed** |
+| GitHub CI for e135114 | `_starter-ci` **success** on `main` ([45279346198](https://github.com/DataScienceVishal/ai-product-studio/actions/runs/45279346198): backend, image, frontend, infra and e2e all success) and on the branch ([45279352583](https://github.com/DataScienceVishal/ai-product-studio/actions/runs/45279352583): e2e skipped by design). 6935565 is also green on both |
+| Docker image | built and smoke-tested by the CI `image` job, which passed. Not run locally (no Docker) |
+| actionlint, both workflows | clean |
+| `scripts/e2e.sh` (ports 8700/4700) | `E2E PASS: core flow` |
+| Core flow on one origin (uvicorn with `FRONTEND_DIST`), with a listener that fails on CSP violations | `E2E PASS: core flow`, no violations |
+| Prod-mode header probe | same as the first review. HTML: `no-cache` and the HTML CSP. `/api`, `/livez`, `/healthz`, asset 404s: `no-store` and `default-src 'none'`. Hashed assets: `immutable`. No `/api` or probe path returns HTML |
+
+Mutations (full suite with the frontend built; baseline 180 passed):
+
+| Mutation | Result |
+|---|---|
+| M7: honour own headers on every response | **caught** (1, the new test) |
+| M7b: go back to the path-based rule from e74e752 | **caught** (1) |
+| M8: `follow_symlink=True` | **caught** (1, the new test) |
+| M12: the fallback doesn't set the marker | caught (11) |
+| M13: assets don't set the marker | caught (2) |
+| M14: set the marker on every StaticFiles status | survived, equivalent (StaticFiles raises its 404 instead of returning it) |
+| M1: drop the `/api` reservation | caught (4) |
+| M5: strip every security header | caught (12) |
+| M10: `'unsafe-inline'` in `script-src` | caught (1) |
+| M15: the hardening test reads the wrong file | caught (1) |
+
+**Verdict: PASS.** T-16 meets ADR 0002 decision 2. The tests are green locally and in CI, and the key behaviour is
+covered by tests that catch the mutations above.
