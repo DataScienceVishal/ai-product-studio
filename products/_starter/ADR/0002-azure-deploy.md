@@ -189,6 +189,8 @@ needs Vishal's approval.
 - **All four secrets always exist** on the web app, holding a placeholder (`not-configured`) until the Actions
   secret does. Only the chosen provider's environment variables reference them. So switching provider
   between releases never deletes a secret that the previous revision, kept for rollback, still reads.
+  The exception is deleting a provider's Actions secret: the next release writes the placeholder, so rolling
+  back to a revision that used the real value then fails. Delete one only when no kept revision uses that provider.
   Microsoft: "Before you delete a secret, deploy a new revision that no longer references the old secret.
   Then deactivate all revisions that reference the secret."
 - A secret that isn't referenced by an environment variable is never visible inside a container. It is
