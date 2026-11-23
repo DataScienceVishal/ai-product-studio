@@ -64,3 +64,10 @@ cd products/_starter/backend && TEST_DATABASE_URL=postgresql+psycopg://studio:st
 cd products/_starter && E2E_API_PORT=8300 E2E_WEB_PORT=4373 E2E_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/<your_e2e_db> ./scripts/e2e.sh
 ```
 Verify: `cd backend && TEST_DATABASE_URL=... .venv/bin/python -m pytest`.
+
+## T-32 status (run 010e hand-off, not merged)
+Reviewer CHANGES (reviews/T-32.md). Before re-review:
+1. Concurrency and lock-waiter tests: the autouse `_no_sleep` fixture patches `time.sleep`, so the "slow" fake endpoint isn't slow and the tests pass without the lock. Block the fake endpoint on a `threading.Event` instead.
+2. Don't cache a failure caused by the caller's own short deadline (timeout from a tiny budget); cache only endpoint errors, so healthy callers aren't blocked for 10 s.
+3. `get(t)` can take about 2t (lock wait + fetch); budget the fetch from what is left after the lock, and never pass a non-positive timeout to httpx (ValueError → 500).
+Note: run 7a98's T-33 (Responses API) also edits ai.py; rebase on main before re-review.
