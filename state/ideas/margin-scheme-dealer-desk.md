@@ -57,6 +57,44 @@ None seen. The Xero thread contains user posts that recommend a PDF guide and a 
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
+| 9 | 7 | 4 | 5 | 11 | 2 | 7 | **45** |
+
+## Validator notes (2026-11-23)
+
+**Verdict: KILL.** A UK product, VAT Margin, already sells this job to non-vehicle resellers: margin, hybrid and global-accounting VAT calculation, per-line records, stock-book export, invoice OCR (200 pages a month) and purchase-to-sale matching, for £25 a month (early access; list price £79). It connects to QuickBooks Online and takes CSV imports. A second tool, OneSixth, posts margin-scheme adjustment journals back to Xero, QuickBooks Online, Sage and FreeAgent (beta, reported 1 September 2026). Xero's refusal is real, but it leaves a gap of one connector, not of a product. The core is deterministic arithmetic (margin x 1/6), and HMRC's global accounting scheme already gives high-volume, low-value dealers a period-total method with no per-item matching. That removes the volume pain the AI front end was meant to solve. The AI layer is reading receipts and matching sales to purchases, which VAT Margin already offers without calling it AI. Formally this is the idea's first gate failure. The Lead may apply the two-failure rule and park it instead, but no realistic evidence gets it near 70, so I recommend killing it now.
+
+How each score was reached:
+- **Pain 9/20.** The Xero thread has 82 votes over 4.5 years. Its workarounds are real: hand-edited tax amounts, journals and spreadsheets. No commenter gives a volume figure or says they left Xero (thread re-read 2026-11-23). Global accounting (items bought for £500 or less, VAT worked out on period totals) removes the per-item burden for bulk low-value dealers. Per-item stock books matter mainly for higher-value items, and dealers sell fewer of those.
+- **Pay 7/20.** Anchors: VAT Margin at £25 to £79 a month and MotorDesk at £79 to £269 (vehicles, full dealer system). No bookkeeper fee for margin-scheme work was found. An accountant's 2018 remark calls specialist software "very expensive" (search summary only; the AccountingWEB page returned 403).
+- **AI 4/15.** The arithmetic and eligibility rules (VAT charged on purchase, precious metals, £500 global-accounting limit) are code. Document reading is commodity OCR or an LLM, and a rival ships it at £25. A spreadsheet stock book plus a monthly journal covers most dealers.
+- **Reach 5/10.** Buyers can be found through the Xero App Store, antiques trade bodies and reseller forums. But they are scattered micro-businesses, and the market size is still unknown.
+- **Build 11/15.** The Xero API and a demo company are free, and the work is deterministic. The open question is whether the API can set tax amounts on margin invoices. The fallback is a journal-only design.
+- **Competition 2/10.** VAT Margin (direct, cheap, covers non-vehicle goods), OneSixth (Xero journals), MotorDesk (vehicles), RepairDesk (used-device point-of-sale software with margin VAT) and the Odoo module. Any one of them could add a Xero connector in a month.
+- **Risk 7/10.** A wrong margin makes VAT due on the full selling price (gov.uk global accounting guidance), so liability is real, and sign-off by the dealer or their accountant is mandatory. This is tax compliance, not legal advice. Self-billed invoices hold private sellers' names and addresses, but in small volumes.
+
+How I tried to kill it:
+- Browsed the Xero UK App Store search for "margin scheme". The page rendered with no results, so it is inconclusive and the store's search cannot be trusted as proof of absence.
+- Ran web searches across Xero, QuickBooks, Sage and Shopify. Found Vintax, a Shopify app that is EU-focused and costs from $19 a month (search result only).
+- Checked whether AI is essential, and the global-accounting substitute.
+
+What would revive it (all three needed):
+1. VAT Margin and OneSixth both show, on their own pages, that they have no Xero support and no plan for it.
+2. 20 or more public posts from Xero-using non-vehicle dealers who hand-key over 50 margin items a month and do not qualify for global accounting.
+3. A wedge where AI is essential, such as mixed auction lots that must be split and valued item by item. It must be confirmed as a costly, recurring job with a published fee.
+
+Lesson for the scout: an incumbent refusal shows that a gap exists in that incumbent's product. It does not show that the market is empty. Small single-purpose startups move into publicly refused features fast. Search for the job itself ("margin scheme software"), not only for "<incumbent> add-on".
+
+Sources (all accessed 2026-11-23):
+- VAT Margin, own homepage: https://vatmargin.co.uk (early access £25/month, list price £79; QuickBooks Online and CSV; stock book; global accounting; invoice OCR; no Xero named)
+- OneSixth, AccountingWEB, 1 September 2026 (page returned 403; details from search summaries): https://www.accountingweb.co.uk/node/231907
+- Xero idea thread, re-read: https://productideas.xero.com/forums/967133-reports-tax/suggestions/45048502-vat-automatically-calculate-vat-using-the-margin
+- HMRC global accounting scheme: https://www.gov.uk/guidance/using-the-global-accounting-vat-margin-scheme
+- HMRC recording margin-scheme transactions: https://www.gov.uk/guidance/recording-vat-margin-scheme-transactions
+- RepairDesk margin-scheme checklist (search result): https://blog.repairdesk.co/2020/04/22/pos-software-checklist-for-vat-margin-support/
+- Vintax, Shopify (search result): https://apps.shopify.com/vintax
+- Xero UK App Store search, no results rendered: https://apps.xero.com/uk/search?q=margin%20scheme
+- Not checked: www.vatmargin.com does not resolve from this session, and QuickBooks and Sage native margin-scheme support was not checked on their own pages.
 
 ## Gate log
 - 2026-11-23: G0 written by scout (T-27). Add-on check run; MotorDesk covers vehicles only.
+- 2026-11-23: Validator (T-28) scored 45/100. KILL (recommended): VAT Margin already sells margin-scheme VAT with OCR, matching and a stock book at £25 to £79 a month, OneSixth posts margin journals to Xero, and the core is deterministic.
