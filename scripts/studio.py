@@ -239,6 +239,23 @@ def count_ideas() -> dict[str, int]:
     return counts
 
 
+def budget_line(now: datetime) -> str:
+    """One line about the Azure spend report in state/BUDGET.md, flagging it when stale or unavailable."""
+    path = STATE / "BUDGET.md"
+    text = path.read_text(encoding="utf-8") if path.exists() else ""
+    updated = re.search(r"^- Updated: (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)", text, re.M)
+    if not updated:
+        return "budget: no spend report yet (the azure-spend workflow needs Azure credentials)"
+    status = re.search(r"^- Status: (.+)$", text, re.M)
+    since = re.search(r"^- Since \S+: (.+)$", text, re.M)
+    when = datetime.strptime(updated.group(1), "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    hours = (now - when).total_seconds() / 3600
+    state = status.group(1) if status else "unknown"
+    parts = [f"budget: {since.group(1)}" if state == "ok" and since else f"budget: {state[:100]}"]
+    parts.append(f"updated {hours:.0f}h ago" + (" (STALE: check the azure-spend workflow)" if hours > 30 else ""))
+    return " · ".join(parts)
+
+
 def cmd_status(args) -> None:
     now = now_utc()
     state, _ = evaluate(load_mode(), now, run_times("run"))
@@ -252,6 +269,7 @@ def cmd_status(args) -> None:
     print("questions: " + (" · ".join(f"{k} {v}" for k, v in sorted(questions.items())) or "none"))
     print("ideas: " + (" · ".join(f"{k} {v}" for k, v in sorted(ideas.items())) or "none yet"))
     print(f"studio runs in last 24h: {len(last24)} · last: {fmt(runs[-1]) if runs else 'never'}")
+    print(budget_line(now))
 
 
 def main() -> None:

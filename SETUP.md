@@ -32,7 +32,7 @@ Pro works in shorter bursts; Max gives the team much more room. A personal plan 
 1. In Telegram, open @BotFather, send `/newbot`, and pick a name and a username ending in `bot`. Copy the token.
 2. Open your new bot and send it `hi`.
 3. In a browser, open `https://api.telegram.org/bot<TOKEN>/getUpdates` with your token in place of `<TOKEN>`. Find `"from":{"id":` followed by a number. That number is your chat id.
-4. Keep both private for step 5. If the token ever leaks, send `/revoke` to @BotFather and update step 5.
+4. Keep both private for step 5. If the token ever leaks, send `/revoke` to @BotFather and update step 5, and also the `TELEGRAM_BOT_TOKEN` Actions secret if you added it in step 3.
 
 ## 3. Azure (10 min)
 
@@ -54,7 +54,28 @@ Copy the JSON the last command prints. Then in GitHub open the repo's **Settings
 | `AZURE_OPENAI_API_KEY` | your Azure OpenAI key |
 | `AZURE_OPENAI_DEPLOYMENT` | your deployment name, such as `gpt-5-mini` |
 
-Optional: also add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` here as Actions secrets (the same values as step 5). The daily `azure-spend` workflow then pings you the first time spend passes 50%, 75% and 95% of the $80 cap. Without them it still writes the figures to `state/BUDGET.md` every morning.
+Optional: also add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` here as Actions secrets (the values from step 2). The daily `azure-spend` workflow then pings you when spend first passes 50%, 75% and 95% of the $80 cap, and when the report fails. Without them, alerts still reach you through the next digest.
+
+Recommended: give the daily spend report its own read-only identity instead of the deployer. In Cloud Shell:
+
+```bash
+SUB=$(az account show --query id -o tsv)
+az ad sp create-for-rbac --name sp-ai-studio-cost --role Reader \
+  --scopes /subscriptions/$SUB/resourceGroups/rg-ai-studio --json-auth
+```
+
+Then add the **Cost Management Reader** role for the same app (use the `clientId` from the JSON it printed):
+
+```bash
+az role assignment create --assignee <clientId> --role "Cost Management Reader" \
+  --scope /subscriptions/$SUB/resourceGroups/rg-ai-studio
+```
+
+Save that JSON as the Actions secret `AZURE_COST_CREDENTIALS`. Without it, the report uses `AZURE_CREDENTIALS`.
+
+Put your Azure OpenAI resource in `rg-ai-studio` (or move it there), so its token spend counts in the daily report. The report covers that resource group only.
+
+After the secrets are in place and the studio's work is on `main`, run the **azure-spend** workflow once by hand (repo → Actions → azure-spend → Run workflow). Then open `state/BUDGET.md`: it either shows figures or says why it can't get them (Microsoft's docs disagree on whether Azure for Students supports the Cost Management API). From then on, a bot (`github-actions[bot]`) commits the report to `main` every morning.
 
 If `create-for-rbac` fails with a permissions error (some university tenants block it), skip `AZURE_CREDENTIALS`. The team will log a hurdle and suggest another deploy route.
 

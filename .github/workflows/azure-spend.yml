@@ -1,8 +1,12 @@
 # Daily Azure spend report for rg-ai-studio (board task T-2).
-# Signs in with the AZURE_CREDENTIALS secret (scoped to rg-ai-studio, SETUP.md step 3),
-# asks Cost Management for actual cost, and commits the result to state/BUDGET.md.
-# Optional: TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID as Actions secrets send an alert the
-# first time spend since STUDIO_SPEND_SINCE passes 50%, 75% and 95% of the $80 cap.
+# Signs in, asks Cost Management for actual cost, lists the group's resources, and commits the result to
+# state/BUDGET.md on main. Every outcome is written to BUDGET.md, including "unavailable" (for example if
+# Cost Management doesn't support this subscription's offer), so the studio never mistakes silence for $0.
+#
+# Credentials: AZURE_COST_CREDENTIALS if set (recommended: a service principal with only Cost Management
+# Reader and Reader on rg-ai-studio), otherwise the AZURE_CREDENTIALS deployer secret (SETUP.md step 3).
+# Optional: TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID as Actions secrets for alerts and failure pings.
+# Alerts also go to state/DIGEST_NOTES.md, so the next digest carries them even without Telegram.
 name: azure-spend
 
 on:
@@ -20,13 +24,15 @@ concurrency:
 jobs:
   report:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
-      HAS_AZURE: ${{ secrets.AZURE_CREDENTIALS != '' }}
+      HAS_AZURE: ${{ secrets.AZURE_COST_CREDENTIALS != '' || secrets.AZURE_CREDENTIALS != '' }}
       HAS_TELEGRAM: ${{ secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != '' }}
+      ON_MAIN: ${{ github.ref == 'refs/heads/main' }}
       STUDIO_RESOURCE_GROUP: rg-ai-studio
       STUDIO_SPEND_SINCE: "2026-11-01"
       STUDIO_SPEND_CAP: "80"
+      SAVED: ${{ runner.temp }}/spend
     steps:
       - uses: actions/checkout@v4
 
@@ -35,58 +41,83 @@ jobs:
 
       - name: Skip without Azure credentials
         if: env.HAS_AZURE != 'true'
-        run: echo "::notice::AZURE_CREDENTIALS is not set, so no spend report today (SETUP.md step 3)."
+        run: echo "::notice::No Azure credentials secret is set, so no spend report today (SETUP.md step 3)."
 
       - name: Sign in to Azure
         if: env.HAS_AZURE == 'true'
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          creds: ${{ secrets.AZURE_COST_CREDENTIALS || secrets.AZURE_CREDENTIALS }}
 
       - name: Report spend
         id: report
         if: env.HAS_AZURE == 'true'
         run: |
           set -o pipefail
-          python3 scripts/azure_spend.py report | tee spend.txt
+          python3 scripts/azure_spend.py report --save-dir "$SAVED" | tee spend.txt
           summary=$(head -n 1 spend.txt)
-          echo "### Azure spend: ${summary}" >> "$GITHUB_STEP_SUMMARY"
-          { grep '^UNLISTED ' spend.txt || true; } | while read -r _ name; do
-            echo "::warning::${name} cost money but is not listed in state/BUDGET.md"
-          done
+          status=$(grep '^STATUS ' spend.txt | awk '{print $2}' || true)
           level=$(grep '^ALERT ' spend.txt | awk '{print $2}' || true)
-          if [ -n "$level" ]; then
-            echo "::warning::Azure spend passed ${level}% of the cap: ${summary}"
-          fi
-          echo "alert=${level}" >> "$GITHUB_OUTPUT"
-          echo "summary=${summary}" >> "$GITHUB_OUTPUT"
+          echo "### Azure spend: ${summary} (status: ${status})" >> "$GITHUB_STEP_SUMMARY"
+          { grep '^UNLISTED ' spend.txt || true; } | while read -r _ name; do
+            echo "::warning::${name} is in rg-ai-studio but not in the table in state/BUDGET.md"
+          done
+          if [ -n "$level" ]; then echo "::warning::Azure spend passed ${level}% of the cap: ${summary}"; fi
+          {
+            echo "summary=${summary}"
+            echo "status=${status}"
+            echo "alert=${level}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Alert on Telegram
         if: steps.report.outputs.alert != '' && env.HAS_TELEGRAM == 'true'
+        continue-on-error: true  # a stale token must never stop BUDGET.md being committed
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           LEVEL: ${{ steps.report.outputs.alert }}
           SUMMARY: ${{ steps.report.outputs.summary }}
-        run: |
-          python3 scripts/tg.py send --text "💸 Azure spend passed ${LEVEL}% of the cap. ${SUMMARY}. Details in state/BUDGET.md."
+        run: python3 scripts/tg.py send --text "💸 Azure spend passed ${LEVEL}% of the cap. ${SUMMARY}. Details in state/BUDGET.md."
 
-      - name: Commit BUDGET.md
-        if: env.HAS_AZURE == 'true'
+      - name: Commit BUDGET.md to main
+        if: always() && steps.report.outcome == 'success' && env.ON_MAIN == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add state/BUDGET.md
-          if git diff --cached --quiet; then
-            echo "BUDGET.md unchanged"
-            exit 0
-          fi
-          git commit -m "budget: daily Azure spend report"
+          commit() {
+            git add state/BUDGET.md state/DIGEST_NOTES.md
+            if git diff --cached --quiet; then return 1; fi
+            git commit -q -m "budget: daily Azure spend report"
+          }
+          commit || { echo "BUDGET.md unchanged"; exit 0; }
           for attempt in 1 2 3 4; do
-            if git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}"; then
-              exit 0
-            fi
-            sleep $((attempt * 10))
+            if git push -q origin HEAD:main; then exit 0; fi
+            # Someone pushed meanwhile: start again from their main and re-render from the saved
+            # responses (no new API calls), instead of fighting a rebase conflict.
+            git rebase --abort 2>/dev/null || true
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            python3 scripts/azure_spend.py report --from-dir "$SAVED" > /dev/null
+            commit || exit 0
+            sleep $((attempt * 5))
           done
           echo "::error::could not push BUDGET.md after 4 attempts"
           exit 1
+
+      - name: Fail the run when spend is unknown
+        if: steps.report.outputs.status != '' && steps.report.outputs.status != 'ok'
+        env:
+          STATUS: ${{ steps.report.outputs.status }}
+          SUMMARY: ${{ steps.report.outputs.summary }}
+        run: |
+          echo "::error::Spend report status is '${STATUS}': ${SUMMARY}. BUDGET.md records it; see HURDLES.md."
+          exit 1
+
+      - name: Tell Vishal the run failed
+        if: failure() && env.HAS_TELEGRAM == 'true'
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: python3 scripts/tg.py send --text "⚠️ The daily Azure spend report failed. Spend may be unknown. ${RUN_URL}"
