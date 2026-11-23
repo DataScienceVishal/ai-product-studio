@@ -1,6 +1,9 @@
 """The backend serves the built frontend from one origin (T-16)."""
 from __future__ import annotations
 
+import re
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -181,3 +184,12 @@ def test_assets_do_not_follow_symlinks(web, dist, tmp_path):
     for path in ("/assets/leak.txt", "/assets/leakdir/secret.txt"):
         r = web.get(path)
         assert r.status_code == 404 and "top secret" not in r.text, path
+
+
+def test_client_routes_match_the_frontend_router():
+    """A new page in App.tsx must be added to CLIENT_ROUTES (or a refresh on it would 404)."""
+    from app.spa import CLIENT_ROUTES
+    app_tsx = Path(__file__).resolve().parents[2] / "frontend" / "src" / "App.tsx"
+    src = app_tsx.read_text()  # missing file: fail, not skip
+    found = set(re.findall(r'path === "(/[^"]*)"', src)) | {"/"}
+    assert found == set(CLIENT_ROUTES)

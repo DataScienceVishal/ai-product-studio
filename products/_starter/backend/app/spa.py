@@ -6,8 +6,8 @@ tests, the e2e script, where Vite serves the frontend and proxies /api).
 - /assets/* is Vite's hashed output: cacheable for a year. StaticFiles refuses paths outside the folder.
 - A GET or HEAD that matches no route and is one of the client routes (CLIENT_ROUTES, mirroring the router in
   frontend/src/App.tsx) falls back to index.html with no-cache and the HTML CSP. Any other unknown path gets
-  the same HTML with status 404, so the app can render its not-found view while crawlers and monitors see a
-  404. It is done from the 404 handler so a wrong method on a real route still answers 405 and unknown /api
+  the same HTML with status 404, so crawlers and monitors see a real 404 (the app has no not-found view yet,
+  it shows the dashboard or sign-in for them). It is done from the 404 handler so a wrong method on a real route still answers 405 and unknown /api
   paths still answer the JSON 404. HEAD carries the same headers as GET (including Content-Length), no body.
 - /assets and /assets/ with no file answer 404 directly (no redirect).
 - The fallback never opens a file named by the request, so there is no path to traverse.
