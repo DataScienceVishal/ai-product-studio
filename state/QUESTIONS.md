@@ -27,10 +27,17 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Recommended: A, because it matches the plan in CLAUDE.md, and B or C can be switched on later
 - If no answer: A after 12 hours (reversible)
 
-## Q-3 (status: open)
+## Q-3 (status: withdrawn 2026-11-23: pEPR was parked after T-13 found Repackd already sells the workflow)
 - Decision: 25 ideas have been scored and none has reached the 70-point G1 bar (best: pEPR packaging data at 68). What should the studio do while pEPR's evidence comes in?
 - Context: pEPR is 2 points short. The validator thinks it reaches about 73 if competitor pages confirm the spec-sheet gap (T-13, desk research, can start now) and an extraction benchmark hits 90% (T-14, needs your Azure OpenAI setup). The shared product starter is nearly through its review gates.
 - Options: A) Start specification work on pEPR now (customer profile, core flow, MVP scope, architecture and cost), with no product code until G1 passes B) Keep the rules as they are: only desk research and new scouting until an idea passes C) Lower the G1 bar to 65 for the first product, so pEPR (68) and the restaurant margin copilot (66) can go ahead now
 - Recommended: A, because the spec work is cheap and reversible, it makes the product buildable the day the benchmark passes, and it keeps the 70-point bar intact
 - If no answer: A after 12 hours (reversible)
+
+## Q-4 (status: open)
+- Decision: Which customers should the next scouting round (round 3) look for problems among?
+- Context: 25 ideas have been scored and none reached the 70-point bar. Every one lost most points on Competition (incumbents already sell it) and Reach (no way in to buyers). Your friend's UK business is the sales channel, but the studio doesn't know what it sells or to whom. Ideas built for its existing customers would start with a way in and first-hand pain.
+- Options: A) My friend's own customers: I'll reply with the business's sector and who it sells to B) My own finance and tax network (accountancy practices and small firms I know) C) Keep scouting broadly, with the lessons from rounds 1 and 2
+- Recommended: A, because a channel that already reaches the buyers is the one advantage incumbents can't copy, and it lifts Reach and evidence quality together
+- If no answer: C after 12 hours (reversible; round 3 runs on the broad lessons until you reply)
 
