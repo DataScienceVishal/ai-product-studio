@@ -13,12 +13,13 @@ Format:
 
 Status moves through: open → sent <UTC> → answered | defaulted.
 
-## Q-1 (status: open)
+## Q-1 (status: answered 2026-11-23T21:49:23Z)
 - Decision: How should this session's work reach `main`, where the scheduled runs start?
 - Context: Today's work (kit moved to the repo root, 15 ideas, T-2 spend report, T-6 starter) is on branch `vishal/blissful-cray-v1s3ys`. `main` still has the old nested `files/ai-product-studio/` layout, so scheduled runs would fail at step 1.
 - Options: A) You merge the branch into `main` on GitHub (a PR or a fast-forward), and switch on "Allow unrestricted branch pushes" for the scheduled tasks B) Ask this session to open a PR for you to review and merge C) Keep the branch separate for now, and don't start the scheduled tasks yet
 - Recommended: A, because the branch only adds to main (no conflicts) and the scheduled runs need it to work at all
 - If no answer: waits (needs you on GitHub)
+- Answer: Vishal in chat: always commit everything and push to `main`. Done: `main` fast-forwarded from 14a1f3a to af446d6. Still yours to do: let the scheduled tasks push to `main` (SETUP.md step 6, "Allow unrestricted branch pushes").
 
 ## Q-2 (status: open)
 - Decision: Does the studio have any way to sell outside the UK (India, Indonesia or elsewhere)?
