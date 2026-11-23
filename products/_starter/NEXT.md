@@ -2,43 +2,49 @@
 
 Last updated 2026-11-23 by run 20261123T111240Z-run-b15e.
 
-## Done and verified
+## Status
 
-- Backend: FastAPI, SQLAlchemy 2 with Alembic migration 0001, argon2id passwords, hashed opaque sessions,
-  CSRF header check, password reset (single use, 30 minutes, revokes sessions), tenant-scoped example resource,
-  AI adapter (fake and Azure OpenAI v1) with retries and a monthly cap per plan, billing adapter (mock and
-  Stripe test mode only) with signed, idempotent webhooks, data export and account deletion, JSON logs with
-  request and tenant ids, security headers including noindex, health check, rate limits.
-- 74 backend tests pass against Postgres 16. A mutation check showed the tenancy test fails when the tenant
-  filter is removed.
-- Frontend: React 19, TypeScript, Vite 8, Tailwind 4. Type check clean, build about 74 kB gzipped.
-- The browser end-to-end test (`scripts/e2e.sh`) passes: sign-up, sample data, AI summary, checkout with
-  EARLY50, sign out and in, delete account.
-- CI: `.github/workflows/_starter-ci.yml`. Not yet seen running on GitHub.
-- Team (T-8 part 1): owners invite members by single-use, expiring email links; members can't use billing,
-  export or deletion; removing a member ends their sessions. 10 backend tests, plus a browser check of the
-  invite, accept and remove flow (a scratch harness, since the invite link lives in the email outbox).
-- Email verification (T-8 part 2): a link at sign-up (48 hours, single use, resend rate-limited); owners must
-  verify before inviting or checking out when REQUIRE_EMAIL_VERIFICATION=true (the default). Accepting an invite
-  or resetting a password also verifies. Outbox-only demos switch the gate off, because no real email is sent.
-  74 backend tests; e2e still passes. `scripts/e2e.sh` takes E2E_API_PORT and E2E_WEB_PORT.
+- The first review gave CHANGES (8 blocking: C1 to C8) and the security gate gave FAIL. Both are addressed in
+  commits after `5df3b8b`. Waiting for re-review and a security re-test.
+- 113 backend tests pass against Postgres 16. The browser end-to-end test passes. CI is green on GitHub; the
+  new image build, audit and hash-checked install steps are untested until the next push runs.
+
+## What changed since the first review (see reviews/ and SECURITY.md for the findings)
+
+- **C1:** no transaction is held across AI or payment calls; there's one 25 s AI deadline; `/livez` (no DB) is
+  separate from `/healthz`.
+- **C2:** parameters are hidden and database errors are scrubbed in logs.
+- **C3:** webhook secrets of 32+ characters, `whsec_` for Stripe; `verify()` refuses an empty one.
+- **C4:** billed tokens of failed calls are counted; reservations happen under advisory locks; there's a global
+  daily budget.
+- **C5:** `--no-proxy-headers`; proxy trust is required in prod; rate-limit eviction can't unblock anyone.
+- **C6:** Stripe metadata is on the checkout session; `subscription.created` is handled; the period end is read
+  from items; live-mode events are ignored.
+- **C7:** a 1 MB body limit; bounded mock sessions; rate limits on checkout and deletion.
+- **C8:** deletion closes the provider customer first and fails closed.
+- **Security Mediums:** argon2 concurrency cap; verification needs the right signed-in account (pre-hijacking);
+  reset timing, single use and an hourly cap; HSTS/CSP; invitation caps and email-safe names; member self-service;
+  retention purge; DRAFT privacy notice and terms.
+- **Review I1 to I12:**
+  - Done: global CSRF and an auth sweep; `MOCK_CHECKOUT_ENABLED`; the prod validator; redaction; DATA.md and the
+    purge; reset races; part of I8 (event order, a second subscription, the idempotency key); a clean test schema;
+    CI hashes, image build, audits and pinned Playwright; frontend 401, sign-out and billing-done; docs.
 
 ## Left to do
 
-1. **Gates:** reviewer and security PASS (required before any product copies the starter).
-2. **Deploy:** an Azure Container Apps deploy workflow and Bicep. Architect first: decide the registry
-   (GHCR vs ACR Basic, about $5 a month) and the Postgres choice (Flexible Server B1ms vs a container), write
-   the monthly estimates in `state/BUDGET.md`, and ask Vishal if one resource passes $10 a month. Needs
-   `AZURE_CREDENTIALS`, which isn't set yet (see HURDLES).
-3. **Gaps to close before G4 products:** Redis-backed rate
-   limits for more than one replica; a frontend unit test setup. (uvicorn's startup lines now go
-   through the JSON logger too.)
-4. **Watch:** Starlette warns that its test client prefers `httpx2`. Installing it was blocked (unverified
-   package), so we stay on httpx. Revisit only if Starlette's docs confirm it.
+1. **Gates:** reviewer re-review and security re-test.
+2. **Deploy (T-7):** the architect designs Container Apps + Bicep (registry, Postgres, the purge job), writes the
+   monthly estimates in `state/BUDGET.md`, and asks Vishal if one resource passes $10 a month.
+3. **Later:**
+   - Redis-backed rate limits before running more than one replica.
+   - A real email adapter (paid, needs approval). Until then the outbox drops emails: prod logs a warning.
+   - The early-customer offer applied server-side as a Stripe coupon (review I8).
+   - The `__Host-` cookie prefix.
+   - Frontend unit tests.
 
 ## How to verify
 
 ```bash
-cd products/_starter/backend && .venv/bin/python -m pytest -q
-cd products/_starter && ./scripts/e2e.sh
+cd products/_starter/backend && TEST_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/<your_db> .venv/bin/python -m pytest -q
+cd products/_starter && E2E_API_PORT=8300 E2E_WEB_PORT=4373 E2E_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/<your_e2e_db> ./scripts/e2e.sh
 ```

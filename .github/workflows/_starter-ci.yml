@@ -1,12 +1,11 @@
 # CI for the product starter (products/_starter). Products copy this as <slug>-ci.yml.
-# Unit and API tests plus the frontend build run on every push and PR that touches the starter.
-# The browser end-to-end test runs on pushes to main and on manual runs, to save Actions minutes.
+# Runs on every push that touches the starter (a pull request shows the push's results, so there's no
+# separate pull_request trigger to run everything twice). The browser end-to-end test runs on pushes to
+# main and on manual runs, to save Actions minutes.
 name: _starter-ci
 
 on:
   push:
-    paths: ["products/_starter/**", ".github/workflows/_starter-ci.yml"]
-  pull_request:
     paths: ["products/_starter/**", ".github/workflows/_starter-ci.yml"]
   workflow_dispatch:
 
@@ -43,12 +42,17 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: products/_starter/backend/requirements-dev.txt
-      - run: pip install -r requirements-dev.txt
+      - name: Install pinned, hash-checked dependencies
+        run: pip install --require-hashes -r requirements-dev.txt
       - name: Migrations apply cleanly and match the models
         env:
           DATABASE_URL: postgresql+psycopg://studio:studio@localhost:5432/starter_test
         run: alembic upgrade head && alembic check && alembic downgrade base
       - run: python -m pytest -q
+      - name: Known vulnerabilities in the runtime dependencies
+        run: pipx run pip-audit==2.10.1 --require-hashes -r requirements.txt
+      - name: The production image builds
+        run: docker build -t starter-backend:ci .
 
   frontend:
     runs-on: ubuntu-latest
@@ -65,6 +69,8 @@ jobs:
           cache-dependency-path: products/_starter/frontend/package-lock.json
       - run: npm ci
       - run: npm run build
+      - name: Known vulnerabilities in shipped dependencies
+        run: npm audit --omit=dev --audit-level=high
 
   e2e:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
@@ -92,20 +98,29 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: products/_starter/frontend/package-lock.json
-      - run: pip install -r products/_starter/backend/requirements-dev.txt
+          cache-dependency-path: |
+            products/_starter/frontend/package-lock.json
+            products/_starter/tests/e2e/package-lock.json
+      - run: pip install --require-hashes -r products/_starter/backend/requirements-dev.txt
       - run: npm ci && npx vite build
         working-directory: products/_starter/frontend
-      - name: Install Playwright's Chromium
-        run: npm install --no-save playwright && npx playwright install --with-deps chromium
+      - name: Install the pinned Playwright
+        run: npm ci
+        working-directory: products/_starter/tests/e2e
+      - name: Cache Playwright's browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('products/_starter/tests/e2e/package-lock.json') }}
+      - run: npx playwright install --with-deps chromium
         working-directory: products/_starter/tests/e2e
       - name: Run the core-flow test
         env:
           PYTHON: python
-          NODE_PATH: ${{ github.workspace }}/products/_starter/tests/e2e/node_modules
           E2E_DATABASE_URL: postgresql+psycopg://studio:studio@localhost:5432/starter_e2e
-          E2E_LOG_DIR: ${{ runner.temp }}/e2e
-        run: mkdir -p "$E2E_LOG_DIR" && products/_starter/scripts/e2e.sh
+        run: |
+          mkdir -p "$RUNNER_TEMP/e2e"
+          E2E_LOG_DIR="$RUNNER_TEMP/e2e" products/_starter/scripts/e2e.sh
       - if: failure()
         uses: actions/upload-artifact@v4
         with:

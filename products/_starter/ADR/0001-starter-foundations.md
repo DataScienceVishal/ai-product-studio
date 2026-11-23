@@ -34,10 +34,18 @@ cost control, logs and health checks. It must run within $80 of Azure credit in 
 9. **Email is an adapter.** Real sending is a paid service and needs approval. The in-memory outbox never logs
    addresses or bodies, because reset links are secrets.
 10. **Logs are JSON lines with request ids and tenant ids.** They never contain emails, names or content.
-    Sensitive-looking extra fields are redacted as a safety net.
+    SQLAlchemy's parameter dumps are off (`hide_parameters`), database error messages are reduced to their
+    SQLSTATE code, and sensitive extra fields are redacted by whole key name.
+11. **No transaction is held across a slow external call.** `deps.current` commits after loading the user. The
+    AI flow reserves budget under Postgres advisory locks, releases the connection, calls the model and settles
+    afterwards. Without this, a few slow AI calls exhaust the pool for every tenant.
+12. **CSRF is global.** One ASGI guard covers every write under `/api`, with one listed exemption (the provider
+    webhook). A test sweeps the route table, so a new router can't forget it.
 
 ## Consequences
 
 - One small Postgres server can host every product (one database each), which keeps Azure costs down.
 - A product copying the starter replaces `Note` with its own core objects and keeps the scoped-query pattern.
-- Known gaps, tracked in NEXT.md: invitations and member roles, email verification, Redis rate limiting.
+- Known gaps, tracked in NEXT.md: Redis rate limiting before scaling out, a real email adapter (needs approval).
+- The sign-up and invitation forms reveal whether an email already has an account. That is accepted for a B2B
+  sign-up form and is rate-limited; the password-reset form does not reveal it.

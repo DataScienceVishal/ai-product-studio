@@ -33,14 +33,18 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 
 | What | Command | Where it runs |
 |---|---|---|
-| Backend unit and API tests (74) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
+| Backend unit and API tests (113) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
 | Migrations match the models | `alembic upgrade head && alembic check` | every push |
 | Frontend type check and build | `cd frontend && npm run build` | every push (CI `frontend`) |
 | Browser end-to-end core flow | `./scripts/e2e.sh` | pushes to main and manual runs (CI `e2e`) |
 
 Backend tests use a real Postgres at `TEST_DATABASE_URL` (default `postgresql+psycopg://studio:studio@localhost:5432/starter_test`).
-The tests prove tenant isolation, session revocation, CSRF refusal, rate limits, the AI cap, the billing
-provider contract, idempotent webhooks, account deletion and log redaction.
+The tests prove tenant isolation (and that every private route needs sign-in and every write needs the CSRF
+header), session revocation, rate limits, the AI cap under concurrency, the billing provider contract, idempotent
+and in-order webhooks, account deletion at the provider, log redaction and the retention purge.
+
+Run the retention purge daily: `python -m app.maintenance purge`. What is stored and for how long is in `DATA.md`.
+Security findings and their status are in `SECURITY.md`; the code review is in `reviews/`.
 
 ## Configuration
 
@@ -71,5 +75,6 @@ hidden in production.
 
 ## Not done yet
 
-See `NEXT.md`: Azure deploy workflow and Bicep (needs the architect's design and a cost entry in
-`state/BUDGET.md` first), invitations and member roles, email verification, and Redis rate limits.
+See `NEXT.md`: the Azure deploy workflow and Bicep (T-7: needs the architect's design and a cost entry in
+`state/BUDGET.md` first), Redis-backed rate limits before running more than one replica, a real email adapter
+(paid, needs approval), and frontend unit tests.
