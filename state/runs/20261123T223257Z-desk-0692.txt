@@ -1,0 +1,3 @@
+kind=desk
+started=2026-11-23T22:32:57Z
+session=cse_01LStgwXtWVUqBf7rjRPe4Ha
