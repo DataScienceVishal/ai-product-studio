@@ -301,8 +301,10 @@ def previous(block: str | None) -> dict:
     block = block or ""
     level = re.search(r"Last alert level: (\d+)% \(since (\d{4}-\d{2}-\d{2})\)", block)
     status = re.search(r"Status: unavailable since (\d{4}-\d{2}-\d{2}): (\S+)", block)
+    code = re.search(r"^- Status: (\w+)", block, re.M)
     return {"level": int(level.group(1)) if level else 0, "level_since": level.group(2) if level else None,
-            "down_since": status.group(1) if status else None, "down_code": status.group(2) if status else None}
+            "down_since": status.group(1) if status else None, "down_code": status.group(2) if status else None,
+            "status": code.group(1) if code else None}
 
 
 def money(amount: float, currency: str | None) -> str:
@@ -333,6 +335,7 @@ def render(text: str, cfg: dict, outcome: Outcome, stamp: str, today: date):
     lines = [START, "## Spend report (written daily by .github/workflows/azure-spend.yml)", "",
              f"- Updated: {stamp}. Covers resource group {cfg['group']} only; Cost Management data can lag by up to a day."]
     alert, cumulative = None, None
+    costs_known = results is not None  # false when unavailable or when Azure returned no rows
     kept = before["level"] if before["level_since"] == cfg["since"] else 0  # a new since date starts afresh
     if results is not None:
         mtd, mtd_cur, mtd_rows = total(results.get("month_to_date"))
@@ -342,9 +345,15 @@ def render(text: str, cfg: dict, outcome: Outcome, stamp: str, today: date):
         start, _, clamped = query_window(cfg["since"], today)
         if currencies - {"USD"}:
             status = "currency"
-            status_line = (f"- Status: currency is {', '.join(sorted(currencies))}, not USD, so it can't be compared "
-                           f"with the ${cfg['cap']:.0f} cap. Convert by hand or change the cap's currency.")
+            status_line = (f"- Status: currency: figures are in {', '.join(sorted(currencies))}, not USD, so they can't be "
+                           f"compared with the ${cfg['cap']:.0f} cap. Convert by hand or change the cap's currency.")
             lines += [status_line, f"- Since {start}: {money(cumulative, cum_cur)}", f"- Month to date: {money(mtd, mtd_cur)}"]
+        elif mtd_rows == 0 and cum_rows == 0:
+            # No rows is "no data", not "$0.00": a new subscription, data lag, or an offer that returns nothing.
+            status = "no_data"
+            costs_known = False  # so the inventory check flags every unlisted resource
+            lines.append("- Status: no_data: Azure returned no cost rows (new subscription, data lag, or an "
+                         "unsupported offer). Spend is unknown.")
         else:
             share = cumulative / cfg["cap"] * 100 if cfg["cap"] else 0.0
             reached = max((lvl for lvl in LEVELS if share >= lvl), default=0)
@@ -356,8 +365,6 @@ def render(text: str, cfg: dict, outcome: Outcome, stamp: str, today: date):
                 digest.append(f"- [budget] Azure spend passed {alert}% of the ${cfg['cap']:.0f} cap: "
                               f"{money(cumulative, 'USD')} since {start}. See state/BUDGET.md.")
         lines.append(f"- Cost rows returned: month to date {mtd_rows}, since start {cum_rows}, by resource {res_rows}")
-        if mtd_rows == 0 and cum_rows == 0:
-            lines.append("- No cost rows came back. That means Azure has no data yet, not necessarily $0.00 spent.")
         if clamped:
             lines.append(f"- The since-start range was shortened to the last {MAX_RANGE_DAYS} days (API limit).")
         if any(((results.get(q) or {}).get("properties") or {}).get("nextLink") for q in QUERIES):
@@ -384,7 +391,7 @@ def render(text: str, cfg: dict, outcome: Outcome, stamp: str, today: date):
             return False
         if entry["cost"] is not None:
             return entry["cost"] > 0
-        return results is None
+        return not costs_known
 
     unlisted = sorted({r["name"] for r in resources.values() if needs_listing(r)})
     if outcome.inventory is not None:
@@ -447,6 +454,7 @@ def cmd_report(args) -> None:
             "results": outcome.results, "inventory": outcome.inventory, "inventory_error": outcome.inventory_error,
             "error": {"code": outcome.error.code, "detail": outcome.error.detail} if outcome.error else None,
         }, indent=2), encoding="utf-8")
+    previous_status = previous(split_block(text)[1])["status"]
     new_text, alert, unlisted, status, digest = render(text, cfg, outcome, now_iso(), today)
     BUDGET.write_text(new_text, encoding="utf-8")
     if digest and DIGEST.exists():
@@ -459,6 +467,7 @@ def cmd_report(args) -> None:
         detail = f"{outcome.error.code}: {outcome.error.detail}" if outcome.error else status
         print(f"spend unknown ({detail})")
     print(f"STATUS {status}")
+    print(f"CHANGED {'yes' if status != previous_status else 'no'}")
     for name in unlisted:
         print(f"UNLISTED {name}")
     if alert:

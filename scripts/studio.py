@@ -243,6 +243,8 @@ def budget_line(now: datetime) -> str:
     """One line about the Azure spend report in state/BUDGET.md, flagging it when stale or unavailable."""
     path = STATE / "BUDGET.md"
     text = path.read_text(encoding="utf-8") if path.exists() else ""
+    block = re.search(r"^<!-- spend:auto:start -->[ \t]*$(.*?)^<!-- spend:auto:end -->[ \t]*$", text, re.M | re.S)
+    text = block.group(1) if block else ""  # only the report's own block: hand-written lines can't fool it
     updated = re.search(r"^- Updated: (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)", text, re.M)
     if not updated:
         return "budget: no spend report yet (the azure-spend workflow needs Azure credentials)"

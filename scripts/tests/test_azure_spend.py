@@ -130,10 +130,15 @@ class Figures(unittest.TestCase):
         self.assertIn("| pg | - | 3.00 | no: add it |", text)
 
     def test_no_rows_is_not_reported_as_zero_spend(self):
-        empty = spend.Outcome(results={q: {} for q in spend.QUERIES}, inventory=[])
-        text, *_ = render(BUDGET, empty)
-        self.assertIn("No cost rows came back", text)
-        self.assertIn("Cost rows returned: month to date 0, since start 0, by resource 0", text)
+        inventory = [{"id": f"{RG}/Microsoft.App/containerApps/ca-new", "name": "ca-new", "type": "Microsoft.App/containerApps"}]
+        empty = spend.Outcome(results={q: {} for q in spend.QUERIES}, inventory=inventory)
+        text, alert, unlisted, status, _ = render(BUDGET, empty)
+        self.assertEqual(status, "no_data")
+        self.assertIn("- Status: no_data:", text)
+        self.assertNotIn("$0.00", text)
+        self.assertIn("spend unknown (no_data)", text)  # the top line too
+        self.assertIsNone(alert)
+        self.assertEqual(unlisted, ["ca-new"])  # costs unknown, so unlisted inventory is still flagged
 
     def test_non_usd_currency_is_not_compared_with_the_cap(self):
         text, alert, _, status, digest = render(BUDGET, ok(70, 70, currency="GBP"))
@@ -288,6 +293,15 @@ class Cli(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertIn("STATUS unavailable", done.stdout)
         self.assertIn("unavailable since", (root / "state" / "BUDGET.md").read_text())
+
+    def test_status_change_is_reported_once(self):
+        down = {"results": None, "inventory": [], "inventory_error": None,
+                "error": {"code": "http_400", "detail": "BadRequest"}}
+        done, root = self.run_report(down)
+        self.assertIn("CHANGED yes", done.stdout)  # ok/none -> unavailable
+        again = subprocess.run([sys.executable, str(root / "scripts" / "azure_spend.py"), "report", "--from-dir",
+                                str(root / "saved")], capture_output=True, text=True)
+        self.assertIn("CHANGED no", again.stdout)  # still unavailable: the workflow won't ping again
 
     def test_malformed_markers_exit_3_and_leave_the_file_alone(self):
         broken = BUDGET + f"\n{spend.START}\nhalf a block\n"

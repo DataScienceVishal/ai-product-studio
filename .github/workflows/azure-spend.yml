@@ -58,6 +58,7 @@ jobs:
           summary=$(head -n 1 spend.txt)
           status=$(grep '^STATUS ' spend.txt | awk '{print $2}' || true)
           level=$(grep '^ALERT ' spend.txt | awk '{print $2}' || true)
+          changed=$(grep '^CHANGED ' spend.txt | awk '{print $2}' || true)
           echo "### Azure spend: ${summary} (status: ${status})" >> "$GITHUB_STEP_SUMMARY"
           { grep '^UNLISTED ' spend.txt || true; } | while read -r _ name; do
             echo "::warning::${name} is in rg-ai-studio but not in the table in state/BUDGET.md"
@@ -67,6 +68,7 @@ jobs:
             echo "summary=${summary}"
             echo "status=${status}"
             echo "alert=${level}"
+            echo "changed=${changed}"
           } >> "$GITHUB_OUTPUT"
 
       - name: Alert on Telegram
@@ -80,16 +82,18 @@ jobs:
         run: python3 scripts/tg.py send --text "💸 Azure spend passed ${LEVEL}% of the cap. ${SUMMARY}. Details in state/BUDGET.md."
 
       - name: Commit BUDGET.md to main
-        if: always() && steps.report.outcome == 'success' && env.ON_MAIN == 'true'
+        if: ${{ !cancelled() && steps.report.outcome == 'success' && env.ON_MAIN == 'true' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          commit() {
-            git add state/BUDGET.md state/DIGEST_NOTES.md
-            if git diff --cached --quiet; then return 1; fi
-            git commit -q -m "budget: daily Azure spend report"
+          # Any git failure fails this step (bash -e); only "nothing to commit" is a quiet success.
+          stage() {
+            git add state/BUDGET.md
+            if [ -f state/DIGEST_NOTES.md ]; then git add state/DIGEST_NOTES.md; fi
           }
-          commit || { echo "BUDGET.md unchanged"; exit 0; }
+          stage
+          if git diff --cached --quiet; then echo "BUDGET.md unchanged"; exit 0; fi
+          git commit -q -m "budget: daily Azure spend report"
           for attempt in 1 2 3 4; do
             if git push -q origin HEAD:main; then exit 0; fi
             # Someone pushed meanwhile: start again from their main and re-render from the saved
@@ -98,14 +102,16 @@ jobs:
             git fetch -q origin main
             git reset -q --hard origin/main
             python3 scripts/azure_spend.py report --from-dir "$RUNNER_TEMP/spend" > /dev/null
-            commit || exit 0
+            stage
+            if git diff --cached --quiet; then exit 0; fi
+            git commit -q -m "budget: daily Azure spend report"
             sleep $((attempt * 5))
           done
           echo "::error::could not push BUDGET.md after 4 attempts"
           exit 1
 
       - name: Fail the run when spend is unknown
-        if: steps.report.outputs.status != '' && steps.report.outputs.status != 'ok'
+        if: steps.report.outputs.status == 'unavailable' || steps.report.outputs.status == 'currency'
         env:
           STATUS: ${{ steps.report.outputs.status }}
           SUMMARY: ${{ steps.report.outputs.summary }}
@@ -114,7 +120,8 @@ jobs:
           exit 1
 
       - name: Tell Vishal the run failed
-        if: failure() && env.HAS_TELEGRAM == 'true'
+        # Once per new problem: not every day while Cost Management stays unavailable.
+        if: failure() && env.HAS_TELEGRAM == 'true' && (steps.report.outcome != 'success' || steps.report.outputs.changed == 'yes')
         continue-on-error: true
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
