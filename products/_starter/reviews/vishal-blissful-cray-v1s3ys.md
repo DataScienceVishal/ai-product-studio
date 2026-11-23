@@ -541,3 +541,109 @@ Known from the security re-test, and confirmed by my probes where they overlap:
 3. Fix the security re-test's R1 to R4 and have the security agent re-test them.
 
 Products shouldn't copy the starter until both gates pass.
+
+## Re-review 2 (2026-11-23)
+
+- Tree: `7da307b`, in a clean detached worktree. The fixes are in `93f7aba`; `7da307b` adds only DATA.md, NEXT.md
+  and state/. Later commits (`3b66b5b`, `f074262`, `d051954`, `b0f72ae`) are not part of this pass.
+- Own workspace again: `starter_rev_test`, `starter_rev_e2e`, ports 8400 and 4473.
+
+### Verdict: CHANGES (one new blocker, B4)
+
+B1, B2, B3, N2 and N3 are fixed, each with a test that I mutation-checked. N1 is mostly fixed. All the earlier
+reproductions still hold. One regression came in with the R11 fix: the new purge of unverified accounts deletes
+active and paying accounts, and under the default configuration it deletes every account 30 days after sign-up
+(B4). `d051954`, which I haven't reviewed, appears from reading to address all three parts of B4. Re-check it
+there.
+
+### What I ran
+
+| Check | Result |
+|---|---|
+| Backend tests at `7da307b` | 132 passed, 1 warning, 22.8 s |
+| Migrations | `upgrade`, `check`, `downgrade base` and `upgrade` all clean. 0005 with data in the table: deleting a tenant leaves its usage row with `tenant_id` NULL (rule SET NULL). Downgrade removes the unlinked rows and restores CASCADE and NOT NULL |
+| Frontend `tsc -b`, `vite build` | clean; JS 248.50 kB (76.63 kB gzip) |
+| `e2e.sh` on 8400/4473 | `E2E PASS: core flow`, including the new wrong-password step. The drop guard refuses `starter_rev_test` |
+| Mutations | The coordinator's two are both caught. The lock test fails in 5 of 5 runs without the lock and passes in 5 of 5 with it. Of 11 mutations to the new fixes, 7 are caught and 4 survive (H, J, L and M, below). My 12 earlier ones, re-run: all caught |
+| CI | The runs for `93f7aba` and `7da307b` were cancelled, superseded by newer pushes. Run 45225652013 at `f074262` has the same starter code and CI workflow (it adds only infra/ and state/) and is green: 132 tests, alembic check, pip-audit clean, docker build, npm audit 0. e2e was skipped (branch push) |
+
+### Status
+
+| Item | Status | Proof |
+|---|---|---|
+| B1 | Fixed | `api.ts:47` ends the session only on `not_signed_in`. In the browser, a wrong password on Delete account stays on /settings, shows "That password isn't right." and `/api/auth/me` stays 200. The e2e step at `core_flow.cjs:56` covers it |
+| B2 | Fixed | `health.py:18` is `async def`; `AISlots` (`ai.py:69`) allows 8 calls with a 2 s wait. 3 tenants × 15 calls of 12 s: 6 run (2 per tenant) and 39 are refused at once. `/livez` max 280 ms, `/healthz` 381 ms, another tenant's list 210 ms (before: 11.7 s). 25 tenants × 2: 8 run and 42 get 503 `ai_busy` after 2 s; `/livez` max 110 ms, others 1.7 s or less. Mutation G caught |
+| B3 | Fixed | Removing the tenant lock fails `test_hardening.py:670` (and the cap test). Removing `deps.current`'s commit fails `:709` |
+| N1 | Mostly fixed | Login commits before verifying (`auth.py:148`); sign-up, reset and accept hash first. In a burst of 200 logins, at most 1 connection was idle in transaction (was 10), and nothing failed. Remainder: a login waits up to 10 s for a hash slot (`security.py:35`) while holding a worker thread. Measured with curl from a separate process, `/healthz` took 5.7 s and `/livez` 1.5 s (CPU). With a hasher that only sleeps, both stayed under 1 s. Mutation F caught |
+| N2 | Fixed | `routes/billing.py:69` locks the row. A newer and an older event posted at once: the stale one won 0 of 40 rounds (before: 8 of 40); no deadlocks. Mutation C caught |
+| N3 | Fixed | A note edited during the AI call gets 409 `note_changed` and no summary is saved; an untouched note is summarised. Mutations D and E caught |
+
+The earlier C3, C4, C6, C7 and C8 reproductions give the same results as in the first re-review. The empty-answer
+run now stops at the trial's daily cap: 5 × 503, then 429s, with 31,000 tokens recorded.
+
+### R1 to R11: regression check
+
+- R1, R5, R6, R9, R10, the R11 wording, `--no-server-header`, and removing tokens from the address bar (checked in
+  the browser on the verify and reset pages): no regressions found.
+- R2:
+  - It works, and the global budget can't be overshot.
+  - It is conservative by design: a 20,000-character English note now reserves about 21,500 tokens. A trial can
+    summarise about two long notes a day, and a plan near its monthly limit is refused calls that would actually fit.
+- R3 works. `.env.example:19` still sets `MOCK_CHECKOUT_ENABLED=true`, so copying it into prod turns free Pro back on.
+- R4: see B2.
+- R11's purge: B4.
+
+### Blocking
+
+**B4. The new purge deletes active and paying accounts.**
+- Where:
+  - `backend/app/maintenance.py:43-47` deletes every tenant whose owner is unverified and was created more than
+    30 days ago.
+  - `:61` turns the rule on whenever `REQUIRE_EMAIL_VERIFICATION` is true, which is the default.
+- Evidence: the purge CLI with the default config, on four seeded accounts.
+  - Deleted: a 31-day-old trial whose owner can't verify (outbox only), with its notes.
+  - Deleted: a 31-day-old paying tenant (`active`, Stripe customer `cus_test_paying`) whose owner signed up while
+    verification was off. No provider call was made.
+  - Kept: a verified tenant and a 10-day-old one.
+- Why it matters:
+  - With only the outbox, no owner can verify, so every account goes 30 days after sign-up. T-7's Bicep at
+    `f074262` (outside this pass) defaults `requireEmailVerification = true` (`infra/main.bicep:48`) and gives the
+    purge job the same environment, so the first deploy would do exactly that.
+  - A tenant with a provider subscription is deleted without `close()`. That bypasses C8: the customer stays
+    billed at Stripe while their data is gone.
+  - R11 asked for "after 30 days with no sign-in". The code ignores sign-ins, so an active user who never verified
+    loses their data.
+- Fix:
+  1. Run the rule only when real email exists (`email_provider != "outbox"`).
+  2. Skip tenants with a provider customer or subscription.
+  3. Require no sign-in for 30 days. This needs a sign-in time, because sessions are purged after 7 days.
+  4. Tests: a paying unverified tenant is kept, an outbox-only config purges no accounts, and a recently signed-in
+     unverified owner is kept.
+
+  `d051954` appears to do 1 to 3.
+
+### Minor (new)
+
+- `notes.py:122`: `db.expire_all()` also expires `me.tenant`. Summaries in flight while their own account is
+  deleted now return 500 (`ObjectDeletedError`, 6 of 6), where they used to return 404. Capture the tenant id
+  before the call, or refresh only the note (`populate_existing`).
+- Surviving mutations: the tests cover the helpers, not their use in summarise.
+  - H: `with ai_slots` removed.
+  - J: the old `used >= cap` monthly rule. Test it with 99,000 used and a 2,000 estimate.
+  - L: the in-flight limit not passed.
+  - M: the period end ignored.
+
+  Add one HTTP-level test for each.
+- Shorten the hash-slot wait to 1 or 2 s, with `Retry-After`; that is the rest of N1. Size the slots to the CPU
+  count: 4 slots × parallelism 4 is 16 lanes, more than Container Apps' 0.25 to 1 vCPU. The 503 `busy` and
+  `ai_busy` answers have no `Retry-After`.
+- `scripts/e2e.sh`: the trap killed `npx` but not its `vite preview` child, which stayed on port 4473 (PPID 1).
+  `b0f72ae` appears to fix this; not reviewed.
+- `README.md:51-60` still has the old prod-guard text. It doesn't say that `REQUIRE_EMAIL_VERIFICATION` now also
+  gates trial AI and the purge, and it doesn't list `MOCK_CHECKOUT_ENABLED`.
+- Carried over: `t=\xb2` still gives a 500 (`billing.py:105`), and `?next=/%5C…` leaves the user on /login.
+
+### What PASS needs now
+
+Fix B4 with its tests. If `d051954` is the fix, I'll re-run the purge probe and the suite on it, plus a quick
+review of its other changes. Everything else in this pass can become board tasks.
