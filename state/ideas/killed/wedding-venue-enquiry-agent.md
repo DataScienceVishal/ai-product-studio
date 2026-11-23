@@ -1,7 +1,7 @@
 # Wedding venue enquiry agent
 
 - slug: wedding-venue-enquiry-agent
-- stage: G0
+- stage: KILLED (second gate failure, 2026-11-23, T-31)
 - market and segment: UK independent wedding venues (barns, country houses, small hotels with one to three events staff), England first
 - one-line pitch: An answering agent trained on the venue's own packages, prices, availability rules and FAQs. It replies to every couple's enquiry within a minute, day or night, on web chat, email and WhatsApp, then books the show-round and hands a qualified lead to the coordinator.
 
@@ -105,6 +105,35 @@ Vendor AI checks (vendors' own pages):
 
 **Conclusion: inconclusive but not killed on this evidence.** Of the six venues readable, all publish their own phone and most their own form or email, and none relies on directory messaging alone, so directory messaging does not dominate the venue side of the channel mix. But a venue-site check cannot see how many enquiries actually come through Bridebook or Hitched, so the main kill test (share of enquiries by channel) still needs UK venue-side data. New negative: Perfect Venue and iVvyAI already sell AI email replies, which lowers Competition further.
 
+## Validator re-score (T-31, second gate attempt), 2026-11-23
+
+| Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
+|---|---|---|---|---|---|---|---|
+| 13 | 13 | 7 | 7 | 12 | 2 | 8 | 62 |
+
+How the four "change my mind" items stand:
+1. UK channel-mix data: **not met.** The desk check shows the channels venues publish, not the share of enquiries arriving through each, and none of the evidence gives that share.
+2. 20-venue desk check: **partly met (6 of 20).** All 6 publish their own phone, and most their own form or email, so directory messaging is not the only route. That eases the Bridebook lock-in worry but doesn't size it. Also, Bridebook now lets couples send an enquiry to a venue from inside ChatGPT (https://support.bridebook.com/en/introducing-bridebook-in-chatgpt, search result, accessed 2026-11-23), which pulls more enquiries into its own channel.
+3. UK price point: **not met.** No UK venue CRM or AI-tool price was verified on a vendor page.
+4. Third-party replies on Bridebook or Hitched: **not met.**
+
+Competition fell from 3 to 2. Beyond Mikla (free plan, inbox answering) and Hyperleap ($40/mo):
+- Perfect Venue, a venue CRM with a free plan and paid tiers at $199 and $299 a location per month, sells "AI Reply", which drafts replies from the venue's availability, menus, policies and tone (https://www.perfectvenue.com/pricing and https://www.perfectvenue.com/ai-reply, fetched 2026-11-23).
+- iVvyAI handles venue enquiries and reportedly has a UK venue, Edgbaston (https://www.ivvy.com/blog/how-ivvyai-automates-venue-enquiry-management).
+So AI reply drafting is now a standard CRM feature, and the remaining gap ("UK-flavoured, GBP-priced") is copyable in weeks. The other scores are unchanged: the venue-side pain is still inferred, and no UK venue was shown paying for AI replies.
+
+**Verdict: KILL (second gate failure, 62).** The desk check shows venues do run their own form and email channels, but it doesn't supply the evidence that would lift the score: no channel-share data, no UK price point, no directory API. Meanwhile, AI enquiry replies are now a standard feature in venue CRMs (Perfect Venue AI Reply, iVvyAI, Tripleseat Intelligence) and in cheap chatbot builders (Mikla, Hyperleap). No clear path to 70 remains, because Competition can't plausibly rise above 3 and Pay has no UK price.
+
+**Lessons**
+- A RAG receptionist is a feature, not a product, in any vertical where a CRM already holds the enquiry. Check the vertical CRMs' AI pages first (here Perfect Venue, iVvy, Tripleseat).
+- When a directory owns the couple-to-venue channel and keeps adding AI entry points (Bridebook in ChatGPT), an outside agent sees a shrinking share of enquiries.
+- Desk checks of public websites can show which channels a business publishes, never the volume through each. Ask for evidence the studio can actually collect.
+
+**What would revive it**
+- A UK venue-side survey showing that over half of enquiries arrive through the venue's own email or website.
+- Plus one of these: a UK venue CRM with no AI reply and an open API, whose users could be reached through the UK partner; or an incumbent's AI reply shown to get UK venue details wrong (licensing, exclusive use, VAT-inclusive pricing).
+
 ## Gate log
 - 2026-11-23: G0 spotted by scout.
 - 2026-11-23 | validator | G0→G1 | REVISE 63 | Couples' frustration is real, but Mikla and Hyperleap already sell grounded multi-channel answering, and Bridebook auto-sends brochures and keeps most of its enquiries inside its own messaging, so the UK gap is thin and unproven.
+- 2026-11-23 | validator | G0→G1 (second attempt, T-31) | KILL 62 | Second failure: the desk check didn't produce channel-share data, a UK price or a directory API, and Perfect Venue AI Reply and iVvyAI joined Mikla and Hyperleap, so AI enquiry replies are now a standard CRM feature with no UK-specific gap.

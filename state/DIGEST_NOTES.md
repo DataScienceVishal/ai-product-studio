@@ -4,3 +4,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - [studio] Telegram messages restyled as you asked: shorter, bold sections, buttons show the option words. Tell me anything you'd change.
 - [_starter] Starter app: 104 screen tests added, 3 web fixes and safer image builds merged; a sign-in redirect weakness found by the tests is fixed.
 - [studio] Got your answers: scouting stays broad; Azure demo spend approved for when a product is ready (you'll still need to flip one setting then).
+- [ideas] Scout round 5: 9 candidates dropped (already sold), 2 ideas killed (tour-operator rate loader, wedding venue replies). Still no idea at the bar.
