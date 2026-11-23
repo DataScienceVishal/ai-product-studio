@@ -78,6 +78,33 @@ The RAG angle: most enquiry questions can be answered from documents the venue a
 3. A UK price point: any UK venue paying for an AI enquiry tool, or UK venue CRM prices verified on vendor pages.
 4. Proof that Hitched or Bridebook allow third-party replies (an API or email relay), or that VenuePro venues, who do receive emails, are a large segment.
 
+## Desk check (T-31), 2026-11-23
+
+Limits: the session's network allow-list blocked about half of the venue domains I tried (host-not-found errors), and several returned HTTP 503. Only 6 venues could be read, not 20. Findings come from each venue's own page, summarised by the fetch tool, so "not mentioned" means not seen on the page fetched, not proven absent.
+
+| Venue | Page | Channels seen |
+|---|---|---|
+| Curradine Barns (Worcs) | https://www.curradinebarns.co.uk/contact | Web form, phone, "Book a Visit" page, email (obfuscated). No chat, WhatsApp, directory link. |
+| Kingscote Barn (Glos) | https://www.kingscotebarn.co.uk/contact | Web forms (viewing, brochure), email, phone, youcanbook.me booking widget. Bridebook and Hitched are footer logos linking to listings, not enquiry paths. |
+| Elmore Court / Elmore Estate (Glos) | https://elmore.estate/contact-us/ | Web form, phone, "Book or Enquire" hub. No directory, chat or WhatsApp seen. |
+| Maunsel House (Somerset) | https://www.maunselhouse.co.uk/ | Email, phone, contact page (form not confirmed). |
+| Gaynes Park (Essex) | https://www.gaynespark.co.uk/ | Phone; contact, arrange-a-visit, check-availability and request-a-brochure pages; Bridebook and Hitched listing links; social links. No chat seen. |
+| Goodnestone Park (Kent) | https://www.goodnestonepark.co.uk/ | Email and phone only on the page fetched; separate "Host an event" page not read. |
+
+Not reachable (blocked, not found or 503): Upwaltham Barns, Healey Barn, Shustoke Farm Barns, Dodford Manor, Packington Moor (redirects), Millbridge Court, Hedsor House, Hazel Gap Barn, Coombe Trenchard, Rise Hall, Cripps Barn, Notley Tythe Barn, Lains Barn, The Ashes Barns.
+
+Counts (6 venues): own web form or form pages 4; email 4; phone 6; booking widget 1 (youcanbook.me); Bridebook/Hitched link on the page 2 (listing links only); chatbot, live chat or WhatsApp 0; CRM form such as Tripleseat or HoneyBook: none identifiable from page text.
+
+Vendor AI checks (vendors' own pages):
+- Bridebook VenuePro (https://partners.bridebook.com/uk/pricing/venues): response templates and "Enquiry Auto Follow-ups" (plan limits 4, 6 or unlimited, per search snippet). No AI auto-reply found. Bridebook's AI is couple-side (ChatGPT venue search, https://bridebook.com/uk/article/bridebook-chat-gpt).
+- Hitched: no AI assistant for venue partners found in search (search only; unverified).
+- Tripleseat (https://www.tripleseat.com/): says it captures and routes every inquiry automatically and has "Tripleseat Intelligence" (AI using platform data); the page does not say it writes replies. No prices.
+- Planning Pod (https://www.planningpod.com/): lead capture forms, pipeline automation, central inbox; no AI features on the page. No prices.
+- Perfect Venue AI Reply (https://www.perfectvenue.com/ai-reply): drafts email replies from the venue's availability, spaces, menus, policies and tone; US address; UK availability not stated.
+- iVvyAI (https://www.ivvy.com/blog/how-ivvyai-automates-venue-enquiry-management): AI enquiry handling; a search snippet says Edgbaston Stadium is the first UK venue to use it (unverified).
+
+**Conclusion: inconclusive but not killed on this evidence.** Of the six venues readable, all publish their own phone and most their own form or email, and none relies on directory messaging alone, so directory messaging does not dominate the venue side of the channel mix. But a venue-site check cannot see how many enquiries actually come through Bridebook or Hitched, so the main kill test (share of enquiries by channel) still needs UK venue-side data. New negative: Perfect Venue and iVvyAI already sell AI email replies, which lowers Competition further.
+
 ## Gate log
 - 2026-11-23: G0 spotted by scout.
 - 2026-11-23 | validator | G0→G1 | REVISE 63 | Couples' frustration is real, but Mikla and Hyperleap already sell grounded multi-channel answering, and Bridebook auto-sends brochures and keeps most of its enquiries inside its own messaging, so the UK gap is thin and unproven.
