@@ -16,6 +16,7 @@ from ..billing import PLANS
 from ..db import get_db
 from ..deps import SESSION_COOKIE, Current, current, require_csrf_header, subscription_of
 from ..errors import AppError
+from ..logs import bind
 from ..models import AuthSession, PasswordReset, Subscription, Tenant, User
 from ..ratelimit import client_ip
 from ..security import (hash_password, needs_rehash, new_token, password_problem, token_hash,
@@ -112,7 +113,8 @@ def signup(data: SignUp, request: Request, response: Response, db: Session = Dep
         raise AppError(409, "email_taken", "An account with this email already exists. Try signing in.")
     _start_session(request, response, db, user)
     db.commit()
-    log.info("signed up", extra={"user_id": str(user.id)})
+    bind(tenant_id=str(tenant.id), user_id=str(user.id))
+    log.info("signed up")
     return me_payload(db, user, tenant)
 
 
@@ -128,7 +130,8 @@ def login(data: SignIn, request: Request, response: Response, db: Session = Depe
     _start_session(request, response, db, user)
     db.commit()
     tenant = db.get(Tenant, user.tenant_id)
-    log.info("signed in", extra={"user_id": str(user.id)})
+    bind(tenant_id=str(tenant.id), user_id=str(user.id))
+    log.info("signed in")
     return me_payload(db, user, tenant)
 
 

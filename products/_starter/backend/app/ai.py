@@ -48,7 +48,7 @@ class FakeAI:
     name = "fake"
 
     def complete(self, system: str, user: str, max_output_tokens: int = 1200) -> AIResult:
-        words = user.split()
+        words = [w for w in user.split() if not (w.startswith("<") and w.endswith(">"))]  # drop delimiters
         return AIResult(text="Summary: " + " ".join(words[:25]), input_tokens=len(system.split()) + len(words),
                         output_tokens=min(len(words), 25) + 1, model="fake")
 
