@@ -9,3 +9,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - [_starter] T-6 built: sign-in, tenancy, test-mode billing, AI with usage caps, React app, CI. 55 tests and the browser end-to-end test pass. Waiting for reviewer and security.
 - [_starter] CI is green on GitHub (_starter-ci: 5 passing runs on the branch).
 - [ideas] T-4 done: no idea reached the 70-point bar. Best: restaurant margin copilot 66, MTD prep 65, wedding venue agent 63. Two India/Indonesia pricing ideas were killed (no lawful data). Evidence passes on the top two and a sharper scouting round are next.
+- [ideas] MTD prep: Dext Solo and Sage's MTD agent already cover most of it. A narrower wedge survives (scans, photos and spreadsheets in, reviewed quarter totals out to any filing tool). Parked until an extraction benchmark can run, which needs your Azure OpenAI setup (T-1).
