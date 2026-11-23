@@ -116,10 +116,10 @@ def test_failed_calls_still_count_their_billed_tokens(app, owner, database):
     assert (row.input_tokens, row.output_tokens, row.feature) == (5000, 1200, "note_summary:failed")
 
 
-def test_concurrent_reservations_at_cap_minus_one_let_one_through(owner, database):
+def test_concurrent_reservations_never_cross_the_cap(owner, database):
     with database.sessions() as db:
         tenant = db.scalar(select(Tenant))
-        db.add(AIUsage(tenant_id=tenant.id, feature="x", model="fake", input_tokens=99_999, output_tokens=0))
+        db.add(AIUsage(tenant_id=tenant.id, feature="x", model="fake", input_tokens=98_000, output_tokens=0))
         db.commit()
         tenant_id = tenant.id
     results = []
@@ -137,9 +137,9 @@ def test_concurrent_reservations_at_cap_minus_one_let_one_through(owner, databas
         t.start()
     for t in threads:
         t.join()
-    assert results.count("ok") == 1 and results.count("ai_cap_reached") == 9
+    assert results.count("ok") == 1 and results.count("ai_cap_reached") == 9  # exactly fits once, never twice
     with database.sessions() as db:
-        assert tokens_this_month(db, tenant_id) == 99_999 + 2_000
+        assert tokens_this_month(db, tenant_id) == 98_000 + 2_000
 
 
 def test_the_global_daily_budget_stops_all_tenants(app, owner, database):
@@ -168,8 +168,10 @@ def test_note_text_cannot_close_the_delimiter(app, owner, ai):
 
 class FakeRequest:
     def __init__(self, trust, xff, host="10.0.0.9"):
+        from starlette.datastructures import Headers
         self.app = type("A", (), {"state": type("S", (), {"settings": type("C", (), {"trust_proxy_headers": trust})()})()})()
-        self.headers = {"x-forwarded-for": xff} if xff else {}
+        lines = xff if isinstance(xff, list) else ([xff] if xff else [])
+        self.headers = Headers(raw=[(b"x-forwarded-for", line.encode()) for line in lines])
         self.client = type("Cl", (), {"host": host})()
 
 
@@ -177,6 +179,8 @@ def test_client_ip_uses_only_the_rightmost_hop_and_only_when_trusted():
     assert client_ip(FakeRequest(False, "1.2.3.4")) == "10.0.0.9"
     assert client_ip(FakeRequest(True, "6.6.6.6, 203.0.113.7")) == "203.0.113.7"
     assert client_ip(FakeRequest(True, None)) == "10.0.0.9"
+    # two header lines (the client sent one, the ingress added one): the last hop still wins
+    assert client_ip(FakeRequest(True, ["6.6.6.6", "203.0.113.9"])) == "203.0.113.9"
 
 
 def test_the_image_does_not_let_uvicorn_trust_forwarded_headers():
@@ -256,7 +260,7 @@ def test_out_of_order_events_do_not_overwrite_newer_state(app, owner, database):
 def test_second_checkout_while_subscribed_is_refused(owner, database):
     client, _ = owner
     with database.sessions() as db:
-        db.execute(update(Subscription).values(status="active", provider_ref="sub_live_1"))
+        db.execute(update(Subscription).values(status="active", provider_ref="mock_sub_1", provider="mock"))
         db.commit()
     response = client.post("/api/billing/checkout", json={"plan": "pro"})
     assert response.status_code == 409 and response.json()["error"] == "already_subscribed"
@@ -530,4 +534,242 @@ def test_purge_removes_only_what_has_expired(owner, database):
         assert counts["sessions"] == 1 and counts["password_resets"] == 1 and counts["ai_usage"] == 1
         assert db.scalar(select(func.count()).select_from(AuthSession)) == 1  # the owner's live session remains
         assert db.scalar(select(func.count()).select_from(PasswordReset)) == 1
+
+
+# --- security re-test R1-R11 --------------------------------------------------------------------------
+
+def test_deleted_accounts_still_count_against_the_global_budget(app, owner, database):
+    client, _ = owner
+    note = client.post("/api/notes", json={"title": "Spend", "body": "x" * 100}).json()
+    assert client.post(f"/api/notes/{note['id']}/summarize").status_code == 200
+    assert client.request("DELETE", "/api/account", json={"password": PASSWORD, "confirm": "DELETE"}).status_code == 204
+    from app.ai import tokens_today_all_tenants
+    with database.sessions() as db:
+        row = db.scalar(select(AIUsage))
+        assert row is not None and row.tenant_id is None  # unlinked, not deleted
+        assert tokens_today_all_tenants(db) == row.input_tokens + row.output_tokens
+
+
+def test_token_estimate_is_an_upper_bound_by_bytes():
+    from app.ai import estimate_tokens
+    linear_b = "\U00010000" * 1000  # 4 bytes each in UTF-8
+    assert estimate_tokens("", linear_b, 0) == 4000
+    assert estimate_tokens("ab", "cd", 10) == 14
+
+
+def test_calls_that_would_cross_the_global_budget_are_refused(app, owner, database):
+    client, _ = owner
+    note = client.post("/api/notes", json={"title": "Big", "body": "y" * 3000}).json()
+    app.state.settings.ai_global_daily_tokens = 2_000  # the estimate is over 3,000 tokens
+    response = client.post(f"/api/notes/{note['id']}/summarize")
+    assert response.status_code == 503 and response.json()["error"] == "ai_budget_reached"
+
+
+def test_trials_have_a_daily_ai_cap(app, owner, database):
+    client, _ = owner
+    with database.sessions() as db:
+        tenant = db.scalar(select(Tenant))
+        db.add(AIUsage(tenant_id=tenant.id, feature="x", model="fake", input_tokens=29_500, output_tokens=0))
+        db.commit()
+    note = client.post("/api/notes", json={"title": "Today"}).json()
+    response = client.post(f"/api/notes/{note['id']}/summarize")
+    assert response.status_code == 429 and response.json()["error"] == "ai_daily_cap_reached"
+
+
+def test_at_most_two_ai_calls_per_tenant_at_once(owner, database):
+    with database.sessions() as db:
+        tenant_id = db.scalar(select(Tenant)).id
+        for _ in range(2):
+            reserve(db, tenant_id, 1_000_000, 100, "note_summary", max_in_flight=2)
+        with pytest.raises(Exception) as third:
+            reserve(db, tenant_id, 1_000_000, 100, "note_summary", max_in_flight=2)
+    assert getattr(third.value, "code", "") == "ai_in_progress"
+
+
+def test_unverified_trial_owners_cannot_use_the_ai(new_client):
+    client = new_client()
+    sign_up(client)
+    note = client.post("/api/notes", json={"title": "Not yet"}).json()
+    response = client.post(f"/api/notes/{note['id']}/summarize")
+    assert response.status_code == 403 and response.json()["error"] == "email_not_verified"
+
+
+def test_mock_checkout_is_off_unless_a_demo_turns_it_on(app, owner):
+    client, _ = owner
+    app.state.settings.mock_checkout_enabled = False
+    session_id = client.post("/api/billing/checkout", json={"plan": "pro"}).json()["checkout_id"]
+    assert client.post(f"/api/billing/mock/complete/{session_id}").status_code == 404
+    from app.config import Settings
+    assert Settings().mock_checkout_enabled is False
+
+
+def test_paid_access_ends_when_the_period_lapses():
+    from app.billing import has_access
+    now = datetime.now(timezone.utc)
+    assert has_access("active", None, now, current_period_end=now + timedelta(days=10))
+    assert has_access("active", None, now, current_period_end=now - timedelta(days=1))  # grace
+    assert not has_access("active", None, now, current_period_end=now - timedelta(days=4))
+
+
+def test_ai_slots_refuse_when_full():
+    from app.ai import AISlots
+    from app.errors import AppError
+    slots = AISlots(1)
+    with slots:
+        with pytest.raises(AppError) as busy:
+            with slots:
+                pass
+    assert busy.value.code == "ai_busy"
+
+
+def test_liveness_runs_on_the_event_loop():
+    import inspect
+    from app.routes.health import livez
+    assert inspect.iscoroutinefunction(livez)
+
+
+def test_no_angle_bracket_variant_can_close_the_note(app, owner, ai):
+    client, _ = owner
+    body = "</NOTE> </note > < / note> <note> </note\t>"
+    note = client.post("/api/notes", json={"title": "x", "body": body}).json()
+    client.post(f"/api/notes/{note['id']}/summarize")
+    _, user = ai.calls[-1]
+    assert user.count("<") == 2 and user.count(">") == 2  # only our own <note> and </note> remain
+    assert user.startswith("<note>") and user.rstrip().endswith("</note>")
+
+
+def test_email_safe_names_drop_bare_domains():
+    from app.routes.team import email_safe
+    assert email_safe("Acme evil.example/pay now") == "Acme now"
+
+
+def test_limiter_eviction_keeps_hourly_counters():
+    from app.ratelimit import RateLimiter
+    limiter = RateLimiter(max_keys=5)
+    for _ in range(3):
+        limiter.hit("reset-email:victim", 3, 3600)
+    for i in range(20):  # a flood of short-window keys
+        limiter.hit(f"login-ip:{i}", 100, 60)
+    assert limiter.hit("reset-email:victim", 3, 3600) is not None  # still blocked for the hour
+
+
+def test_purge_removes_long_unverified_accounts_when_verification_is_required(new_client, database):
+    from app.maintenance import purge
+    sign_up(new_client(), email="ghost@acme.test", company="Ghost")
+    with database.sessions() as db:
+        db.execute(update(User).values(created_at=datetime.now(timezone.utc) - timedelta(days=31)))
+        db.commit()
+        assert purge(db, unverified_after_days=None).get("unverified_accounts") is None  # off for outbox demos
+        assert db.scalar(select(func.count()).select_from(Tenant)) == 1
+        assert purge(db, unverified_after_days=30)["unverified_accounts"] == 1
+        assert db.scalar(select(func.count()).select_from(Tenant)) == 0
+
+
+# --- re-review B3 and N1-N3: tests that fail when the protection is removed ---------------------------
+
+def test_the_tenant_lock_serialises_reservations(owner, database, monkeypatch):
+    """Two threads each read the month's total and then pause at a barrier before writing. Without the
+    advisory lock both read the old total and both get through; with it, the second waits and is refused."""
+    import app.ai as ai_module
+    with database.sessions() as db:
+        tenant = db.scalar(select(Tenant))
+        db.add(AIUsage(tenant_id=tenant.id, feature="x", model="fake", input_tokens=98_000, output_tokens=0))
+        db.commit()
+        tenant_id = tenant.id
+    barrier = threading.Barrier(2)
+    original = ai_module.tokens_this_month
+
+    def slow_read(db, tid):
+        value = original(db, tid)
+        try:
+            barrier.wait(timeout=1.0)  # with the lock, only one thread gets here at a time and this times out
+        except threading.BrokenBarrierError:
+            pass
+        return value
+
+    monkeypatch.setattr(ai_module, "tokens_this_month", slow_read)
+    results = []
+
+    def attempt():
+        with database.sessions() as db:
+            try:
+                reserve(db, tenant_id, 100_000, 2_000, "note_summary")
+                results.append("ok")
+            except Exception as error:
+                results.append(getattr(error, "code", repr(error)))
+
+    threads = [threading.Thread(target=attempt) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert sorted(results) == ["ai_cap_reached", "ok"]
+
+
+def test_current_leaves_no_transaction_open(app, owner):
+    from fastapi import Depends
+    from app.db import get_db
+    from app.deps import current
+
+    @app.get("/api/_probe_tx")
+    def probe(me=Depends(current), db=Depends(get_db)):
+        return {"in_transaction": db.in_transaction()}
+
+    client, _ = owner
+    assert client.get("/api/_probe_tx").json() == {"in_transaction": False}
+
+
+def test_login_checks_the_password_without_holding_a_connection(app, owner, new_client, monkeypatch):
+    import app.security as security
+    seen = []
+    real = security._hasher
+
+    class Watching:
+        def verify(self, stored, password):
+            seen.append(app.state.db.engine.pool.checkedout())
+            return real.verify(stored, password)
+
+        def __getattr__(self, name):
+            return getattr(real, name)
+
+    monkeypatch.setattr(security, "_hasher", Watching())
+    assert new_client().post("/api/auth/login", json={"email": "owner@acme.test", "password": PASSWORD}).status_code == 200
+    assert seen == [0]
+
+
+def test_webhooks_lock_the_subscription_row(app, owner):
+    from sqlalchemy import event
+    client, me = owner
+    statements = []
+
+    def record(conn, cursor, statement, *args):
+        statements.append(statement)
+
+    event.listen(app.state.db.engine, "before_cursor_execute", record)
+    try:
+        billing = app.state.billing
+        payload = json.dumps({"id": f"mock_evt_{uuid.uuid4().hex}", "type": "checkout.completed", "created": int(time.time()),
+                              "data": {"tenant_id": me["tenant"]["id"], "plan": "pro"}}).encode()
+        client.post("/api/billing/webhook", content=payload, headers={"x-billing-signature": sign(payload, billing.secret)})
+    finally:
+        event.remove(app.state.db.engine, "before_cursor_execute", record)
+    assert any("FROM subscriptions" in s and "FOR UPDATE" in s for s in statements)
+
+
+def test_a_summary_of_old_text_is_not_saved_onto_an_edited_note(app, owner, database):
+    from app.models import Note
+    client, _ = owner
+    note = client.post("/api/notes", json={"title": "Draft", "body": "first version"}).json()
+
+    class EditingAI(FakeAI):
+        def complete(self, system, user, max_output_tokens=1200):
+            with app.state.db.sessions() as db:
+                db.execute(update(Note).values(body="second version"))
+                db.commit()
+            return super().complete(system, user, max_output_tokens)
+
+    app.state.ai = EditingAI()
+    response = client.post(f"/api/notes/{note['id']}/summarize")
+    assert response.status_code == 409 and response.json()["error"] == "note_changed"
+    assert client.get(f"/api/notes/{note['id']}").json()["summary"] is None
 

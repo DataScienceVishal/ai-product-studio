@@ -91,10 +91,13 @@ class BillingEvent(Base):
 
 
 class AIUsage(Base):
+    """Token use per call. Rows outlive their tenant (tenant_id is cleared on deletion), because the global
+    daily budget must still count what deleted accounts spent; they hold no personal data."""
     __tablename__ = "ai_usage"
-    __table_args__ = (Index("ix_ai_usage_tenant_created", "tenant_id", "created_at"),)
+    __table_args__ = (Index("ix_ai_usage_tenant_created", "tenant_id", "created_at"),
+                      Index("ix_ai_usage_created", "created_at"))
     id: Mapped[uuid.UUID] = _id()
-    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("tenants.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = _created()
     feature: Mapped[str] = mapped_column(String(60), nullable=False)
     model: Mapped[str] = mapped_column(String(80), nullable=False)

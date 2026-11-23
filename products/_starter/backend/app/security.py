@@ -28,14 +28,27 @@ def password_problem(password: str) -> str | None:
     return None
 
 
+class _Slot:
+    """A hashing slot, or a friendly 503 if none frees up soon (so waiting requests don't pile up)."""
+
+    def __enter__(self):
+        if not _hash_slots.acquire(timeout=10):
+            from .errors import AppError
+            raise AppError(503, "busy", "We're busy right now. Please try again in a moment.")
+
+    def __exit__(self, *exc):
+        _hash_slots.release()
+
+
 def hash_password(password: str) -> str:
-    with _hash_slots:
+    """Call outside any database transaction: hashing takes about 0.1 s and 64 MiB."""
+    with _Slot():
         return _hasher.hash(password)
 
 
 def verify_password(stored_hash: str | None, password: str) -> bool:
     try:
-        with _hash_slots:
+        with _Slot():
             return _hasher.verify(stored_hash or _DUMMY_HASH, password) and stored_hash is not None
     except (VerifyMismatchError, VerificationError, InvalidHashError):
         return False

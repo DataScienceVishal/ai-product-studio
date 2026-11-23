@@ -11,6 +11,10 @@ web_port="${E2E_WEB_PORT:-4173}"
 
 admin_url="${db_url%/*}/postgres"
 db_name="${db_url##*/}"
+case "$db_name" in  # this script drops the database it is given, so refuse anything not named for e2e
+  *e2e*) ;;
+  *) echo "refusing to drop '$db_name': E2E_DATABASE_URL must name a database containing 'e2e'"; exit 2 ;;
+esac
 "$python" - "$admin_url" "$db_name" <<'PY'
 import sys
 from sqlalchemy import create_engine, text
@@ -24,7 +28,7 @@ cd "$here/backend"
 DATABASE_URL="$db_url" "$python" -m alembic upgrade head >"$logs/migrate.log" 2>&1
 ENV=dev DATABASE_URL="$db_url" COOKIE_SECURE=false APP_BASE_URL="http://127.0.0.1:$web_port" \
   CORS_ORIGINS="[\"http://127.0.0.1:$web_port\"]" AI_PROVIDER=fake BILLING_PROVIDER=mock LOG_LEVEL=INFO \
-  REQUIRE_EMAIL_VERIFICATION=false \
+  REQUIRE_EMAIL_VERIFICATION=false MOCK_CHECKOUT_ENABLED=true \
   "$python" -m uvicorn app.main:app --host 127.0.0.1 --port "$api_port" >"$logs/api.log" 2>&1 &
 api_pid=$!
 cd "$here/frontend"

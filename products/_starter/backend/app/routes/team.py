@@ -40,6 +40,7 @@ def email_safe(name: str) -> str:
     """A tenant name as it may appear in an email: no control characters, no links, short."""
     name = re.sub(r"[\x00-\x1f\x7f]", " ", name)
     name = re.sub(r"(?i)(?:[a-z][a-z0-9+.-]*://|www\.)\S*", "", name)
+    name = re.sub(r"(?i)\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}(?:/\S*)?", "", name)  # bare domains too
     return " ".join(name.split())[:60] or "A team"
 
 
@@ -119,14 +120,15 @@ def remove_member(user_id: uuid.UUID, me: Current = Depends(owner), db: Session 
 @public.post("/accept", status_code=201)
 def accept(data: AcceptIn, request: Request, response: Response, db: Session = Depends(get_db)):
     request.app.state.limiter.check(f"accept:{client_ip(request)}", request.app.state.settings.auth_rate_limit_per_minute)
+    problem = password_problem(data.password)
+    if problem:
+        raise AppError(422, "weak_password", problem)
+    password_hash = hash_password(data.password)  # before any transaction opens
     now = datetime.now(timezone.utc)
     invitation = db.scalar(select(Invitation).where(Invitation.token_hash == token_hash(data.token), *_pending(now)))
     if invitation is None:
         raise AppError(400, "invalid_invitation", "This invitation has expired or was already used. Ask for a new one.")
-    problem = password_problem(data.password)
-    if problem:
-        raise AppError(422, "weak_password", problem)
-    user = User(tenant_id=invitation.tenant_id, email=invitation.email, password_hash=hash_password(data.password),
+    user = User(tenant_id=invitation.tenant_id, email=invitation.email, password_hash=password_hash,
                 role=invitation.role, email_verified_at=now)  # the invite link proved they control the inbox
     db.add(user)
     invitation.accepted_at = now

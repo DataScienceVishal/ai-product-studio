@@ -27,8 +27,9 @@ MAX_SUMMARY_TOKENS = 1200
 
 
 def _as_data(text: str) -> str:
-    """Neutralise our delimiter inside user text, so a note can't close the <note> block early."""
-    return text.replace("<note>", "‹note›").replace("</note>", "‹/note›")
+    """User text can't contain angle brackets at all, so no variant (</NOTE>, </note >, ...) can close the
+    <note> block early."""
+    return text.replace("<", "‹").replace(">", "›")
 
 
 class NoteIn(BaseModel):
@@ -96,15 +97,21 @@ def summarize(note_id: uuid.UUID, request: Request, me: Current = Depends(curren
     request.app.state.limiter.check(f"ai:{me.tenant.id}", settings.ai_rate_limit_per_minute)
     note = _get(db, me, note_id)
     sub = subscription_of(db, me.tenant.id)
-    if not has_access(sub.status, sub.trial_ends_at):
-        raise AppError(402, "plan_required", "Your trial has ended. Choose a plan to keep using AI features.")
+    if not has_access(sub.status, sub.trial_ends_at, current_period_end=sub.current_period_end):
+        raise AppError(402, "plan_required", "Your trial or plan has ended. Choose a plan to keep using AI features.")
+    if sub.status == "trialing" and settings.require_email_verification and me.user.email_verified_at is None:
+        raise AppError(403, "email_not_verified", "Confirm your email address to use the AI during your free trial.")
     plan = PLANS.get(sub.plan, PLANS["trial"])
+    version = (note.title, note.body)
     prompt = f"<note>\n{_as_data(note.title)}\n\n{_as_data(note.body)}\n</note>"
     reservation = reserve(db, me.tenant.id, plan.ai_monthly_tokens,
                           estimate_tokens(SUMMARY_SYSTEM, prompt, MAX_SUMMARY_TOKENS), "note_summary",
-                          global_daily_cap=settings.ai_global_daily_tokens)  # commits
+                          global_daily_cap=settings.ai_global_daily_tokens,
+                          daily_cap=plan.ai_daily_tokens if sub.status == "trialing" else None,
+                          max_in_flight=settings.ai_calls_per_tenant_at_once)  # commits
     try:
-        result = request.app.state.ai.complete(SUMMARY_SYSTEM, prompt, max_output_tokens=MAX_SUMMARY_TOKENS)
+        with request.app.state.ai_slots:
+            result = request.app.state.ai.complete(SUMMARY_SYSTEM, prompt, max_output_tokens=MAX_SUMMARY_TOKENS)
     except AIUnavailable as error:
         settle(db, reservation, "note_summary:failed", error.input_tokens, error.output_tokens, "unknown")
         raise
@@ -112,7 +119,10 @@ def summarize(note_id: uuid.UUID, request: Request, me: Current = Depends(curren
         settle(db, reservation, "note_summary:failed", 0, 0, "unknown")
         raise
     settle(db, reservation, "note_summary", result.input_tokens, result.output_tokens, result.model)
+    db.expire_all()  # sessions keep objects across commits (expire_on_commit=False): force a fresh read
     note = _get(db, me, note_id)  # reload: it may have been edited or deleted while the AI worked
+    if (note.title, note.body) != version:
+        raise AppError(409, "note_changed", "The note changed while the AI was working. Summarise it again.")
     note.summary = result.text[:4000]
     db.commit()
     return _out(note)

@@ -7,6 +7,18 @@ export function navigate(to: string) {
   window.dispatchEvent(new PopStateEvent("popstate"));
 }
 
+/** Read ?token= once and remove it from the address bar and history, so links' secrets don't linger. */
+export function takeToken(): string {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token") ?? "";
+  if (token) {
+    params.delete("token");
+    const rest = params.toString();
+    window.history.replaceState({}, "", window.location.pathname + (rest ? `?${rest}` : ""));
+  }
+  return token;
+}
+
 export function usePath(): string {
   const [path, setPath] = useState(window.location.pathname);
   useEffect(() => {

@@ -53,8 +53,15 @@ const BASE = process.env.E2E_BASE_URL || "http://127.0.0.1:4173";
     await page.getByRole("button", { name: "Sign in" }).click();
     await page.getByRole("heading", { name: "Oven repair" }).waitFor();
 
-    step("delete the account");
+    step("a wrong password on delete shows an error and keeps you signed in");
     await page.getByRole("link", { name: "Settings" }).click();
+    await page.getByLabel("Your password").fill("not my password at all");
+    await page.getByLabel("Type DELETE to confirm").fill("DELETE");
+    await page.getByRole("button", { name: "Delete everything" }).click();
+    await page.getByText("That password isn't right.").waitFor();
+    assert.equal(await page.evaluate(async () => (await fetch("/api/auth/me")).status), 200);
+
+    step("delete the account");
     await page.getByLabel("Your password").fill("a long enough passphrase");
     await page.getByLabel("Type DELETE to confirm").fill("DELETE");
     await page.getByRole("button", { name: "Delete everything" }).click();

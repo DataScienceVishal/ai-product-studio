@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { api, ApiError, type Me } from "../api";
-import { Alert, AuthLayout, Button, Card, Field, navigate } from "../ui";
+import { Alert, AuthLayout, Button, Card, Field, navigate, takeToken } from "../ui";
 
 type Member = { id: string; email: string; role: string; created_at: string };
 type Invitation = { id: string; email: string; expires_at: string };
@@ -99,7 +99,7 @@ export function Team({ me }: { me: Me }) {
 }
 
 export function AcceptInvite({ onSignedIn }: { onSignedIn: (me: Me) => void }) {
-  const token = new URLSearchParams(window.location.search).get("token") ?? "";
+  const [token] = useState(takeToken);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

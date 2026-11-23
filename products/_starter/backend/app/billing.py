@@ -27,6 +27,7 @@ class Plan:
     name: str
     price_pence: int
     ai_monthly_tokens: int
+    ai_daily_tokens: int | None = None  # extra daily cap, used for free trials
     currency: str = "gbp"
     interval: str = "month"
 
@@ -41,7 +42,7 @@ class Offer:
 
 # Placeholder prices. Each product sets its own in its SPEC.md (strategist) and here.
 PLANS: dict[str, Plan] = {
-    "trial": Plan("trial", "Free trial", 0, ai_monthly_tokens=100_000),
+    "trial": Plan("trial", "Free trial", 0, ai_monthly_tokens=100_000, ai_daily_tokens=30_000),
     "starter": Plan("starter", "Starter", 2900, ai_monthly_tokens=500_000),
     "pro": Plan("pro", "Pro", 7900, ai_monthly_tokens=2_000_000),
 }
@@ -286,8 +287,12 @@ def build_billing(settings) -> BillingProvider:
     return MockBilling(settings.billing_webhook_secret, settings.app_base_url)
 
 
-def has_access(status: str, trial_ends_at: datetime | None, now: datetime | None = None) -> bool:
+GRACE = timedelta(days=3)  # a renewal webhook can arrive late
+
+
+def has_access(status: str, trial_ends_at: datetime | None, now: datetime | None = None,
+               current_period_end: datetime | None = None) -> bool:
     now = now or datetime.now(timezone.utc)
-    if status == "active":
-        return True
+    if status == "active":  # a paid period that ended (plus grace) without renewal no longer counts
+        return current_period_end is None or current_period_end + GRACE > now
     return status == "trialing" and trial_ends_at is not None and trial_ends_at > now

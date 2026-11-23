@@ -42,7 +42,8 @@ def _clean(database):
 @pytest.fixture
 def settings() -> Settings:
     return Settings(env="test", database_url=TEST_DB, app_base_url="https://app.test", cookie_secure=True,
-                    auth_rate_limit_per_minute=1000, ai_rate_limit_per_minute=1000, log_level="WARNING")
+                    auth_rate_limit_per_minute=1000, ai_rate_limit_per_minute=1000, log_level="WARNING",
+                    mock_checkout_enabled=True)
 
 
 class RecordingAI(FakeAI):

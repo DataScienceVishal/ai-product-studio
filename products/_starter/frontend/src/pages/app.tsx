@@ -357,7 +357,7 @@ export function BillingDone({ refresh, me }: { refresh: () => Promise<void>; me:
 export function Help() {
   const faqs = [
     ["Is my data shared with other companies?", "No. Each company's data is kept separate, and other customers can't see it."],
-    ["What does the AI see?", "Only the note you ask it to summarise. It is sent to Microsoft's Azure OpenAI service, which processes it under Microsoft's data-protection terms. Other customers never see it."],
+    ["What does the AI see?", "Only the note you ask it to summarise. It is sent to Microsoft's Azure OpenAI service, which processes it under Microsoft's data-protection terms: Microsoft may keep prompts and answers for up to 30 days to detect abuse, and some deployment types process data outside the UK. Other customers never see it."],
     ["How do I cancel?", "You can delete your account and all its data from Settings at any time."],
     ["Is this a real payment?", "Not yet. The starter runs in test mode, so no money is taken."],
   ];

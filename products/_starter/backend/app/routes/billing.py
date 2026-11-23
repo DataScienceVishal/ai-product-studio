@@ -40,7 +40,7 @@ def checkout(data: CheckoutIn, request: Request, me: Current = Depends(verified_
     request.app.state.limiter.check(f"checkout:{me.tenant.id}", 10)
     sub = subscription_of(db, me.tenant.id)
     db.commit()  # don't hold a transaction while the payment provider is called
-    if sub.status == "active" and sub.provider_ref:
+    if sub.status == "active" and sub.provider_ref and sub.provider == request.app.state.billing.name:
         raise AppError(409, "already_subscribed", "You already have an active plan. To change it, contact support.")
     plan = PLANS.get(data.plan)
     if plan is None or plan.id == "trial":
@@ -65,7 +65,8 @@ def apply_update(db: Session, update: BillingUpdate, provider: str) -> bool:
     except IntegrityError:
         db.rollback()
         return False
-    sub = db.scalar(select(Subscription).where(Subscription.tenant_id == update.tenant_id))
+    # Lock the row, so two webhooks delivered at once apply one after the other and the order check holds.
+    sub = db.scalar(select(Subscription).where(Subscription.tenant_id == update.tenant_id).with_for_update())
     if sub is None:  # the tenant deleted their account; keep the event id, change nothing
         db.commit()
         return True

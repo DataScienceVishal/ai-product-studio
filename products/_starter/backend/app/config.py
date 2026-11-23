@@ -54,6 +54,8 @@ class Settings(BaseSettings):
     ai_rate_limit_per_minute: int = 20
     # All tenants together, per UTC day. Protects the studio's $80 of Azure credit from farmed free trials.
     ai_global_daily_tokens: int = 500_000
+    ai_concurrent_calls: int = 8  # in-process cap, so slow AI calls can't take every request thread
+    ai_calls_per_tenant_at_once: int = 2
 
     # billing (test mode only until `unlock selling`)
     billing_provider: Literal["mock", "stripe"] = "mock"
@@ -61,7 +63,9 @@ class Settings(BaseSettings):
     billing_webhook_secret: str = Field(default_factory=lambda: secrets.token_urlsafe(MIN_WEBHOOK_SECRET))
     stripe_secret_key: str = ""
     stripe_api_version: str = ""  # empty uses the account's default version
-    mock_checkout_enabled: bool = True  # the demo "Pay (test)" button; only with BILLING_PROVIDER=mock
+    # The demo "Pay (test)" button, only with BILLING_PROVIDER=mock. Off unless a demo turns it on: it grants
+    # paid plans for free (each mock period lasts 30 days).
+    mock_checkout_enabled: bool = False
     trial_days: int = 14
 
     log_level: str = "INFO"

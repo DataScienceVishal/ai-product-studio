@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from . import __version__, errors
-from .ai import AIProvider, build_provider
+from .ai import AIProvider, AISlots, build_provider
 from .billing import BillingProvider, build_billing
 from .config import Settings
 from .db import Database
@@ -172,6 +172,7 @@ def create_app(settings: Settings | None = None, *, ai: AIProvider | None = None
                             settings.db_idle_in_transaction_timeout_ms, settings.db_pool_size, settings.db_max_overflow)
     app.state.limiter = RateLimiter()
     app.state.ai = ai or build_provider(settings)
+    app.state.ai_slots = AISlots(settings.ai_concurrent_calls)
     app.state.billing = billing_provider or build_billing(settings)
     app.state.email = email or OutboxEmail()
     if settings.env == "prod" and isinstance(app.state.email, OutboxEmail):

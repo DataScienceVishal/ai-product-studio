@@ -8,8 +8,10 @@ placeholder. gpt-5-mini is a reasoning model: max_completion_tokens covers reaso
 from __future__ import annotations
 
 import logging
+import threading
 import time
 import uuid
+from datetime import timedelta
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Protocol
@@ -59,8 +61,24 @@ class FakeAI:
 
 
 def estimate_tokens(system: str, user: str, max_output_tokens: int) -> int:
-    """Conservative: about 3 characters per token for the input, plus the whole output budget."""
-    return (len(system) + len(user)) // 3 + max_output_tokens
+    """An upper bound: every token is at least one byte of UTF-8, so input bytes bound input tokens
+    (characters don't: some scripts take several tokens per character). Plus the whole output budget."""
+    return len(system.encode("utf-8")) + len(user.encode("utf-8")) + max_output_tokens
+
+
+class AISlots:
+    """In-process cap on simultaneous AI calls, so slow calls can't occupy every request thread."""
+
+    def __init__(self, size: int):
+        self._slots = threading.BoundedSemaphore(size)
+
+    def __enter__(self):
+        if not self._slots.acquire(timeout=2.0):
+            raise AppError(503, "ai_busy", "The AI is busy with other requests. Please try again in a moment.")
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self._slots.release()
 
 
 class AzureOpenAI:
@@ -169,29 +187,50 @@ def _tenant_lock(tenant_id: uuid.UUID) -> int:
     return tenant_id.int & 0x7FFF_FFFF_FFFF_FFFF
 
 
+def _today() -> datetime:
+    return datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+
+
 def tokens_today_all_tenants(db: Session) -> int:
-    today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     used = db.scalar(select(func.coalesce(func.sum(AIUsage.input_tokens + AIUsage.output_tokens), 0))
-                     .where(AIUsage.created_at >= today))
+                     .where(AIUsage.created_at >= _today()))  # includes deleted tenants' rows (tenant_id NULL)
+    return int(used or 0)
+
+
+def tokens_today(db: Session, tenant_id: uuid.UUID) -> int:
+    used = db.scalar(select(func.coalesce(func.sum(AIUsage.input_tokens + AIUsage.output_tokens), 0))
+                     .where(AIUsage.tenant_id == tenant_id, AIUsage.created_at >= _today()))
     return int(used or 0)
 
 
 def reserve(db: Session, tenant_id: uuid.UUID, cap: int, estimate: int, feature: str,
-            global_daily_cap: int | None = None) -> uuid.UUID:
-    """Reserve an estimated amount before calling the model, under Postgres advisory locks, so concurrent
-    calls see each other's reservations. A tenant under its cap can make one call that ends slightly over;
-    the next one is refused. Commits, so no transaction stays open during the AI call."""
+            global_daily_cap: int | None = None, daily_cap: int | None = None, max_in_flight: int | None = None,
+            in_flight_window: timedelta = timedelta(minutes=2)) -> uuid.UUID:
+    """Reserve an upper-bound estimate before calling the model, under Postgres advisory locks, so concurrent
+    calls see each other's reservations. A call is refused if it *would* cross any cap: the plan's monthly
+    allowance, a daily cap (trials), or the studio-wide daily budget. At most `max_in_flight` calls per tenant
+    run at once. Commits, so no transaction stays open during the AI call."""
     db.execute(text("SELECT pg_advisory_xact_lock(CAST(:key AS bigint))"), {"key": _tenant_lock(tenant_id)})
     if global_daily_cap is not None:
         db.execute(text("SELECT pg_advisory_xact_lock(CAST(:key AS bigint))"), {"key": GLOBAL_LOCK})
-    if tokens_this_month(db, tenant_id) >= cap:
+
+    def refuse(status: int, code: str, message: str):
         db.rollback()
-        raise AppError(429, "ai_cap_reached",
-                       "You've used this month's AI allowance. It resets on the 1st, or upgrade your plan.")
-    if global_daily_cap is not None and tokens_today_all_tenants(db) >= global_daily_cap:
-        db.rollback()
+        raise AppError(status, code, message)
+
+    if max_in_flight is not None:
+        pending = db.scalar(select(func.count()).select_from(AIUsage).where(
+            AIUsage.tenant_id == tenant_id, AIUsage.model == "pending",
+            AIUsage.created_at > datetime.now(timezone.utc) - in_flight_window))
+        if pending >= max_in_flight:
+            refuse(429, "ai_in_progress", "Your other AI requests are still running. Try again when they finish.")
+    if tokens_this_month(db, tenant_id) + estimate > cap:
+        refuse(429, "ai_cap_reached", "You've used this month's AI allowance. It resets on the 1st, or upgrade your plan.")
+    if daily_cap is not None and tokens_today(db, tenant_id) + estimate > daily_cap:
+        refuse(429, "ai_daily_cap_reached", "You've reached today's AI allowance for the free trial. It resets at midnight (UTC).")
+    if global_daily_cap is not None and tokens_today_all_tenants(db) + estimate > global_daily_cap:
         log.error("global daily AI budget reached")
-        raise AppError(503, "ai_budget_reached", "The AI is resting until tomorrow. Everything else still works.")
+        refuse(503, "ai_budget_reached", "The AI is resting until tomorrow. Everything else still works.")
     row = AIUsage(tenant_id=tenant_id, feature=f"{feature}:reserved", model="pending",
                   input_tokens=estimate, output_tokens=0)
     db.add(row)

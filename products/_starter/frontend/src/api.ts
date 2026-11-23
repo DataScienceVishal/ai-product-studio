@@ -43,7 +43,8 @@ export async function api<T>(path: string, options: { method?: string; body?: un
   }
   if (response.status === 204) return undefined as T;
   const data = await response.json().catch(() => ({}));
-  if (response.status === 401 && !AUTH_PATHS.includes(path)) {
+  // Only a real "not signed in" ends the session: a wrong password on a confirm form is also a 401.
+  if (response.status === 401 && data.error === "not_signed_in" && !AUTH_PATHS.includes(path)) {
     window.dispatchEvent(new Event(SESSION_ENDED)); // expired session or removed member: back to sign-in
   }
   if (!response.ok) {

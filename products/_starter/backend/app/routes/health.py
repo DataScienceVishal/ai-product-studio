@@ -15,7 +15,7 @@ router = APIRouter(tags=["health"])
 
 
 @router.get("/livez")
-def livez():
+async def livez():  # async: answered on the event loop, so it works even when every worker thread is busy
     """Liveness: the process is up. No database, so a busy pool never gets the replica restarted."""
     return {"status": "ok", "version": __version__}
 

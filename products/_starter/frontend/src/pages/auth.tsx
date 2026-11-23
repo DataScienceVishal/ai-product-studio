@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api, ApiError, type Me } from "../api";
-import { Alert, AuthLayout, Button, Field, Link, navigate } from "../ui";
+import { Alert, AuthLayout, Button, Field, Link, navigate, takeToken } from "../ui";
 
 /** Where to go after signing in: a same-site path from ?next=, otherwise home. */
 function safeNext(): string {
@@ -101,7 +101,7 @@ export function ForgotPassword() {
 }
 
 export function ResetPassword() {
-  const token = new URLSearchParams(window.location.search).get("token") ?? "";
+  const [token] = useState(takeToken);
   const [password, setPassword] = useState("");
   const [done, setDone] = useState(false);
   const { busy, error, submit } = useSubmit(
@@ -126,7 +126,7 @@ export function ResetPassword() {
 }
 
 export function VerifyEmail({ me, onVerified }: { me: Me | null; onVerified: () => Promise<void> }) {
-  const token = new URLSearchParams(window.location.search).get("token") ?? "";
+  const [token] = useState(takeToken);
   const [state, setState] = useState<"working" | "done" | "failed">("working");
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false); // StrictMode runs effects twice in dev; the link is single-use
@@ -139,7 +139,7 @@ export function VerifyEmail({ me, onVerified }: { me: Me | null; onVerified: () 
       .catch((err: ApiError) => { setState("failed"); setError(err.message); });
   }, [me, token, onVerified]);
   if (!me) {
-    const next = encodeURIComponent(window.location.pathname + window.location.search);
+    const next = encodeURIComponent(`/verify-email?token=${encodeURIComponent(token)}`);
     return (
       <AuthLayout title="Confirm your email">
         <p className="text-slate-700">Sign in to the account this email was sent to, and we'll confirm it straight away.</p>

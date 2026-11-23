@@ -118,10 +118,11 @@ def signup(data: SignUp, request: Request, response: Response, db: Session = Dep
     if problem:
         raise AppError(422, "weak_password", problem)
     settings = request.app.state.settings
+    password_hash = hash_password(data.password)  # before any transaction opens
     tenant = Tenant(name=data.company_name)
     db.add(tenant)
     db.flush()
-    user = User(tenant_id=tenant.id, email=data.email, password_hash=hash_password(data.password), role="owner")
+    user = User(tenant_id=tenant.id, email=data.email, password_hash=password_hash, role="owner")
     db.add(user)
     db.add(Subscription(tenant_id=tenant.id, plan=PLANS["trial"].id, status="trialing", provider="none",
                         trial_ends_at=datetime.now(timezone.utc) + timedelta(days=settings.trial_days)))
@@ -144,6 +145,7 @@ def login(data: SignIn, request: Request, response: Response, db: Session = Depe
     email = data.email.strip().lower()
     _limit(request, f"login-ip:{client_ip(request)}", f"login-email:{email}")
     user = db.scalar(select(User).where(User.email == email))
+    db.commit()  # no transaction (or pooled connection) held while the password is checked
     if not verify_password(user.password_hash if user else None, data.password):
         raise AppError(401, "invalid_credentials", "That email and password don't match.")
     if needs_rehash(user.password_hash):
@@ -215,6 +217,7 @@ def reset_confirm(data: ResetConfirm, request: Request, db: Session = Depends(ge
     problem = password_problem(data.new_password)
     if problem:
         raise AppError(422, "weak_password", problem)
+    new_hash = hash_password(data.new_password)  # before the transaction
     now = datetime.now(timezone.utc)
     # Consume the link in one statement, so two simultaneous clicks can't both use it.
     user_id = db.scalar(update(PasswordReset)
@@ -225,7 +228,7 @@ def reset_confirm(data: ResetConfirm, request: Request, db: Session = Depends(ge
         db.rollback()
         raise AppError(400, "invalid_reset_link", "This reset link has expired or was already used. Ask for a new one.")
     user = db.get(User, user_id)
-    user.password_hash = hash_password(data.new_password)
+    user.password_hash = new_hash
     user.email_verified_at = user.email_verified_at or now  # the link proved they control the inbox
     db.execute(delete(AuthSession).where(AuthSession.user_id == user.id))  # sign out everywhere
     db.commit()
@@ -256,7 +259,7 @@ def verify_email(data: VerifyIn, request: Request, me: Current = Depends(current
 
 @router.post("/verify-email/resend", status_code=202)
 def resend_verification(request: Request, me: Current = Depends(current), db: Session = Depends(get_db)):
-    request.app.state.limiter.check(f"verify-resend:{me.user.id}", 3)
+    request.app.state.limiter.check(f"verify-resend:{me.user.id}", 3, 3600)  # 3 an hour
     if me.user.email_verified_at is not None:
         return {"status": "Your email is already verified."}
     send_verification(request, db, me.user)
