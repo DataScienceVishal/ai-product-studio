@@ -56,6 +56,43 @@ Azure (estimate, method: default stack with scale-to-zero container app, a small
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
+| 11 | 11 | 7 | 7 | 10 | 1 | 7 | 54 |
+
+## Validator notes (2026-11-23)
+
+**Red-flag check: none.**
+- Not an off-limits area. The product prepares data for a customs intermediary, who confirms every field and code. It is not legal or tax advice, and the UI must say so.
+- No paid service or scraping is needed. Tariff data comes from HMRC's free, official Trade Tariff API (https://trade-tariff.service.gov.uk/news/stories/uk-trade-tariff-developer-portal, search summary only).
+- Synthetic and public data can credibly demo the value: fictional commercial invoices and packing lists in realistic layouts, plus the public tariff. Accuracy on real supplier scans stays unproven until a pilot.
+
+**Falsification findings** (all accessed 2026-11-23)
+- **The cheapest substitute already gives the core feature away.** customs-declarations.uk's document processing reads "PDFs, scans, photos or Excel files" and drafts CDS import and export declarations "free of charge on our platform for every declaration type we support".
+  - Agents and brokers can "file declarations for multiple clients from one account".
+  - CDS filing is "£25 max per declaration", pay as you go, with no monthly fee (https://www.customs-declarations.uk/, https://www.customs-declarations.uk/?p=3745).
+  - The scout's table says "the user still keys the data". That is no longer true.
+- **Other AI entry-prep vendors already cover the UK.**
+  - Digicust lists "CDS filings (UK)" and reads "invoices, CMRs, certificates, and shipping emails". It classifies UK tariff codes "with reasoning" and claims "100+ companies already live" (https://digicust.com/).
+  - Raft covers "HTS classification, entry preparation and audit across the US, UK and EU" for forwarders and brokers (https://www.raft.ai/solutions/customs).
+  - iCustoms sells AI document processing with CDS filing. Directory listings give starting prices anywhere from £250 to £1,000 (https://www.getapp.co.uk/software/2071344/icustoms, search summary only).
+- **Code suggestions may now be free from HMRC.** A 28 Oct 2026 report says HMRC added AI-enabled commodity classification to the Online Trade Tariff (https://samsearch.co/government-contracting-news/hmrc-adds-ai-commodity-classification-to-online-trade-tariff-234862). This is a secondary source; I found no HMRC announcement.
+- **Each entry saves less time than the pitch implies.**
+  - HMRC's Customs Administrative Burden Wave 2 (26 Feb 2026) surveyed 460 declarants, 70% of them intermediaries. It found "19 to 28 minutes on average per typical process" and an internal cost of £5 to £7 per process. About 70% still said automated solutions would help data entry (https://www.gov.uk/government/publications/customs-administrative-burden-wave-2/customs-administrative-burden-wave-2-executive-summary).
+  - The scout's "1 to 2 hours" is traders' own time on simplified frontier declarations, not an entry clerk's time.
+  - The scout's 2023 figures do check out: 78% use only an intermediary, 66% send information without software, and the median cost is about £50 per declaration (https://www.gov.uk/government/publications/research-into-customs-administrative-burden-2017-and-2023/ipsos-survey-executive-summary-2023).
+- **The market is small.** 5,650 declarants lodged every UK declaration in 2024 (https://www.gov.uk/government/statistics/customs-declarants-and-declaration-volumes-for-international-trade-in-2024/customs-declarants-and-declaration-volumes-for-international-trade-in-2024-commentary, search summary only). BIFA's member search (over 1,600 members, per its site; search summary only) makes them reachable.
+- **Liability trap.** Under indirect representation, the agent and the importer "will both be jointly and severally liable for any customs debt" (https://www.gov.uk/guidance/customs-debt-liability, updated 13 Aug 2026).
+  - A wrong suggested code costs the buyer real money, so every code needs a human sign-off.
+  - Buyers will want accuracy evidence before they trust it.
+- **Switching cost.** Forwarders lodge through their existing software. A CSV or XML export only helps if that software accepts an import file, and each vendor's software differs.
+
+**What would change my mind (re-score on this evidence)**
+1. Named CDS packages used by small forwarders that have no AI intake but do accept an import file the studio could produce. Start from HMRC's list (https://www.gov.uk/guidance/list-of-software-developers-providing-customs-declaration-support) and check each vendor's own pages.
+2. What HMRC's new AI tariff tool actually does, whether it is free, and whether it has an API. Add a desk benchmark showing the studio's code suggestions beat it.
+3. Evidence that customs-declarations.uk's free document processing is poor (reviews, accuracy complaints) or doesn't suit agents using indirect representation.
+4. A time study for full import declarations specifically, showing that reading and keying take most of the time.
+
+My estimate is that even with all four, the score tops out around 60, because a free competitor sets the price of the core feature.
 
 ## Gate log
 - 2026-11-23: G0 spotted by scout.
+- 2026-11-23 | validator | G0→G1 | REVISE 54 | HMRC data shows the work is real and mostly outsourced, but customs-declarations.uk already gives agents free AI drafting of CDS declarations from invoices and packing lists, Digicust, Raft and iCustoms sell the same, and HMRC's 2026 survey puts a typical declaration process at only 19 to 28 minutes.

@@ -53,6 +53,38 @@ Azure (estimate, method: scale-to-zero container app, small database on free or 
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
+| 12 | 13 | 6 | 8 | 13 | 1 | 6 | 59 |
+
+## Validator notes (2026-11-23)
+
+**Red-flag check: none.**
+- Health and safety drafting is not an off-limits area, but the output is safety-critical. The product only drafts: a competent person must review and sign, and the product must never be sold as replacing one.
+- No paid services or scraping are needed.
+- Synthetic and public data can credibly demo it: a fictional principal contractor's site rules and construction phase plan, HSE guidance, and a fictional drylining job. Whether principal contractors accept the output first time can't be shown without real submissions.
+
+**Falsification findings** (all accessed 2026-11-23)
+- **The field is crowded and cheap.**
+  - swiftRMS's own comparison, last reviewed 19 Oct 2026, lists (https://swiftrms.co.uk/compare/rams-software-uk):
+    - swiftRMS at £49/month unlimited;
+    - The Site Book, free to £199/month;
+    - RAMS Pro, free for 2 RAMS a month and £199/month unlimited;
+    - Anyrisks at £29 per assessment, and RapidRAMS at £15 per RAMS;
+    - consultants at £300 to £500+ per document.
+  - RAMS AI is £39.97 a month for the whole firm (https://ramsai.co.uk/).
+  - RamsBox is listed at £7 per RAMS, or £19.99 a month unlimited (https://www.capterra.co.uk/software/1325744/RamsBox, search summary only).
+- **The scout's gap is already sold.** The scout's gap is reading the principal contractor's site pack and writing in its format. RAMSGen says "Upload the pre-construction information, the drawings and the specification" and promises "site-specific RAMS drafted from the project requirements". It links each line to the requirement it meets, and offers custom templates and a RAMS review, at £59, £99 and £199 a month (https://www.ramsgen.com/).
+- **The pricey incumbent has no AI, but challengers are filling the gap.** HandsHQ's pricing page mentions no AI. Its Small plan starts at £275/month for up to 10 users, billed annually plus a set-up fee (https://handshq.com/pricing).
+- **The cheapest substitute is a general chatbot plus an old template.** RAMSReady markets against "free AI tools" that cite the wrong law (https://ramsready.co.uk/, search summary only), which suggests that substitute is common.
+- **The pain evidence is qualitative.** The designingbuildings.co.uk wiki page (last edited 8 Jun 2026) lists the common rejection causes, but gives no figures on rejection rates or delays (https://www.designingbuildings.co.uk/wiki/RAMS_review_and_approval). I found no survey of how often RAMS are rejected.
+- **Copy risk is high,** as the scout says. The only moat would be an "accepted first time" record, which needs real submissions.
+
+**What would change my mind (re-score on this evidence)**
+1. A specific requirement the tools above don't meet, shown on their own pages. For example, mandatory RAMS forms or standards in large principal contractors' public supply-chain handbooks that no tool produces.
+2. Public evidence (reviews, forums, trade press) that principal contractors reject RAMS from the cheap AI tools, for reasons this product could fix.
+3. A trade segment the tools ignore, with an estimate of its size.
+
+My estimate is that even with all three, the score tops out in the mid 60s, unless the requirement in item 1 is one the tools can't copy quickly.
 
 ## Gate log
 - 2026-11-23: G0 spotted by scout.
+- 2026-11-23 | validator | G0→G1 | REVISE 59 | The pain is structural and the build is the easiest in the batch, but at least ten AI RAMS tools already sell to UK subcontractors from £7 a document or about £20 to £60 a month, and RAMSGen already drafts from the uploaded pre-construction pack with custom templates and a RAMS review, which closes the scout's claimed gap.

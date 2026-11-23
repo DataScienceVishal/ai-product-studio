@@ -52,6 +52,44 @@ Azure (estimate, method: scale-to-zero container app, small database on free or 
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
+| 9 | 11 | 9 | 6 | 7 | 4 | 9 | 55 |
+
+## Validator notes (2026-11-23)
+
+**Red-flag check: none, though the Sage integration comes close.**
+- Not an off-limits area. The product handles B2B order data with little personal data.
+- Synthetic data can credibly demo the core value. Fictional customer orders (PDF, Excel and free-text email), a fictional catalogue and a customer-code map are enough to show extraction, SKU matching and mismatch flags.
+- The "push into Sage" step is the problem. Sage 50 can't import sales orders natively (see below), so the push needs one of these:
+  - Sage's SDK. A 2022 Sage forum post quoted £2,500+VAT a year for Sage 50c (search summary only, unverified).
+  - A connector the customer pays for, such as Zynk or PostTrans.
+  - For Sage 200, the API. It is free to develop against but needs a Sage 200 test environment (https://developer.sage.com/200/guides/api_faq, search summary only).
+- Each of those is an ask-first purchase. Without one, the studio can't prove the Sage step end to end before G4. A file export avoids the red flag but costs Build points.
+
+**Falsification findings** (all accessed 2026-11-23)
+- **The closest UK competitor is a service, not a product.** Zestcode reads "PDF purchase orders across many layouts, CSV and Excel files, Word documents, and orders in the email body" (https://zestcode.co.uk/services/sage-200-order-automation/).
+  - It maps customer references to Sage 200 stock items and validates each line. A person reviews every order before it is created as a sales order.
+  - It works to a scoped, fixed quote, publishes no price and doesn't support Sage 50.
+  - This confirms both the demand and the gap: there is no self-serve product, and nothing for Sage 50.
+- **Cheap substitutes that a Sage partner could chain together:**
+  - Y Meadows lists "Sage" (no version) among its integrations, includes GB in its service area, and has a free Starter plan for up to 50 orders a month (https://ymeadows.com/en/integrations/; https://ymeadows.com/en/starter/, search summary only).
+  - Parseur's AI parsing costs $49 a month for 100 pages or $129 for 1,000, with CSV and webhook export (https://parseur.com/pricing).
+  - PostTrans imports sales orders into Sage 50 from Excel or CSV templates, on a subscription (https://www.posttrans.co.uk/sage-line-50-import-sales-invoice-order).
+- **Incumbents are moving.**
+  - Microsoft's Business Central Sales Order Agent already reads PDF and image orders from email and creates quotes and orders, billed in Copilot Credits (https://learn.microsoft.com/en-us/dynamics365/business-central/sales-order-agent, search summary only).
+  - I found no Sage-native equivalent for Sage 50 or Sage 200.
+  - PaperLess already runs an AI "Company Inbox" for Sage 50 and Sage 200 purchase invoices (https://uk-marketplace.sage.com/en-GB/apps/59356/paperless-software/features, search summary only). It could plausibly extend that to customer orders within a month.
+- **The pain evidence is weak, as the scout admits.**
+  - The Sage forum threads are 3 to 8 years old. One confirms that CSV import doesn't cover orders and points to add-ons (https://communityhub.sage.com/gb/sage-50-accounts/f/general-discussion-uk/203817/importing-sales-orders-invoices/509549).
+  - The job ads are unverified snippets, and the Payscale salary data dates from 2021.
+- **Support burden.** Sage 50 is mostly a desktop product with local data. A live integration means installing and supporting a connector on the customer's machine, which is hard for a two-person business without a Sage partner.
+
+**What would change my mind (re-score on this evidence)**
+1. Current UK evidence of volume: several live, fetched job ads for staff keying emailed orders into Sage 50 or Sage 200, or a UK case study giving orders per day and error rates.
+2. A cheap, testable integration route, confirmed on Sage's own developer pages: current Sage 50 SDK or API terms and cost, and Sage 200 test-environment options. If one is free or within the approval threshold, Build rises by 3 to 4 points.
+3. Confirmation on vendor pages that Y Meadows and similar tools don't support Sage 50 UK or Sage 200, so the gap stays open.
+
+My estimate is that with all three, the score tops out in the mid 60s. It reaches 70 only if the pain turns out much larger than the current evidence shows.
 
 ## Gate log
 - 2026-11-23: G0 spotted by scout.
+- 2026-11-23 | validator | G0→G1 | REVISE 55 | This batch's clearest product gap (no self-serve AI sales-order capture found for Sage 50, and Zestcode does Sage 200 only as a bespoke service), but the pain evidence is old forum posts and unverified job snippets, Sage 50 can't import sales orders natively so a live demo needs a paid SDK, connector or Sage licence, and generic AI parsers plus connectors are a cheap substitute.
