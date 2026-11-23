@@ -4,6 +4,10 @@ Last updated 2026-11-23 by run 20261123T111240Z-run-b15e.
 
 ## Status
 
+- 2026-11-23, later: the security re-test (FAIL 2 of 8: R1-R4) and the re-review (CHANGES: B1-B3, plus N1-N3)
+  are addressed in 93f7aba. 132 backend tests pass; e2e passes (now including a wrong-password delete). The
+  two B3 tests were mutation-checked: each fails with its protection removed. Waiting for both checkers again.
+
 - The first review gave CHANGES (8 blocking: C1 to C8) and the security gate gave FAIL. Both are addressed in
   commits after `5df3b8b`. Waiting for re-review and a security re-test.
 - 113 backend tests pass against Postgres 16. The full CI passed on GitHub (run 13, manual): hash-checked
