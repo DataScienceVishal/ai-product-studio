@@ -4,6 +4,13 @@ Last updated 2026-11-23 by run 20261123T111240Z-run-b15e.
 
 ## Status
 
+- T-15 cookies slice (branch p/_starter/T-15-cookies), done: tests that the cookie clears on logout, owner
+  account deletion and member leave carry the same Secure, HttpOnly, SameSite and Path=/ as the set (secure and
+  plain-http modes, mutation-checked); a test tying LIMITED_PROVIDERS to the live-key refusal; the CLIENT_ROUTES
+  sync test now accepts any quote style and fails on other path comparisons; `normalise("//")` returns "/".
+  The `__Host-` prefix was already in main (A8/R7), so only docs were updated. 205 backend and 111 frontend tests
+  pass. Left: nothing from this slice; the e2e was not re-run (no core-flow change).
+
 - 2026-11-23, later: the security re-test (FAIL 2 of 8: R1-R4) and the re-review (CHANGES: B1-B3, plus N1-N3)
   are addressed in 93f7aba. 132 backend tests pass; e2e passes (now including a wrong-password delete). The
   two B3 tests were mutation-checked: each fails with its protection removed. Waiting for both checkers again.
