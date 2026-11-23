@@ -12,4 +12,4 @@ Status is one of todo, doing, review, blocked, done. Move done items older than 
 - [doing] T-3 | ideas | Scout 15 candidate problems across markets: Vishal's four seed directions plus at least 11 others; one idea file each | claimed-by: 20261123T111240Z-run-b15e @ 2026-11-23T11:13:00Z | updated: 2026-11-23T11:13:00Z
 - [todo] T-4 | ideas | Validate and score every G0 idea; write state/ideas/RANKING.md | claimed-by: - | updated: -
 - [todo] T-5 | ideas | Take the top 2 ideas through G2 (spec, architecture, cost) | claimed-by: - | updated: -
-- [todo] T-6 | studio | Build products/_starter (see playbooks/engineering.md) and get reviewer and security PASS | claimed-by: - | updated: -
+- [doing] T-6 | studio | Build products/_starter (see playbooks/engineering.md) and get reviewer and security PASS | claimed-by: 20261123T111240Z-run-b15e @ 2026-11-23T11:19:07Z | updated: 2026-11-23T11:19:07Z
