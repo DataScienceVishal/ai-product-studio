@@ -1,0 +1,4 @@
+kind=desk
+started=2026-11-23T22:19:41Z
+session=cse_01LStgwTujYT5n9GAts7qTB7
+- Desk 20261123T221941Z-desk-bf43: digest NOT sent (Telegram blocked by proxy); notes kept for the next digest.

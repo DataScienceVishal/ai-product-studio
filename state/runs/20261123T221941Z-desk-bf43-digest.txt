@@ -1,0 +1,30 @@
+🧪 Studio digest · Mon 23 Nov, 22:20
+Mode NORMAL · selling locked · Azure $0 of $80 (nothing created)
+
+Done since last digest
+• [_starter] Product starter DONE: passed code review and security (147 tests, CI green). Every product starts from it.
+• [_starter] Azure deploy design passed review; nothing is created until you answer Q-5.
+• [studio] Everything is on main now, as you asked.
+• [ideas] 32 ideas scored, none at the 70 bar yet. Best: pEPR 68, margin copilot 66, holiday-pay audit 63, all parked (incumbents or pending gov rules).
+• [ideas] Round 4: margin-scheme VAT killed (45), charity fund coding parked (52).
+
+Pipeline
+• G4 none · G3 none · G2 none · G1 none · queue 29 G0 · killed 3
+
+Needs you
+Q-4 Which customers should round 3 scout among?
+  A) My friend's customers (reply with sector)  B) My finance/tax network  C) Keep broad
+  Recommended A · No answer: C at 10:20
+Q-2 Can the studio sell outside the UK?
+  A) No, UK first ⭐  B) Yes, I sell in India  C) Via a partner
+  No answer: A at 10:20
+Q-5 Create shared Azure resources (~$5-23/month) when a product reaches G3?
+  A) Yes ⭐  B) Yes, ACR Standard  C) Not yet
+  Waits for you (spending money)
+
+Hurdles
+• Azure OpenAI env vars still missing: finish SETUP.md steps 3 and 5.
+• Scheduled runs can't reach Telegram (proxy blocks api.telegram.org): set the studio environment's network to Full.
+
+Next
+• Scout among your friend's sector once you answer Q-4.
