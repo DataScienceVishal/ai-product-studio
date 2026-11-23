@@ -78,12 +78,27 @@ def apply_update(db: Session, update: BillingUpdate, provider: str) -> bool:
     return True
 
 
+MAX_WEBHOOK_BYTES = 256_000
+
+
+async def _read_limited(request: Request, limit: int) -> bytes:
+    """Read the body but stop as soon as it passes `limit`, so a huge request can't exhaust memory."""
+    declared = request.headers.get("content-length", "")
+    if declared.isdigit() and int(declared) > limit:
+        raise AppError(413, "too_large", "Payload too large.")
+    chunks, size = [], 0
+    async for chunk in request.stream():
+        size += len(chunk)
+        if size > limit:
+            raise AppError(413, "too_large", "Payload too large.")
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
 @router.post("/webhook")
 async def webhook(request: Request, db: Session = Depends(get_db)):
     """Called by the payment provider, not the browser: no cookie, no CSRF header, signature instead."""
-    payload = await request.body()
-    if len(payload) > 256_000:
-        raise AppError(413, "too_large", "Payload too large.")
+    payload = await _read_limited(request, MAX_WEBHOOK_BYTES)
     signature = request.headers.get("stripe-signature") or request.headers.get("x-billing-signature", "")
     update = request.app.state.billing.parse_webhook(payload, signature)
     if update is None:

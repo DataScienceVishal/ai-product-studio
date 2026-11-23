@@ -9,7 +9,7 @@ Last updated 2026-11-23 by run 20261123T111240Z-run-b15e.
   AI adapter (fake and Azure OpenAI v1) with retries and a monthly cap per plan, billing adapter (mock and
   Stripe test mode only) with signed, idempotent webhooks, data export and account deletion, JSON logs with
   request and tenant ids, security headers including noindex, health check, rate limits.
-- 55 backend tests pass against Postgres 16. A mutation check showed the tenancy test fails when the tenant
+- 56 backend tests pass against Postgres 16. A mutation check showed the tenancy test fails when the tenant
   filter is removed.
 - Frontend: React 19, TypeScript, Vite 8, Tailwind 4. Type check clean, build about 74 kB gzipped.
 - The browser end-to-end test (`scripts/e2e.sh`) passes: sign-up, sample data, AI summary, checkout with

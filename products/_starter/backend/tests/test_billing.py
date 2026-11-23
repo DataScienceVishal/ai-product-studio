@@ -155,3 +155,16 @@ def test_access_rules():
     assert has_access("trialing", now + timedelta(days=1), now)
     assert not has_access("trialing", now - timedelta(seconds=1), now)
     assert not has_access("past_due", None, now) and not has_access("canceled", None, now)
+
+
+def test_oversized_webhook_is_refused_without_reading_it_all(new_client):
+    client = new_client(csrf=False)
+    response = client.post("/api/billing/webhook", content=b"x" * 300_000, headers={"x-billing-signature": "t=1,v1=0"})
+    assert response.status_code == 413 and response.json()["error"] == "too_large"
+
+    def chunks():  # no content-length: the streaming check has to catch it
+        for _ in range(40):
+            yield b"y" * 10_000
+
+    streamed = client.post("/api/billing/webhook", content=chunks(), headers={"x-billing-signature": "t=1,v1=0"})
+    assert streamed.status_code == 413
