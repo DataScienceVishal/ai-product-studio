@@ -181,3 +181,169 @@ def test_empty_answers_carry_the_billed_usage():
 def test_bad_credentials_are_a_friendly_error():
     with pytest.raises(AIUnavailable, match="configured"):
         _azure(lambda _: httpx.Response(401)).complete("s", "u")
+
+
+# --- Azure OpenAI through a managed identity ----------------------------------------------------
+
+import logging  # noqa: E402
+
+from app.ai import ManagedIdentityToken, build_provider  # noqa: E402
+
+IDENTITY_URL = "http://localhost:42356/msi/token"
+SECRET_HEADER = "hdr-secret-123"
+
+
+class Tokens:
+    """A fake identity endpoint: records requests, hands out tok-1, tok-2, ... expiring `lifetime` s from now."""
+
+    def __init__(self, clock, lifetime=3600, status=200, body=None):
+        self.clock, self.lifetime, self.status, self.body, self.requests, self.n = clock, lifetime, status, body, [], 0
+
+    def __call__(self, request: httpx.Request):
+        self.requests.append(request)
+        if self.status != 200:
+            return httpx.Response(self.status, json={"error": "bad"})
+        if self.body is not None:
+            return httpx.Response(200, json=self.body)
+        self.n += 1
+        return httpx.Response(200, json={"access_token": f"tok-{self.n}", "expires_on": str(int(self.clock() + self.lifetime)),
+                                         "resource": "https://cognitiveservices.azure.com", "token_type": "Bearer"})
+
+
+def _provider(tokens, clock, client_id=""):
+    return ManagedIdentityToken(client_id, endpoint=IDENTITY_URL, header=SECRET_HEADER,
+                                client=httpx.Client(transport=httpx.MockTransport(tokens)), now=clock)
+
+
+def test_token_request_follows_the_container_apps_contract():
+    clock = FakeClock()
+    tokens = Tokens(clock)
+    assert _provider(tokens, clock).get() == "tok-1"
+    request = tokens.requests[0]
+    assert request.method == "GET" and str(request.url).startswith(IDENTITY_URL)
+    assert request.url.params["resource"] == "https://cognitiveservices.azure.com"
+    assert request.url.params["api-version"] == "2019-08-01"
+    assert request.headers["x-identity-header"] == SECRET_HEADER
+    assert "client_id" not in request.url.params  # system-assigned identity
+
+
+def test_client_id_is_passed_for_a_user_assigned_identity():
+    clock = FakeClock()
+    tokens = Tokens(clock)
+    _provider(tokens, clock, client_id="1111-2222").get()
+    assert tokens.requests[0].url.params["client_id"] == "1111-2222"
+
+
+def test_token_is_cached_then_refreshed_five_minutes_before_expiry():
+    clock = FakeClock()
+    clock.now = 1_000_000.0
+    tokens = Tokens(clock, lifetime=3600)
+    provider = _provider(tokens, clock)
+    assert provider.get() == provider.get() == "tok-1" and len(tokens.requests) == 1
+    clock.now += 3600 - 301  # still more than 5 minutes left
+    assert provider.get() == "tok-1" and len(tokens.requests) == 1
+    clock.now += 2  # inside the margin
+    assert provider.get() == "tok-2" and len(tokens.requests) == 2
+
+
+def test_concurrent_callers_share_one_fetch():
+    import threading
+    clock = FakeClock()
+    tokens = Tokens(clock)
+    provider = _provider(tokens, clock)
+    results = []
+    threads = [threading.Thread(target=lambda: results.append(provider.get())) for _ in range(8)]
+    [t.start() for t in threads]
+    [t.join() for t in threads]
+    assert results == ["tok-1"] * 8 and len(tokens.requests) == 1
+
+
+def _azure_mi(provider, handler):
+    return AzureOpenAI("https://res.openai.azure.com/", "gpt-5-mini", "", token_provider=provider,
+                       client=httpx.Client(transport=httpx.MockTransport(handler)), sleep=lambda _: None)
+
+
+def test_managed_identity_sends_bearer_and_no_api_key():
+    clock = FakeClock()
+    seen = {}
+
+    def handler(request):
+        seen["auth"], seen["key"] = request.headers.get("authorization"), request.headers.get("api-key")
+        return _ok()
+
+    assert _azure_mi(_provider(Tokens(clock), clock), handler).complete("s", "u").text == "A summary."
+    assert seen == {"auth": "Bearer tok-1", "key": None}
+
+
+def test_key_mode_still_sends_api_key_only():
+    seen = {}
+
+    def handler(request):
+        seen["auth"], seen["key"] = request.headers.get("authorization"), request.headers.get("api-key")
+        return _ok()
+
+    _azure(handler).complete("s", "u")
+    assert seen == {"auth": None, "key": "proxy-injected"}
+
+
+@pytest.mark.parametrize("make", [
+    lambda clock: Tokens(clock, status=500),
+    lambda clock: Tokens(clock, status=400),
+    lambda clock: Tokens(clock, body={"nope": 1}),
+    lambda clock: Tokens(clock, body={"access_token": "t", "expires_on": "soon"}),
+])
+def test_token_failures_become_ai_unavailable_and_nothing_is_sent_or_billed(make):
+    clock = FakeClock()
+    sent = []
+    with pytest.raises(AIUnavailable) as raised:
+        _azure_mi(_provider(make(clock), clock), lambda r: sent.append(r) or _ok()).complete("s", "u")
+    assert sent == [] and (raised.value.input_tokens, raised.value.output_tokens) == (0, 0)
+
+
+def test_unreachable_or_missing_identity_endpoint_is_ai_unavailable():
+    def boom(request):
+        raise httpx.ConnectError("cannot connect to " + str(request.url))
+
+    provider = ManagedIdentityToken(endpoint=IDENTITY_URL, header=SECRET_HEADER, client=httpx.Client(transport=httpx.MockTransport(boom)))
+    with pytest.raises(AIUnavailable):
+        provider.get()
+    with pytest.raises(AIUnavailable, match="configured"):
+        ManagedIdentityToken(endpoint="", header="").get()
+
+
+def test_rejected_token_is_dropped_so_the_next_call_fetches_a_new_one():
+    clock = FakeClock()
+    tokens = Tokens(clock)
+    provider = _provider(tokens, clock)
+    with pytest.raises(AIUnavailable):
+        _azure_mi(provider, lambda r: httpx.Response(401)).complete("s", "u")
+    assert provider.get() == "tok-2"
+
+
+def test_token_and_identity_header_never_reach_logs_or_errors(caplog):
+    clock = FakeClock()
+    with caplog.at_level(logging.DEBUG):
+        with pytest.raises(AIUnavailable) as rejected:
+            _azure_mi(_provider(Tokens(clock), clock), lambda r: httpx.Response(401)).complete("s", "u")
+        with pytest.raises(AIUnavailable) as failed:
+            _provider(Tokens(clock, status=500), clock).get()
+    text = caplog.text + str(rejected.value.message) + str(failed.value.message)
+    for line in caplog.records:
+        text += repr(line.__dict__)
+    assert "tok-1" not in text and SECRET_HEADER not in text
+
+
+def test_build_provider_picks_the_auth_mode(monkeypatch):
+    from types import SimpleNamespace
+    base = dict(ai_provider="azure", azure_openai_endpoint="https://r.openai.azure.com", azure_openai_deployment="d",
+                azure_openai_api_key="", ai_timeout_seconds=5, ai_deadline_seconds=9, ai_retries=1, azure_client_id="cid")
+    assert build_provider(SimpleNamespace(**base, azure_openai_auth="key")).token_provider is None
+    built = build_provider(SimpleNamespace(**base, azure_openai_auth="managed_identity"))
+    assert built.token_provider.client_id == "cid"
+
+
+def test_settings_accept_only_known_auth_modes():
+    from app.config import Settings
+    assert Settings().azure_openai_auth == "key"
+    with pytest.raises(ValueError):
+        Settings(azure_openai_auth="password")

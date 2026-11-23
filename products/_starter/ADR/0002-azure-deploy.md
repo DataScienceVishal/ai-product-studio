@@ -217,11 +217,19 @@ needs Vishal's approval.
   call reserves its upper-bound estimate and is refused if it would cross the budget, and since the R14 fix a
   call that was sent is never retried, so the tokens counted are the tokens billed. 100,000 tokens cost at
   most $0.20 a day even if every one were output ($2.00 per million). Trials together get half.
-- **Next (T-17):** a per-product user-assigned identity with the "Cognitive Services OpenAI User" role on the
-  Azure OpenAI resource. The app gets a token from the Container Apps identity endpoint (`IDENTITY_ENDPOINT`
-  with the `X-IDENTITY-HEADER`; audience `https://ai.azure.com/.default` per Microsoft's Entra ID guide) and
-  sends `Authorization: Bearer` instead of `api-key`. That is an app change in `ai.py`. The role assignment
-  needs an Owner: Vishal, and ask-first if the resource sits outside `rg-ai-studio`.
+- **Built (T-17), not yet switched on:** `AZURE_OPENAI_AUTH=managed_identity` (default `key`) makes `ai.py` fetch
+  a bearer token from the Container Apps identity endpoint (`IDENTITY_ENDPOINT` with `X-IDENTITY-HEADER`,
+  api-version 2019-08-01, `AZURE_CLIENT_ID` for a user-assigned identity) and send `Authorization: Bearer`
+  instead of `api-key`. Tokens are cached until 5 minutes before expiry; any failure is `AIUnavailable`, and
+  neither token nor header is logged. The audience is `https://cognitiveservices.azure.com/.default`
+  (the Azure OpenAI data-plane scope; this corrects the `ai.azure.com` guess written earlier).
+- **Not in Bicep, on purpose:** the only identity the infra attaches is the shared pull identity, with
+  `lifecycle: None` so code in the containers can't get tokens for it (and it must not get an OpenAI role).
+  A per-app identity plus a role assignment needs a design of its own and an Owner. Manual steps for Vishal
+  (ask-first; do them only if the OpenAI resource is in `rg-ai-studio`, otherwise ask first):
+  1. enable the app's system-assigned identity (or create a user-assigned one and attach it with default lifecycle);
+  2. grant it "Cognitive Services OpenAI User" (`5e0bd9bd-7b93-4f28-af87-19fc36ad61bd`) on the Azure OpenAI resource only;
+  3. set `AZURE_OPENAI_AUTH=managed_identity` (and `AZURE_CLIENT_ID` for a user-assigned identity); the key secret can then go.
 
 ### 8. Identities and permissions
 

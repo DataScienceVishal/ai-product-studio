@@ -4,10 +4,15 @@ Azure OpenAI uses the v1 API: POST {endpoint}/openai/v1/chat/completions with an
 header and the deployment name as `model` (Microsoft Learn, checked 2026-11-23). In cloud runs
 the key is injected by the environment's network secret, so AZURE_OPENAI_API_KEY holds only a
 placeholder. gpt-5-mini is a reasoning model: max_completion_tokens covers reasoning too.
+
+With AZURE_OPENAI_AUTH=managed_identity there is no key: a bearer token for the app's managed identity
+is fetched from the Container Apps identity endpoint (see ManagedIdentityToken) and sent as
+`Authorization: Bearer`.
 """
 from __future__ import annotations
 
 import logging
+import os
 import threading
 import time
 import uuid
@@ -82,15 +87,82 @@ class AISlots:
         self._slots.release()
 
 
+class ManagedIdentityToken:
+    """Bearer tokens for Azure OpenAI from the Container Apps managed identity endpoint.
+
+    Contract (Microsoft Learn, "Managed identities in Azure Container Apps", REST endpoint reference,
+    https://learn.microsoft.com/azure/container-apps/managed-identity#rest-endpoint-reference, checked 2026-11-23):
+    GET $IDENTITY_ENDPOINT?resource=<audience>&api-version=2019-08-01 with header `X-IDENTITY-HEADER:
+    $IDENTITY_HEADER`; optional `client_id` picks a user-assigned identity (without it the system-assigned
+    identity is used). The answer is JSON with `access_token` and `expires_on` (epoch seconds, as a string).
+    Tokens are cached until `refresh_margin` seconds before expiry; one lock makes concurrent callers share
+    a single fetch. The token and the identity header are never logged or put in an error message."""
+
+    RESOURCE = "https://cognitiveservices.azure.com"  # scope https://cognitiveservices.azure.com/.default
+    API_VERSION = "2019-08-01"
+
+    def __init__(self, client_id: str = "", endpoint: str | None = None, header: str | None = None,
+                 client: httpx.Client | None = None, timeout: float = 5.0, refresh_margin: float = 300.0,
+                 now=time.time):
+        self.client_id = client_id
+        self._endpoint = endpoint if endpoint is not None else os.environ.get("IDENTITY_ENDPOINT", "")
+        self._header = header if header is not None else os.environ.get("IDENTITY_HEADER", "")
+        self._client = client or httpx.Client(timeout=timeout)
+        self._timeout, self._margin, self._now = timeout, refresh_margin, now
+        self._lock = threading.Lock()
+        self._token = ""
+        self._expires_on = 0.0
+
+    def get(self) -> str:
+        with self._lock:
+            if self._token and self._now() < self._expires_on - self._margin:
+                return self._token
+            self._token, self._expires_on = self._fetch()
+            return self._token
+
+    def invalidate(self) -> None:
+        """Forget the cached token (the service rejected it), so the next call fetches a fresh one."""
+        with self._lock:
+            self._token, self._expires_on = "", 0.0
+
+    def _fetch(self) -> tuple[str, float]:
+        if not self._endpoint or not self._header:
+            log.error("managed identity endpoint is not available")
+            raise AIUnavailable("The AI service isn't configured correctly. The team has been notified.")
+        params = {"resource": self.RESOURCE, "api-version": self.API_VERSION}
+        if self.client_id:
+            params["client_id"] = self.client_id
+        try:
+            response = self._client.get(self._endpoint, params=params, headers={"X-IDENTITY-HEADER": self._header},
+                                        timeout=self._timeout)
+        except httpx.HTTPError as error:  # only the class name: messages can echo the URL
+            log.error("managed identity token request failed", extra={"kind": type(error).__name__})
+            raise AIUnavailable() from None
+        if response.status_code != 200:
+            log.error("managed identity token request rejected", extra={"status": response.status_code})
+            raise AIUnavailable("The AI service isn't configured correctly. The team has been notified.") from None
+        try:
+            data = response.json()
+            token, expires_on = str(data["access_token"]), float(data["expires_on"])
+            if not token:
+                raise ValueError
+        except (ValueError, KeyError, TypeError):
+            log.error("managed identity token response was malformed")
+            raise AIUnavailable() from None
+        return token, expires_on
+
+
 class AzureOpenAI:
     name = "azure"
 
     def __init__(self, endpoint: str, deployment: str, api_key: str, timeout: float = 20.0, deadline: float = 25.0,
-                 retries: int = 1, client: httpx.Client | None = None, sleep=time.sleep, clock=time.monotonic):
+                 retries: int = 1, client: httpx.Client | None = None, sleep=time.sleep, clock=time.monotonic,
+                 token_provider: ManagedIdentityToken | None = None):
         if not endpoint:
             raise ValueError("AZURE_OPENAI_ENDPOINT is not set")
         self.url = endpoint.rstrip("/") + "/openai/v1/chat/completions"
         self.deployment = deployment
+        self.token_provider = token_provider  # set: bearer token from the managed identity, no api-key
         self.headers = {"api-key": api_key or "proxy-injected", "Content-Type": "application/json"}
         self.client = client or httpx.Client(timeout=timeout)
         self.timeout, self.deadline, self.retries = timeout, deadline, retries
@@ -112,7 +184,10 @@ class AzureOpenAI:
             if remaining() < 1.0:
                 break
             try:
-                response = self.client.post(self.url, json=payload, headers=self.headers,
+                headers = self.headers
+                if self.token_provider is not None:  # may raise AIUnavailable; nothing was sent, so nothing billed
+                    headers = {"Authorization": f"Bearer {self.token_provider.get()}", "Content-Type": "application/json"}
+                response = self.client.post(self.url, json=payload, headers=headers,
                                             timeout=min(self.timeout, remaining()))
             except (httpx.ConnectError, httpx.ConnectTimeout) as error:  # never reached the model: no cost
                 log.warning("ai call failed", extra={"attempt": attempt, "kind": type(error).__name__})
@@ -129,6 +204,8 @@ class AzureOpenAI:
                 continue
             if response.status_code in (401, 403):
                 log.error("ai credentials rejected", extra={"status": response.status_code})
+                if self.token_provider is not None:
+                    self.token_provider.invalidate()
                 raise fail("The AI service isn't configured correctly. The team has been notified.")
             if response.status_code >= 400:
                 log.error("ai request rejected", extra={"status": response.status_code})
@@ -163,9 +240,11 @@ class AzureOpenAI:
 
 def build_provider(settings) -> AIProvider:
     if settings.ai_provider == "azure":
+        token = ManagedIdentityToken(settings.azure_client_id) if settings.azure_openai_auth == "managed_identity" else None
         return AzureOpenAI(settings.azure_openai_endpoint, settings.azure_openai_deployment,
                            settings.azure_openai_api_key, timeout=settings.ai_timeout_seconds,
-                           deadline=settings.ai_deadline_seconds, retries=settings.ai_retries)
+                           deadline=settings.ai_deadline_seconds, retries=settings.ai_retries,
+                           token_provider=token)
     return FakeAI()
 
 
