@@ -7,11 +7,15 @@ Needs two environment variables (set them on the cloud environment, never in git
 
 Commands
   pull                                   save new messages to state/inbox/<update_id>.json
-  send --text "..." | --file PATH [--buttons PATH]
+  send --text "..." | --file PATH [--buttons PATH] [--html]
+                                         --html: Telegram HTML (<b>, <i>, <u>, <code>, <a href>);
+                                         falls back to plain text if Telegram can't parse it
   whoami                                 check the token works (prints the bot's username)
 
 Buttons file (JSON), one row of buttons per question:
-  [{"qid": "Q-12", "options": ["A", "B", "C"], "recommended": "A"}]
+  [{"qid": "Q-12", "options": ["A", "B", "C"], "recommended": "A",
+    "labels": {"A": "Stripe", "B": "Razorpay", "C": "Both"}}]
+"labels" is optional (short words, up to 24 characters); buttons then read "A · Stripe ⭐".
 A tap arrives on the next pull as {"type": "button", "data": "q:Q-12:A"}.
 """
 from __future__ import annotations
@@ -48,6 +52,10 @@ def iso(ts: float | int | None) -> str:
     return moment.replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+class ParseError(Exception):
+    """Telegram could not parse the message's HTML entities."""
+
+
 def call(method: str, payload: dict | None = None, timeout: int = 30):
     """POST to the Bot API. Never prints the URL, because it contains the token."""
     url = API.format(token=need("TELEGRAM_BOT_TOKEN"), method=method)
@@ -70,6 +78,8 @@ def call(method: str, payload: dict | None = None, timeout: int = 30):
                     pass
                 time.sleep(min(wait, 30))
                 continue
+            if error.code == 400 and "parse entities" in detail:
+                raise ParseError(detail)
             sys.exit(f"tg.py: Telegram error {error.code} on {method}: {detail}")
         except (urllib.error.URLError, TimeoutError, OSError) as error:
             if attempt == 3:
@@ -175,9 +185,25 @@ def load_buttons(path: str) -> dict:
             sys.exit(f"tg.py: {qid} needs 2 to 4 options from A, B, C, D")
         if recommended not in options:
             sys.exit(f"tg.py: {qid} recommended option must be one of {options}")
-        rows.append([{"text": f"{qid} {o}{' ⭐' if o == recommended else ''}",
-                      "callback_data": f"q:{qid}:{o}"} for o in options])
+        labels = item.get("labels") or {}
+        if not isinstance(labels, dict):
+            sys.exit(f"tg.py: {qid} labels must be an object like {{\"A\": \"Stripe\"}}")
+        row = []
+        for o in options:
+            label = str(labels.get(o, "")).strip()[:24]
+            text = f"{o} · {label}" if label else f"{qid} {o}"
+            row.append({"text": text + (" ⭐" if o == recommended else ""), "callback_data": f"q:{qid}:{o}"})
+        if labels and len(options) > 2:  # labelled buttons are wide: one per row
+            rows.extend([button] for button in row)
+        else:
+            rows.append(row)
     return {"inline_keyboard": rows}
+
+
+def strip_html(text: str) -> str:
+    """Plain-text fallback: drop tags and unescape the three HTML entities Telegram uses."""
+    text = re.sub(r"<[^>]+>", "", text)
+    return text.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
 
 
 def cmd_send(args) -> None:
@@ -190,10 +216,18 @@ def cmd_send(args) -> None:
     markup = load_buttons(args.buttons) if args.buttons else None
     chunks = split(text)
     for index, chunk in enumerate(chunks):
-        payload = {"chat_id": chat_id, "text": chunk}
+        payload = {"chat_id": chat_id, "text": chunk, "link_preview_options": {"is_disabled": True}}
+        if args.html:
+            payload["parse_mode"] = "HTML"
         if markup and index == len(chunks) - 1:
             payload["reply_markup"] = markup
-        call("sendMessage", payload)
+        try:
+            call("sendMessage", payload)
+        except ParseError:
+            payload.pop("parse_mode")
+            payload["text"] = strip_html(chunk)
+            call("sendMessage", payload)
+            print("tg.py: Telegram couldn't parse the HTML; sent this part as plain text.")
     print(f"sent {len(chunks)} message(s){' with buttons' if markup else ''}.")
 
 
@@ -210,6 +244,7 @@ def main() -> None:
     p.add_argument("--text")
     p.add_argument("--file")
     p.add_argument("--buttons", help="JSON file describing question buttons")
+    p.add_argument("--html", action="store_true", help="send as Telegram HTML (falls back to plain text)")
     p.set_defaults(func=cmd_send)
     sub.add_parser("whoami").set_defaults(func=cmd_whoami)
     args = parser.parse_args()

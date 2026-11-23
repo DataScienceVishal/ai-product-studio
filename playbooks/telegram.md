@@ -19,7 +19,7 @@
 | `leave some usage for me` | `python3 scripts/studio.py set-mode reserve --at <the message's date>` |
 | `pause` | `python3 scripts/studio.py set-mode paused` |
 | `resume` | `python3 scripts/studio.py set-mode normal` |
-| `status` | send at most 8 lines now with `tg.py send --text` |
+| `status` | send the status reply (below) now with `tg.py send --html --text` |
 | `unlock selling` | send a Yes/No button question; on Yes run `python3 scripts/studio.py selling unlock` |
 | `lock selling` | `python3 scripts/studio.py selling lock` |
 
@@ -29,41 +29,48 @@ Write each question in `state/QUESTIONS.md` using the format there: one decision
 
 ## Digest (Desk run at 08:00, 15:00 and 19:30 UK)
 
-One message, about 30 lines at most, plain text:
+Vishal reads these on his phone. Make them short, calm and easy to scan: **12 to 18 lines**, sent with `--html`.
 
-    🧪 Studio digest · Mon 23 Nov, 15:00
-    Mode NORMAL · selling locked · Azure $12 of $80
+Writing rules:
+- Plain words. No gate codes (G0-G5), task ids (T-12), run ids, scores out of 100 or file paths. Say "the starter app", not "_starter"; "idea ranked 2nd", not "66/100".
+- One idea per line, 12 words or fewer. Lead with the result, not the activity.
+- Bold section titles with one emoji each. Leave out any section with nothing in it (no "none" lines).
+- At most 4 wins, 2 questions, 1 problem, 2 next steps. Everything else waits for the next digest or `status`.
+- Escape `&`, `<` and `>` in any text that is not a tag (`&amp;`, `&lt;`, `&gt;`).
 
-    Done since last digest
-    • 3 to 6 lines, most important first, product slug in brackets
+Template:
 
-    Pipeline
-    • G4 none · G3 restaurant-ops (core flow 70%) · G2 ai-receptionist · queue 4
+    🧪 <b>Studio update</b> · Mon 23 Nov, 15:00
+    🟢 Running normally · 🔒 Selling locked · 💷 Azure $0 of $80
 
-    I decided (reversible; reply if you disagree)
-    • up to 3
+    <b>✨ What's new</b>
+    • Starter app finished: passed code and security review
+    • 32 ideas checked; none strong enough yet
 
-    Needs you
-    Q-12 Which payment provider for test mode?
-      A) Stripe ⭐  B) Razorpay  C) both
-      No answer: A at 03:00
+    <b>🙋 Need your call</b>
+    <b>1. Which customers should we aim at next?</b>
+    Tap a button below. <i>No reply → "Keep broad" at 10:40.</i>
 
-    Answers applied
-    • Q-11 → B (restaurant-ops uses WhatsApp-style chat UI)
+    <b>⚠️ One problem</b>
+    • AI keys not set up yet, so tests on real documents wait
 
-    Hurdles
-    • up to 2, each with the fix I recommend
+    <b>🧭 Next</b>
+    • Polishing the starter app (tests, safer builds)
 
-    Next
-    • 2 or 3 lines
+Questions: number them 1, 2 in the text; the full option wording lives on the buttons. Give every question `labels` so buttons read "A · Friend's sector ⭐" (up to 24 characters each). The question id stays in the button data only.
 
-Buttons for up to 3 questions ride on the same message. Write them as JSON:
+    [{"qid": "Q-4", "options": ["A", "B", "C"], "recommended": "A",
+      "labels": {"A": "Friend's sector", "B": "Finance network", "C": "Keep broad"}}]
 
-    [{"qid": "Q-12", "options": ["A", "B", "C"], "recommended": "A"}]
+Send with: `python3 scripts/tg.py send --html --file /tmp/digest.txt --buttons /tmp/buttons.json`
 
-Send with: `python3 scripts/tg.py send --file /tmp/digest.txt --buttons /tmp/buttons.json`
+Answers applied, decisions taken and the pipeline go in a "📌 Also" section of at most 2 lines, only when Vishal needs to know.
 
-In LIGHT or PAUSED mode, still send the digest, shorter, starting with the mode and how to change it.
+In LIGHT or PAUSED mode, still send the digest, shorter, with the first line saying the mode and how to change it ("⏸ Paused · send resume to restart").
+
+## Status reply
+
+At most 6 lines, same style, sent with `--html`: a bold title line, then what is running now, the last win, and anything waiting on him.
 
 ## Urgent pings (between digests)
 
