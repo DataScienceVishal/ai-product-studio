@@ -1,6 +1,6 @@
 # Security and privacy gate: product starter (T-6)
 
-> **Latest: re-test 2 on 2026-11-23 at `93f7aba`: FAIL, 2 of 8 sections (LLM features, privacy). Urgent: none, because nothing is deployed.** R1, R3–R6 and R8–R10 are fixed. Still open, both Medium: R12, verified throwaway trials can still use up the shared AI budget, and R13, the new purge deletes live and paying accounts. See [Re-test 2 (2026-11-23)](#re-test-2-2026-11-23) at the end. Earlier results below are unchanged.
+> **Latest: re-test 3 on 2026-11-23 at `95360d8`: PASS, 8 of 8 sections. Urgent: none, because nothing is deployed.** R12–R16 are fixed. Only Lows remain: R17 (fix before any Stripe test-mode demo goes online), R18 and R19, plus the deferred R7, lockout and actions pinned by tag. See [Re-test 3 (2026-11-23)](#re-test-3-2026-11-23) at the end. Earlier results below are unchanged.
 
 **Gate result: FAIL.** 3 of 8 sections pass (authorization, secrets, dependencies). 5 fail: auth and sessions, input
 handling, LLM features, privacy, infrastructure. Products must not copy the starter until the High and Medium items
@@ -1023,3 +1023,97 @@ Same harness as re-test 1, with the scripts updated for the new rules:
 - in T18-C, the paying tenant's per-minute limit is raised, because it isn't under test.
 
 The new scripts (t18v3, t19v3, t22v3, t17v3) are in the session scratchpad and aren't kept. Gaps are as in re-test 1: no real Azure, Stripe or ingress; simulated latency; prices from third-party trackers.
+
+---
+
+## Re-test 3 (2026-11-23)
+
+**Result: PASS, 8 of 8 sections.** R12 to R16 are fixed, with fresh evidence. What remains is Low: three new items (R17 to R19), and the items deferred or accepted by the team. Products can start from the starter. R17 must be fixed before any demo goes online with `BILLING_PROVIDER=stripe`.
+
+**Urgent: none.** Nothing is deployed: everything in `state/BUDGET.md` is still "planned (needs approval)". None of the 59 commits on any ref holds a live secret.
+
+| | |
+|---|---|
+| Tested | Everything at `95360d8`, exported read-only: `d051954` (the R12–R16 fixes), `b0f72ae` (`e2e.sh` hardening) and `95360d8` (the reviewer's minor items). The one exception is T23, the sign-up throttles, which ran at `b0f72ae`; `routes/auth.py` is identical at `95360d8`. T18, T17 and T19 ran at both commits with identical results. |
+| Suite | 144/144 at `95360d8` (137/137 at `b0f72ae`), on `starter_sec2_test`. |
+| Live | Same set-up as before: the API on 127.0.0.1:8500 with the Dockerfile flags, and database `starter_sec2_app`. The AI scenarios used the real `AzureOpenAI` adapter on a mock transport, so nothing reached Azure or Stripe. Port 4573 wasn't needed. Databases dropped and servers stopped afterwards. |
+
+### Results by section
+
+| # | Section | Re-test 2 | Re-test 3 | Evidence |
+|---|---|---|---|---|
+| 1 | Auth and sessions | PASS | **PASS** | New sign-up limits work (T23): from one address, sign-ups 21 and 22 get `429 rate_limited`, and the address is allowed again a day later. Login and accept set `last_sign_in_at`. Two hashing slots with a 3 s wait: peak RSS 217–227 MiB (it was 350 with four slots); no 503 up to 120 parallel logins; at 200, 45 get `503 busy` with `Retry-After: 5`. A real user's login sent during the burst still worked. Resets: caps hold and 1 of 8 racing confirms wins. Pre-hijack (a), (b) and (e) are still blocked. Deferred: R7 (T4c(d) still verifies the attacker's account) and lockout. Accepted: A5. New Low: R19. |
+| 2 | Authorization | PASS | **PASS** | 48/48 live checks. |
+| 3 | Input handling | PASS | **PASS** | T8: the forged cross-site requests created 0 notes. Webhook timestamps must now be ASCII digits: `t=²`, fullwidth `１２３`, `+1`, ` 1`, `1e3` and 14 digits all get 400; the only 500s in the log are T5's deliberate lock timeouts. |
+| 4 | LLM features | FAIL | **PASS** | R12, R14 and R15 fixed (below). T18-U and T18-D are unchanged. `ai_busy` now sends `Retry-After: 10`. An account deleted while its own AI call runs gets 404 (was 500), and its usage row is kept, unlinked. New Low: R17. |
+| 5 | Secrets | PASS | **PASS** | 59 commits: 0 known-format tokens. The new deploy workflow and infra use only variables (`readEnvironmentVariable`, the psql variable `:'app_password'`, `${PG_APP_PASSWORD}`), and the workflow masks values with `::add-mask::`. |
+| 6 | Dependencies | PASS | **PASS** | The lockfiles haven't changed since re-test 2's audit, which found 0 known vulnerabilities (pip-audit, npm audit). |
+| 7 | Privacy | FAIL | **PASS** | R13 and R16 fixed (below). Logs are still clean: T5 shows the SQLSTATE only, and the server log has 0 personal-data matches. New Low: R18. |
+| 8 | Infrastructure | PASS | **PASS** | T19 unchanged: in prod "Pay (test)" gets 404, mock plans lapse 3 days after their period, checkout works after the switch to Stripe, and HSTS and CSP are sent. `.env.example` now ships `MOCK_CHECKOUT_ENABLED=false`. `e2e.sh` runs each server in its own process group, checks its ports and creates its log directory. Deferred: actions pinned by tag; Permissions-Policy and COOP. |
+
+### Fixed, with fresh evidence
+- **R12, T18-C:** 25 rounds; in each, one trial was created, verified, used once and deleted. The paying tenant was on Pro and summarised a 2,000-character note after each round.
+  - 8 trials ran. From the 9th on, the other 17 got `503 ai_trial_pool_reached`.
+  - Trial usage reached 239,880 of the 250,000 pool. 8 of those rows were left unlinked by the deletions and still counted.
+  - The paying tenant succeeded 25 times out of 25. The day's total was 327,005.
+- **R14, T18-T:** the first attempt timed out after sending, and there was no retry. The provider saw 1 request, and the call got `503 ai_unavailable`. It recorded 29,985 tokens, the same as the reservation.
+- **R15, T18-G:** with `MOCK_CHECKOUT_ENABLED=true`, a mock-Pro tenant gets the trial caps. A 20,000-character note gets 429, because its estimate of about 81,500 tokens is over the 30,000 daily cap. A paying Starter tenant still gets 200.
+- **R13, T17 v4:**
+  - With the shipped defaults (outbox), the CLI purge has no unverified-account step. All six accounts survived: abandoned, active, paying, mock-paid, verified and young.
+  - `purge(unverified_after_days=30)` is how it would run once real email exists. It removed only the abandoned account and the abandoned mock-paid demo account. It kept the unverified owner who signed in today, the paying one (Stripe customer), the verified one and the 10-day-old one.
+- **R16:** the Help and the notice now say "Microsoft may store prompts and answers for abuse monitoring, as described on its Azure OpenAI data-privacy page". That matches Microsoft's current page.
+- **Not re-run:** T22, because the AI slots and async `/livez` are unchanged since re-test 2 apart from the new `Retry-After`.
+
+### Still open (all Low)
+
+| Id | Issue | Section |
+|---|---|---|
+| R17 | Stripe test-mode plans count as paying, so they skip the trial pool | LLM |
+| R18 | DATA.md doesn't list the new sign-in time, and its purge rule is out of date | Privacy |
+| R19 | Filling the studio-wide cap of 200 new trials a day blocks real prospects for the rest of the day | Auth |
+| Deferred | R7 `__Host-` cookie, A4 lockout, actions pinned by tag, I4 (no Permissions-Policy or COOP) | Auth, Infra |
+| Accepted | A5: inviting an address that already has an account reveals it ("That email already has an account", ADR 0001) | Auth |
+
+#### R17 (Low) Stripe test-mode plans skip the trial pool
+- **Why they are free:** `StripeBilling` accepts only `sk_test_` and `rk_test_` keys, and ignores `livemode` events. So until `unlock selling`, every Stripe plan is paid for with Stripe's public test cards, which costs nothing.
+- **Evidence, T18-S:**
+  - A verified owner completed a test-mode checkout (`checkout.session.completed`, `livemode: false`). The tenant became `pro/active` with `provider=stripe`.
+  - Six 20,000-character summaries then used 490,555 of the 500,000 global budget.
+  - None of those rows counted toward the trial pool, because `limited` is true only for trialing and mock plans.
+- **Impact:** a second such account takes the rest, and the AI is then off for every tenant until midnight UTC. Cost is still capped by the global budget.
+- **This must change in the starter before any demo goes online with `BILLING_PROVIDER=stripe`,** which T-7 supports. In `notes.summarize`, use `limited = sub.status == "trialing" or sub.provider in ("mock", "stripe")` until a selling ADR allows live keys. Alternatively, count a Stripe plan as paying only after an event with `livemode: true`.
+
+#### R18 (Low) DATA.md is behind the code
+- **Evidence:**
+  - The `users` row lists "email, role, argon2 password hash", but not the new `last_sign_in_at`, which is activity data.
+  - The `tenants` row still says unverified accounts are "removed after 30 days when verification is required".
+- **Fix:**
+  - Add "last sign-in time" to the `users` row.
+  - Restate the purge rule: the owner is unverified, hasn't signed in for 30 days, has no payment customer, and real email is sent.
+  - Mention sign-in times under "What we keep" in the DRAFT notice.
+
+#### R19 (Low) The studio-wide sign-up cap is a lever against real prospects
+- **Evidence, T23,** with the cap set to 30 for the test: 3 addresses × 10 sign-ups filled it. A prospect from a new address then got `429 signups_paused` for the rest of the UTC day.
+- **At the default of 200:** it takes 10 addresses × 20, and sign-up itself needs no email. Farmed accounts are never purged while email is outbox-only. Deleting them would free the slots, so the attacker keeps them.
+- **Fix, pick one:**
+  - only alert at the cap, since the trial pool already bounds AI cost and availability;
+  - let new accounts in past the cap, but without trial AI for the rest of the day;
+  - count only verified sign-ups once real email exists.
+
+#### Note: the hashing cap trades a short wait for 503s
+Two slots with a 3 s wait bound memory to about 225 MiB, but a burst of about 200 logins makes some sign-ins fail with `503 busy`. At 10 a minute per IP, that burst needs about 20 addresses, and the reply carries `Retry-After: 5`. That is reasonable for a 0.5–1 vCPU container. Size `HASH_WAIT_SECONDS` together with the replica's CPU in T-7.
+
+### Starter changes still worth making
+- **R17**, before any Stripe test-mode demo goes online.
+- **R7, the `__Host-` cookie.** It is the last way to get an attacker's pre-registered account verified (T4c(d)), and every product on `*.vishalkhan.me` shares the risk.
+- **Everything else** can ride with the next starter change: R18, R19, A4 lockout, Permissions-Policy and COOP, and the T-7 items already under review there.
+
+### Method
+Same harness as before, with these changes:
+- T18 v4 adds scenario S (Stripe test mode) and runs 25 farm trials in C.
+- In-process runs raise `signups_per_ip_per_day`, because every in-process sign-up comes from one client address. The throttle itself was tested separately (T23, with a patched clock).
+- T17 v4 seeds six account types.
+- T7b counts 503s and reads `Retry-After`.
+- T24 checks the new `ai_busy` header, and what happens when an account is deleted mid-call.
+
+Gaps are as before: no real Azure, Stripe or ingress; simulated latency; prices from third-party trackers.
