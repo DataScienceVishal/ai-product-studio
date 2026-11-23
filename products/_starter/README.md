@@ -5,7 +5,7 @@ isolation, billing in test mode, AI calls with a per-customer cap, logs, a healt
 product only has to build its own core flow.
 
 ```
- browser ──► React app (Vite) ──/api──► FastAPI ──► Postgres
+ browser ──► React app (Vite in dev; served by FastAPI in the image) ──/api──► FastAPI ──► Postgres
                                           │  ├─ AI adapter ──► Azure OpenAI (or FakeAI in dev/tests)
                                           │  └─ billing adapter ──► Mock (default) or Stripe test mode
                                           └─ JSON logs with request ids → stdout
@@ -33,7 +33,7 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 
 | What | Command | Where it runs |
 |---|---|---|
-| Backend unit and API tests (113) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
+| Backend unit and API tests (178) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
 | Migrations match the models | `alembic upgrade head && alembic check` | every push |
 | Frontend type check and build | `cd frontend && npm run build` | every push (CI `frontend`) |
 | Browser end-to-end core flow | `./scripts/e2e.sh` | pushes to main and manual runs (CI `e2e`) |
@@ -46,6 +46,21 @@ and in-order webhooks, account deletion at the provider, log redaction and the r
 Run the retention purge daily: `python -m app.maintenance purge`. What is stored and for how long is in `DATA.md`.
 Security findings and their status are in `SECURITY.md`; the code review is in `reviews/`.
 
+## One image, one origin
+
+`Dockerfile` (build context `products/_starter`) builds the frontend with Node, then copies `dist/` into the
+Python runtime image: `docker build -t starter -f Dockerfile .` from this folder. FastAPI serves it, so the
+browser sees the app and `/api` on one origin (ADR 0002, decision 2):
+
+- `/assets/*` is Vite's hashed output, cached for a year (`immutable`).
+- Any other GET that matches no route (`/verify-email`, `/reset-password`, `/accept-invite`, `/billing/done`)
+  gets `index.html` with `Cache-Control: no-cache` and a CSP of `script-src 'self'` (no inline script or style).
+- `/api/*`, `/livez` and `/healthz` are unchanged; an unknown `/api` path is still a JSON 404.
+- It is on only when `FRONTEND_DIST` names a folder with `index.html` (the image sets `/app/static`). Without it
+  the app is API-only, which is how dev, the tests and `scripts/e2e.sh` run (Vite serves the frontend and proxies `/api`).
+
+The old `backend/Dockerfile` is gone; nothing else used it.
+
 ## Configuration
 
 Environment variables only; names are in `.env.example`. The app refuses to start with an empty or short
@@ -57,6 +72,7 @@ AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
 |---|---|
 | `DATABASE_URL` | Postgres URL (`postgresql+psycopg://...`) |
 | `APP_BASE_URL`, `CORS_ORIGINS` | where the frontend lives; only these origins may call the API |
+| `FRONTEND_DIST` | folder with the built frontend; empty (default) means API-only. The image sets `/app/static` |
 | `COOKIE_SECURE` | `true` everywhere except local http |
 | `REQUIRE_EMAIL_VERIFICATION` | `true` (default) makes owners verify their email before inviting or checking out; `false` only where no real email is sent |
 | `TRUST_PROXY_HEADERS` | `true` behind Azure Container Apps ingress, so rate limits see the real client IP |
@@ -81,6 +97,5 @@ AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
 ## Not done yet
 
 See `NEXT.md`. The Azure deploy is designed in `ADR/0002-azure-deploy.md` (Bicep in `infra/`, manual workflow
-`.github/workflows/_starter-deploy.yml`); it creates nothing until Vishal approves the costs (Q-5) and the frontend
-is served from the API image (T-16). Also open: Redis-backed rate limits before running more than one replica, a real email adapter
+`.github/workflows/_starter-deploy.yml`); it creates nothing until Vishal approves the costs (Q-5). Also open: Redis-backed rate limits before running more than one replica, a real email adapter
 (paid, needs approval), and frontend unit tests.

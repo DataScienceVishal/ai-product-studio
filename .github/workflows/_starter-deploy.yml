@@ -72,11 +72,11 @@ env:
   PG_SERVER: psql-studio-znp96r
   ENVIRONMENT: cae-studio
   PULL_IDENTITY: id-studio-acrpull
-  # T-16 (the backend serves the frontend) changes these three: the image is then built from the starter
-  # root with both parts, and the smoke test also checks the HTML and its CSP.
-  IMAGE_CONTEXT: products/_starter/backend
-  DOCKERFILE: products/_starter/backend/Dockerfile
-  EXPECT_SPA: "false"
+  # One image holds the built frontend and the backend that serves it (T-16); the smoke test also checks
+  # the HTML and its CSP.
+  IMAGE_CONTEXT: products/_starter
+  DOCKERFILE: products/_starter/Dockerfile
+  EXPECT_SPA: "true"
   # Trivy 0.76.2 (2026-11-05), pinned by digest.
   TRIVY_IMAGE: aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
   # Saved Azure outputs go in "$RUNNER_TEMP" (GitHub rejects the runner context in workflow and job env).

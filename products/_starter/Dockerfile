@@ -1,16 +1,25 @@
-# Backend image for Azure Container Apps. Runs as a non-root user; migrations run as a separate step.
-FROM python:3.12-slim AS base
+# One image for Azure Container Apps: the built React app and the FastAPI backend that serves it (ADR 0002,
+# decision 2). Build context is products/_starter. Runs as a non-root user; migrations run as a separate step.
+FROM node:22-slim AS frontend
+WORKDIR /build
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --ignore-scripts --no-audit --no-fund
+COPY frontend/ ./
+RUN npm run build
+
+FROM python:3.12-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 \
-    TRUST_PROXY_HEADERS=true
+    TRUST_PROXY_HEADERS=true FRONTEND_DIST=/app/static
 WORKDIR /app
 
-COPY requirements.txt ./
+COPY backend/requirements.txt ./
 # requirements.txt is generated with hashes (uv pip compile --generate-hashes), so every download is verified.
 RUN pip install --require-hashes -r requirements.txt
 
-COPY app ./app
-COPY migrations ./migrations
-COPY alembic.ini ./
+COPY backend/app ./app
+COPY backend/migrations ./migrations
+COPY backend/alembic.ini ./
+COPY --from=frontend /build/dist ./static
 
 RUN useradd --create-home --uid 10001 appuser
 USER appuser
