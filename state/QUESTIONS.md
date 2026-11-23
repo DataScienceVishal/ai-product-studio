@@ -35,17 +35,19 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Recommended: A, because the spec work is cheap and reversible, it makes the product buildable the day the benchmark passes, and it keeps the 70-point bar intact
 - If no answer: A after 12 hours (reversible)
 
-## Q-4 (status: sent 2026-11-23T22:39:50Z)
+## Q-4 (status: answered 2026-11-23T23:02:54Z)
 - Decision: Which customers should the next scouting round (round 3) look for problems among?
 - Context: 25 ideas have been scored and none reached the 70-point bar. Every one lost most points on Competition (incumbents already sell it) and Reach (no way in to buyers). Your friend's UK business is the sales channel, but the studio doesn't know what it sells or to whom. Ideas built for its existing customers would start with a way in and first-hand pain.
 - Options: A) My friend's own customers: I'll reply with the business's sector and who it sells to B) My own finance and tax network (accountancy practices and small firms I know) C) Keep scouting broadly, with the lessons from rounds 1 and 2
 - Recommended: A, because a channel that already reaches the buyers is the one advantage incumbents can't copy, and it lifts Reach and evidence quality together
 - If no answer: C after 12 hours (reversible; round 3 runs on the broad lessons until you reply)
+- Answer: C (Telegram reply "1C" to the 23:05 digest, 22:59:50Z). Keep scouting broadly with the round 1-4 lessons.
 
-## Q-5 (status: sent 2026-11-23T22:39:50Z)
+## Q-5 (status: answered 2026-11-23T23:02:54Z)
 - Decision: May the studio create its shared Azure resources (Postgres, container registry, Container Apps) in rg-ai-studio when the first product needs a demo?
 - Context: ADR 0002 (products/_starter/ADR/0002-azure-deploy.md) costs it at $5.07 a month if the Azure for Students free allowance covers Postgres (12 months, new customers), or $23.20 a month if not, which uses the $80 in about 3.4 months and puts Postgres ($18.13) over the $10-per-resource rule. Nothing is created until you set the repository variable STUDIO_AZURE_APPROVED to yes.
 - Options: A) Yes: create them when a product reaches G3 (check the portal's "Free services" page first; the infra README lists the 10 minutes of one-time steps) B) Yes, but use ACR Standard while the allowance lasts ($0 for 12 months, then $20.28 a month) C) Not yet: keep demos local until a product passes G1
 - Recommended: A, because it is the cheapest path that meets the security rules, and nothing runs until a product needs it
 - If no answer: waits (spending money is on the ask-first list)
+- Answer: A (Telegram reply "2A" to the 23:05 digest, 23:00:09Z). Create the shared resources when a product reaches G3. Still needed from Vishal at that point: the one-time steps in products/_starter/infra/README.md (check Free services, AZURE_CREDENTIALS, STUDIO_DB_SEED, and the STUDIO_AZURE_APPROVED=yes variable, which agents can't set).
 

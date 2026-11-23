@@ -7,15 +7,15 @@ Month-to-date spend: not reported yet (board task T-2)
 
 | Resource | Product | Created (UTC) | Estimated $ per month | Status |
 |---|---|---|---|---|
-| `psql-studio-znp96r` (Postgres Flexible Server, Burstable B1ms, 32 GB, 7-day backups) | shared | - | 18.13 without the student free allowance ($13.87 compute + $4.26 storage); 0 while the 12-month allowance (750 h B1MS, 32 GB) applies | planned (needs approval) |
-| `acrstudioznp96r` (Container Registry Basic, 10 GiB included) | shared | - | 5.07 ($0.1666 a day) | planned (needs approval) |
-| `cae-studio` (Container Apps environment, Consumption profile only, no own network) | shared | - | 0 (no environment fee without Dedicated profiles, private endpoints or maintenance windows) | planned (needs approval) |
-| `log-studio` (Log Analytics, 30-day retention, 0.1 GB a day cap) | shared | - | 0 (first 5 GB a month free) | planned (needs approval) |
-| `id-studio-acrpull` (managed identity for image pulls) | shared | - | 0 | planned (needs approval) |
-| `ca-starter` (container app, 0.5 vCPU, 1 GiB, scales 0 to 1) | _starter | - | 0 inside the free grant (about 100 active hours a month); 0.076 per active hour after that | planned (needs approval) |
-| `caj-starter-migrate` (job, one run per release) | _starter | - | 0 (inside the free grant) | planned (needs approval) |
-| `caj-starter-purge` (scheduled job, daily) | _starter | - | 0 (inside the free grant) | planned (needs approval) |
-| (Azure OpenAI tokens for ca-starter, existing deployment) | _starter | - | 0 with ai_provider=fake (the default); at most 6.10 with azure and the 100,000-token daily cap | planned (needs approval) |
+| `psql-studio-znp96r` (Postgres Flexible Server, Burstable B1ms, 32 GB, 7-day backups) | shared | - | 18.13 without the student free allowance ($13.87 compute + $4.26 storage); 0 while the 12-month allowance (750 h B1MS, 32 GB) applies | planned (approved by Vishal, Q-5 A; create at first G3) |
+| `acrstudioznp96r` (Container Registry Basic, 10 GiB included) | shared | - | 5.07 ($0.1666 a day) | planned (approved by Vishal, Q-5 A; create at first G3) |
+| `cae-studio` (Container Apps environment, Consumption profile only, no own network) | shared | - | 0 (no environment fee without Dedicated profiles, private endpoints or maintenance windows) | planned (approved by Vishal, Q-5 A; create at first G3) |
+| `log-studio` (Log Analytics, 30-day retention, 0.1 GB a day cap) | shared | - | 0 (first 5 GB a month free) | planned (approved by Vishal, Q-5 A; create at first G3) |
+| `id-studio-acrpull` (managed identity for image pulls) | shared | - | 0 | planned (approved by Vishal, Q-5 A; create at first G3) |
+| `ca-starter` (container app, 0.5 vCPU, 1 GiB, scales 0 to 1) | _starter | - | 0 inside the free grant (about 100 active hours a month); 0.076 per active hour after that | planned (approved by Vishal, Q-5 A; create at first G3) |
+| `caj-starter-migrate` (job, one run per release) | _starter | - | 0 (inside the free grant) | planned (approved by Vishal, Q-5 A; create at first G3) |
+| `caj-starter-purge` (scheduled job, daily) | _starter | - | 0 (inside the free grant) | planned (approved by Vishal, Q-5 A; create at first G3) |
+| (Azure OpenAI tokens for ca-starter, existing deployment) | _starter | - | 0 with ai_provider=fake (the default); at most 6.10 with azure and the 100,000-token daily cap | planned (approved by Vishal, Q-5 A; create at first G3) |
 
 Planned for T-7: `products/_starter/ADR/0002-azure-deploy.md` has the sources and options. Projected: $23.20 a
 month if the student free allowance doesn't cover Postgres (the $80 then lasts about 3.4 months), $5.07 if it does.
