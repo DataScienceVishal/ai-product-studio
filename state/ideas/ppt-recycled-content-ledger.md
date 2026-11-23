@@ -58,7 +58,67 @@ Demo with public or synthetic data: synthetic converter with 150 product lines, 
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| 10 | 9 | 7 | 5 | 11 | 2 | 7 | 51 |
+
+## Validator notes (2026-11-23)
+
+**Verdict: REVISE, merged into pepr-packaging-data-pipeline.** I agree with the scout's merge proposal, for three reasons:
+- The data is the same: per-component plastic weights and supplier evidence.
+- The buyers overlap: brand owners and importers with plastic packaging.
+- The incumbents are the same: Valpak, ERP, Clarity and PackTotal sell both.
+
+Alone it scores 51. It continues as a module that follows G4 of pepr-packaging-data-pipeline, scored there as part of the merged idea. Don't re-score it separately.
+
+**Red-flag check: none.**
+- Not an off-limits area. It does touch a tax return (see sign-off below).
+- No paid service or scraping is needed.
+- Public and synthetic data can credibly demo the value. A synthetic converter with 150 product lines, synthetic supplier declarations (some counting pre-consumer scrap) and HMRC's public rules are enough to show the 1 April 2027 re-test and its tax effect.
+- Tax advice flag and sign-off design:
+  - The module outputs recycled-content figures and evidence per component, never a tax liability statement.
+  - The registrant signs off every return figure.
+  - A tax adviser reviews before any tax figure appears.
+  - There is no HMRC submission.
+
+**Forcing function: confirmed on gov.uk**
+- Policy paper (26 Nov 2025): from 1 April 2027, pre-consumer waste no longer counts towards the 30% threshold. Chemically recycled content counts only under a certified mass balance approach.
+- Mass balance guidance (published 28 Aug 2026):
+  - a 3-month accounting period with no negative balance;
+  - certification at every step from the chemical recycler to the converter;
+  - records kept for 6 years.
+- Tax rate: £228.82 a tonne from 1 April 2026 (gov.uk rates page via search summary, matched by the Isle of Man government), and £236.56 from 1 April 2027 (Deloitte, search summary). The scout's "disputed" note is resolved: the other figure was a typo in a GWP guide.
+- HMRC statistics (updated 27 Aug 2026, fetched):
+  - 5,142 businesses registered at 13 Aug 2026.
+  - 2.970m tonnes declared in 2025-26, of which 1.107m tonnes (37%) were taxable.
+  - 1.506m tonnes (51%) were declared at or above 30% recycled content.
+  - £250m accrued.
+
+**Falsification findings**
+- Valpak's platform already reports on recycled content and source certification (BRC release, fetched), and Valpak's PPT service is priced by quote (the scout's own-page check).
+- ERP sells a managed calculation (search summary). PackTotal PPT is unverified: its site returned 503.
+- No job ads for PPT compliance roles were found.
+- The April 2027 re-test is a one-off event. The ongoing work is the quarterly return, which the incumbents already handle.
+- Mass balance details are still being consulted on (a technical consultation launched 6 Oct 2026, per the scout's search summary; I didn't re-check it).
+
+**Scoring rationale**
+- **Pain 10.** The rule change is real, but it is a one-off for a subset of 5,142 registrants.
+- **Pay 9.** The only price points are the tax itself and quote-only services.
+- **AI 7.** Reading supplier declarations is useful.
+- **Reach 5.** I found no public list of PPT registrants.
+- **Build 11.** Straightforward on the default stack.
+- **Competition 2.** Valpak, ERP and PackTotal already cover it.
+- **Risk 7.** It produces tax figures.
+
+**What would revive it as a standalone**
+Evidence that many converters relied on pre-consumer scrap to pass 30% (for example a British Plastics Federation survey or HMRC impact figures), plus own-page checks showing no incumbent offers the 2027 re-test. I don't expect it. The module path is better.
+
+**Sources** (all accessed 2026-11-23)
+- https://www.gov.uk/government/publications/plastic-packaging-tax-mass-balance-approach-and-removal-of-pre-consumer-plastic/plastic-packaging-tax-mass-balance-approach-and-removal-of-pre-consumer-plastic (fetched)
+- https://www.gov.uk/guidance/preparing-to-use-a-mass-balance-approach-for-plastic-packaging-tax (fetched)
+- https://www.gov.uk/government/statistics/plastic-packaging-tax-ppt-statistics/plastic-packaging-tax-ppt-statistics-commentary (fetched)
+- https://www.gov.im/news/2026/mar/03/plastic-packaging-tax-rate-to-increase-from-1-april-2026/ and https://taxscape.deloitte.com/measures-budget-2026/plastic-packaging-tax.aspx (search summaries)
+- https://brc.org.uk/news-and-events/news/associate-insight/2026/valpak-by-reconomy-launches-global-epr-platform/ (fetched)
+- https://www.packtotal.com/ (503)
 
 ## Gate log
 - 2026-11-23 scout round 2: G0 file written. Weakest of the five on Competition; included so the validator can decide whether to merge it with pepr-packaging-data-pipeline. Price points are thin: tax rate and one quote-only vendor.
+- 2026-11-23 | validator | G0→G1 | REVISE 51 (merged into pepr-packaging-data-pipeline) | The 1 April 2027 change is confirmed, but alone it is a one-off re-test for a subset of 5,142 registrants that Valpak, ERP and PackTotal already serve, so it continues only as a module of the pEPR data layer.

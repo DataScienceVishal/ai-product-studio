@@ -152,3 +152,211 @@ For a re-review I need:
 - ideally S1 and S2 as well.
 
 T-2 should move to done only after a real run has written real figures to BUDGET.md.
+
+## Re-review (2026-11-23)
+
+- **Commits:** `00c9c9d` (rework), `7fde4b6` (runner-context fix), `422f48e` (two SETUP.md troubleshooting rows; the brief said `0b5e8b1`, a typo the coordinator confirmed). The T-2 files are unchanged through the current branch tip, `eba7c87`: the later commits touch only `products/_starter`, `.github/workflows/_starter-ci.yml` and ideas files.
+- **Reviewer:** reviewer agent, 2026-11-23
+- **Verdict: PASS.** Safe to merge. T-2 still moves to done only after a real run writes real figures to BUDGET.md, and N1 below should be fixed before then.
+
+### Evidence
+
+- **Tests:** `python3 -m unittest discover -s scripts/tests` ran 25 tests (up from 11), all OK, on Python 3.11, 3.12 and 3.13.
+- **Mutation check** (scratch copies only): I reverted twelve fixes one at a time. Each one made at least one named test fail. The twelve were:
+  - substring markers;
+  - first marker wins;
+  - unknown cost not flagged;
+  - digest line dropped;
+  - currency guard;
+  - QPU header;
+  - sleep after the last try;
+  - rows after the block;
+  - substring names;
+  - level not tied to the since date;
+  - no-rows line;
+  - nextLink line.
+- **Workflow lint:**
+  - actionlint 1.7.12 (built from source into a scratch folder) with shellcheck 0.11.0 reports nothing on HEAD.
+  - Control: the `00c9c9d` version fails at 35:18 with `context "runner" is not allowed here`, the error GitHub hit.
+  - `gh run list` shows four 0-second `.github/workflows/azure-spend.yml` failures (`00c9c9d`, `5df3b8b`, `f0f5b25`, `017886d`, 11:46 to 11:52Z) and none after `7fde4b6`. The workflow has no push trigger, so a valid file produces no runs on push.
+- **Push race, re-simulated.**
+  - Setup:
+    - a local bare remote;
+    - the runner set up the way `actions/checkout@v4` does it (depth-1 fetch of `+<sha>:refs/remotes/origin/main`, then `checkout -B main`);
+    - the Commit step's `run:` text extracted verbatim from the YAML and run under `bash -e`, which is GitHub's default shell.
+  - A. First run, before the block exists. An agent adds a table row in the same minute, which is the case that used to conflict. One push is rejected, then the step resets, re-renders and pushes. Result: one block, the agent's row kept, the 50% digest line written once. Exit 0 after 5 s.
+  - B. Steady state. Spend passes 75% while an agent adds a row and the Desk clears DIGEST_NOTES.md. It recovers the same way: both rows kept, the Desk's clear kept, the 75% line present exactly once.
+  - C. The concurrent push deletes the END line. The re-render exits 3 and nothing is pushed.
+  - D. No race: the first push works.
+  - E. The remote rejects every push. Four attempts, then `could not push BUDGET.md after 4 attempts`, exit 1 after 51 s, and the remote is untouched.
+- **Report step shell** (verbatim, stubbed script output): ok, unavailable and currency set `summary`, `status` and `alert` as expected. A marker error fails the step with exit 3.
+- **Probes:** scratch scripts against a `git archive` snapshot of HEAD, because the shared working tree has another agent's uncommitted `products/_starter` changes (HURDLES.md:13). No product code was edited. They covered:
+  - `render()` edge cases;
+  - `budget_line()`;
+  - `post()` against a fake server;
+  - `az()` with a fake CLI on PATH.
+
+### C1. Unsupported offer: fixed, with one residual (N1)
+
+- **Unavailable path.**
+  - Any HTTP error that isn't retried becomes `Unavailable` (`azure_spend.py:186`), and so does any `az` failure (`:130-145`).
+  - `cmd_report` catches it and still fetches the inventory (`:437-442`).
+  - `render()` writes "Status: unavailable since <first day>: <code> (<detail>). Spend is unknown.", keeps the first day while the code stays the same, and adds a digest line only when the code changes (`:323-329`).
+  - The script exits 0 so the commit happens, then the workflow fails the run (`azure-spend.yml:107-114`).
+  - Tests: `test_unavailable_is_written_down_with_its_start_date`, `test_unavailable_outcome_still_writes_and_exits_zero`, `test_client_errors_are_unavailable_with_the_azure_code`.
+- **"No rows" vs $0.**
+  - The block now carries the row counts and "No cost rows came back…" (`:358-360`), which is what the fix asked for. Test: `test_no_rows_is_not_reported_as_zero_spend`.
+  - The headline, `studio.py status` and the digest still say $0.00, and the inventory check is off in that case. See N1.
+- **Inventory fallback.**
+  - `az resource list` provides the inventory (`:207-215`).
+  - Unlisted resources are flagged whenever cost is unknown (`:381-387`).
+  - The projected monthly total comes from the table (`:285-297`, `:367`).
+  - An inventory line, or the inventory error, is written into the block (`:390-394`).
+  - Tests: `test_unavailable_is_written_down_with_its_start_date` (`ca-new` flagged from the inventory alone), `test_free_inventory_items_are_not_flagged_when_figures_exist`, `test_projected_monthly_sums_the_estimates_column`.
+  - The fallback is in DECISIONS.md:24 and the open question in HURDLES.md:12. A real call is still pending (needs credentials, Q-1).
+
+### C2. Marker rewrite: fixed
+
+- Markers match only as whole lines (`:50-51`).
+- `split_block()` accepts either no markers or exactly one START followed by one END, and raises `MarkerError` for anything else (`:255-263`).
+- `cmd_report` checks before any API call and exits 3 without writing (`:425-429`). pipefail turns that into a failed step.
+- The original table, row by row:
+  - An inline note naming both markers: `test_a_note_that_mentions_the_markers_inline_is_left_alone`.
+  - A note naming only START: probed; the block is written once and the table is kept.
+  - END deleted, END before START, and both conflict sides kept: `test_malformed_markers_refuse_to_write`, which also covers a missing START.
+  - Exit 3 with the file byte-identical: `test_malformed_markers_exit_3_and_leave_the_file_alone`.
+- Also probed: leftover `<<<<<<<` conflict markers, and a marker quoted alone on a line inside a code fence. Both refuse. Simulation C shows the same refusal inside the push loop.
+
+### C3. Telegram and the commit: fixed
+
+- **Telegram can't block the commit.**
+  - The alert step has `continue-on-error: true` (`azure-spend.yml:74`).
+  - Commit runs on `always() && steps.report.outcome == 'success' && env.ON_MAIN == 'true'` (`:83`).
+  - `tg.py` uses a 30 s timeout and exits non-zero on failure, so a stale token or a Telegram outage can no longer skip the commit.
+- **Alerts reach the digest.**
+  - Alerts are appended to DIGEST_NOTES.md (`azure_spend.py:355-357`, `:452-453`) and committed with BUDGET.md (`azure-spend.yml:88`).
+  - The level is always saved, the digest is the guaranteed channel and Telegram is best-effort. That's a deliberate, sound delivery rule.
+  - Tests: `test_alert_fires_once_per_level_and_goes_to_the_digest`, `test_report_from_saved_outcome_alerts_and_notes_the_digest`. Simulation B shows the line surviving a concurrent Desk clear.
+- SETUP.md:35 now says to update the `TELEGRAM_BOT_TOKEN` Actions secret after `/revoke`.
+
+### Should-fix items
+
+| Item | Status | Where | Proof |
+|---|---|---|---|
+| S1 currency | Fixed | `azure_spend.py:341-347`, `money()` `:308-309`; the run fails on status `currency` (`azure-spend.yml:107-114`) | `test_non_usd_currency_is_not_compared_with_the_cap` (GBP: no alert, "70.00 GBP", no "$70.00") |
+| S2 push race | Fixed | `azure-spend.yml:93-103`: push; on failure fetch, `reset --hard origin/main`, re-render `--from-dir`, recommit | Simulations A to E above |
+| S3 failure visibility | Fixed | Ping on `failure()` (`azure-spend.yml:116-123`); `budget_line()` (`studio.py:242-256`) printed by `cmd_status` (`:272`); the Desk runs `studio.py status` before the digest (`prompts/studio-desk.md:11,13`) | Probed: 31 h old → "STALE: check the azure-spend workflow". Unavailable and currency are shown. With no report it says "needs Azure credentials", which also covers the old secret-missing notice. No tests (N4) |
+| S4 spend outside the RG | Docs fixed | SETUP.md:76; the block says "Covers resource group rg-ai-studio only" (`azure_spend.py:334`) | Vishal still has to confirm the Azure OpenAI resource is in the group |
+| S5 least privilege | Partly fixed; the rest deferred (DECISIONS.md:25) | `AZURE_COST_CREDENTIALS` with Reader and Cost Management Reader (SETUP.md:59-74), preferred by the workflow (`:29`, `:50`) | Without that secret, the job still uses the Contributor credential. The deferral reason doesn't hold here: in this session `git ls-remote https://github.com/actions/checkout 'refs/tags/v4*'`, and the same for `Azure/login`, returned tag SHAs, so pinning can be done now |
+| S6 retries | Fixed | `RETRY_HEADERS` `:55-60` (QPU, entity, tenant, then Retry-After); `retry_wait` `:148-156`; no sleep after the last try `:182-183`; 5xx wording `:181`; `az()` makes 3 tries, waiting 5 s and 10 s (`:130-145`) | `test_qpu_retry_header_is_honoured`, `test_persistent_throttling_gives_up_without_a_final_sleep`. Probed: 5xx says "kept failing (503)", and a fake `az` that failed twice then worked waited [5, 10]. The `az` retries and the 5xx wording have no tests |
+| S7 main only | Fixed | `ON_MAIN` (`azure-spend.yml:31`), Commit gated on it (`:83`), `push origin HEAD:main` (`:94`), recovery against `origin/main` (`:98-99`) | actionlint is clean; simulation |
+| S8 matching | Fixed | Exact first word (`:275-282`); table read from outside the block (`:317`); keyed by lower-cased full ID, with the child path shown (`:371-380`, `:240-252`) | `test_listed_names_are_exact_first_words`, `test_unlisted_costly_resource_is_flagged`, `test_top_level_names_keep_children_distinct`, `test_rows_added_after_the_block_count_as_listed` |
+| S9 top line | Fixed | The "Month-to-date spend:" line now carries the since-start figure (`:414-417`); the studio line shows "$X of $80 cap (N%)" | Only tested indirectly: "$60.40 of $80" also matches the Since line. Nit: the label still says "Month-to-date" |
+| S10 level vs period | Fixed | Written at `:368`, parsed at `:300-305`, reset on a new since date at `:336` | `test_a_new_since_date_resets_the_alert_level` |
+| S11 range length | Fixed (clamped) | `:54`, `:106-111`, note at `:361-362` | `test_window_is_clamped_to_the_api_limit`. Nit: once clamped, the summary still says "Since <configured date>" while the block says "Since <clamped date>" (probed). This only matters from 2027-11 |
+| S12 tests | Mostly done | 14 more tests | Still missing: `budget_line()`, `az()` retries, the "(unattributed)" display, the ok-path top line |
+| S13 small things | Fixed | nextLink warning (`:363-364`); utf-8 on every read and write (`:424`, `:433`, `:446-453`); "(unattributed)" shows "-" (`:398-399`); SETUP.md:57 says "the values from step 2"; SETUP.md:78 covers the manual first run and the daily bot commit | `test_next_link_is_mentioned`; the rest checked by reading |
+
+### Workflow conditions and contexts
+
+Every expression uses a context GitHub allows where it's used, and actionlint agrees.
+
+| Where | Contexts used | Allowed there |
+|---|---|---|
+| Job `env` (`:29-34`) | `secrets`, `github` | github, needs, strategy, matrix, vars, secrets, inputs. `runner` is not allowed, and the fix removed it |
+| Step `if` (`:43`, `:47`, `:54`, `:73`, `:83`, `:108`, `:117`) | `env`, `steps`, `always()`, `failure()` | Adds job, runner, env and steps. `secrets` is not allowed, and none is used |
+| Step `with` (`:50`) and step `env` (`:76-79`, `:110-111`, `:120-122`) | `secrets`, `steps`, `github` | All of these |
+
+How each kind of run plays out:
+- **No Azure secret:** a notice, a green run, no ping. `studio.py status` says "no spend report yet".
+- **A test fails, or sign-in fails:** Report and Commit are skipped and the ping fires. BUDGET.md isn't touched, so the status line flags it as stale after 30 h (N11).
+- **Report ok:** the alert is best-effort, then Commit runs, and the run is green.
+- **Report `unavailable` or `currency`:** Commit runs, then "Fail the run when spend is unknown" turns the run red, then the ping fires. That order is right: the figures are committed before the run fails.
+- **Marker error:** Report fails, Commit is skipped (its `outcome` is `failure`), and the ping fires.
+- **Push fails 4 times:** Commit fails, the "Fail…" step is skipped, and the ping fires.
+- **Manual run on another branch:** no commit. A Telegram alert can still fire, which is harmless.
+- **Nit:** `always()` also runs after a cancel. GitHub's docs suggest `!cancelled()`.
+
+### New findings
+
+**N1. "No cost rows" still reads as $0.00 where people look, and it switches off the inventory check. Fix before T-2 moves to done.**
+
+- **Where:**
+  - `azure_spend.py:349-360`: status stays `ok`, and the Since line says "$0.00 of $80 cap (0%)".
+  - `:414-417`: the top line.
+  - `:381-387`: a resource with unknown cost is never flagged when results are present.
+  - `studio.py:250-254`: the budget line.
+- **Probe:** all three queries returned no rows, and the inventory held `ca-new`, which isn't in the table.
+  - The status was `ok` and the unlisted list was `[]`.
+  - The top line read "(Since 2026-11-01: $0.00 of $80, …)".
+  - `studio.py status` read "budget: $0.00 of $80 cap (0%) · updated 6h ago", so the digest would say "Azure $0 of $80".
+  - The run is green, so there's no ping.
+- **Why it matters:**
+  - This is the "200 with no rows, or 204" half of C1. The block line is there, as the fix asked.
+  - The point was that "no data" can't be mistaken for $0.00, and the three places people read still show $0.00 with no caveat.
+  - The inventory check is the fallback for exactly this situation, and here it flags nothing.
+- **Mitigation for now:** SETUP.md:78 has Vishal run the report once by hand and read BUDGET.md, and T-2 stays open until real figures appear.
+- **Fix:**
+  - When the month-to-date and since-start queries both return zero rows, use a separate status, for example `no_data`.
+  - Make the summary, the top line and the `studio.py` line say "no cost data yet" instead of "$0.00".
+  - Treat costs as unknown in `needs_listing`, so unlisted inventory is flagged.
+  - Optionally, fail the run only if it lasts more than 2 days, since a day of data lag is normal.
+  - Add a test that checks the top line and the unlisted list.
+
+**N2. A long outage pings Telegram every day. Fix once the first real run settles C1.**
+
+- **Where:** "Fail the run when spend is unknown" (`azure-spend.yml:107-114`) plus the `failure()` ping (`:116-117`).
+- **What happens:** "the daily Azure spend report failed" goes out every morning while Cost Management is unavailable, though the digest line is only written once (`azure_spend.py:327-329`).
+- **Why it matters:** if the offer is unsupported, that's a permanent daily ping, and playbooks/telegram.md keeps urgent pings for when money is at risk.
+- **Fix:** fail and ping only on the first day of an outage or when the error code changes. The script already knows when that is, because that's when it writes the digest line. Alternatively, have the C1 fallback decision switch the failure off.
+
+**N3. The Commit step reports git errors as "unchanged". Small fix.**
+
+- **Where:** `commit() || { echo "BUDGET.md unchanged"; exit 0; }` (`azure-spend.yml:87-92`) treats any `git add` or `git commit` failure as nothing to commit.
+- **Probe:** with `state/DIGEST_NOTES.md` missing, `git add state/BUDGET.md state/DIGEST_NOTES.md` exits 128 and stages nothing. The step prints "BUDGET.md unchanged" and the run goes green with no commit. The script never creates that file (`azure_spend.py:452`).
+- **Fix:** `git add state/BUDGET.md` on its own, add DIGEST_NOTES.md only if it exists, and let any other git error fail the step.
+
+**N4. `budget_line()` has no tests and reads the whole file.**
+
+- **Where:** `studio.py:246-250` searches all of BUDGET.md, not just the report block.
+- **Probe:** a hand-written "- Updated: 2026-11-01T00:00:00Z" line above the block made a fresh report show "updated 564h ago (STALE…)". The status text is also cut at 100 characters, mid-word.
+- **Fix:** search only between the markers, and add tests for ok, stale, unavailable, no report, and the N1 case.
+
+**Nits**
+
+- **N5. A null outcome crashes `render()`.**
+  - If outcome.json has both `results` and `error` null, `money(None)` at `:414` raises `TypeError`.
+  - `fetch()` can't produce that, but treat it as unavailable anyway.
+- **N6. A non-JSON 200 escapes `post()`.**
+  - A 200 with a non-JSON body raises `JSONDecodeError` (`:177`). The step fails and the ping fires, but nothing is written.
+  - Raise `Unavailable("bad_response")` instead.
+- **N7. Indented markers are read as plain text.**
+  - Effect: a second block gets appended, and the old block's generated rows then count as hand-kept. Probed: the unlisted list went from `['ca-unlisted']` to `[]`.
+  - Fix: count lines matching `^[ \t]*<!-- spend:auto:(start|end) -->[ \t]*$` as markers.
+- **N8. Formatted table names aren't recognised.**
+  - Names in bold or written as links ("**ca-bold**", "[ca-link]") don't match.
+  - Effect: false "add it" warnings. Noisy, but not silent.
+- **N9. The last push attempt is wasted.**
+  - On the 4th pass the push loop resets, re-renders, commits and sleeps 20 s, then gives up without pushing.
+  - Fix: push after the last re-render, or skip the recovery on the final pass.
+- **N10. Error text is published.**
+  - The repo is public (`gh api` reports `visibility: public`). Azure error text goes into BUDGET.md and the public log, and unsupported-offer errors usually quote the subscription ID.
+  - A subscription ID isn't a credential, but redact GUIDs from `Unavailable.detail`.
+- **N11. A sign-in failure isn't written to BUDGET.md.**
+  - Only the ping and the 30 h stale flag show it.
+  - The likeliest cause is the service-principal secret expiring, one year after it's created (`create-for-rbac`'s default).
+  - Put the renewal date in SETUP.md step 3.
+- **N12. Throttling hints: the first header wins, not the largest.**
+  - Probed: with QPU at 10 s and entity at 40 s, it waited 10 s. Waits are also capped at 60 s.
+  - Use the largest hint.
+
+### Verdict: PASS
+
+- C1, C2 and C3 are fixed, and each has tests that fail when the fix is reverted.
+- S1 is fixed. S2 is fixed and held up in a fresh simulation.
+- The workflow file is valid, and its step conditions do what the rework intends. Nothing in it can lose the hand-kept table or skip a good commit.
+- No blocking issue remains for merging.
+- Before T-2 moves to done:
+  - a real run must write real figures to BUDGET.md (unchanged);
+  - N1 must be fixed, because it's the one place where "no data" can still look like $0.00 in the digest.
+- After that: N2 once the first run shows whether the offer is supported, and N3 and N4 when convenient.
