@@ -143,6 +143,8 @@ The times start a few minutes early so digests land by 08:00, 15:00 and 19:30. I
 | Azure OpenAI returns 401 | step 5, network secret host and the `api-key` header name |
 | a run "didn't start" | GitHub access from step 1, or you're at a usage limit |
 | digests arrive at the wrong hour | the `CRON_TZ=` prefix in step 6 |
+| a workflow shows instant failures named after its file path | GitHub rejected the workflow file; open the run to see the line, fix it, push |
+| `state/BUDGET.md` says the spend report is unavailable | the reason is on the Status line; if it's the offer, read the credit in the Azure Sponsorships portal instead |
 | limits run out too fast | switch Studio Run to Sonnet 5.5, change `model: opus` to `model: sonnet` in `.claude/agents/`, or run every two hours with `7 */2 * * *` |
 
 ## Daily use
