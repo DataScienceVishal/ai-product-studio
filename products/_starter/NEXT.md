@@ -15,6 +15,9 @@ Last updated 2026-11-23 by run 20261123T111240Z-run-b15e.
 - The browser end-to-end test (`scripts/e2e.sh`) passes: sign-up, sample data, AI summary, checkout with
   EARLY50, sign out and in, delete account.
 - CI: `.github/workflows/_starter-ci.yml`. Not yet seen running on GitHub.
+- Team (T-8 part 1): owners invite members by single-use, expiring email links; members can't use billing,
+  export or deletion; removing a member ends their sessions. 10 backend tests, plus a browser check of the
+  invite, accept and remove flow (a scratch harness, since the invite link lives in the email outbox).
 
 ## Left to do
 
@@ -23,7 +26,7 @@ Last updated 2026-11-23 by run 20261123T111240Z-run-b15e.
    (GHCR vs ACR Basic, about $5 a month) and the Postgres choice (Flexible Server B1ms vs a container), write
    the monthly estimates in `state/BUDGET.md`, and ask Vishal if one resource passes $10 a month. Needs
    `AZURE_CREDENTIALS`, which isn't set yet (see HURDLES).
-3. **Gaps to close before G4 products:** invitations and member roles; email verification; Redis-backed rate
+3. **Gaps to close before G4 products:** email verification; Redis-backed rate
    limits for more than one replica; a frontend unit test setup. (uvicorn's startup lines now go
    through the JSON logger too.)
 4. **Watch:** Starlette warns that its test client prefers `httpx2`. Installing it was blocked (unverified

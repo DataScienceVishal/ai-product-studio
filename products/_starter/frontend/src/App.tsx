@@ -2,9 +2,10 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { api, ApiError, type Me } from "./api";
 import { Billing, Dashboard, Help, MockCheckout, Settings } from "./pages/app";
 import { ForgotPassword, ResetPassword, SignIn, SignUp } from "./pages/auth";
+import { AcceptInvite, Team } from "./pages/team";
 import { Link, navigate, usePath } from "./ui";
 
-const PUBLIC = new Set(["/login", "/signup", "/forgot-password", "/reset-password", "/help"]);
+const PUBLIC = new Set(["/login", "/signup", "/forgot-password", "/reset-password", "/accept-invite", "/help"]);
 
 export default function App() {
   const path = usePath();
@@ -30,6 +31,7 @@ export default function App() {
   if (path === "/login") return <SignIn onSignedIn={setMe} />;
   if (path === "/forgot-password") return <ForgotPassword />;
   if (path === "/reset-password") return <ResetPassword />;
+  if (path === "/accept-invite") return <AcceptInvite onSignedIn={setMe} />;
   if (!me) return path === "/help" ? <Shell><Help /></Shell> : null;
 
   const signOut = async () => {
@@ -43,6 +45,7 @@ export default function App() {
       {path === "/billing" ? <Billing me={me} refresh={refresh} />
         : path === "/billing/mock-checkout" ? <MockCheckout refresh={refresh} />
         : path === "/settings" ? <Settings me={me} onDeleted={() => setMe(null)} />
+        : path === "/team" ? <Team me={me} />
         : path === "/help" ? <Help />
         : <Dashboard me={me} />}
     </Shell>
@@ -57,6 +60,7 @@ function Shell({ me, onSignOut, children }: { me?: Me; onSignOut?: () => void; c
           <Link to="/" className="font-bold text-slate-900">Starter</Link>
           {me && <>
             <Link to="/">Notes</Link>
+            <Link to="/team">Team</Link>
             <Link to="/billing">Billing</Link>
             <Link to="/settings">Settings</Link>
           </>}
