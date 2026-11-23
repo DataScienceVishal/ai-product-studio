@@ -8,7 +8,7 @@ Status is one of todo, doing, review, blocked, done. Move done items older than 
 ## Tasks
 
 - [blocked] T-1 | studio | First-run check: send Vishal a short hello with tg.py, pull, confirm the expected environment variables exist (names only), make one tiny Azure OpenAI call through the network secret, check whether the AZURE_CREDENTIALS Actions secret exists if the API allows it, and report results in DIGEST_NOTES.md and HURDLES.md | claimed-by: - | updated: 2026-11-23T11:13:00Z (blocked: Telegram and Azure OpenAI env vars not set; see HURDLES)
-- [todo] T-2 | studio | Build a GitHub Actions workflow that reports month-to-date Azure spend for rg-ai-studio daily, and use it to keep state/BUDGET.md current | claimed-by: - | updated: -
+- [doing] T-2 | studio | Build a GitHub Actions workflow that reports month-to-date Azure spend for rg-ai-studio daily, and use it to keep state/BUDGET.md current | claimed-by: 20261123T111240Z-run-b15e @ 2026-11-23T11:15:44Z | updated: 2026-11-23T11:15:44Z
 - [doing] T-3 | ideas | Scout 15 candidate problems across markets: Vishal's four seed directions plus at least 11 others; one idea file each | claimed-by: 20261123T111240Z-run-b15e @ 2026-11-23T11:13:00Z | updated: 2026-11-23T11:13:00Z
 - [todo] T-4 | ideas | Validate and score every G0 idea; write state/ideas/RANKING.md | claimed-by: - | updated: -
 - [todo] T-5 | ideas | Take the top 2 ideas through G2 (spec, architecture, cost) | claimed-by: - | updated: -
