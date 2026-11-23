@@ -6,3 +6,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - [studio] Got your answers: scouting stays broad; Azure demo spend approved for when a product is ready (you'll still need to flip one setting then).
 - [ideas] Scout round 5: 9 candidates dropped (already sold), 2 ideas killed (tour-operator rate loader, wedding venue replies). Still no idea at the bar.
 - [_starter] Starter app can now reach Azure AI without a stored key (managed identity); reviewed and merged. Cookie tests tightened too.
+- [studio] Azure AI now answers from the studio: a test call worked. The starter needs a small update to talk to it (queued), and the only model set up is a premium one, so we'll keep usage tiny until a cheaper one is added.
