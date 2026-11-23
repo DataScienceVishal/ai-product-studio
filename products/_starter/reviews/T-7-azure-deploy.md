@@ -366,3 +366,77 @@ rejected.
 - Not tested: real ARM validation (no Bicep CLI or credentials), real Container Apps ingress, ACR pulls, and Azure's
   Postgres admin role (simulated with a `CREATEDB CREATEROLE` role).
 - T-20 (compile the Bicep in CI) and the first real deploy will be the first runs of the templates. Expect small fixes.
+
+---
+
+## Re-review (T-7 fixes)
+
+**Verdict: PASS.** Reviewed at `b92dc3e` (fixes; WIP snapshot `af446d6`), checked with `git log`. Head was `748af56`
+(board only) when requested and is `96484ee` now. That commit adds T-20's CI compile and isn't part of this
+re-review. Every finding from the first review is fixed, with evidence below. Three notes remain, none blocking.
+
+### Findings from the first review
+
+| Id | Fixed? | How it was fixed | Evidence (local tests on an export of `b92dc3e`) |
+|---|---|---|---|
+| C1 purge job image | yes | The deploy keeps `caj-<slug>-purge` on the live revision's image and email settings (`purgeImage`, `purgeRequireEmailVerification`, `purgeEmailProvider`). `purge-job.sh follow` moves it only after the public smoke test passes. Both rollback paths (in-run, including on cancel, and `rollback_to`) move it back | Stand-in `az`: `follow` runs `job update --container-name purge --image <digest> --set-env-vars ...` and reads the job back. A readback mismatch exits 1. If `follow` fails, the rollback step runs, because the shift wasn't skipped |
+| C2 access logs | yes | `shared.bicep` names `ContainerAppConsoleLogs` and `ContainerAppSystemLogs` (with a comment on why not `allLogs`). DATA.md states what is and isn't collected, plus 7-day backups and server logs | read |
+| I1 deploy defaults | yes | The web app, migration job and purge job share one email rule set. `require_email_verification` and `mock_checkout` are workflow inputs, both off by default. The template's default stays on. The ADR has a "What a deployed demo can do" table and decision | Purge as the app role with verification off and outbox email: nothing purged, and no `unverified_accounts` step |
+| I2 transient read | yes | `live-release.sh` fails closed | Stand-in `az`: not found (exit 3) gives a first release. A throttling error (exit 1) stops the run. A revision pinned at 100% is used. After a first release, "latest" resolves to the ready revision. An app with no revision ever ready is treated as a first release, with a warning. Split traffic stops the run. A revision name like `ca-starter--X;rm -rf` is refused |
+| I3 seed rotation | yes | README has a "Rotating the database seed" section (deploy_shared + setup_database). The wait loop stops at once on `password authentication failed` or a TLS failure, with the reason | read |
+| I4 cost guard | yes | `cost-guard.sh` checks the compiled JSON, and the grep stays as a second net | Crafted templates: a Consumption-only template passes. Refused, each with its reason: a parameterised profile type, `Consumption-GPU-NC24-A100`, `vnetConfiguration`/`infrastructureSubnetId`, `Microsoft.Network/privateEndpoints` plus `maintenanceConfigurations`, and `D4` nested inside a module deployment |
+| I5 secret removal | yes | All four secrets always exist, with `not-configured` as the placeholder. Only the chosen provider is wired into env | read |
+| S2 passwords and empty values | yes | `scram_verifier.py` makes the verifiers, and db-setup.sql refuses anything that isn't one | PG 16.15, non-superuser admin: setup and grants run twice cleanly. `pg_authid` holds `SCRAM-SHA-256$4096:...`. The plain password signs in and a wrong one fails. The verifier is identical to libpq's `PQencryptPasswordConn` with the same salt (5 of 5). An empty value or a plaintext value exits 3 with a fixed message, and 0 output lines quote it. An unset variable makes `scram_verifier.py` exit 1. The server log has 0 lines with a password |
+| S3 `alembic_version` | yes | db-grants.sql creates the table with Alembic's own layout, then revokes write access from the app role | 6 migrations as the migrator under the job env, then `alembic current` = `0006 (head)`. The app role: SELECT works. UPDATE and DELETE get "permission denied". INSERT into `tenants` works. CREATE TABLE is refused |
+| S4 login audit | yes | `log_connections`, `log_error_verbosity=terse`, server log files kept 7 days, outside `log-studio` | `logfiles.retention_days` 1 to 7 is documented. Microsoft: the files move to backup storage after about an hour (inside the 32 GB backup allowance) |
+| S5, S6, S8, S9 | yes | Cleanup warns with the rule name instead of hiding errors. The startup probe is 6 s × 10. ADR wording is corrected. psql version check (15 or later) | read |
+
+Workflow checks: actionlint 1.7.12 reports 0 errors, and every `infra/*.sh` passes `bash -n`. `az containerapp job update`
+accepts `--container-name`, `--image` and `--set-env-vars` (CLI reference).
+
+### The two decisions you asked about
+
+- **Demos deploy with email verification off while email is outbox-only: accepted.** With outbox email, verification
+  blocks everyone equally and protects nothing: no link ever arrives, and A1's pre-hijack path needs a delivered reset
+  email. The risks of turning it off are bounded:
+  - Cost: trials share half of the 100,000-token budget, and sign-ups are throttled (20 a day per IP, 200 new trials
+    a day studio-wide).
+  - Data: with outbox email the purge skips unverified accounts.
+  - The app refuses verification-off once real email exists, so this can't outlive the outbox.
+  - The template's own default stays on.
+
+  One small caveat: anyone who finds the URL can use the demo's AI, so this rests on the URL staying private plus
+  the caps. That's fine for private demos.
+- **All four provider secrets always exist, with placeholders: accepted.** It follows Microsoft's guidance on not
+  deleting secrets that a revision references, and env refs are wired only for the chosen provider.
+  - Cost: the Azure OpenAI and Stripe keys are now stored on the app even for fake or mock deploys, whenever the
+    GitHub secrets exist. The only principals that can read them already hold the GitHub secrets, and no container
+    receives them as env unless wired.
+  - Note N2 below covers what happens when a GitHub secret is deleted later.
+
+### Postgres conditions (decision 5)
+
+All four are now written into ADR decision 5 as conditions of acceptance:
+1. demo data only, ending at T-18 or private networking, before G4, handover and `unlock selling`;
+2. the compensating controls kept as built;
+3. SCRAM verifiers before any server logging;
+4. connection logging as the audit.
+
+Decision 5 also gives private networking (about $25.55 a month) as the fallback, needing approval.
+
+### Notes (not blocking)
+
+- **N1.** I couldn't find Microsoft's page confirming that `log_connections` and `log_error_verbosity` are writable on
+  Azure Flexible Server 16. If one is read-only, the `deploy_shared` parameter loop fails. Watch the first shared
+  deploy. `log_connections` is on by default anyway, so dropping that entry would be safe.
+- **N2.** If a provider's GitHub secret is deleted later, the next release overwrites that Container Apps secret with
+  `not-configured`. A revision that used it then breaks on rollback. Add one line to ADR decision 6.
+- **N3.** The Bicep is still uncompiled here. T-20 (now in CI at `96484ee`) and the first real deploy are its first
+  compiles, including the new `@batchSize(1)` parameter loop.
+
+### Method
+
+- I tested an export of `b92dc3e` in the session scratchpad, never the shared working tree.
+- The scripts ran against a stand-in `az` that I wrote.
+- Postgres scratch objects were prefixed `t7rev_` and are all dropped (0 left).
+- No ports were needed this time. I ran no `git commit`.
