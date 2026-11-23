@@ -31,7 +31,7 @@ def web(settings, dist):
 
 
 @pytest.mark.parametrize("path", ["/", "/login", "/verify-email?token=abc", "/reset-password", "/accept-invite",
-                                  "/billing/done", "/billing/mock-checkout", "/some/deep/client/route", "/favicon.ico"])
+                                  "/billing/done", "/billing/mock-checkout", "/settings", "/team", "/verify-email/"])
 def test_client_routes_fall_back_to_index(web, path):
     r = web.get(path)
     assert r.status_code == 200
@@ -43,6 +43,32 @@ def test_client_routes_fall_back_to_index(web, path):
 def test_head_falls_back_without_a_body(web):
     r = web.head("/verify-email")
     assert r.status_code == 200 and r.content == b"" and r.headers["cache-control"] == "no-cache"
+
+
+@pytest.mark.parametrize("path", ["/some/deep/client/route", "/favicon.ico", "/robots.txt", "/API/notes", "/nope"])
+def test_unknown_paths_are_404_with_the_app_html(web, path):
+    r = web.get(path)
+    assert r.status_code == 404
+    assert r.headers["content-type"].startswith("text/html") and r.text == INDEX
+    assert r.headers["cache-control"] == "no-cache"
+    assert web.head(path).status_code == 404
+
+
+@pytest.mark.parametrize("path", ["/", "/verify-email", "/some/unknown", "/billing/done"])
+def test_head_matches_get_headers_without_a_body(web, path):
+    g, h = web.get(path), web.head(path)
+    assert h.status_code == g.status_code and h.content == b""
+    assert h.headers["content-length"] == str(len(INDEX.encode())) == g.headers["content-length"]
+    for name in ("content-type", "cache-control", "content-security-policy"):
+        assert h.headers[name] == g.headers[name]
+
+
+@pytest.mark.parametrize("path", ["/assets", "/assets/", "/assets/missing.js"])
+@pytest.mark.parametrize("method", ["get", "head"])
+def test_assets_without_a_file_is_404_not_a_redirect(web, path, method):
+    r = getattr(web, method)(path, follow_redirects=False)
+    assert r.status_code == 404
+    assert "location" not in r.headers
 
 
 def test_assets_are_immutable(web):
