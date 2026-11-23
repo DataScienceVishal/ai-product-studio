@@ -248,14 +248,82 @@ def test_token_is_cached_then_refreshed_five_minutes_before_expiry():
 
 def test_concurrent_callers_share_one_fetch():
     import threading
+    import time as _time
     clock = FakeClock()
-    tokens = Tokens(clock)
-    provider = _provider(tokens, clock)
+    inflight, peak, count = [0], [0], [0]
+    guard = threading.Lock()
+
+    def slow(request):  # a slow endpoint: without the lock every caller would fetch
+        with guard:
+            inflight[0] += 1
+            count[0] += 1
+            peak[0] = max(peak[0], inflight[0])
+        _time.sleep(0.2)
+        with guard:
+            inflight[0] -= 1
+        return httpx.Response(200, json={"access_token": "tok-1", "expires_on": str(int(clock() + 3600))})
+
+    provider = ManagedIdentityToken(endpoint=IDENTITY_URL, header=SECRET_HEADER,
+                                    client=httpx.Client(transport=httpx.MockTransport(slow)), now=clock)
     results = []
     threads = [threading.Thread(target=lambda: results.append(provider.get())) for _ in range(8)]
     [t.start() for t in threads]
     [t.join() for t in threads]
-    assert results == ["tok-1"] * 8 and len(tokens.requests) == 1
+    assert results == ["tok-1"] * 8 and count[0] == 1 and peak[0] == 1
+
+
+def test_fetch_timeout_is_the_remaining_deadline_capped_at_the_configured_timeout():
+    clock = FakeClock()
+    seen = []
+
+    def handler(request):
+        seen.append(request.extensions["timeout"]["read"])
+        return httpx.Response(200, json={"access_token": "t", "expires_on": str(int(clock() + 3600))})
+
+    provider = ManagedIdentityToken(endpoint=IDENTITY_URL, header=SECRET_HEADER, timeout=5.0,
+                                    client=httpx.Client(transport=httpx.MockTransport(handler)), now=clock)
+    provider.get(2.0)
+    provider.invalidate()
+    provider.get(30.0)
+    assert seen == [2.0, 5.0]
+
+
+def test_lock_waiter_gives_up_at_its_own_deadline():
+    import threading
+    import time as _time
+    clock = FakeClock()
+    release = threading.Event()
+
+    def hung(request):
+        release.wait(5)
+        return httpx.Response(200, json={"access_token": "t", "expires_on": str(int(clock() + 3600))})
+
+    provider = ManagedIdentityToken(endpoint=IDENTITY_URL, header=SECRET_HEADER,
+                                    client=httpx.Client(transport=httpx.MockTransport(hung)), now=clock)
+    first = threading.Thread(target=provider.get)
+    first.start()
+    _time.sleep(0.1)
+    started = _time.monotonic()
+    with pytest.raises(AIUnavailable):
+        provider.get(0.3)
+    assert _time.monotonic() - started < 2
+    release.set()
+    first.join()
+
+
+def test_token_failure_is_cached_briefly_so_queued_callers_fail_fast():
+    clock = FakeClock()
+    clock.now = 1_000_000.0
+    tokens = Tokens(clock, status=500)
+    provider = _provider(tokens, clock)
+    for _ in range(3):
+        with pytest.raises(AIUnavailable):
+            provider.get()
+    assert len(tokens.requests) == 1  # the two later callers did not hit the endpoint
+    clock.now += ManagedIdentityToken.FAILURE_TTL + 1
+    with pytest.raises(AIUnavailable):
+        provider.get()
+    assert len(tokens.requests) == 2  # retried after the TTL
 
 
 def _azure_mi(provider, handler):

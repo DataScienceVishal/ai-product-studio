@@ -112,20 +112,40 @@ class ManagedIdentityToken:
         self._lock = threading.Lock()
         self._token = ""
         self._expires_on = 0.0
+        self._failed_until = 0.0  # a failed fetch is remembered until then, so queued callers fail fast
+        self._failure: AIUnavailable | None = None
 
-    def get(self) -> str:
-        with self._lock:
+    FAILURE_TTL = 10.0
+
+    def get(self, timeout: float | None = None) -> str:
+        """`timeout` is the caller's remaining deadline: it bounds both the wait for the lock and the fetch."""
+        budget = self._timeout if timeout is None else min(self._timeout, timeout)
+        if budget <= 0:
+            raise AIUnavailable()
+        if not self._lock.acquire(timeout=budget):
+            log.warning("managed identity token wait timed out")
+            raise AIUnavailable()
+        try:
             if self._token and self._now() < self._expires_on - self._margin:
                 return self._token
-            self._token, self._expires_on = self._fetch()
+            if self._failure is not None and self._now() < self._failed_until:
+                raise AIUnavailable(self._failure.message)
+            try:
+                self._token, self._expires_on = self._fetch(budget)
+            except AIUnavailable as error:
+                self._failure, self._failed_until = error, self._now() + self.FAILURE_TTL
+                raise
+            self._failure = None
             return self._token
+        finally:
+            self._lock.release()
 
     def invalidate(self) -> None:
         """Forget the cached token (the service rejected it), so the next call fetches a fresh one."""
         with self._lock:
             self._token, self._expires_on = "", 0.0
 
-    def _fetch(self) -> tuple[str, float]:
+    def _fetch(self, timeout: float) -> tuple[str, float]:
         if not self._endpoint or not self._header:
             log.error("managed identity endpoint is not available")
             raise AIUnavailable("The AI service isn't configured correctly. The team has been notified.")
@@ -134,7 +154,7 @@ class ManagedIdentityToken:
             params["client_id"] = self.client_id
         try:
             response = self._client.get(self._endpoint, params=params, headers={"X-IDENTITY-HEADER": self._header},
-                                        timeout=self._timeout)
+                                        timeout=timeout)
         except httpx.HTTPError as error:  # only the class name: messages can echo the URL
             log.error("managed identity token request failed", extra={"kind": type(error).__name__})
             raise AIUnavailable() from None
@@ -186,7 +206,7 @@ class AzureOpenAI:
             try:
                 headers = self.headers
                 if self.token_provider is not None:  # may raise AIUnavailable; nothing was sent, so nothing billed
-                    headers = {"Authorization": f"Bearer {self.token_provider.get()}", "Content-Type": "application/json"}
+                    headers = {"Authorization": f"Bearer {self.token_provider.get(remaining())}", "Content-Type": "application/json"}
                 response = self.client.post(self.url, json=payload, headers=headers,
                                             timeout=min(self.timeout, remaining()))
             except (httpx.ConnectError, httpx.ConnectTimeout) as error:  # never reached the model: no cost
