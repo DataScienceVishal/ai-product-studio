@@ -330,7 +330,7 @@ Sign-up, login-by-IP, reset-by-IP, accept and verify are all keyed by a client I
 - `requirements-dev.txt` has no hashes, and CI installs it plainly (`_starter-ci.yml:46,96`). Regenerate with `uv pip compile pyproject.toml --extra dev --generate-hashes -o requirements-dev.txt` and install with `pip install --require-hashes`.
 - Actions are pinned by tag (`actions/checkout@v4`, `setup-python@v5`, `setup-node@v4`, `upload-artifact@v4`). Pin them by commit SHA with a version comment.
 - `npm install --no-save playwright` (`_starter-ci.yml:100`) installs whatever is latest. Add `tests/e2e/package.json` and a lockfile, then use `npm ci`.
-- `FROM python:3.12-slim` isn't pinned by digest, and the image's OS packages weren't scanned (no Trivy, Grype or Docker here). Pin `@sha256:...` and add a Trivy scan step to the deploy workflow in T-7.
+- `FROM python:3.12-slim` isn't pinned by digest, and the image's OS packages weren't scanned (no Trivy, Grype or Docker here). Pin `@sha256:...` and add a Trivy scan step to the deploy workflow in T-7. *(Update, T-19: both base images are now pinned by digest, Dependabot refreshes them, and Trivy runs in the deploy workflow.)*
 
 ---
 
