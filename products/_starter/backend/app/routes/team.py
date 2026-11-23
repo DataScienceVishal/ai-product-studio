@@ -3,17 +3,18 @@ export or account deletion. Invitations and members are always looked up within 
 from __future__ import annotations
 
 import logging
+import re
 import uuid
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, Field
-from sqlalchemy import select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..deps import Current, current, owner, require_csrf_header, verified_owner
+from ..deps import Current, current, owner, verified_owner
 from ..errors import AppError
 from ..logs import bind
 from ..models import Invitation, Tenant, User
@@ -22,8 +23,8 @@ from ..security import hash_password, new_token, password_problem, token_hash
 from .auth import Email, _start_session, me_payload
 
 log = logging.getLogger("app.team")
-router = APIRouter(prefix="/api/team", tags=["team"], dependencies=[Depends(require_csrf_header)])
-public = APIRouter(prefix="/api/invitations", tags=["team"], dependencies=[Depends(require_csrf_header)])
+router = APIRouter(prefix="/api/team", tags=["team"])
+public = APIRouter(prefix="/api/invitations", tags=["team"])
 
 
 class InviteIn(BaseModel):
@@ -33,6 +34,13 @@ class InviteIn(BaseModel):
 class AcceptIn(BaseModel):
     token: str = Field(min_length=20, max_length=200)
     password: str = Field(max_length=256)
+
+
+def email_safe(name: str) -> str:
+    """A tenant name as it may appear in an email: no control characters, no links, short."""
+    name = re.sub(r"[\x00-\x1f\x7f]", " ", name)
+    name = re.sub(r"(?i)(?:[a-z][a-z0-9+.-]*://|www\.)\S*", "", name)
+    return " ".join(name.split())[:60] or "A team"
 
 
 def _pending(now: datetime):
@@ -57,9 +65,17 @@ def team(me: Current = Depends(current), db: Session = Depends(get_db)):
 def invite(data: InviteIn, request: Request, me: Current = Depends(verified_owner), db: Session = Depends(get_db)):
     settings = request.app.state.settings
     request.app.state.limiter.check(f"invite:{me.tenant.id}", 20)
+    now = datetime.now(timezone.utc)
+    sent_today = db.scalar(select(func.count()).select_from(Invitation)
+                           .where(Invitation.tenant_id == me.tenant.id, Invitation.created_at > now - timedelta(days=1)))
+    if sent_today >= settings.invites_per_day:
+        raise AppError(429, "invite_limit", "You've sent a lot of invitations today. Try again tomorrow.")
+    pending = db.scalar(select(func.count()).select_from(Invitation)
+                        .where(Invitation.tenant_id == me.tenant.id, *_pending(now)))
+    if pending >= settings.max_pending_invites:
+        raise AppError(409, "too_many_pending", "Cancel some unanswered invitations before sending more.")
     if db.scalar(select(User.id).where(User.email == data.email)) is not None:
         raise AppError(409, "email_taken", "That email already has an account.")
-    now = datetime.now(timezone.utc)
     db.execute(update(Invitation).where(Invitation.tenant_id == me.tenant.id, Invitation.email == data.email,
                                         *_pending(now)).values(revoked_at=now))  # only the newest link works
     token = new_token()
@@ -68,9 +84,10 @@ def invite(data: InviteIn, request: Request, me: Current = Depends(verified_owne
     db.add(invitation)
     db.commit()
     link = f"{settings.app_base_url.rstrip('/')}/accept-invite?token={token}"
+    team_name = email_safe(me.tenant.name)
     request.app.state.email.send(
-        data.email, f"You're invited to {me.tenant.name}",
-        f"{me.tenant.name} has invited you to join their account.\n\nAccept within {settings.invite_days} days: {link}")
+        data.email, f"You're invited to {team_name}",
+        f"{team_name} has invited you to join their account.\n\nAccept within {settings.invite_days} days: {link}")
     log.info("member invited", extra={"invitation_id": str(invitation.id)})
     return {"id": str(invitation.id), "email": invitation.email, "expires_at": invitation.expires_at.isoformat()}
 
@@ -92,7 +109,8 @@ def remove_member(user_id: uuid.UUID, me: Current = Depends(owner), db: Session 
     member = db.scalar(select(User).where(User.id == user_id, User.tenant_id == me.tenant.id))
     if member is None:
         raise AppError(404, "not_found", "That person isn't in your team.")
-    db.delete(member)  # their sessions go with them (ON DELETE CASCADE)
+    db.execute(delete(Invitation).where(Invitation.tenant_id == me.tenant.id, Invitation.email == member.email))
+    db.delete(member)  # their sessions go with them (ON DELETE CASCADE); their invitation rows too (above)
     db.commit()
     log.info("member removed", extra={"removed_user_id": str(user_id)})
     return Response(status_code=204)

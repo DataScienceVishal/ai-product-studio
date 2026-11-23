@@ -6,7 +6,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
 from pydantic import AfterValidator, BaseModel, Field, field_validator
 from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from ..billing import PLANS
 from ..db import get_db
-from ..deps import SESSION_COOKIE, Current, current, require_csrf_header, subscription_of
+from ..deps import SESSION_COOKIE, Current, current, subscription_of
 from ..errors import AppError
 from ..logs import bind
 from ..models import AuthSession, EmailVerification, PasswordReset, Subscription, Tenant, User
@@ -23,7 +23,7 @@ from ..security import (hash_password, needs_rehash, new_token, password_problem
                         verify_password)
 
 log = logging.getLogger("app.auth")
-router = APIRouter(prefix="/api/auth", tags=["auth"], dependencies=[Depends(require_csrf_header)])
+router = APIRouter(prefix="/api/auth", tags=["auth"])
 EMAIL = re.compile(r"^[^@\s]{1,64}@[^@\s]+\.[^@\s]{2,}$")
 
 
@@ -45,7 +45,7 @@ class SignUp(BaseModel):
     @field_validator("company_name")
     @classmethod
     def _company(cls, value: str) -> str:
-        value = value.strip()
+        value = " ".join(re.sub(r"[\x00-\x1f\x7f]", " ", value).split())  # no control characters or newlines
         if not value:
             raise ValueError("Enter your company name.")
         return value
@@ -173,43 +173,60 @@ def me(me: Current = Depends(current), db: Session = Depends(get_db)):
     return me_payload(db, me.user, me.tenant)
 
 
-@router.post("/password-reset/request", status_code=202)
-def reset_request(data: ResetRequest, request: Request, db: Session = Depends(get_db)):
-    """Always 202, whether or not the email has an account, so it can't be used to probe addresses."""
-    email = data.email.strip().lower()
-    _limit(request, f"reset-ip:{client_ip(request)}", f"reset-email:{email}")
-    user = db.scalar(select(User).where(User.email == email))
-    if user is not None:
-        settings = request.app.state.settings
+def _send_reset(app, user_id) -> None:
+    """Runs after the response, so a known and an unknown email take the same time to answer."""
+    settings = app.state.settings
+    with app.state.db.sessions() as db:
+        user = db.get(User, user_id)
+        if user is None:
+            return
+        now = datetime.now(timezone.utc)
         db.execute(update(PasswordReset).where(PasswordReset.user_id == user.id, PasswordReset.used_at.is_(None))
-                   .values(used_at=datetime.now(timezone.utc)))  # only the newest link works
+                   .values(used_at=now))  # only the newest link works
         token = new_token()
         db.add(PasswordReset(user_id=user.id, token_hash=token_hash(token),
-                             expires_at=datetime.now(timezone.utc) + timedelta(minutes=settings.reset_token_minutes)))
+                             expires_at=now + timedelta(minutes=settings.reset_token_minutes)))
         db.commit()
         link = f"{settings.app_base_url.rstrip('/')}/reset-password?token={token}"
-        request.app.state.email.send(
+        app.state.email.send(
             user.email, "Reset your password",
             f"Someone asked to reset the password for this account.\n\nReset it here (valid for "
             f"{settings.reset_token_minutes} minutes): {link}\n\nIf this wasn't you, ignore this email.")
         log.info("password reset requested", extra={"user_id": str(user.id)})
+
+
+@router.post("/password-reset/request", status_code=202)
+def reset_request(data: ResetRequest, request: Request, background: BackgroundTasks, db: Session = Depends(get_db)):
+    """Always 202, whether or not the email has an account, so it can't be used to probe addresses."""
+    settings = request.app.state.settings
+    email = data.email.strip().lower()
+    _limit(request, f"reset-ip:{client_ip(request)}")
+    request.app.state.limiter.check(f"reset-email:{email}", settings.reset_requests_per_hour, 3600)  # no inbox bombing
+    user_id = db.scalar(select(User.id).where(User.email == email))
+    db.commit()
+    if user_id is not None:
+        background.add_task(_send_reset, request.app, user_id)
     return {"status": "If that email has an account, we've sent a reset link."}
 
 
 @router.post("/password-reset/confirm", status_code=204)
 def reset_confirm(data: ResetConfirm, request: Request, db: Session = Depends(get_db)) -> Response:
     _limit(request, f"reset-confirm:{client_ip(request)}")
-    now = datetime.now(timezone.utc)
-    row = db.scalar(select(PasswordReset).where(PasswordReset.token_hash == token_hash(data.token)))
-    if row is None or row.used_at is not None or row.expires_at <= now:
-        raise AppError(400, "invalid_reset_link", "This reset link has expired or was already used. Ask for a new one.")
     problem = password_problem(data.new_password)
     if problem:
         raise AppError(422, "weak_password", problem)
-    user = db.get(User, row.user_id)
+    now = datetime.now(timezone.utc)
+    # Consume the link in one statement, so two simultaneous clicks can't both use it.
+    user_id = db.scalar(update(PasswordReset)
+                        .where(PasswordReset.token_hash == token_hash(data.token), PasswordReset.used_at.is_(None),
+                               PasswordReset.expires_at > now)
+                        .values(used_at=now).returning(PasswordReset.user_id))
+    if user_id is None:
+        db.rollback()
+        raise AppError(400, "invalid_reset_link", "This reset link has expired or was already used. Ask for a new one.")
+    user = db.get(User, user_id)
     user.password_hash = hash_password(data.new_password)
     user.email_verified_at = user.email_verified_at or now  # the link proved they control the inbox
-    row.used_at = now
     db.execute(delete(AuthSession).where(AuthSession.user_id == user.id))  # sign out everywhere
     db.commit()
     log.info("password reset", extra={"user_id": str(user.id)})
@@ -217,16 +234,21 @@ def reset_confirm(data: ResetConfirm, request: Request, db: Session = Depends(ge
 
 
 @router.post("/verify-email", status_code=204)
-def verify_email(data: VerifyIn, request: Request, db: Session = Depends(get_db)) -> Response:
-    """Works without being signed in, so the link can be opened on another device."""
+def verify_email(data: VerifyIn, request: Request, me: Current = Depends(current), db: Session = Depends(get_db)) -> Response:
+    """The person must be signed in as the account the link was sent to. Otherwise someone who signed up
+    with your address could have you verify *their* account just by clicking an unexpected email."""
     _limit(request, f"verify:{client_ip(request)}")
     now = datetime.now(timezone.utc)
-    row = db.scalar(select(EmailVerification).where(EmailVerification.token_hash == token_hash(data.token)))
-    if row is None or row.used_at is not None or row.expires_at <= now:
-        raise AppError(400, "invalid_verification_link", "This link has expired or was already used. Sign in to get a new one.")
-    user = db.get(User, row.user_id)
+    used = db.scalar(update(EmailVerification)
+                     .where(EmailVerification.token_hash == token_hash(data.token), EmailVerification.used_at.is_(None),
+                            EmailVerification.expires_at > now, EmailVerification.user_id == me.user.id)
+                     .values(used_at=now).returning(EmailVerification.id))
+    if used is None:
+        db.rollback()
+        raise AppError(400, "invalid_verification_link",
+                       "This link has expired, was already used, or belongs to a different account.")
+    user = db.get(User, me.user.id)
     user.email_verified_at = user.email_verified_at or now
-    row.used_at = now
     db.commit()
     log.info("email verified", extra={"user_id": str(user.id)})
     return Response(status_code=204)

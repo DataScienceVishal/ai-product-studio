@@ -15,15 +15,6 @@ from .models import AuthSession, Subscription, Tenant, User
 from .security import token_hash
 
 SESSION_COOKIE = "session"
-CSRF_HEADER = "x-requested-with"
-UNSAFE = {"POST", "PUT", "PATCH", "DELETE"}
-
-
-def require_csrf_header(request: Request) -> None:
-    """Cookie-authenticated writes must carry a custom header. Browsers can't add one cross-site
-    without a CORS preflight, which our CORS policy refuses, so forged form posts fail."""
-    if request.method in UNSAFE and not request.headers.get(CSRF_HEADER):
-        raise AppError(403, "csrf_check_failed", "Missing request header. Please reload the page and try again.")
 
 
 @dataclass

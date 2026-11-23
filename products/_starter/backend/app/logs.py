@@ -33,7 +33,9 @@ def bind(**fields: str) -> None:
     if current is not None:
         current.update(fields)
 
-_SENSITIVE = re.compile(r"pass(word)?|token|secret|authori[sz]ation|cookie|api[-_]?key|email", re.I)
+# Whole key names (optionally prefixed, like new_password), so "input_tokens" is kept but "token" is not.
+_SENSITIVE = re.compile(r"(?:\w+_)?(?:pass(?:word)?|token|secret|authori[sz]ation|cookie|api[-_]?key|e?mail|to)", re.I)
+_DROP = {"color_message"}  # uvicorn adds a copy of the message with ANSI colour codes
 _STANDARD = set(vars(logging.LogRecord("", 0, "", 0, "", None, None))) | {"message", "asctime"}
 
 
@@ -49,8 +51,8 @@ class JsonFormatter(logging.Formatter):
         }
         entry.update(_request_fields.get() or {})
         for key, value in vars(record).items():
-            if key not in _STANDARD and not key.startswith("_"):
-                entry[key] = "[redacted]" if _SENSITIVE.search(key) else value
+            if key not in _STANDARD and key not in _DROP and not key.startswith("_"):
+                entry[key] = "[redacted]" if _SENSITIVE.fullmatch(key) else value
         if record.exc_info:
             entry["error"] = safe_exception(record.exc_info)
         return json.dumps(entry, default=str)

@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     # Owners must verify their email before inviting people or checking out. Turn off only where no real
     # email leaves the system (local dev, tests, outbox-only demos): no email, no spam risk.
     require_email_verification: bool = True
+    # Only the in-memory outbox exists today; a real provider (paid) needs approval. With real email,
+    # skipping verification would turn invitations into a spam relay, so the validator refuses that.
+    email_provider: Literal["outbox"] = "outbox"
     auth_rate_limit_per_minute: int = 10
 
     # AI
@@ -70,6 +73,8 @@ class Settings(BaseSettings):
                              "(leave it unset with mock billing)")
         if self.billing_provider == "stripe" and not self.billing_webhook_secret.startswith("whsec_"):
             raise ValueError("BILLING_WEBHOOK_SECRET must be the Stripe endpoint secret (whsec_...) with BILLING_PROVIDER=stripe")
+        if not self.require_email_verification and self.email_provider != "outbox":
+            raise ValueError("REQUIRE_EMAIL_VERIFICATION can only be false while no real email is sent")
         if "*" in self.cors_origins:
             raise ValueError("CORS_ORIGINS can't contain '*': with credentials, that would let any site call the API")
         if self.env == "prod":

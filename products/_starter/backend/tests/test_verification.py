@@ -16,21 +16,26 @@ def test_signup_sends_a_link_and_verifying_flips_the_flag(new_client, outbox):
     assert client.get("/api/auth/me").json()["user"]["email_verified"] is True
 
 
-def test_verification_link_is_single_use_and_works_signed_out(new_client, outbox):
-    sign_up(new_client())
+def test_verification_needs_the_right_signed_in_account_and_is_single_use(new_client, outbox):
+    owner = new_client()
+    sign_up(owner)
     token = link_token(outbox, "verify-email")
-    stranger = new_client()  # the link may be opened on another device
-    assert stranger.post("/api/auth/verify-email", json={"token": token}).status_code == 204
-    assert stranger.post("/api/auth/verify-email", json={"token": token}).status_code == 400
+    assert new_client().post("/api/auth/verify-email", json={"token": token}).status_code == 401  # signed out
+    someone_else = new_client()
+    sign_up(someone_else, email="other@beta.test", company="Beta")
+    assert someone_else.post("/api/auth/verify-email", json={"token": token}).status_code == 400  # wrong account
+    assert owner.post("/api/auth/verify-email", json={"token": token}).status_code == 204
+    assert owner.post("/api/auth/verify-email", json={"token": token}).status_code == 400  # used
 
 
 def test_expired_link_fails(new_client, outbox, database):
-    sign_up(new_client())
+    client = new_client()
+    sign_up(client)
     token = link_token(outbox, "verify-email")
     with database.sessions() as db:
         db.execute(update(EmailVerification).values(expires_at=datetime.now(timezone.utc) - timedelta(seconds=1)))
         db.commit()
-    assert new_client().post("/api/auth/verify-email", json={"token": token}).status_code == 400
+    assert client.post("/api/auth/verify-email", json={"token": token}).status_code == 400
 
 
 def test_resend_replaces_the_old_link_and_is_rate_limited(new_client, outbox):

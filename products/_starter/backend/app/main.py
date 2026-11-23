@@ -30,6 +30,31 @@ SECURITY_HEADERS = [
     (b"x-robots-tag", b"noindex, nofollow"),  # private demos until approved
     (b"cache-control", b"no-store"),
 ]
+HSTS = (b"strict-transport-security", b"max-age=31536000; includeSubDomains")
+API_CSP = (b"content-security-policy", b"default-src 'none'; frame-ancestors 'none'")  # JSON only; docs are off in prod
+UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+CSRF_EXEMPT = {"/api/billing/webhook"}  # called by the payment provider; protected by its signature
+
+
+class CsrfGuard:
+    """Pure ASGI: every cookie-authenticated write under /api needs an X-Requested-With header. Browsers
+    can't add one cross-site without a CORS preflight, which CORS refuses for other origins. Global, so a
+    new router can't forget it; the only exemption is listed above."""
+
+    BODY = b'{"error":"csrf_check_failed","message":"Missing request header. Please reload the page and try again."}'
+
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if (scope["type"] == "http" and scope.get("method") in UNSAFE_METHODS
+                and scope.get("path", "").startswith("/api/") and scope.get("path") not in CSRF_EXEMPT
+                and not dict(scope.get("headers") or []).get(b"x-requested-with")):
+            await send({"type": "http.response.start", "status": 403,
+                        "headers": [(b"content-type", b"application/json")]})
+            await send({"type": "http.response.body", "body": self.BODY})
+            return
+        await self.app(scope, receive, send)
 
 
 class BodyTooLarge(Exception):
@@ -90,8 +115,10 @@ class BodyLimit:
 class RequestContext:
     """Pure ASGI middleware: request id, access log, security headers, and a last-resort 500."""
 
-    def __init__(self, app: ASGIApp):
+    def __init__(self, app: ASGIApp, hsts: bool = False, strict_csp: bool = False):
         self.app = app
+        self.headers = SECURITY_HEADERS + ([HSTS] if hsts else []) + ([API_CSP] if strict_csp else [])
+        self.names = {name for name, _ in self.headers}
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -106,8 +133,8 @@ class RequestContext:
             nonlocal status, response_started
             if message["type"] == "http.response.start":
                 status, response_started = message["status"], True
-                headers = [h for h in message.get("headers", []) if h[0].lower() not in {k for k, _ in SECURITY_HEADERS}]
-                message["headers"] = headers + SECURITY_HEADERS + [(b"x-request-id", rid.encode())]
+                headers = [h for h in message.get("headers", []) if h[0].lower() not in self.names]
+                message["headers"] = headers + self.headers + [(b"x-request-id", rid.encode())]
             await send(message)
 
         try:
@@ -147,13 +174,17 @@ def create_app(settings: Settings | None = None, *, ai: AIProvider | None = None
     app.state.ai = ai or build_provider(settings)
     app.state.billing = billing_provider or build_billing(settings)
     app.state.email = email or OutboxEmail()
+    if settings.env == "prod" and isinstance(app.state.email, OutboxEmail):
+        log.warning("email goes to the in-memory outbox: password reset, verification and invitation emails "
+                    "are not delivered. Fine for demos; a real email adapter needs approval")
 
     errors.install(app)
     app.add_middleware(BodyLimit, limit=settings.max_body_bytes)
+    app.add_middleware(CsrfGuard)
     app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_credentials=True,
                        allow_methods=["GET", "POST", "PUT", "DELETE"],
                        allow_headers=["content-type", "x-requested-with", "x-request-id"])
-    app.add_middleware(RequestContext)  # added last, so it runs outermost
+    app.add_middleware(RequestContext, hsts=settings.cookie_secure, strict_csp=settings.env == "prod")  # outermost
     for router in (health.router, auth.router, notes.router, billing.router, account.router, team.router, team.public):
         app.include_router(router)
     return app

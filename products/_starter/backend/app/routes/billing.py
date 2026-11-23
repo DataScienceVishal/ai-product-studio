@@ -12,7 +12,7 @@ from starlette.concurrency import run_in_threadpool
 
 from ..billing import OFFERS, PLANS, BillingUpdate, MockBilling, sign
 from ..db import get_db
-from ..deps import Current, owner, require_csrf_header, subscription_of, verified_owner
+from ..deps import Current, owner, subscription_of, verified_owner
 from ..errors import AppError
 from ..models import BillingEvent, Subscription
 
@@ -35,7 +35,7 @@ def plans():
     }
 
 
-@router.post("/checkout", dependencies=[Depends(require_csrf_header)])
+@router.post("/checkout")
 def checkout(data: CheckoutIn, request: Request, me: Current = Depends(verified_owner), db: Session = Depends(get_db)):
     request.app.state.limiter.check(f"checkout:{me.tenant.id}", 10)
     sub = subscription_of(db, me.tenant.id)
@@ -121,7 +121,7 @@ async def webhook(request: Request, db: Session = Depends(get_db)):
     return {"received": True, "applied": applied}
 
 
-@router.post("/mock/complete/{session_id}", dependencies=[Depends(require_csrf_header)])
+@router.post("/mock/complete/{session_id}")
 def mock_complete(session_id: str, request: Request, me: Current = Depends(owner), db: Session = Depends(get_db)):
     """Dev and demo only: pretend the customer paid. Goes through the same signed webhook path."""
     billing = request.app.state.billing

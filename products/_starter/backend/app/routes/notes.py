@@ -12,11 +12,11 @@ from sqlalchemy.orm import Session
 from ..ai import AIUnavailable, estimate_tokens, reserve, settle
 from ..billing import PLANS, has_access
 from ..db import get_db
-from ..deps import Current, current, require_csrf_header, subscription_of
+from ..deps import Current, current, subscription_of
 from ..errors import AppError
 from ..models import Note
 
-router = APIRouter(prefix="/api/notes", tags=["notes"], dependencies=[Depends(require_csrf_header)])
+router = APIRouter(prefix="/api/notes", tags=["notes"])
 
 SUMMARY_SYSTEM = (
     "You summarise a business note for its owner in at most three short sentences. "

@@ -332,3 +332,202 @@ def test_stripe_close_deletes_the_customer():
 
     stripe(handler).close("cus_1", "sub_1")
     assert seen == [("DELETE", "/v1/customers/cus_1")]
+
+
+# --- security gate: auth hardening ------------------------------------------------------------------
+
+def test_a_reset_link_works_once_even_when_clicked_twice_at_the_same_time(owner, new_client, outbox):
+    from .conftest import link_token
+    client = new_client()
+    client.post("/api/auth/password-reset/request", json={"email": "owner@acme.test"})
+    token = link_token(outbox, "reset-password")
+    codes = []
+
+    def confirm():
+        codes.append(new_client().post("/api/auth/password-reset/confirm",
+                                       json={"token": token, "new_password": "a brand new passphrase"}).status_code)
+
+    threads = [threading.Thread(target=confirm) for _ in range(5)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert sorted(codes) == [204, 400, 400, 400, 400]
+
+
+def test_reset_requests_are_capped_per_address_per_hour(owner, new_client, outbox):
+    client = new_client()
+    codes = [client.post("/api/auth/password-reset/request", json={"email": "owner@acme.test"}).status_code for _ in range(4)]
+    assert codes == [202, 202, 202, 429]
+
+
+def test_pre_hijacking_is_blocked(app, new_client, outbox):
+    from .conftest import link_token
+    attacker = new_client()
+    sign_up(attacker, email="victim@acme.test", company="Not the victim")
+    assert attacker.post("/api/team/invitations", json={"email": "plant@evil.test"}).status_code == 403  # unverified
+    victim = new_client()  # clicks the unexpected link, not signed in as the attacker's account
+    assert victim.post("/api/auth/verify-email", json={"token": link_token(outbox, "verify-email")}).status_code == 401
+    assert attacker.get("/api/auth/me").json()["user"]["email_verified"] is False
+
+
+def test_argon2_work_is_bounded_to_four_at_a_time(monkeypatch):
+    import app.security as security
+
+    class SlowHasher:
+        active = peak = 0
+        lock = threading.Lock()
+
+        def verify(self, stored, password):
+            with self.lock:
+                SlowHasher.active += 1
+                SlowHasher.peak = max(SlowHasher.peak, SlowHasher.active)
+            time.sleep(0.05)
+            with self.lock:
+                SlowHasher.active -= 1
+            return True
+
+    monkeypatch.setattr(security, "_hasher", SlowHasher())
+    threads = [threading.Thread(target=security.verify_password, args=("h", "p")) for _ in range(12)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert SlowHasher.peak <= 4
+
+
+# --- review I1: CSRF and authentication over the whole route table ----------------------------------
+
+PUBLIC = {("GET", "/healthz"), ("GET", "/livez"), ("GET", "/api/billing/plans"), ("POST", "/api/auth/signup"),
+          ("POST", "/api/auth/login"), ("POST", "/api/auth/logout"), ("POST", "/api/auth/password-reset/request"),
+          ("POST", "/api/auth/password-reset/confirm"), ("POST", "/api/invitations/accept"),
+          ("POST", "/api/billing/webhook")}
+
+
+def _operations(app):
+    for path, methods in app.openapi()["paths"].items():
+        for method in methods:
+            yield method.upper(), path, path.replace("{note_id}", str(uuid.uuid4())).replace(
+                "{invitation_id}", str(uuid.uuid4())).replace("{user_id}", str(uuid.uuid4())).replace(
+                "{session_id}", "mock_cs_x")
+
+
+def test_every_unsafe_api_route_needs_the_csrf_header(app):
+    client = TestClient(app, base_url="https://testserver")
+    checked = 0
+    for method, path, url in _operations(app):
+        if method in {"POST", "PUT", "DELETE"} and path != "/api/billing/webhook":
+            response = client.request(method, url, json={})
+            assert response.status_code == 403 and response.json()["error"] == "csrf_check_failed", (method, path)
+            checked += 1
+    assert checked >= 15
+
+
+def test_every_private_route_needs_a_signed_in_user(app):
+    client = TestClient(app, base_url="https://testserver", headers={"X-Requested-With": "test"})
+    checked = 0
+    for method, path, url in _operations(app):
+        if (method, path) in PUBLIC:
+            continue
+        response = client.request(method, url, json={})
+        assert response.status_code == 401, (method, path, response.status_code)
+        checked += 1
+    assert checked >= 15
+
+
+# --- review I5: log redaction by whole key names -------------------------------------------------------
+
+def test_redaction_keeps_token_counts_and_hides_secrets():
+    import logging
+    from app.logs import JsonFormatter
+    record = logging.LogRecord("app.test", logging.INFO, __file__, 1, "x", None, None)
+    record.input_tokens, record.new_password, record.to, record.user_email, record.color_message = 12, "p", "a@b", "c@d", "\x1b[0m"
+    line = json.loads(JsonFormatter().format(record))
+    assert line["input_tokens"] == 12
+    assert line["new_password"] == line["to"] == line["user_email"] == "[redacted]"
+    assert "color_message" not in line
+
+
+# --- security gate: headers -------------------------------------------------------------------------------
+
+def test_hsts_and_api_csp(app, new_client, settings):
+    response = new_client().get("/livez")
+    assert "max-age=31536000" in response.headers["strict-transport-security"]
+    from app.main import create_app
+    from .test_platform import GOOD_PROD
+    prod = create_app(settings.model_copy(update=GOOD_PROD))
+    with TestClient(prod, base_url="https://testserver") as client:
+        assert "default-src 'none'" in client.get("/livez").headers["content-security-policy"]
+    prod.state.db.dispose()
+
+
+# --- review I4 and privacy: invitations, member self-service, retention --------------------------------
+
+def test_invitation_emails_strip_links_and_control_characters():
+    from app.routes.team import email_safe
+    assert email_safe("Acme\nLtd https://evil.example/login www.phish.test") == "Acme Ltd"
+    assert email_safe("\x00\x07") == "A team"
+
+
+def test_invitation_caps(app, owner):
+    client, _ = owner
+    app.state.settings.max_pending_invites = 2
+    codes = [client.post("/api/team/invitations", json={"email": f"p{i}@acme.test"}).status_code for i in range(3)]
+    assert codes == [201, 201, 409]
+    app.state.settings.max_pending_invites = 50
+    app.state.settings.invites_per_day = 3
+    assert client.post("/api/team/invitations", json={"email": "p9@acme.test"}).status_code == 201
+    assert client.post("/api/team/invitations", json={"email": "p10@acme.test"}).status_code == 429
+
+
+def _member(owner_client, new_client, outbox):
+    from .conftest import link_token
+    owner_client.post("/api/team/invitations", json={"email": "crew@acme.test"})
+    member = new_client()
+    member_id = member.post("/api/invitations/accept", json={"token": link_token(outbox, "accept-invite"),
+                                                             "password": "member passphrase 1"}).json()["user"]["id"]
+    return member, member_id
+
+
+def test_members_can_export_their_own_data_and_leave(owner, new_client, outbox, database):
+    owner_client, _ = owner
+    member, member_id = _member(owner_client, new_client, outbox)
+    member.post("/api/notes", json={"title": "Mine"})
+    exported = member.get("/api/account/me/export").json()
+    assert exported["user"]["email"] == "crew@acme.test" and [n["title"] for n in exported["notes_written"]] == ["Mine"]
+    assert member.request("DELETE", "/api/account/me", json={"password": "member passphrase 1", "confirm": "DELETE"}).status_code == 204
+    with database.sessions() as db:
+        assert db.get(User, uuid.UUID(member_id)) is None
+        assert db.scalar(select(func.count()).select_from(__import__("app.models", fromlist=["Invitation"]).Invitation)) == 0
+    assert owner_client.get("/api/notes").json()["total"] == 1  # the company keeps the note
+    owner_leave = owner_client.request("DELETE", "/api/account/me", json={"password": PASSWORD, "confirm": "DELETE"})
+    assert owner_leave.status_code == 422
+
+
+def test_removing_a_member_also_removes_their_invitation_record(owner, new_client, outbox, database):
+    from app.models import Invitation
+    owner_client, _ = owner
+    _, member_id = _member(owner_client, new_client, outbox)
+    owner_client.delete(f"/api/team/members/{member_id}")
+    with database.sessions() as db:
+        assert db.scalar(select(func.count()).select_from(Invitation)) == 0
+
+
+def test_purge_removes_only_what_has_expired(owner, database):
+    from app.maintenance import purge
+    from app.models import AuthSession, PasswordReset
+    now = datetime.now(timezone.utc)
+    with database.sessions() as db:
+        user = db.scalar(select(User))
+        db.add(AuthSession(user_id=user.id, token_hash="a" * 64, expires_at=now - timedelta(minutes=1)))
+        db.add(PasswordReset(user_id=user.id, token_hash="b" * 64, created_at=now - timedelta(days=8),
+                             expires_at=now - timedelta(days=8), used_at=None))
+        db.add(PasswordReset(user_id=user.id, token_hash="c" * 64, expires_at=now + timedelta(minutes=10)))
+        db.add(AIUsage(tenant_id=user.tenant_id, feature="x", model="m", input_tokens=1, output_tokens=1,
+                       created_at=now - timedelta(days=401)))
+        db.commit()
+        counts = purge(db, now)
+        assert counts["sessions"] == 1 and counts["password_resets"] == 1 and counts["ai_usage"] == 1
+        assert db.scalar(select(func.count()).select_from(AuthSession)) == 1  # the owner's live session remains
+        assert db.scalar(select(func.count()).select_from(PasswordReset)) == 1
+

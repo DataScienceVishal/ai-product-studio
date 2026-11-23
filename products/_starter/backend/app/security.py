@@ -3,11 +3,14 @@ from __future__ import annotations
 
 import hashlib
 import secrets
+import threading
 
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 
 _hasher = PasswordHasher()  # argon2id with the library's current recommended parameters
+# Each hash or check uses about 64 MiB. Bounding concurrency bounds memory: extra requests wait their turn.
+_hash_slots = threading.BoundedSemaphore(4)
 # Verified against when the email is unknown, so a miss takes as long as a wrong password.
 _DUMMY_HASH = _hasher.hash("timing-equaliser-not-a-real-password")
 
@@ -26,12 +29,14 @@ def password_problem(password: str) -> str | None:
 
 
 def hash_password(password: str) -> str:
-    return _hasher.hash(password)
+    with _hash_slots:
+        return _hasher.hash(password)
 
 
 def verify_password(stored_hash: str | None, password: str) -> bool:
     try:
-        return _hasher.verify(stored_hash or _DUMMY_HASH, password) and stored_hash is not None
+        with _hash_slots:
+            return _hasher.verify(stored_hash or _DUMMY_HASH, password) and stored_hash is not None
     except (VerifyMismatchError, VerificationError, InvalidHashError):
         return False
 
