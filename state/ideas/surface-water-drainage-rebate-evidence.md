@@ -57,7 +57,49 @@ Gap that survives (provisional): nobody offers a computed site-area evidence pac
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| 7 | 8 | 5 | 5 | 7 | 4 | 9 | 45 |
+
+## Validator notes (2026-11-23)
+
+**Verdict: REVISE, 45.** A firm score from a lighter pass, as briefed.
+
+**Main reason: the weakest pain evidence of the round, and the core data is too coarse.**
+- There is no job ad, no complaint volume and no deadline.
+- OS OpenMap Local building outlines are generalised at 1:10,000 and don't map paved areas.
+- Water companies want a site plan showing boundaries, sewers, pipe routes, and paved and built areas (per Aquaswitch). That needs survey-grade data or a site visit, which is exactly what auditors sell.
+
+**Red-flag check: none.** Open map data and business data only. But accurate measurement in production would probably need paid mapping (OS MasterMap or aerial imagery), which needs approval.
+
+**Other findings**
+- United Utilities' business page sets out the routes to lower surface water charges (fetched):
+  - switch to non-chargeable surfaces;
+  - a reduction if more than 10% of surface water doesn't drain to the public sewer;
+  - an 80% reduction in chargeable area for qualifying sustainable drainage (SuDS).
+  - It tells customers to speak to their retailer first, and charges fall only if the chargeable area drops into a lower band.
+- Ofwat and CCW guidance tells customers to ask the water company to check its site-area estimate (search summaries). So the wholesaler checks for free, and charges move only by band, which caps the saving.
+- **Bundle with the energy checker:** scored at 49, which is weaker; see that file.
+
+**Scoring rationale**
+- **Pain 7.**
+- **Pay 8.** Auditors' fees are unpublished: a share of savings or a fee per site.
+- **AI 5.** This is mostly geo processing, not AI.
+- **Reach 5.**
+- **Build 7.** Whether open map data is accurate enough is unproven.
+- **Competition 4.** There are few tools, but the wholesalers' checks are free and auditors do the rest.
+- **Risk 9.**
+
+**What would change my mind:**
+1. A water company or retailer publicly accepting a plan derived from open data, or a 20-site comparison showing OpenMap or OpenStreetMap areas fall within the same charging band.
+2. Evidence of claim volume or rebate size, such as CCW or Ofwat data.
+
+Otherwise park; a second failure kills it.
+
+**Sources** (all accessed 2026-11-23)
+- https://unitedutilities.com/Business-services/business-customers/site-area/how-do-i-reduce-my-surface-water-and-highway-drainage-charges (fetched)
+- https://ofwat.gov.uk/nonhouseholds/surface-water-drainage/site-area-based-charging/ and https://www.ofwat.gov.uk/?p=234 (search summaries)
+- https://www.ccw.org.uk/faq/what-is-site-area-based-charging-for-water-and-wastewater/ (search summary)
+- https://docs.os.uk/os-downloads/products/maps-and-imagery-portfolio/os-openmap-local (from the scout file: generalised, 1:10,000)
 
 ## Gate log
 - 2026-11-23 scout round 3 (T-22): G0 drafted. Weak pain evidence, no deadline; flagged.
+- 2026-11-23 | validator | G0→G1 | REVISE 45 | Weakest pain of the round. Open map data is too coarse for the site plan a water company wants, wholesalers check site areas for free, and charges move only by band. The bundle with the energy checker scores 49. Park; a second failure kills it.

@@ -61,7 +61,46 @@ Gap that survives (provisional): PDF-first, self-serve checking for SMEs with no
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| 10 | 8 | 7 | 6 | 8 | 3 | 9 | 51 |
+
+## Validator notes (2026-11-23)
+
+**Verdict: REVISE, 51.** A firm score from a lighter pass, as briefed.
+
+**Main reason:** there is no forcing function, and the SME end of the market already gets bill validation free from brokers, paid for by their commission (Moneyhelpdesk and Smarter Business; search summaries). Bureaux (SOCOTEC, Team Energy, Trident, MRI) serve larger estates on quote. So, as the scout feared, this is a sales-process gap, not a product gap.
+
+**Red-flag check: none, provided the network-charge data can be reused.** The licences for DNO charging statements and Elexon data are still unverified. If they can't be reused, recalculating real bills would depend on paid data, which needs approval.
+
+**Other findings**
+- Generic AI extraction tools already target this job. Invoice Data Extraction (DEH Technologies LLC) offers 50 free pages a month and publishes a guide to checking UK business energy overcharges; the user still runs the checks in a spreadsheet (fetched).
+- Suppliers' own bill explainers exist (EDF; search summary). A US entrant, Gravity, launched utility bill analysis in June 2026, but its UK SME coverage is unconfirmed (search summary).
+- The error rate still rests on one vendor claim (Team Energy, 3% to 4% of bills).
+
+**Scoring rationale**
+- **Pain 10.** A vendor's error claim, plus analyst job ads that are mostly at large organisations.
+- **Pay 8.** No published price; brokers give validation away.
+- **AI 7.** Extraction across supplier PDFs, which generic tools already do.
+- **Reach 6.** Brokers are the natural channel but conflict with it.
+- **Build 8.** Pass-through charges (DUoS, TNUoS, levies, CCL) and supplier layouts are heavy for four weeks.
+- **Competition 3.**
+- **Risk 9.**
+
+**Bundle with surface-water-drainage-rebate-evidence: scored at 49 (10, 8, 7, 6, 6, 3, 9), weaker than either idea alone needs.** The two halves are unrelated engines, tariff recalculation and geospatial area measurement, so the build doubles. Neither half has a deadline or a confirmed gap. Score them separately.
+
+**What would change my mind:**
+1. 20 published or user-shared SME bills where recalculation finds errors worth more than 3% of the bill.
+2. DNO charging statements and Elexon data confirmed as free to reuse commercially.
+3. A published SME validation price that brokers don't undercut with free checks.
+
+Otherwise park.
+
+**Sources** (all accessed 2026-11-23)
+- https://invoicedataextraction.com/blog/check-business-energy-bill-overcharges-uk (fetched)
+- https://www.moneyhelpdesk.com/business/business-energy/energy-bill-validation-for-businesses/ (search summary)
+- https://smarterbusiness.co.uk/blogs/business-energy-bills-explained-why-regular-invoice-audits-protect-smes/ (search summary)
+- https://www.edfenergy.com/node/123675 (search summary)
+- https://forbesjapan.com/articles/detail/102762 (search summary; Gravity)
 
 ## Gate log
 - 2026-11-23 scout round 3 (T-22): G0 drafted. Scout expects Competition 3 to 5; flagged as the weakest of the five on gap.
+- 2026-11-23 | validator | G0→G1 | REVISE 51 | No forcing function. Brokers give SME bill validation away, bureaux serve larger estates, and generic AI extraction tools already target the job. Bundling with the drainage idea scores 49. Park.

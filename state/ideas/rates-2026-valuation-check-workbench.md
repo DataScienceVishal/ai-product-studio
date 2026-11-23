@@ -68,7 +68,86 @@ Gap that survives: no tool or agent serves the sub-£30,000 RV multi-site owner 
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| 12 | 11 | 6 | 6 | 10 | 1 | 7 | 53 |
+
+## Validator notes (2026-11-23)
+
+**Verdict: REVISE, 53.** Scored on its own; the bundle with rates-2026-bill-recalculator is no stronger (see below). The file's central gap is false: it says "no tool or agent serves the sub-£30,000 RV multi-site owner with a cheap, evidence-first Check case". Several self-serve services built for the 2026 list already do that, from free up to £349 a property.
+
+**Red-flag check: none, with two cautions.**
+- **VO terms.** "Publication of this information and its use is restricted to Non Domestic Rating (NDR) purposes only."
+  - Onward disclosure is prohibited "except where the third party's use is for the uses stated above". Those uses include letting anyone view rating assessments in the list, and letting an interested person review a valuation they have an interest in.
+  - Users must delete the information once it is no longer needed for those purposes (terms page, fetched).
+  - **My decision: not a red flag.** A tool that helps a ratepayer check their own valuation is an NDR purpose, so the terms don't block this product. They would block resale of the dataset, marketing lists of "over-assessed" properties, or property-investment analytics.
+  - No scraping is needed: HMRC's "Find a business rates valuation" service offers the whole rating list and summary valuations as downloads (search summary).
+  - At least three commercial services openly build on the same data: Rightly Rated, BusinessRateChecker and RateRight.
+  - The product still needs an NDR-only use clause and a retention policy. The doubt about the bulk-file licence (University of Liverpool article) stays open, and a written VO answer needs Vishal.
+- **Demo.** The synthetic or OGL fallback is credible for the workflow only.
+  - The core claim is that a real site is out of line with its real comparables. Invented comparables can't show that, and the OGL statistics are area averages, not comparables.
+  - A credible demo would use real list entries under the NDR terms, as rivals do. That has to wait for the VO answer, so it costs Build points rather than being a red flag.
+
+**Forcing function: weaker than the file implies**
+- **The rules.** gov.uk "Challenge the valuation" (updated 9 July 2026):
+  - a Check comes first;
+  - Challenge "within 4 months of receiving a check case decision";
+  - "You must submit all your evidence together when sending your challenge"; further evidence only "in exceptional circumstances";
+  - "You may have to pay a penalty if you knowingly submit false information to the Valuation Office".
+- **No end date for 2026-list Checks** appears on that page. Its one date, 30 September 2026, is for checks based on a legal decision, which the VO blog ties to the 2023 list.
+- **The window.** The VO blog (2 Feb 2026) says the 2023 list took Checks until 31 March 2026, the end of that list.
+  - By analogy, the 2026 list should stay open until it ends on 31 March 2029, with reductions usually backdated to 1 April 2026 (BusinessRateChecker FAQ, search summary).
+  - That is my inference; no official page I read states it.
+  - So there is no near-term deadline, and waiting costs an owner little.
+- **Volumes** (VO statistics published 12 Nov 2026; England, 2026 list, 1 April to 30 September 2026):
+  - Checks: 35,820 registered and 24,880 resolved. Of the resolved, 23% reduced the RV, 75% made no change and 2% increased it.
+  - Challenges: 5,240 registered but only 290 resolved; 62% of those reduced the RV.
+  - 2023 list over its life: 340,710 Checks (23% reduced) and 101,730 Challenges (57% of resolved reduced).
+  - The VO has a statutory 18 months to clear a Challenge.
+
+**Competitors (own pages)**
+- **Rightly Rated** (ABT Ventures Ltd; fetched). This is the file's product, already selling:
+  - a free check of the 2026 RV, floor area and £ per m² against similar nearby properties, with a verdict and an estimated saving;
+  - a £29 Check-stage pack;
+  - an evidence pack at £99 (RV under £51,000), £199 or £349: up to 12 comparables with VO references, a proposed RV and effective date, and a facts-only draft statement;
+  - a £29 relief claim pack.
+  - AI only words the statement, and an automatic check rejects any number not in the source facts. Multi-site isn't mentioned.
+- **BusinessRateChecker** (Mirror Mountain Ltd; Glama MCP listing fetched, own site returned 429 twice): a comparables verdict with a suggested RV and indicative saving, rating history including Check and Challenge outcomes, Valuation Tribunal decisions, area £ per m² analysis, and an AI (MCP) connector. Free and paid plans.
+- **RateRight** (RateRight Ltd; fetched): a free postcode screen of RV per m² against comparables, plus an estimated 2026/27 bill. "The diagnostic stays free while we harden the data."
+- **Paddl** (Trading Projects Ltd; fetched): for multi-site hospitality. AI reads bills and cross-checks the RV against the VO list, at £69 per location per month.
+- **businessrates.review** (£49 evidence pack) and **ratesxray.co.uk** (free): search summaries only.
+- **The VO's own service** lets anyone compare similar properties' RVs and see how a valuation was worked out (search summary).
+- **Agents:** Eddisons and Allsop work on contingency fees (scout's evidence).
+- **What survives:** only a portfolio view across 3 to 30 sites. Any of these vendors could add that in a week.
+
+**Scoring rationale**
+- **Pain 12.** The pain is real and measured: 23% of resolved Checks and about 60% of resolved Challenges cut the value, at high volume. But it comes once per list per property, with no near deadline.
+- **Pay 11.** Contingency fees and £99 to £349 packs show that people pay, but one-off per property. A subscription for a task that comes round every three years is hard to justify.
+- **AI 6.** Comparables come from the VO's summary valuations by deterministic code. LLMs help read leases and plans and word the grounds, and rivals already do both.
+- **Reach 6.** Multi-site owners can be reached through accountants and trade bodies, but rivals win them through search.
+- **Build 10.** Four weeks is feasible on the bulk download. It needs a retention policy, an NDR-use clause and the VO's written answer before a real-data demo.
+- **Competition 1.** At least three live self-serve services, one of them selling the exact pack.
+- **Risk 7.** Business data only. Deductions for the VO-terms compliance burden, the chance of a higher value after a Check (2% to 3% of resolved Checks), and the penalty for false information.
+
+**Bundle with rates-2026-bill-recalculator: scored at 54 (12, 12, 7, 6, 9, 1, 7), so not stronger.** Paddl already sells a combined bill-and-RV check per location for multi-site hospitality, and Rightly Rated sells relief and valuation packs. Bundling adds build scope (bill extraction plus a second rules engine) without opening a gap.
+
+**What would change my mind**
+1. Evidence that owners of 3 to 30 sites are unserved: Rightly Rated, BusinessRateChecker and Paddl shown on their own pages to lack portfolio checks, plus a published agent or tool price for portfolio checks of sites under £30,000 RV.
+2. The scout's own kill test, run on 50 sites under £30,000 RV from the official download under the NDR terms: a median likely saving above £150 a year per site.
+3. A written VO answer that a commercial tool may use the bulk list and summary valuations for ratepayers' own checks.
+
+Even with all three, Competition stays at 1 to 2 and the ceiling is about 58. I recommend parking it; a second failure kills it.
+
+**Sources** (all accessed 2026-11-23)
+- https://www.gov.uk/guidance/challenge-the-valuation (fetched; updated 9 July 2026)
+- https://valuationoffice.blog.gov.uk/2026/02/02/why-do-we-close-the-rating-list/ (fetched)
+- https://www.gov.uk/government/statistics/non-domestic-rating-challenges-and-changes-2023-and-2026-rating-lists-september-2026/non-domestic-rating-challenges-and-changes-statistical-commentary (fetched; published 12 Nov 2026)
+- https://www.tax.service.gov.uk/view-my-valuation/terms-and-conditions (fetched)
+- https://www.tax.service.gov.uk/business-rates-find/search and https://www.gov.uk/find-business-rates (search summaries: downloads and similar-property comparison)
+- https://rightlyrated.uk/ (fetched)
+- https://glama.ai/mcp/connectors/com.businessratechecker/mcp (fetched); https://www.businessratechecker.com/ (429 twice)
+- https://www.rateright.uk/ (fetched)
+- https://paddl-ai.co/features/business-rates (fetched)
+- https://www.businessrates.review/ (title only on fetch; £49 from search summary) and https://ratesxray.co.uk/business-rates-checker/ (search summary)
 
 ## Gate log
 - 2026-11-23 scout round 3 (T-22): G0 drafted.
+- 2026-11-23 | validator | G0→G1 | REVISE 53 | The claimed gap is false. Rightly Rated already sells per-property Check evidence packs built from the VO list (£29 to £349), and BusinessRateChecker and RateRight screen RVs against comparables for free or on credits. The 2026 list has no near-term Check deadline. The VO terms allow this use for rating purposes, so no red flag. Park; the bundle with the bill recalculator scores 54 and is no stronger.

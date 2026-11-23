@@ -61,7 +61,51 @@ Gap that survives (provisional): a cross-council, multi-site recalculation with 
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| 9 | 10 | 7 | 6 | 11 | 2 | 9 | 54 |
+
+## Validator notes (2026-11-23)
+
+**Verdict: REVISE, 54.** A firm score from a lighter pass, as briefed.
+
+**Main reason: Paddl already sells this to multi-site hospitality**, at £69 per location per month or £703.80 a year (own page, fetched). It:
+- reads uploaded bills (PDF or photo) with AI, extracting the RV, multiplier, reliefs and net payable;
+- checks six relief types: the retail, hospitality and leisure (RHL) multiplier, Small Business Rate Relief, the pubs and live music discount, Supporting Small Business, transitional relief, and valuation accuracy;
+- cross-checks the RV against the VO list;
+- gives a red, amber or green verdict per site, with portfolio totals and an April re-check reminder.
+
+**Red-flag check: none.** Business data, public rules and synthetic bills. It recalculates published rules and the owner or accountant decides, so it is not tax advice.
+
+**Other findings**
+- More free or cheap substitutes:
+  - Rightly Rated sells a £29 relief claim pack and has a free 2026/27 calculator (fetched).
+  - BusinessRateChecker shows an estimated 2026/27 bill per property (MCP listing, fetched).
+  - Councils' own calculators are free.
+- **Pain evidence** is still one council admission (Harborough) plus the complexity of the rules. Councils apply relief automatically and refund credit balances routinely (gov.uk refund guidance and council pages, search summaries). How often bills are wrong is unknown, so the scout's own test is still the right next step: 30 public examples of wrong 2026/27 bills.
+- **Refund time limit** (the file's open item): not found. Searches found no statutory limit for England. The Local Government Ombudsman has treated very late refund complaints as out of time (search summary). Treat it as UNVERIFIED.
+- **Bundle with the valuation workbench:** 54, so no stronger; see that file.
+
+**Scoring rationale**
+- **Pain 9.** No complaint volume, and errors are probably rare.
+- **Pay 10.** Paddl shows someone charges for this; there are also audits paid as a share of savings.
+- **AI 7.** Extraction across council bill layouts, which Paddl already does.
+- **Reach 6.**
+- **Build 11.** The rules are public and finite, and the demo can use synthetic bills.
+- **Competition 2.** Paddl covers the core for hospitality. Multi-site retail is a thin remaining gap.
+- **Risk 9.**
+
+**What would change my mind:**
+1. Evidence that bill errors are common: 30 or more public cases or council notices of wrong 2026/27 bills.
+2. A segment Paddl doesn't serve, such as multi-site retail or leisure, with a published price someone pays for bill checks.
+
+Otherwise park.
+
+**Sources** (all accessed 2026-11-23)
+- https://paddl-ai.co/features/business-rates (fetched)
+- https://rightlyrated.uk/ (fetched)
+- https://glama.ai/mcp/connectors/com.businessratechecker/mcp (fetched)
+- https://www.gov.uk/get-rebate-refund-business-rates (search summary)
+- https://www.lgo.org.uk/decisions/benefits-and-tax/other/19-002-878 (search summary)
 
 ## Gate log
 - 2026-11-23 scout round 3 (T-22): G0 drafted. Pain evidence thin (one council admission); flagged for validator.
+- 2026-11-23 | validator | G0→G1 | REVISE 54 | Paddl already reads bills with AI and checks the 2026 reliefs and the RV against the VO list for multi-site hospitality, at £69 per location per month. How often bills are wrong is unproven. Park.
