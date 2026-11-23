@@ -53,8 +53,13 @@ Python runtime image: `docker build -t starter -f Dockerfile .` from this folder
 browser sees the app and `/api` on one origin (ADR 0002, decision 2):
 
 - `/assets/*` is Vite's hashed output, cached for a year (`immutable`).
-- Any other GET that matches no route (`/verify-email`, `/reset-password`, `/accept-invite`, `/billing/done`)
-  gets `index.html` with `Cache-Control: no-cache` and a CSP of `script-src 'self'` (no inline script or style).
+- A GET or HEAD for a known client route (`/`, `/login`, `/verify-email`, `/reset-password`, `/accept-invite`,
+  `/billing/done`, ...) gets `index.html` with 200, `Cache-Control: no-cache` and a CSP of `script-src 'self'` (no
+  inline script or style). Any other unknown path gets the same HTML with status 404, so crawlers and monitors
+  see a real 404. HEAD returns the same headers as GET (including `Content-Length`) with no body.
+  **Every new frontend page must be added to `CLIENT_ROUTES` in `backend/app/spa.py`**, or it will answer 404 when
+  opened directly or refreshed. `test_client_routes_match_the_frontend_router` fails if the two lists differ.
+- `/assets` and `/assets/` with no file are a 404 (no redirect).
 - `/api/*`, `/livez` and `/healthz` are unchanged; an unknown `/api` path is still a JSON 404.
 - It is on only when `FRONTEND_DIST` names a folder with `index.html` (the image sets `/app/static`). Without it
   the app is API-only, which is how dev, the tests and `scripts/e2e.sh` run (Vite serves the frontend and proxies `/api`).

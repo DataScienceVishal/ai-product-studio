@@ -19,10 +19,12 @@ export function takeToken(): string {
   return token;
 }
 
+const normalise = (p: string) => (p.length > 1 ? p.replace(/\/+$/, "") : p); // /verify-email/ is /verify-email
+
 export function usePath(): string {
-  const [path, setPath] = useState(window.location.pathname);
+  const [path, setPath] = useState(normalise(window.location.pathname));
   useEffect(() => {
-    const onChange = () => setPath(window.location.pathname);
+    const onChange = () => setPath(normalise(window.location.pathname));
     window.addEventListener("popstate", onChange);
     return () => window.removeEventListener("popstate", onChange);
   }, []);
