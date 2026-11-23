@@ -708,3 +708,42 @@ The earlier probes still hold: B2's 45-call case (`/livez` 67 ms, `/healthz` 161
   - `README.md:51-53` still has the old prod-guard text;
   - `?next=/%5C…` leaves a signed-in user on /login (not a redirect);
   - actions are pinned by tag, not SHA.
+
+## Review of T-21 (2026-11-23)
+
+- Commit: `6e5e37a`, one commit on top of the PASS tree. The parent's starter code is identical to `95360d8`. Not
+  reviewed here: `reviews/T-7-azure-deploy.md` and the state/ files in the same commit.
+- Own workspace: `starter_rev_test`, `starter_rev_e2e`, ports 8400 and 4473.
+
+### Verdict: PASS
+
+Each change does what the task says and has a test that fails without it. One survivor is minor (below). Local:
+147 tests pass, the frontend builds, and `e2e.sh` passes. CI run 45231648454 at `6e5e37a` is green: 147 tests,
+alembic check, pip-audit, docker build, npm audit (e2e skipped on a branch push).
+
+### Checks
+
+| Change | Result |
+|---|---|
+| R7, cookie helper used everywhere | All five sites use `session_cookie(settings)`: the read in `deps.current`, the set in `auth._start_session` (sign-up, login, invite accept), the read and clear in `auth.logout`, and the clears in `account.delete_account` and `account.delete_me`. No old constant or literal name is left in app code, and the frontend never touches the HttpOnly cookie |
+| R7, Starlette headers | Set: `__Host-session=…; HttpOnly; Max-Age=604800; Path=/; SameSite=lax; Secure`, with no Domain, as the prefix requires. Clears (logout, account deletion): `__Host-session=""; expires=…; HttpOnly; Max-Age=0; Path=/; SameSite=lax; Secure`. Browsers need `Secure` and `Path=/` on the clear too, and it has both. On plain http the name is `session`, without Secure |
+| R7, httpx and a real browser | httpx (Python's cookiejar) doesn't enforce cookie prefixes, so the tests can't show what a browser does. It stores, sends and drops the cookie as expected. Chromium over HTTPS, with the API on 8400 and a throwaway self-signed certificate, accepted `__Host-session` as a host-only, Secure, HttpOnly, Lax cookie. It sent it (`/me` 200), scripts couldn't read it, and logout and account deletion both cleared it |
+| R17 | Mutations caught: dropping `"stripe"` fails the new test, and inlining the set fails three tests that use `selling_unlocked`, so the fixture really matters |
+| P4 | Removing the `last_sign_in_at` line in login now fails `test_login_records_the_sign_in_time` |
+| e2e.sh, port check | It now runs before the drop. With 4473 occupied: exit 2, and a marker table in the e2e database survived |
+| e2e.sh, trap | `web_pid=""` plus `${web_pid:+-"$web_pid"}` is safe under `set -u`. Three exit paths, each leaving nothing on 8400 or 4473: success; an early failure (a broken frontend build while the API was starting, `web_pid` empty); and a late failure (4473 taken inside the start window, vite can't bind, the 30 s health wait gives up with the API fully up). The frontend is rebuilt every run |
+| `?next=` | In a browser after sign-in: `/billing` and `/billing?tab=plans` are kept. `//evil.example`, `https://evil.example`, `/%5Cevil.example`, `/%09/evil.example`, `javascript:alert(1)`, `/%2F%2Fevil.example` and `/%5C%5Cevil.example/x` all go to `/`. The backslash case no longer leaves the user on /login |
+| Docs | The README's guard text now matches every rule in `config.py`'s validator. DATA.md describes the current purge rule and the sign-in time |
+
+### Minor
+
+- A logout that clears the cookie without `Secure` passes all 147 tests, because httpx doesn't enforce the prefix.
+  A browser would ignore such a clear and keep the cookie (harmless: the server-side session is already gone). One
+  assertion that the logout and account-deletion `Set-Cookie` headers carry `Secure` and `Path=/` would guard it.
+- Renaming the cookie signs everyone out once, on the first deploy that switches. Nothing is deployed yet, so
+  there's no impact.
+- `LIMITED_PROVIDERS` and the live-key refusal must change together. A test that ties them (while `StripeBilling`
+  refuses live keys, `"stripe"` stays limited) would stop a selling ADR from changing one and not the other.
+
+The deferrals in DECISIONS.md (the login-burst threads moved to T-15, the sign-up caps kept for the $80) are
+reasonable.
