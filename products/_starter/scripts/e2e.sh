@@ -24,18 +24,24 @@ with engine.connect() as conn:
     conn.execute(text(f'CREATE DATABASE "{sys.argv[2]}"'))
 PY
 
+port_free() { ! (echo > "/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
+for port in "$api_port" "$web_port"; do  # a stale server on these ports would answer for the new one
+  port_free "$port" || { echo "port $port is already in use: stop that server or pick E2E_API_PORT/E2E_WEB_PORT"; exit 2; }
+done
+
 cd "$here/backend"
 DATABASE_URL="$db_url" "$python" -m alembic upgrade head >"$logs/migrate.log" 2>&1
 ENV=dev DATABASE_URL="$db_url" COOKIE_SECURE=false APP_BASE_URL="http://127.0.0.1:$web_port" \
   CORS_ORIGINS="[\"http://127.0.0.1:$web_port\"]" AI_PROVIDER=fake BILLING_PROVIDER=mock LOG_LEVEL=INFO \
   REQUIRE_EMAIL_VERIFICATION=false MOCK_CHECKOUT_ENABLED=true \
-  "$python" -m uvicorn app.main:app --host 127.0.0.1 --port "$api_port" >"$logs/api.log" 2>&1 &
+  setsid "$python" -m uvicorn app.main:app --host 127.0.0.1 --port "$api_port" >"$logs/api.log" 2>&1 &
 api_pid=$!
 cd "$here/frontend"
 [ -d dist ] || npx vite build >"$logs/build.log" 2>&1
-API_URL="http://127.0.0.1:$api_port" npx vite preview --host 127.0.0.1 --port "$web_port" --strictPort >"$logs/web.log" 2>&1 &
+API_URL="http://127.0.0.1:$api_port" setsid npx vite preview --host 127.0.0.1 --port "$web_port" --strictPort >"$logs/web.log" 2>&1 &
 web_pid=$!
-trap 'kill $api_pid $web_pid 2>/dev/null || true' EXIT
+# Each server runs in its own process group (setsid), so this stops npx's child node process too.
+trap 'kill -- -"$api_pid" -"$web_pid" 2>/dev/null || true' EXIT
 
 for _ in $(seq 1 60); do
   if curl -fsS "http://127.0.0.1:$web_port/healthz" >/dev/null 2>&1; then break; fi
