@@ -5,6 +5,12 @@ header and the deployment name as `model` (Microsoft Learn, checked 2026-11-23).
 the key is injected by the environment's network secret, so AZURE_OPENAI_API_KEY holds only a
 placeholder. gpt-5-mini is a reasoning model: max_completion_tokens covers reasoning too.
 
+The studio's real deployment (a reasoning model) refuses chat/completions with HTTP 400 and supports only the
+v1 Responses API: POST {endpoint}/openai/v1/responses with `input` (role/content items), `instructions` and
+`max_output_tokens`. AZURE_OPENAI_API picks `chat` or `responses`; `auto` (default) uses responses when the
+configured endpoint ends in /openai/v1/responses, else chat. The endpoint may be the resource root or end in
+/openai/v1, /openai/v1/responses or /openai/v1/chat/completions (see normalise_endpoint).
+
 With AZURE_OPENAI_AUTH=managed_identity there is no key: a bearer token for the app's managed identity
 is fetched from the Container Apps identity endpoint (see ManagedIdentityToken) and sent as
 `Authorization: Bearer`.
@@ -152,15 +158,33 @@ class ManagedIdentityToken:
         return token, expires_on
 
 
+_ENDPOINT_SUFFIXES = ("/openai/v1/chat/completions", "/openai/v1/responses", "/openai/v1", "/openai")
+
+
+def normalise_endpoint(endpoint: str) -> str:
+    """The resource root (no trailing slash, no API path), from a root or any known /openai/... form."""
+    root = endpoint.strip().rstrip("/")
+    for suffix in _ENDPOINT_SUFFIXES:
+        if root.lower().endswith(suffix):
+            return root[: -len(suffix)].rstrip("/")
+    return root
+
+
 class AzureOpenAI:
     name = "azure"
 
     def __init__(self, endpoint: str, deployment: str, api_key: str, timeout: float = 20.0, deadline: float = 25.0,
                  retries: int = 1, client: httpx.Client | None = None, sleep=time.sleep, clock=time.monotonic,
-                 token_provider: ManagedIdentityToken | None = None):
+                 token_provider: ManagedIdentityToken | None = None, api: str = "auto"):
         if not endpoint:
             raise ValueError("AZURE_OPENAI_ENDPOINT is not set")
-        self.url = endpoint.rstrip("/") + "/openai/v1/chat/completions"
+        if api not in ("auto", "chat", "responses"):
+            raise ValueError("AZURE_OPENAI_API must be auto, chat or responses")
+        if api == "auto":
+            api = "responses" if endpoint.strip().rstrip("/").lower().endswith("/openai/v1/responses") else "chat"
+        self.api = api
+        path = "/openai/v1/responses" if api == "responses" else "/openai/v1/chat/completions"
+        self.url = normalise_endpoint(endpoint) + path
         self.deployment = deployment
         self.token_provider = token_provider  # set: bearer token from the managed identity, no api-key
         self.headers = {"api-key": api_key or "proxy-injected", "Content-Type": "application/json"}
@@ -169,8 +193,12 @@ class AzureOpenAI:
         self.sleep, self.clock = sleep, clock
 
     def complete(self, system: str, user: str, max_output_tokens: int = 1200) -> AIResult:
-        payload = {"model": self.deployment, "max_completion_tokens": max_output_tokens,
-                   "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
+        if self.api == "responses":  # reasoning tokens count inside max_output_tokens
+            payload = {"model": self.deployment, "instructions": system, "max_output_tokens": max_output_tokens,
+                       "input": [{"role": "user", "content": user}]}
+        else:
+            payload = {"model": self.deployment, "max_completion_tokens": max_output_tokens,
+                       "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
         started = self.clock()
         billed_in = billed_out = 0  # from attempts that failed but may have cost money
 
@@ -214,17 +242,32 @@ class AzureOpenAI:
                 data = response.json()
             except ValueError:
                 raise fail() from None
-            usage = data.get("usage") or {}
-            used_in, used_out = int(usage.get("prompt_tokens", 0)), int(usage.get("completion_tokens", 0))
-            choice = (data.get("choices") or [{}])[0]
-            text = ((choice.get("message") or {}).get("content") or "").strip()
+            if not isinstance(data, dict):
+                raise fail() from None
+            used_in, used_out, text, why = self._parse(data)
             if not text:
-                log.warning("ai returned no text", extra={"finish_reason": choice.get("finish_reason")})
+                log.warning("ai returned no text", extra={"finish_reason": why})
                 billed_in, billed_out = billed_in + used_in, billed_out + used_out
                 raise fail("The AI ran out of room before answering. Try a shorter input.")
             return AIResult(text=text, input_tokens=used_in + billed_in, output_tokens=used_out + billed_out,
                             model=data.get("model", self.deployment))
         raise fail()
+
+    def _parse(self, data: dict) -> tuple[int, int, str, str | None]:
+        """(input tokens, output tokens, text, why there is no text) for either API."""
+        usage = data.get("usage") or {}
+        if self.api == "chat":
+            choice = (data.get("choices") or [{}])[0]
+            text = ((choice.get("message") or {}).get("content") or "").strip()
+            return (int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0), text,
+                    choice.get("finish_reason"))
+        parts = [part.get("text") or "" for item in data.get("output") or [] if item.get("type") == "message"
+                 for part in item.get("content") or [] if part.get("type") == "output_text"]
+        why = data.get("status") if data.get("status") != "completed" else None
+        if why == "incomplete":
+            why = (data.get("incomplete_details") or {}).get("reason") or why
+        return (int(usage.get("input_tokens") or 0), int(usage.get("output_tokens") or 0),
+                "".join(parts).strip(), why)
 
     def _pause(self, attempt: int, retry_after: str | None, remaining) -> None:
         if attempt >= self.retries:
@@ -244,7 +287,7 @@ def build_provider(settings) -> AIProvider:
         return AzureOpenAI(settings.azure_openai_endpoint, settings.azure_openai_deployment,
                            settings.azure_openai_api_key, timeout=settings.ai_timeout_seconds,
                            deadline=settings.ai_deadline_seconds, retries=settings.ai_retries,
-                           token_provider=token)
+                           token_provider=token, api=settings.azure_openai_api)
     return FakeAI()
 
 

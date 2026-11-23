@@ -51,6 +51,7 @@ class Settings(BaseSettings):
     azure_openai_endpoint: str = ""
     azure_openai_deployment: str = "gpt-5-mini"
     azure_openai_api_key: str = ""  # placeholder; the network secret injects the real key
+    azure_openai_api: Literal["auto", "chat", "responses"] = "auto"  # auto: responses if the endpoint ends /openai/v1/responses
     azure_openai_auth: Literal["key", "managed_identity"] = "key"
     azure_client_id: str = ""  # user-assigned identity; empty means the system-assigned one
     ai_timeout_seconds: float = 20.0  # per attempt

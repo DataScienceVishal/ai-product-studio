@@ -105,6 +105,16 @@ See `NEXT.md`. The Azure deploy is designed in `ADR/0002-azure-deploy.md` (Bicep
 `.github/workflows/_starter-deploy.yml`); it creates nothing until Vishal approves the costs (Q-5). Also open: Redis-backed rate limits before running more than one replica, a real email adapter
 (paid, needs approval), and frontend unit tests.
 
+## Azure OpenAI API
+
+`AZURE_OPENAI_API` is `auto` (default), `responses` or `chat`. `auto` uses the v1 Responses API
+(`/openai/v1/responses`) when `AZURE_OPENAI_ENDPOINT` ends in `/openai/v1/responses`, otherwise chat completions.
+The studio's reasoning deployment refuses chat (HTTP 400), so set `responses` or give that endpoint form. The
+endpoint may be the resource root or end in `/openai/v1`, `/openai/v1/responses` or `/openai/v1/chat/completions`.
+Reasoning tokens count inside the output budget, and an `incomplete` answer with no text is billed and shown as
+a friendly error. A reasoning model can take about 8 s for one word; the 25 s `AI_DEADLINE_SECONDS` still holds
+but is tight for long summaries (raise it together with the frontend's 30 s abort if needed).
+
 ## Azure OpenAI sign-in
 
 `AZURE_OPENAI_AUTH=key` (default) sends the `api-key` header. `managed_identity` sends a bearer token from the

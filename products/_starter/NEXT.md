@@ -1,3 +1,10 @@
+# T-33 status
+
+Done: Azure provider supports the v1 Responses API (`AZURE_OPENAI_API=auto|responses|chat`, endpoint
+normalisation, usage and failure billing as chat), tests in `backend/tests/test_ai.py`, README, .env.example.
+Left: set `AZURE_OPENAI_API=responses` (or the /openai/v1/responses endpoint) in the cloud app. Open question:
+25 s deadline vs ~8 s+ reasoning latency; budget logic unchanged.
+
 # T-17 status
 
 Done: `ManagedIdentityToken` and auth mode in `backend/app/ai.py`, settings `AZURE_OPENAI_AUTH` and
