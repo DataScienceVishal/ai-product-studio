@@ -18,8 +18,8 @@ export function Privacy() {
         <p><strong>Why.</strong> To run the service you signed up for, to secure your account, and to bill you.</p>
         <p><strong>Who processes it.</strong> Our hosting provider (Microsoft Azure, UK region), Microsoft's Azure OpenAI
           service for AI summaries, and our payment provider once payments are switched on. Each processes data under its own
-          data-protection terms. Microsoft may keep AI prompts and answers for up to 30 days to detect abuse, and some
-          Azure OpenAI deployment types process data outside the UK; each product states which one it uses.</p>
+          data-protection terms. Microsoft may store AI prompts and answers for abuse monitoring, as described on its Azure OpenAI
+          data-privacy page, and some deployment types process data outside the UK; each product states which one it uses.</p>
         <p><strong>How long.</strong> Until you delete your account. Expired sign-in sessions and used links are removed
           within days; usage records after 13 months.</p>
         <p><strong>Your rights.</strong> Download your data or delete it at any time from Settings. Account owners can

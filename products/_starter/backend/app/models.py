@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, Uuid
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, Uuid, false
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base
@@ -41,6 +41,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(20), default="owner", nullable=False)  # owner | member
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_sign_in_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # protects live accounts from purges
     created_at: Mapped[datetime] = _created()
 
 
@@ -103,6 +104,7 @@ class AIUsage(Base):
     model: Mapped[str] = mapped_column(String(80), nullable=False)
     input_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
     output_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
+    trial: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
 
 
 class Note(Base):

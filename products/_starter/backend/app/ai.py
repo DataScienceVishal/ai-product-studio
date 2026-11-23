@@ -121,8 +121,7 @@ class AzureOpenAI:
                 log.warning("ai call failed after sending", extra={"attempt": attempt, "kind": type(error).__name__})
                 billed_in += estimate_tokens(system, user, 0)
                 billed_out += max_output_tokens
-                self._pause(attempt, None, remaining)
-                continue
+                raise fail() from None  # no retry: a second send could be billed again on top of the first
             if response.status_code == 429 or response.status_code >= 500:
                 log.warning("ai call throttled or failed", extra={"attempt": attempt, "status": response.status_code})
                 self._pause(attempt, response.headers.get("retry-after"), remaining)
@@ -197,6 +196,12 @@ def tokens_today_all_tenants(db: Session) -> int:
     return int(used or 0)
 
 
+def trial_tokens_today(db: Session) -> int:
+    used = db.scalar(select(func.coalesce(func.sum(AIUsage.input_tokens + AIUsage.output_tokens), 0))
+                     .where(AIUsage.created_at >= _today(), AIUsage.trial.is_(True)))
+    return int(used or 0)
+
+
 def tokens_today(db: Session, tenant_id: uuid.UUID) -> int:
     used = db.scalar(select(func.coalesce(func.sum(AIUsage.input_tokens + AIUsage.output_tokens), 0))
                      .where(AIUsage.tenant_id == tenant_id, AIUsage.created_at >= _today()))
@@ -205,7 +210,8 @@ def tokens_today(db: Session, tenant_id: uuid.UUID) -> int:
 
 def reserve(db: Session, tenant_id: uuid.UUID, cap: int, estimate: int, feature: str,
             global_daily_cap: int | None = None, daily_cap: int | None = None, max_in_flight: int | None = None,
-            in_flight_window: timedelta = timedelta(minutes=2)) -> uuid.UUID:
+            in_flight_window: timedelta = timedelta(minutes=2), trial: bool = False,
+            trial_pool_cap: int | None = None) -> uuid.UUID:
     """Reserve an upper-bound estimate before calling the model, under Postgres advisory locks, so concurrent
     calls see each other's reservations. A call is refused if it *would* cross any cap: the plan's monthly
     allowance, a daily cap (trials), or the studio-wide daily budget. At most `max_in_flight` calls per tenant
@@ -228,11 +234,13 @@ def reserve(db: Session, tenant_id: uuid.UUID, cap: int, estimate: int, feature:
         refuse(429, "ai_cap_reached", "You've used this month's AI allowance. It resets on the 1st, or upgrade your plan.")
     if daily_cap is not None and tokens_today(db, tenant_id) + estimate > daily_cap:
         refuse(429, "ai_daily_cap_reached", "You've reached today's AI allowance for the free trial. It resets at midnight (UTC).")
+    if trial and trial_pool_cap is not None and trial_tokens_today(db) + estimate > trial_pool_cap:
+        refuse(503, "ai_trial_pool_reached", "Free-trial AI is busy for today. It resets at midnight (UTC); paid plans aren't affected.")
     if global_daily_cap is not None and tokens_today_all_tenants(db) + estimate > global_daily_cap:
         log.error("global daily AI budget reached")
         refuse(503, "ai_budget_reached", "The AI is resting until tomorrow. Everything else still works.")
     row = AIUsage(tenant_id=tenant_id, feature=f"{feature}:reserved", model="pending",
-                  input_tokens=estimate, output_tokens=0)
+                  input_tokens=estimate, output_tokens=0, trial=trial)
     db.add(row)
     db.commit()
     return row.id

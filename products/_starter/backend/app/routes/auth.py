@@ -8,7 +8,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
 from pydantic import AfterValidator, BaseModel, Field, field_validator
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -113,16 +113,22 @@ def me_payload(db: Session, user: User, tenant: Tenant) -> dict:
 
 @router.post("/signup", status_code=201)
 def signup(data: SignUp, request: Request, response: Response, db: Session = Depends(get_db)):
+    settings = request.app.state.settings
     _limit(request, f"signup:{client_ip(request)}")
+    request.app.state.limiter.check(f"signup-day:{client_ip(request)}", settings.signups_per_ip_per_day, 86400)
     problem = password_problem(data.password)
     if problem:
         raise AppError(422, "weak_password", problem)
-    settings = request.app.state.settings
+    today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    if db.scalar(select(func.count()).select_from(Tenant).where(Tenant.created_at >= today)) >= settings.new_trials_per_day:
+        raise AppError(429, "signups_paused", "We're not taking more sign-ups today. Please try again tomorrow.")
+    db.commit()  # end the read transaction before hashing
     password_hash = hash_password(data.password)  # before any transaction opens
     tenant = Tenant(name=data.company_name)
     db.add(tenant)
     db.flush()
-    user = User(tenant_id=tenant.id, email=data.email, password_hash=password_hash, role="owner")
+    user = User(tenant_id=tenant.id, email=data.email, password_hash=password_hash, role="owner",
+                last_sign_in_at=datetime.now(timezone.utc))
     db.add(user)
     db.add(Subscription(tenant_id=tenant.id, plan=PLANS["trial"].id, status="trialing", provider="none",
                         trial_ends_at=datetime.now(timezone.utc) + timedelta(days=settings.trial_days)))
@@ -150,6 +156,8 @@ def login(data: SignIn, request: Request, response: Response, db: Session = Depe
         raise AppError(401, "invalid_credentials", "That email and password don't match.")
     if needs_rehash(user.password_hash):
         user.password_hash = hash_password(data.password)
+    user = db.merge(user)  # back into the new transaction after the commit above
+    user.last_sign_in_at = datetime.now(timezone.utc)
     _start_session(request, response, db, user)
     db.commit()
     tenant = db.get(Tenant, user.tenant_id)

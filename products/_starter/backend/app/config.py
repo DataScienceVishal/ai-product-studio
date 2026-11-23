@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     # skipping verification would turn invitations into a spam relay, so the validator refuses that.
     email_provider: Literal["outbox"] = "outbox"
     auth_rate_limit_per_minute: int = 10
+    signups_per_ip_per_day: int = 20
+    new_trials_per_day: int = 200  # studio-wide, so farmed trials can't exhaust shared budgets
 
     # AI
     ai_provider: Literal["fake", "azure"] = "fake"
@@ -54,6 +56,7 @@ class Settings(BaseSettings):
     ai_rate_limit_per_minute: int = 20
     # All tenants together, per UTC day. Protects the studio's $80 of Azure credit from farmed free trials.
     ai_global_daily_tokens: int = 500_000
+    ai_trial_share: float = 0.5  # all free trials together may use at most this share of the global budget
     ai_concurrent_calls: int = 8  # in-process cap, so slow AI calls can't take every request thread
     ai_calls_per_tenant_at_once: int = 2
 

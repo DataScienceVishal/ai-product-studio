@@ -101,14 +101,17 @@ def summarize(note_id: uuid.UUID, request: Request, me: Current = Depends(curren
         raise AppError(402, "plan_required", "Your trial or plan has ended. Choose a plan to keep using AI features.")
     if sub.status == "trialing" and settings.require_email_verification and me.user.email_verified_at is None:
         raise AppError(403, "email_not_verified", "Confirm your email address to use the AI during your free trial.")
-    plan = PLANS.get(sub.plan, PLANS["trial"])
+    # Trials and mock (demo) plans get the trial allowance and share the trials' slice of the global budget.
+    limited = sub.status == "trialing" or sub.provider == "mock"
+    plan = PLANS["trial"] if limited else PLANS.get(sub.plan, PLANS["trial"])
     version = (note.title, note.body)
     prompt = f"<note>\n{_as_data(note.title)}\n\n{_as_data(note.body)}\n</note>"
     reservation = reserve(db, me.tenant.id, plan.ai_monthly_tokens,
                           estimate_tokens(SUMMARY_SYSTEM, prompt, MAX_SUMMARY_TOKENS), "note_summary",
                           global_daily_cap=settings.ai_global_daily_tokens,
-                          daily_cap=plan.ai_daily_tokens if sub.status == "trialing" else None,
-                          max_in_flight=settings.ai_calls_per_tenant_at_once)  # commits
+                          daily_cap=plan.ai_daily_tokens if limited else None,
+                          max_in_flight=settings.ai_calls_per_tenant_at_once, trial=limited,
+                          trial_pool_cap=int(settings.ai_global_daily_tokens * settings.ai_trial_share))  # commits
     try:
         with request.app.state.ai_slots:
             result = request.app.state.ai.complete(SUMMARY_SYSTEM, prompt, max_output_tokens=MAX_SUMMARY_TOKENS)

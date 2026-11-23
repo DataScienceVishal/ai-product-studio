@@ -142,8 +142,15 @@ def test_concurrent_reservations_never_cross_the_cap(owner, database):
         assert tokens_this_month(db, tenant_id) == 98_000 + 2_000
 
 
+def _make_paying(database):
+    with database.sessions() as db:
+        db.execute(update(Subscription).values(status="active", plan="pro", provider="stripe"))
+        db.commit()
+
+
 def test_the_global_daily_budget_stops_all_tenants(app, owner, database):
     client, _ = owner
+    _make_paying(database)
     app.state.settings.ai_global_daily_tokens = 1_000
     with database.sessions() as db:
         other = Tenant(name="Elsewhere")
@@ -559,6 +566,7 @@ def test_token_estimate_is_an_upper_bound_by_bytes():
 
 def test_calls_that_would_cross_the_global_budget_are_refused(app, owner, database):
     client, _ = owner
+    _make_paying(database)
     note = client.post("/api/notes", json={"title": "Big", "body": "y" * 3000}).json()
     app.state.settings.ai_global_daily_tokens = 2_000  # the estimate is over 3,000 tokens
     response = client.post(f"/api/notes/{note['id']}/summarize")
@@ -657,7 +665,8 @@ def test_purge_removes_long_unverified_accounts_when_verification_is_required(ne
     from app.maintenance import purge
     sign_up(new_client(), email="ghost@acme.test", company="Ghost")
     with database.sessions() as db:
-        db.execute(update(User).values(created_at=datetime.now(timezone.utc) - timedelta(days=31)))
+        old = datetime.now(timezone.utc) - timedelta(days=31)
+        db.execute(update(User).values(created_at=old, last_sign_in_at=old))
         db.commit()
         assert purge(db, unverified_after_days=None).get("unverified_accounts") is None  # off for outbox demos
         assert db.scalar(select(func.count()).select_from(Tenant)) == 1
@@ -772,4 +781,85 @@ def test_a_summary_of_old_text_is_not_saved_onto_an_edited_note(app, owner, data
     response = client.post(f"/api/notes/{note['id']}/summarize")
     assert response.status_code == 409 and response.json()["error"] == "note_changed"
     assert client.get(f"/api/notes/{note['id']}").json()["summary"] is None
+
+
+# --- security re-test 2: R12, R13, R15 -----------------------------------------------------------------
+
+def test_trials_share_half_the_global_budget_and_paying_tenants_keep_theirs(app, new_client, outbox, database):
+    from .conftest import verify_email
+    app.state.settings.ai_global_daily_tokens = 20_000  # trials may use 10,000 together
+    with database.sessions() as db:
+        db.add(AIUsage(tenant_id=None, feature="x", model="fake", input_tokens=9_000, output_tokens=0, trial=True))
+        db.commit()
+    trial = new_client()
+    sign_up(trial, email="trial@acme.test", company="Trial")
+    verify_email(trial, outbox)
+    note = trial.post("/api/notes", json={"title": "t", "body": "z" * 900}).json()
+    refused = trial.post(f"/api/notes/{note['id']}/summarize")
+    assert refused.status_code == 503 and refused.json()["error"] == "ai_trial_pool_reached"
+    payer = new_client()
+    sign_up(payer, email="payer@beta.test", company="Payer")
+    with database.sessions() as db:
+        tenant = db.scalar(select(Tenant).where(Tenant.name == "Payer"))
+        db.execute(update(Subscription).where(Subscription.tenant_id == tenant.id)
+                   .values(status="active", plan="pro", provider="stripe"))
+        db.commit()
+    paid_note = payer.post("/api/notes", json={"title": "p", "body": "q" * 900}).json()
+    assert payer.post(f"/api/notes/{paid_note['id']}/summarize").status_code == 200
+
+
+def test_mock_plans_get_the_trial_allowance(app, owner, database):
+    client, _ = owner
+    with database.sessions() as db:
+        tenant = db.scalar(select(Tenant))
+        db.execute(update(Subscription).values(status="active", plan="pro", provider="mock"))
+        db.add(AIUsage(tenant_id=tenant.id, feature="x", model="fake", input_tokens=29_500, output_tokens=0))
+        db.commit()
+    note = client.post("/api/notes", json={"title": "Demo"}).json()
+    response = client.post(f"/api/notes/{note['id']}/summarize")
+    assert response.status_code == 429 and response.json()["error"] == "ai_daily_cap_reached"
+
+
+def test_signups_are_capped_per_ip_per_day_and_studio_wide(app, new_client):
+    app.state.settings.signups_per_ip_per_day = 2
+    codes = [new_client().post("/api/auth/signup", json={"company_name": f"C{i}", "email": f"c{i}@acme.test",
+                                                         "password": PASSWORD}).status_code for i in range(3)]
+    assert codes == [201, 201, 429]
+    app.state.limiter = __import__("app.ratelimit", fromlist=["RateLimiter"]).RateLimiter()
+    app.state.settings.signups_per_ip_per_day = 100
+    app.state.settings.new_trials_per_day = 2
+    response = new_client().post("/api/auth/signup", json={"company_name": "D", "email": "d@acme.test", "password": PASSWORD})
+    assert response.status_code == 429 and response.json()["error"] == "signups_paused"
+
+
+def test_purge_keeps_live_and_paying_accounts(new_client, database):
+    from app.maintenance import purge
+    sign_up(new_client(), email="live@acme.test", company="Live")
+    sign_up(new_client(), email="payer@acme.test", company="Payer")
+    sign_up(new_client(), email="gone@acme.test", company="Gone")
+    old = datetime.now(timezone.utc) - timedelta(days=40)
+    with database.sessions() as db:
+        db.execute(update(User).values(created_at=old))  # all old and unverified
+        db.execute(update(User).where(User.email != "live@acme.test").values(last_sign_in_at=old))  # live signed in today
+        payer = db.scalar(select(Tenant).where(Tenant.name == "Payer"))
+        db.execute(update(Subscription).where(Subscription.tenant_id == payer.id).values(provider_customer="cus_1"))
+        db.commit()
+        assert purge(db, unverified_after_days=30)["unverified_accounts"] == 1
+        assert sorted(t.name for t in db.scalars(select(Tenant))) == ["Live", "Payer"]
+
+
+def test_purge_command_does_nothing_to_accounts_while_email_is_the_outbox(monkeypatch):
+    import app.maintenance as maintenance
+    captured = {}
+
+    def fake_purge(db, now=None, unverified_after_days=None):
+        captured["days"] = unverified_after_days
+        return {}
+
+    monkeypatch.setattr(maintenance, "purge", fake_purge)
+    monkeypatch.setattr("sys.argv", ["maintenance", "purge"])
+    monkeypatch.setenv("DATABASE_URL", TEST_DB)
+    monkeypatch.setenv("REQUIRE_EMAIL_VERIFICATION", "true")
+    maintenance.main()
+    assert captured["days"] is None  # the outbox can't deliver verification links, so no one is purged for it
 

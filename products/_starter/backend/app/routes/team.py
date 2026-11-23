@@ -129,7 +129,7 @@ def accept(data: AcceptIn, request: Request, response: Response, db: Session = D
     if invitation is None:
         raise AppError(400, "invalid_invitation", "This invitation has expired or was already used. Ask for a new one.")
     user = User(tenant_id=invitation.tenant_id, email=invitation.email, password_hash=password_hash,
-                role=invitation.role, email_verified_at=now)  # the invite link proved they control the inbox
+                role=invitation.role, email_verified_at=now, last_sign_in_at=now)  # the link proved the inbox
     db.add(user)
     invitation.accepted_at = now
     try:

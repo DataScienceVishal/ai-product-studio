@@ -158,9 +158,16 @@ def test_connection_errors_cost_nothing_but_timeouts_after_sending_are_counted()
     def timeout(request):
         raise httpx.ReadTimeout("slow", request=request)
 
+    calls = []
+
+    def timeout_counting(request):
+        calls.append(1)
+        raise httpx.ReadTimeout("slow", request=request)
+
     with pytest.raises(AIUnavailable) as timed_out:
-        _azure(timeout, retries=1).complete("s" * 30, "u" * 30, max_output_tokens=500)
-    assert timed_out.value.output_tokens == 1000 and timed_out.value.input_tokens > 0  # two sent attempts
+        _azure(timeout_counting, retries=3).complete("s" * 30, "u" * 30, max_output_tokens=500)
+    assert len(calls) == 1  # no retry once a request may have run: a second send could be billed again
+    assert timed_out.value.output_tokens == 500 and timed_out.value.input_tokens > 0
 
 
 def test_empty_answers_carry_the_billed_usage():

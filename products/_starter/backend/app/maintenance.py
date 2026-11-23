@@ -9,7 +9,9 @@ Rules (also in DATA.md):
   - billing events (idempotency records): after 400 days
   - AI usage rows: after 400 days (13 months covers a full year of billing questions). They outlive deleted
     tenants (unlinked), because the studio-wide daily AI budget must count them.
-  - accounts whose owner never verified their email: after 30 days, only when verification is required
+  - accounts whose owner never verified their email, never signed in for 30 days, and has no payment-provider
+    customer: after 30 days, only when verification is required AND real email is sent (with the outbox nobody
+    can verify, so nothing is purged)
 """
 from __future__ import annotations
 
@@ -22,7 +24,8 @@ from sqlalchemy.orm import Session
 
 from .config import Settings
 from .db import Database
-from .models import AIUsage, AuthSession, BillingEvent, EmailVerification, Invitation, PasswordReset, Tenant, User
+from .models import (AIUsage, AuthSession, BillingEvent, EmailVerification, Invitation, PasswordReset, Subscription,
+                     Tenant, User)
 
 
 def purge(db: Session, now: datetime | None = None, unverified_after_days: int | None = None) -> dict[str, int]:
@@ -42,9 +45,11 @@ def purge(db: Session, now: datetime | None = None, unverified_after_days: int |
     }
     if unverified_after_days is not None:
         cutoff = now - timedelta(days=unverified_after_days)
-        abandoned = select(User.tenant_id).where(User.role == "owner", User.email_verified_at.is_(None),
-                                                 User.created_at < cutoff)
-        statements["unverified_accounts"] = delete(Tenant).where(Tenant.id.in_(abandoned))
+        paying = select(Subscription.tenant_id).where(Subscription.provider_customer.is_not(None))
+        abandoned = select(User.tenant_id).where(
+            User.role == "owner", User.email_verified_at.is_(None), User.created_at < cutoff,
+            or_(User.last_sign_in_at.is_(None), User.last_sign_in_at < cutoff))
+        statements["unverified_accounts"] = delete(Tenant).where(Tenant.id.in_(abandoned), Tenant.id.not_in(paying))
     counts = {name: db.execute(statement).rowcount for name, statement in statements.items()}
     db.commit()
     return counts
@@ -58,7 +63,8 @@ def main() -> None:
     database = Database(settings.database_url, settings.db_statement_timeout_ms)
     try:
         with database.sessions() as db:
-            days = 30 if settings.require_email_verification else None  # outbox-only demos can't verify
+            # Only when people can actually verify: verification required AND real email (not the outbox).
+            days = 30 if settings.require_email_verification and settings.email_provider != "outbox" else None
             print(json.dumps({"purged": purge(db, unverified_after_days=days)}))
     finally:
         database.dispose()
