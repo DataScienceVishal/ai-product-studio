@@ -34,7 +34,7 @@ jobs:
       STUDIO_SPEND_CAP: "80"
       # Saved Azure responses live in "$RUNNER_TEMP/spend". (The runner context isn't allowed in job-level env.)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Test the report script
         run: python3 -m unittest discover -s scripts/tests

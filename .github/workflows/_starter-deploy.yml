@@ -89,7 +89,7 @@ jobs:
     outputs:
       go: ${{ steps.gate.outputs.go }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Bicep compiles, scripts parse (no Azure sign-in needed)
         working-directory: ${{ env.PRODUCT_DIR }}/infra
@@ -146,7 +146,7 @@ jobs:
       EMAIL_PROVIDER: outbox
       SETUP_DATABASE: ${{ inputs.setup_database && 'true' || 'false' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build the image
         run: |
@@ -448,7 +448,7 @@ jobs:
     env:
       TARGET: ${{ inputs.rollback_to }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check the revision name
         run: |
