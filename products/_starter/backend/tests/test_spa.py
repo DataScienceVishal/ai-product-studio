@@ -186,10 +186,24 @@ def test_assets_do_not_follow_symlinks(web, dist, tmp_path):
         assert r.status_code == 404 and "top secret" not in r.text, path
 
 
+_ROUTE = re.compile(r"""\bpath\s*===\s*(["'`])(/[^"'`$]*)\1""")
+# Other ways to compare the path would hide a route from the sync test: path.startsWith(..), path !== .., /re/.test(path)...
+_OTHER = re.compile(r"""\bpath\s*(?:!==?|==(?!=))|\bpath\s*\.\s*\w+\s*\(|\bswitch\s*\(\s*path\s*\)|\.\s*(?:test|includes)\s*\(\s*path\s*\)""")
+
+
+def test_route_scanner_accepts_any_quote_style_and_flags_other_comparisons():
+    assert {m.group(2) for m in _ROUTE.finditer("path === \"/a\" || path === '/b' || path === `/c`")} == {"/a", "/b", "/c"}
+    for bad in ("path.startsWith('/x')", "path !== '/x'", "path == '/x'", "switch (path) {", "/x/.test(path)", "ROUTES.includes(path)"):
+        assert _OTHER.search(bad), bad
+    assert not _OTHER.search('PUBLIC.has(path) && path === "/x"')
+
+
 def test_client_routes_match_the_frontend_router():
     """A new page in App.tsx must be added to CLIENT_ROUTES (or a refresh on it would 404)."""
     from app.spa import CLIENT_ROUTES
     app_tsx = Path(__file__).resolve().parents[2] / "frontend" / "src" / "App.tsx"
     src = app_tsx.read_text()  # missing file: fail, not skip
-    found = set(re.findall(r'path === "(/[^"]*)"', src)) | {"/"}
+    found = {m.group(2) for m in _ROUTE.finditer(src)} | {"/"}
+    other = [m.group(0) for m in _OTHER.finditer(src)]
+    assert not other, f"App.tsx compares the path in a way this test cannot read ({other}); use path === '/route'"
     assert found == set(CLIENT_ROUTES)
