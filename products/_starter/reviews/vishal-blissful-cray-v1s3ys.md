@@ -352,3 +352,192 @@ Fix C1 to C8, each with a regression test, and update the README and ADR in the 
 the backend tests, `alembic check`, the frontend build and `e2e.sh`, and run CI once on GitHub. Fix I1 to I11
 in this branch where cheap. Otherwise open board tasks (I9 and I10 are quick). The security gate still has to
 run `pip-audit` and `npm audit`.
+
+## Re-review (2026-11-23)
+
+- Reviewer: reviewer agent. Tree: `ce1fa5b`, checked out as a clean detached worktree. The starter's code there is
+  identical to `7ab92be`; later commits up to `fe67f7a` change only `NEXT.md` under `products/_starter`.
+- Commits reviewed: `f0f5b25` (email verification), `5a4b765` (C1 to C8 and the security Highs), `ed84b1a` (security
+  Mediums, I1, I4 to I7, I9), `cd9b216` (frontend, I11), `7ab92be` (CI I10, docs I12). The ids `76c29fc` and
+  `7ea1d7c` in the first brief don't exist; the coordinator confirmed the correction.
+- Own workspace this time: databases `starter_rev_test` and `starter_rev_e2e`, ports 8400 and 4473 only. I read the
+  security re-test (`c326528`, "Re-test" in SECURITY.md) without touching it. Its findings R1 to R11 are treated as
+  known and only cross-referenced here.
+
+### Verdict: CHANGES
+
+All eight blockers are fixed, and every original reproduction now gives the right answer. I1 to I12 are fixed or
+mostly fixed. CI is green on GitHub, e2e included. Three small things stop a PASS:
+- the I11 fix introduced a regression in the delete-my-data path (B1);
+- the liveness probe still waits for a worker thread (B2: the last piece of C1, also R4 in SECURITY.md);
+- two of the new regression tests can't fail (B3).
+
+Each is under ten lines. Once they're fixed, I'll re-check just those three. N1 to N3 can be fixed here or opened as
+board tasks before G4.
+
+### What I ran
+
+| Check | Result |
+|---|---|
+| Backend tests at `ce1fa5b` on `starter_rev_test` | 113 passed, 1 warning (httpx2 deprecation), 20.8 s. The venv matches all 39 pins in `requirements-dev.txt` |
+| `alembic upgrade head`, `check`, `downgrade base`, `upgrade`, `check` | clean |
+| Frontend `tsc -b` and `vite build` | clean; JS 247.80 kB (76.37 kB gzip) |
+| `scripts/e2e.sh` on 8400/4473 with `starter_rev_e2e` | `E2E PASS: core flow`. The "ai usage" line now shows `input_tokens: 65, output_tokens: 17`, and the API log holds no email |
+| Original reproductions C1 to C8, and regression probes | The real app ran under uvicorn on :8400, through a scratch launcher that injects a slow or scripted AI and a fake Stripe API. The scripts are in this session's scratchpad (`probes/`) and aren't committed |
+| Browser probe (Playwright 1.63) | wrong-password deletion, `?next=`, verify-email while signed out |
+| 14 mutations on a scratch copy of the backend | 12 caught by a targeted test, 2 survive (B3) |
+| CI run 45174839869 (push, `7ab92be`) | backend and frontend green: hash-checked install, migrations, 113 tests, pip-audit "No known vulnerabilities found", docker build done, npm audit "found 0 vulnerabilities". e2e skipped (branch push) |
+| CI run 45175660079 (manual, `d0171f1`, same starter tree) | all three jobs green, e2e included ("E2E PASS: core flow" with the pinned Playwright) |
+| CI run 45176951289 (push, `a9b9e19`) | green |
+
+### Item by item
+
+| Item | Status | Where | Proof |
+|---|---|---|---|
+| C1 | Fixed for the DB pool; a liveness gap remains (B2) | `deps.py:39` commits. `notes.py:91-118`: reserve, then the call with no transaction, then settle and reload. `ai.py:80-132`: one 25 s deadline and 1 retry. `db.py:27-29`: idle-in-transaction timeout. `health.py:17-20`: `/livez` | Tests `test_hardening.py:34,43,58`, `test_ai.py:138`. Repro with a pool of 2 + 0 (`DB_POOL_SIZE=2`, `DB_MAX_OVERFLOW=0`) and 14 concurrent summaries with a 12 s AI: all 200 in 12.2 s, `/healthz` max 58 ms, another tenant's list max 21 ms, 0 connections idle in transaction. Before: `/healthz` took 9.6 s, and with 40 s calls it gave 503 after 30 s |
+| C2 | Fixed | `db.py:32-33` (`hide_parameters`); `logs.py:61-73` (DB errors reduced to the SQLSTATE); `email.py:34` | Test `test_hardening.py:73`. Repro: `users` and `notes` locked, 700 ms statement timeout. Login, sign-up and note creation gave 500. The log holds 0 emails, 0 `$argon2` and 0 note text, and the error ends `OperationalError: database error (sqlstate 57014); details hidden` |
+| C3 | Fixed | `config.py:61,71-75`; `billing.py:100-101` | Tests `test_platform.py:101,120`, `test_hardening.py:96`. Repro: an empty secret is refused in prod and dev, and the server exits 1 with `BILLING_WEBHOOK_SECRET=`. Webhooks signed with `""` or the old public constant get 400, and the tenant stays `trial`/`trialing` |
+| C4 | Fixed for both reproductions; known residue R1 and R2 | `ai.py:35-42,102-107,126-129` (billed usage travels with the error); `ai.py:179-199` (reserve under advisory locks); `notes.py:103-114` (settle on every path) | Tests `test_hardening.py:109,119,145`, `test_ai.py:150,166`. (a) 30 empty answers through the real `AzureOpenAI` adapter: 17 × 503, then 13 × 429; 105,400 tokens recorded (before: 0 of 186,000). (b) A tenant at 99,999 with 15 concurrent max-size calls: 1 × 200 and 14 × 429, usage 106,199 (before: 10 got through, 161,999). R2: the estimate under-counts non-Latin text. R1: the global budget forgets deleted tenants |
+| C5 | Fixed | `Dockerfile:3-4,22`; `config.py:86-87`; `ratelimit.py:37-46,55-60` | Tests `test_hardening.py:176,182`. Repro with the CMD's flags, the image's env and an auth limit of 3 a minute. Each request had a new spoofed `X-Forwarded-For` plus the ingress IP: `[201, 201, 201, 429, 429, 429]` (before: 6 × 201). Same with trust off. 60,000 new keys left a blocked key blocked; the dict stayed bounded at 45,001 |
+| C6 | Fixed | `billing.py:219-237,245-279`; `config.py:63` | Tests `test_hardening.py:203,212,225,235,240,256`. Repro through the real webhook route with the Stripe adapter. The session form carries `metadata[tenant_id]`, `[plan]` and `[offer]`. A realistic `checkout.session.completed` gives `pro`, `active`, `EARLY50` (before: `trial`). A basil-shape `customer.subscription.created` sets the period end from its items. Live-mode events are ignored, a stale `past_due` leaves `active`, and a second checkout gets 409 |
+| C7 | Fixed | `main.py:64-112`; `billing.py:132,141-142`; `routes/billing.py:40`; `account.py:52,91` | Tests `test_hardening.py:267,280,289`. Repro: 150 MB to `/api/auth/login` gets 413 in 138 ms (declared) and 133 ms (chunked), and RSS stays near 91 MB (before: 129 to 539 MB). 300 checkouts: 10 × 200, 290 × 429. 25 wrong-password deletions: 5 × 401, 20 × 429 |
+| C8 | Fixed | `billing.py:87-89,239-243`; `account.py:57-68` | Tests `test_hardening.py:300,309,326`. Repro with the Stripe adapter. With Stripe failing: 503, nothing deleted, still signed in. With Stripe up: `DELETE /v1/customers/cus_…` is sent while the tenant row still exists, then 204, and `/me` gives 401. A later webhook for the deleted tenant changes nothing |
+| I1 | Fixed | `main.py:35-57` | Tests `test_hardening.py:415,426` sweep the OpenAPI route table. A mutation that widens the exemption to `/api/billing/*` is caught |
+| I2 | Fixed | `config.py:64`; `routes/billing.py:128`; `main.py:177-179` | In prod with the flag on, mock pay gives 200; with it off, 404. The outbox warning is logged at startup. The flag defaulting to on is R3 |
+| I3 | Fixed | `config.py:78-89` | Test `test_platform.py:101`. Nine realistic configs are accepted: mock demo, Azure AI, Stripe test mode, a Stripe CLI secret, a trailing slash, an upper-case scheme, two origins, an explicit mock secret and the dev defaults. No false rejections |
+| I4 | Mostly fixed | `deps.py:49-53`; `team.py:39-43,69-76` | Tests `test_hardening.py:466,472`, `test_verification.py:51`. Bare domains such as `bit.ly/3xYz` still pass `email_safe` (R9) |
+| I5 | Fixed | `logs.py:37-38,53-55` | Test `test_hardening.py:440`, and the e2e log shows the counts. The rule misses `password_hash`, `token_hash`, `stripe_secret_key` and `email_address` (minor) |
+| I6 | Fixed | `maintenance.py`; `DATA.md` | Test `test_hardening.py:516`. The CLI purged 2,000,000 expired sessions in 2.1 s, inside the 10 s statement timeout |
+| I7 | Fixed | `auth.py:176-209,219-226`; `config.py:33` | Tests `test_hardening.py:339,358`. Known and unknown emails take 3.85 and 3.77 ms median (before: 10.4 and 6.3 ms) |
+| I8 | Partly fixed | `routes/billing.py:43-44,72-75`; `billing.py:213-216,234-236` | Event order, a second subscription, one idempotency key and unreadable replies are handled. The offer still comes from metadata with `allow_promotion_codes` (deferred in NEXT.md). The order check races when events arrive in parallel (N2) |
+| I9 | Fixed | `conftest.py:23-31` | 113 passed on my own database |
+| I10 | Mostly fixed | workflow lines 46, 53, 55, 73, 104-115 | Hash-checked installs, the docker build, pip-audit, npm audit, a pinned Playwright with a lockfile and browser cache, a push-only trigger, and one manual run with e2e. Actions are still pinned by tag (lines 39, 40, 64, 65, 91, 92, 97, 111, 125) |
+| I11 | Fixed, with a regression (B1) | `api.ts:17-22,36-39,46-48`; `App.tsx:49-57`; `pages/app.tsx:339` | A failed sign-out keeps you signed in and shows a notice. `/billing/done` polls. Timeouts have their own message |
+| I12 | Mostly fixed | README, ADR items 10 to 12, `billing.py:6` | The test count (113), "Not done yet" and the ADR consequences are current. `README.md:51-53` still describes the old prod guard. The table lacks `MOCK_CHECKOUT_ENABLED`, `AI_GLOBAL_DAILY_TOKENS`, `DB_POOL_SIZE`, `DB_MAX_OVERFLOW`, `MAX_BODY_BYTES` and `STRIPE_API_VERSION` |
+
+### Regressions the fixes could have introduced
+
+| Area | Finding |
+|---|---|
+| BodyLimit and CsrfGuard order | Correct: RequestContext, then CORS, then CsrfGuard, then BodyLimit. CSRF 403s and 413s carry CORS headers for the allowed origin only, plus the security headers and `x-request-id`, and they are access-logged. Preflights get 200 from the allowed origin and 400 from others. Only the exact webhook path is exempt: `/api/billing/webhook/` gets 403. Minor: those two JSON bodies have no `request_id` (`main.py:44,70`) |
+| Reserve/settle and advisory locks | No deadlocks in 3 rounds of 36 concurrent summaries across 3 tenants, with one tenant deleting its account mid-flight and another editing notes. Locks are always taken tenant first, then global, and nothing else takes them. When settle fails (`ai_usage` locked, 700 ms timeout), the request gets 500, the reservation keeps its 1,302-token estimate (it fails safe), and the log keeps only the SQLSTATE. With a year of rows (160,000), `reserve()` takes 8.4 ms median under the global lock against 1.5 ms without it, because the daily SUM is a sequential scan. That caps the app at about 120 reservations a second (R8). One summary in flight while its own tenant was deleted got 500 (FK violation 23503): minor. Summaries of edited notes: N3 |
+| `deps.current` committing | No probe left a transaction or connection open (0 idle in transaction), and the objects stay usable after the commit. No test guards it (B3) |
+| Verify-email needs sign-in | Works in the browser. A link opened while signed out shows "Sign in to confirm" and goes to `/login?next=/verify-email?token=…`. After sign-in the page says "your email is confirmed" and the flag is true. The pre-hijacking test passes |
+| Reset through BackgroundTasks | Runs after the response with its own session; 60 known-address requests created 60 links. Known and unknown emails take the same time when requests are spaced out. Back to back on one connection, the next request overlaps the previous one's background work (2.35 against 3.48 ms), so the difference is small and noisy. Minor: the access log's `duration_ms` includes the background work |
+| `_hash_slots` | Memory is bounded as intended. Availability isn't: see N1 |
+| Log scrubbing | DB errors are scrubbed correctly. Minor: redaction misses `*_hash`, `secret_key` and `email_address`. A refused config prints pydantic's `input_value`, which ends with the last environment value set: my probe showed the last 22 characters of `STRIPE_SECRET_KEY`. Fix: `hide_input_in_errors=True` at `config.py:15` |
+| Prod validator | No false rejections (see I3) |
+| Stripe adapter | C6 holds. Minor: `_call` can take about 63 s (three 20 s timeouts plus sleeps of 1 s and 2 s, `billing.py:189,196-217`), past the browser's 30 s abort, for checkout and deletion. `checkout.session.completed` activates the plan even when `payment_status` is `unpaid` (Bacs Direct Debit): check it, and handle `checkout.session.async_payment_succeeded` and `..._failed` |
+| Account deletion order | Correct (see C8). A retry after a partial failure is safe, because the DELETE's 404 counts as already gone |
+| Retention purge | Works (see I6). Minor: DATA.md says links and invitations go N days "after use or expiry", but `maintenance.py:28-37` counts from `created_at` |
+| Frontend SESSION_ENDED and `?next=` | See B1. `?next=//evil.example` and absolute URLs go home. `?next=/%5Cevil.example` passes `safeNext` (`auth.tsx:6-9`), but `pushState` refuses it, so the signed-in user stays on `/login`. That isn't a redirect: minor. At `App.tsx:20`, `refresh()` sets `me` to null on any error, so a network blip while `/billing/done` polls drops the user at `/login` (minor) |
+
+### Blocking
+
+**B1. A wrong password is treated as "session ended" (regression from the I11 fix).**
+- Where: `frontend/src/api.ts:46-48` dispatches `SESSION_ENDED` for every 401 outside `AUTH_PATHS`, and
+  `backend/app/routes/account.py:56,97` answer a wrong password with 401 `invalid_credentials`.
+- Evidence: in the browser, a wrong password on Delete account sends the app to `/login`. "That password isn't
+  right." never shows, and `GET /api/auth/me` still returns 200. "Leave this team" (`pages/app.tsx:311`) takes the
+  same path.
+- Why it matters: it's in the delete-my-data path, and it brings back what the I11 sign-out fix removed: the screen
+  says signed out while the cookie still works. On a shared computer, the next person reloads straight into the
+  account.
+- Fix: dispatch only when `data.error === "not_signed_in"`, the code `current()` uses for every session failure, and
+  drop `AUTH_PATHS`. Or answer re-authentication failures with 403. Add a wrong-password step to `core_flow.cjs`.
+
+**B2. `/livez` waits for a worker thread (the rest of C1; also R4).**
+- Where: `backend/app/routes/health.py:17-20` is a plain `def`, so it runs on AnyIO's 40-thread pool along with
+  every other endpoint.
+- Evidence: 45 concurrent summaries with a 12 s AI, from 3 tenants (15 each, inside the limit of 20 a minute).
+  `/livez` took 11.7 s, `/healthz` 11.6 s, and another tenant's list 11.8 s. 39 calls had no effect. On a scratch
+  copy with `async def livez`, under the same load, `/livez` stayed under 79 ms.
+- Why it matters: T-7 will point the liveness probe at `/livez`. A stall of up to the 25 s AI deadline can get the
+  replica restarted, which is the C1 outcome at a higher threshold. Splitting out `/livez` was meant to prevent
+  exactly that.
+- Fix: `async def livez()`. Tell T-7 to use `/livez` for liveness and `/healthz` for readiness. A cap on concurrent
+  AI calls (R4) deals with the rest.
+
+**B3. Two of the new regression tests can't fail.**
+- `test_hardening.py:119` passes in 5 of 5 runs with the tenant advisory lock (`ai.py:184`) removed: the threads
+  start too far apart to race. Fix: a `threading.Barrier` before `reserve()` and a monkeypatched
+  `tokens_this_month` that sleeps about 50 ms, so a version without the lock lets several calls through.
+- Nothing fails when the commit at `deps.py:39` is removed: all 113 tests pass, because the C1 test relies on
+  `reserve()`'s own commit. Fix: a test endpoint that depends on `current` and asserts `not db.in_transaction()`
+  and `pool.checkedout() == 0`.
+- The first review's PASS condition was a regression test for each of C1 to C8.
+
+### Important (fix here if cheap, or open board tasks before any product reaches G4)
+
+**N1. Argon2 runs inside an open transaction, and threads waiting for a hash slot stay blocked.**
+- Where: `routes/auth.py:146-147` (login reads the user, then verifies), `auth.py:121-124` (sign-up flushes the
+  tenant, then hashes), `team.py:123-129` (accept), `auth.py:220-228` (reset confirm), and `security.py:13,31-41`
+  (a blocking semaphore).
+- Evidence: 200 concurrent wrong-password logins, with the rate limit raised to stand in for about 20 IPs. They
+  drained in 23 s, with all 10 pool connections idle in transaction. `/healthz` took 10.0 s (its pool timeout is
+  10 s), `/livez` 7.4 s and another tenant's list 7.0 s; the slowest login took 20.5 s. Argon2 takes 57 ms per
+  check here, on 4 CPUs.
+- Why it matters: credential stuffing from a proxy pool would stall every tenant. This isn't in SECURITY.md, whose
+  login test measured memory.
+- Fix: read the hash and commit (or hash first) before any argon2 work. Wait for a hash slot without holding a
+  thread, for example with an `anyio.CapacityLimiter` in an async dependency. Or fail fast: `acquire(timeout=1)`,
+  otherwise 503 with `Retry-After`.
+
+**N2. Webhooks delivered in parallel can still apply a stale event.**
+- Where: `routes/billing.py:68` reads the subscription without a row lock. Two deliveries can both pass the order
+  check at `:72`, and the last commit wins.
+- Evidence: a newer `checkout.completed` and a `subscription.past_due` 50 s older, posted at the same instant:
+  past_due won 8 of 40 rounds. Stripe delivers events in parallel and doesn't guarantee their order.
+- Why it matters: a paying customer stays `past_due`, so AI is blocked for them, until the next event arrives.
+- Fix: `.with_for_update()` on that select, and a test that posts two events concurrently.
+
+**N3. A summary of the old text is saved onto an edited note.**
+- Where: `routes/notes.py:115-116` reloads the note after the AI call but only handles deletion.
+- Evidence: all 36 notes edited while the AI worked ended up with their old summary, for example "Summary: n0" on a
+  note now titled "edited".
+- Why it matters: every product will copy this write-back pattern.
+- Fix: keep `updated_at` (or a hash of the input) from before the call. If it has changed, don't save, and return
+  409 "The note changed while we were summarising".
+
+Known from the security re-test, and confirmed by my probes where they overlap:
+- R1 and R2: trials can use up the global budget, and it forgets deleted accounts.
+- R3: mock checkout is on by default in prod. I got Pro for free under prod settings.
+- R4: AI calls tie up threads (the B2 evidence).
+- R8: the global SUM is a sequential scan (the 8.4 ms figure above).
+- R9: bare domains in invitations, and the verification resend rate.
+
+### Minor
+
+- `billing.py:105`: `isdigit()` still accepts "²", so `t=\xb2` gives an unauthenticated 500 and an "unhandled
+  error" log line (carried over). Use `isdecimal()`.
+- `config.py:15`: set `hide_input_in_errors=True` (see "Log scrubbing" above).
+- `logs.py:37`: match on key parts, so `password_hash`, `token_hash`, `stripe_secret_key` and `email_address` are
+  redacted too.
+- `auth.tsx:8`: reject `\` in `next`, or check `new URL(next, location.origin).origin`.
+- `DATA.md` against `maintenance.py:28-37`, and `README.md:51-53` and its config table (I12).
+- `main.py:44,70`: add `request_id` to the CSRF and 413 bodies.
+- Stripe: give `_call` an overall deadline under 30 s, and check `payment_status`.
+- `scripts/e2e.sh`:
+  - `:31` reuses any existing `dist`, so a local run can test a stale build (this time it wasn't stale);
+  - the trap at `:34` is set only after both servers start;
+  - `DROP DATABASE` isn't limited to names ending `_e2e`.
+- CI:
+  - pin actions by SHA (the rest of I10);
+  - `pipx run pip-audit` resolves its own dependencies unpinned;
+  - pin the base image by digest.
+- Carried over from the first review and still open:
+  - tokens travel in query strings;
+  - there's no `require_active_plan` dependency and no per-tenant storage cap;
+  - `team.py` imports `auth._start_session`;
+  - `tsconfig.tsbuildinfo` is still tracked, and there's no `.dockerignore`;
+  - the export leaves out pending invitations;
+  - a signed-in user who opens `/signup` or `/accept-invite` gets a second session.
+
+### What PASS needs now
+
+1. Fix B1 to B3. I'll then check B1 in the browser, B2 with the 45-call probe, and B3 by re-running the two
+   mutations. There's no need to repeat the rest.
+2. Fix N1 to N3 here, or open board tasks for them.
+3. Fix the security re-test's R1 to R4 and have the security agent re-test them.
+
+Products shouldn't copy the starter until both gates pass.
