@@ -1,0 +1,17 @@
+🧪 <b>Studio update</b> · Mon 23 Nov, 23:05
+🟢 Running normally · 🔒 Selling locked · 💷 Azure $0 of $80
+
+<b>✨ What's new</b>
+• Telegram works, and messages now look like this
+• Starter app: 100 new screen tests, 3 web fixes, safer builds
+• All three are in review before they go live
+
+<b>🙋 Need your call</b>
+<b>1. Which customers should we aim at next?</b>
+<i>No reply → "Keep broad" at 10:40.</i>
+<b>2. May we spend ~$5-23/month on Azure for demos?</b>
+<i>Waits for you.</i>
+
+<b>🧭 Next</b>
+• Merge the starter fixes once reviews pass
+• Then scout ideas aimed at your answer to 1

@@ -117,6 +117,7 @@ def normalize(update: dict) -> dict | None:
             "date": iso(None),  # Telegram gives no press time; this is when we pulled it
             "data": query.get("data", ""),
             "question_text": ((query.get("message") or {}).get("text") or "")[:500],
+            "callback_id": str(query.get("id", "")),
         }
     return None
 
@@ -138,6 +139,8 @@ def cmd_pull(args) -> None:
         if record is None or record["from_id"] != chat_id:
             ignored += 1
             continue
+        if record["type"] == "button":
+            acknowledge(record)
         path = INBOX / f"{record['update_id']}.json"
         if not path.exists():
             path.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n")
@@ -147,6 +150,17 @@ def cmd_pull(args) -> None:
     print(f"pulled {len(updates)} update(s): {saved} new from Vishal, {ignored} ignored.")
     if updates:
         print("Commit and push state/inbox/ and state/tg_offset.txt now, then handle the new files.")
+
+
+def acknowledge(record: dict) -> None:
+    """Stop the button's spinner and confirm the tap. Old taps can't be answered any more; that's fine."""
+    if not record.get("callback_id"):
+        return
+    try:
+        call("answerCallbackQuery", {"callback_query_id": record["callback_id"],
+                                     "text": "✓ Got it. I'll apply it on the next run."}, timeout=10)
+    except (SystemExit, ParseError):
+        pass
 
 
 def split(text: str) -> list[str]:
@@ -200,6 +214,11 @@ def load_buttons(path: str) -> dict:
     return {"inline_keyboard": rows}
 
 
+def looks_like_html(text: str) -> bool:
+    """Digests written from the playbook template use <b>/<i>; send them as HTML even without --html."""
+    return bool(re.search(r"</(b|i|u|code|a)>", text))
+
+
 def strip_html(text: str) -> str:
     """Plain-text fallback: drop tags and unescape the three HTML entities Telegram uses."""
     text = re.sub(r"<[^>]+>", "", text)
@@ -217,7 +236,7 @@ def cmd_send(args) -> None:
     chunks = split(text)
     for index, chunk in enumerate(chunks):
         payload = {"chat_id": chat_id, "text": chunk, "link_preview_options": {"is_disabled": True}}
-        if args.html:
+        if args.html or looks_like_html(text):
             payload["parse_mode"] = "HTML"
         if markup and index == len(chunks) - 1:
             payload["reply_markup"] = markup

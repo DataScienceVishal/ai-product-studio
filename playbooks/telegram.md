@@ -8,7 +8,7 @@
 2. For each inbox file whose update id isn't in `state/inbox/HANDLED.md`:
    - **Button press** (`"type": "button"`, data `q:<QID>:<letter>`): apply that option to the question in `state/QUESTIONS.md`, mark it answered, and log the decision in `state/DECISIONS.md`.
    - **Command** (the whole message, any capitalisation): see the table below.
-   - **Reply to a question** (`reply_to_text` contains a `Q-` id) or a message naming one: treat it as the answer.
+   - **Reply to a question**: `reply_to_text` contains a `Q-` id, the message names one, or it is a short answer like `1A` / `2 c` (match the number to the latest digest's numbering in QUESTIONS.md). Treat it as the answer.
    - **Anything else**: an instruction or information from Vishal. Turn it into board tasks or decisions. If it's ambiguous, act on the most sensible reading and say what you assumed in the next digest.
 3. Add `<update_id> | <what you did> | <run id>` to `state/inbox/HANDLED.md` in the same commit as the action. If the push is rejected, pull, re-check HANDLED.md, and never repeat an action another run already took.
 
@@ -28,6 +28,8 @@
 Write each question in `state/QUESTIONS.md` using the format there: one decision, 2 to 4 options lettered A to D, the recommended option, and the default. Reversible questions take the recommendation 12 hours after being sent; ask-first questions wait. The Desk applies due defaults, marks them `defaulted`, and logs them in DECISIONS.md.
 
 ## Digest (Desk run at 08:00, 15:00 and 19:30 UK)
+
+**One digest per slot.** Before writing one, look at the newest `state/runs/*-digest.txt`. If it is less than 3 hours old, this run is not a digest slot (for example an hourly run started with the Desk prompt): pull and handle the inbox, send nothing, and push.
 
 Vishal reads these on his phone. Make them short, calm and easy to scan: **12 to 18 lines**, sent with `--html`.
 
@@ -49,7 +51,10 @@ Template:
 
     <b>🙋 Need your call</b>
     <b>1. Which customers should we aim at next?</b>
-    Tap a button below. <i>No reply → "Keep broad" at 10:40.</i>
+    A Friend's sector ⭐ · B Finance network · C Keep broad
+    <i>No reply → C at 10:40.</i>
+
+    Tap a button, or just reply <b>1A</b>.
 
     <b>⚠️ One problem</b>
     • AI keys not set up yet, so tests on real documents wait
@@ -57,7 +62,7 @@ Template:
     <b>🧭 Next</b>
     • Polishing the starter app (tests, safer builds)
 
-Questions: number them 1, 2 in the text; the full option wording lives on the buttons. Give every question `labels` so buttons read "A · Friend's sector ⭐" (up to 24 characters each). The question id stays in the button data only.
+Questions: number them 1, 2 in the text and list the options in one short line, so a text reply works even if buttons don't. When you send, write in QUESTIONS.md which number each question had in that digest (`sent: <time> as 1`); a reply like `1A`, `1 a` or `2: C` then answers it (use the latest digest's numbering). Give every question `labels` so buttons read "A · Friend's sector ⭐" (up to 24 characters each). The question id stays in the button data only.
 
     [{"qid": "Q-4", "options": ["A", "B", "C"], "recommended": "A",
       "labels": {"A": "Friend's sector", "B": "Finance network", "C": "Keep broad"}}]

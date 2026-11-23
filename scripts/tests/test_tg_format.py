@@ -39,5 +39,11 @@ class StripHtmlTests(unittest.TestCase):
         self.assertEqual(tg.strip_html("<b>1. Costs &lt; £5 &amp; up</b> <i>ok</i>"), "1. Costs < £5 & up ok")
 
 
+class LooksLikeHtmlTests(unittest.TestCase):
+    def test_detects_template_tags(self):
+        self.assertTrue(tg.looks_like_html("<b>Studio update</b>"))
+        self.assertFalse(tg.looks_like_html("costs < 5 and > 2"))
+
+
 if __name__ == "__main__":
     unittest.main()
