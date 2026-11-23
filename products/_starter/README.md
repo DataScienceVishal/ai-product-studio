@@ -104,3 +104,9 @@ AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
 See `NEXT.md`. The Azure deploy is designed in `ADR/0002-azure-deploy.md` (Bicep in `infra/`, manual workflow
 `.github/workflows/_starter-deploy.yml`); it creates nothing until Vishal approves the costs (Q-5). Also open: Redis-backed rate limits before running more than one replica, a real email adapter
 (paid, needs approval), and frontend unit tests.
+
+## Azure OpenAI sign-in
+
+`AZURE_OPENAI_AUTH=key` (default) sends the `api-key` header. `managed_identity` sends a bearer token from the
+Container Apps identity endpoint instead (optional `AZURE_CLIENT_ID` for a user-assigned identity). The role
+assignment is a manual step, see `ADR/0002-azure-deploy.md` decision 7.

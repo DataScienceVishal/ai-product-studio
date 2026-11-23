@@ -1,8 +1,11 @@
-# NEXT: product starter (T-6)
+# T-17 status
 
-Last updated 2026-11-23 by run 20261123T111240Z-run-b15e.
+Done: `ManagedIdentityToken` and auth mode in `backend/app/ai.py`, settings `AZURE_OPENAI_AUTH` and
+`AZURE_CLIENT_ID`, tests in `backend/tests/test_ai.py`, ADR 0002 decision 7, README.
 
-## Status
+Left (needs Vishal, ask-first): attach an identity to the app, grant "Cognitive Services OpenAI User" on the
+OpenAI resource, set the two settings. No Bicep changed: the infra has only the shared pull identity
+(`lifecycle: None`), so there is nothing to scope a role to yet.
 
 - T-15 cookies slice (branch p/_starter/T-15-cookies), done: tests that the cookie clears on logout, owner
   account deletion and member leave carry the same Secure, HttpOnly, SameSite and Path=/ as the set (secure and
@@ -60,3 +63,4 @@ Last updated 2026-11-23 by run 20261123T111240Z-run-b15e.
 cd products/_starter/backend && TEST_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/<your_db> .venv/bin/python -m pytest -q
 cd products/_starter && E2E_API_PORT=8300 E2E_WEB_PORT=4373 E2E_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/<your_e2e_db> ./scripts/e2e.sh
 ```
+Verify: `cd backend && TEST_DATABASE_URL=... .venv/bin/python -m pytest`.
