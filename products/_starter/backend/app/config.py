@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     app_base_url: str = "http://localhost:5173"
     cors_origins: list[str] = ["http://localhost:5173"]
     trust_proxy_headers: bool = False  # true behind Azure Container Apps ingress (the image sets it)
+    frontend_dist: str = ""  # folder with the built frontend (index.html, assets/); empty means API-only
     max_body_bytes: int = 1_000_000  # per request; the billing webhook has its own smaller limit
 
     # sessions and auth

@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from . import __version__, errors
+from . import __version__, errors, spa
 from .ai import AIProvider, AISlots, build_provider
 from .billing import BillingProvider, build_billing
 from .config import Settings
@@ -119,6 +119,7 @@ class RequestContext:
         self.app = app
         self.headers = SECURITY_HEADERS + ([HSTS] if hsts else []) + ([API_CSP] if strict_csp else [])
         self.names = {name for name, _ in self.headers}
+        self.spa_own = {b"cache-control", b"content-security-policy"}  # the frontend sets its own, outside /api
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -133,8 +134,11 @@ class RequestContext:
             nonlocal status, response_started
             if message["type"] == "http.response.start":
                 status, response_started = message["status"], True
-                headers = [h for h in message.get("headers", []) if h[0].lower() not in self.names]
-                message["headers"] = headers + self.headers + [(b"x-request-id", rid.encode())]
+                own = set() if scope.get("path", "").startswith("/api") else self.spa_own
+                headers = [h for h in message.get("headers", []) if h[0].lower() not in self.names - own]
+                kept = {h[0].lower() for h in headers}
+                extra = [h for h in self.headers if h[0] not in kept]
+                message["headers"] = headers + extra + [(b"x-request-id", rid.encode())]
             await send(message)
 
         try:
@@ -188,6 +192,7 @@ def create_app(settings: Settings | None = None, *, ai: AIProvider | None = None
     app.add_middleware(RequestContext, hsts=settings.cookie_secure, strict_csp=settings.env == "prod")  # outermost
     for router in (health.router, auth.router, notes.router, billing.router, account.router, team.router, team.public):
         app.include_router(router)
+    spa.install(app, settings.frontend_dist)
     return app
 
 

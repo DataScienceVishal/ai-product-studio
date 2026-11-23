@@ -25,7 +25,11 @@ def install(app: FastAPI) -> None:
         return JSONResponse(body(exc.code, exc.message), status_code=exc.status, headers=exc.headers)
 
     @app.exception_handler(StarletteHTTPException)
-    async def _http_error(_: Request, exc: StarletteHTTPException):
+    async def _http_error(request: Request, exc: StarletteHTTPException):
+        if exc.status_code == 404 and (spa := getattr(request.app.state, "spa_fallback", None)):
+            page = spa(request)  # client-side routes (/verify-email, ...) get the app's HTML
+            if page is not None:
+                return page
         code = {401: "not_signed_in", 403: "forbidden", 404: "not_found", 405: "method_not_allowed"}.get(
             exc.status_code, "http_error")
         message = exc.detail if isinstance(exc.detail, str) else "Request failed."
