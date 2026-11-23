@@ -21,7 +21,7 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - If no answer: waits (needs you on GitHub)
 - Answer: Vishal in chat: always commit everything and push to `main`. Done: `main` fast-forwarded from 14a1f3a to af446d6. Still yours to do: let the scheduled tasks push to `main` (SETUP.md step 6, "Allow unrestricted branch pushes").
 
-## Q-2 (status: open)
+## Q-2 (status: sent 2026-11-23T22:39:50Z)
 - Decision: Does the studio have any way to sell outside the UK (India, Indonesia or elsewhere)?
 - Context: The validator scored every India and Indonesia idea 2 or 3 out of 10 on reach, because selling goes through your friend's UK business. Without a channel there, those ideas can't reach the 70-point bar however good the evidence gets.
 - Options: A) No: prioritise UK and English-speaking ideas, and keep non-UK ideas parked B) Yes: I (Vishal) can sell in India myself, so score Indian ideas with that channel C) Yes, through a partner I'll name
@@ -35,14 +35,14 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Recommended: A, because the spec work is cheap and reversible, it makes the product buildable the day the benchmark passes, and it keeps the 70-point bar intact
 - If no answer: A after 12 hours (reversible)
 
-## Q-4 (status: open)
+## Q-4 (status: sent 2026-11-23T22:39:50Z)
 - Decision: Which customers should the next scouting round (round 3) look for problems among?
 - Context: 25 ideas have been scored and none reached the 70-point bar. Every one lost most points on Competition (incumbents already sell it) and Reach (no way in to buyers). Your friend's UK business is the sales channel, but the studio doesn't know what it sells or to whom. Ideas built for its existing customers would start with a way in and first-hand pain.
 - Options: A) My friend's own customers: I'll reply with the business's sector and who it sells to B) My own finance and tax network (accountancy practices and small firms I know) C) Keep scouting broadly, with the lessons from rounds 1 and 2
 - Recommended: A, because a channel that already reaches the buyers is the one advantage incumbents can't copy, and it lifts Reach and evidence quality together
 - If no answer: C after 12 hours (reversible; round 3 runs on the broad lessons until you reply)
 
-## Q-5 (status: open)
+## Q-5 (status: sent 2026-11-23T22:39:50Z)
 - Decision: May the studio create its shared Azure resources (Postgres, container registry, Container Apps) in rg-ai-studio when the first product needs a demo?
 - Context: ADR 0002 (products/_starter/ADR/0002-azure-deploy.md) costs it at $5.07 a month if the Azure for Students free allowance covers Postgres (12 months, new customers), or $23.20 a month if not, which uses the $80 in about 3.4 months and puts Postgres ($18.13) over the $10-per-resource rule. Nothing is created until you set the repository variable STUDIO_AZURE_APPROVED to yes.
 - Options: A) Yes: create them when a product reaches G3 (check the portal's "Free services" page first; the infra README lists the 10 minutes of one-time steps) B) Yes, but use ACR Standard while the allowance lasts ($0 for 12 months, then $20.28 a month) C) Not yet: keep demos local until a product passes G1

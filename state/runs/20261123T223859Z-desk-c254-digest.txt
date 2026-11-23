@@ -1,0 +1,37 @@
+🧪 Studio digest · Mon 23 Nov, 22:40
+Mode NORMAL · selling locked · Azure $0 of $80 (no spend report yet)
+
+Telegram works now: I got your 10 messages. Your chat id is 2042554398 and it is already set correctly, so nothing to do there.
+
+Done since last digest
+• [_starter] Product starter DONE: passed code review and security (8/8). 147 tests, CI green. Every product starts from it.
+• [_starter] Azure deploy design done and compiles in CI with a cost guard. Nothing is created until you answer Q-5.
+• [_starter] One image now serves app and API from one address (needed for browser demos).
+• [ideas] 32 ideas scored over 4 rounds, none at the 70 bar. Best: pEPR packaging 68, restaurant margin 66, MTD prep 65, holiday-pay audit 63. All parked: incumbents (Repackd, Jelly, Dext) already sell them, or holiday-pay waits on the government's consultation response.
+• [studio] main has all work; the spend report passed review.
+
+Pipeline
+• G4 none · G3 none · G2 none · G1 none · G0 29 parked/queued · killed 3
+
+I decided (reversible; reply if you disagree)
+• Parked the top 3 ideas rather than spend their last G1 attempt.
+• Product code reaches main only after the full test suite passes on that exact tree.
+
+Needs you
+Q-4 Which customers should the next scouting round target?
+  A) Your friend's customers (reply with sector) ⭐  B) Your finance/tax network  C) Keep broad
+  No answer: C at 10:40 UTC
+Q-5 May the studio create Azure resources in rg-ai-studio (~$5-23/month) when a product needs a demo?
+  A) Yes, at G3 ⭐  B) Yes, with ACR Standard  C) Not yet
+  No answer: waits for you
+Q-2 Any way to sell outside the UK?
+  A) No, UK focus ⭐  B) You sell in India  C) A partner
+  No answer: A at 10:40 UTC
+
+Hurdles
+• Azure OpenAI not set up (AZURE_OPENAI_* vars). Blocks the extraction benchmarks. Fix: SETUP.md steps 3 and 5.
+• Azure secret missing, so no spend figures. Fix: SETUP.md step 3, then run the azure-spend workflow once.
+
+Next
+• Starter polish (frontend tests, image pins) is running.
+• Q-4 is the big lever: telling me your friend's sector points scouting at buyers we can actually reach.
