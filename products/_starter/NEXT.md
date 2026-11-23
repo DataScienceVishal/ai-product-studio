@@ -6,8 +6,9 @@ Last updated 2026-11-23 by run 20261123T111240Z-run-b15e.
 
 - The first review gave CHANGES (8 blocking: C1 to C8) and the security gate gave FAIL. Both are addressed in
   commits after `5df3b8b`. Waiting for re-review and a security re-test.
-- 113 backend tests pass against Postgres 16. The browser end-to-end test passes. CI is green on GitHub; the
-  new image build, audit and hash-checked install steps are untested until the next push runs.
+- 113 backend tests pass against Postgres 16. The full CI passed on GitHub (run 13, manual): hash-checked
+  installs, migrations, tests, pip-audit and npm audit with no known vulnerabilities, the production image build,
+  and the browser end-to-end core flow with pinned Playwright.
 
 ## What changed since the first review (see reviews/ and SECURITY.md for the findings)
 
