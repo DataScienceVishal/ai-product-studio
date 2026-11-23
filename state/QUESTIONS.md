@@ -41,3 +41,10 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Recommended: A, because a channel that already reaches the buyers is the one advantage incumbents can't copy, and it lifts Reach and evidence quality together
 - If no answer: C after 12 hours (reversible; round 3 runs on the broad lessons until you reply)
 
+## Q-5 (status: open)
+- Decision: May the studio create its shared Azure resources (Postgres, container registry, Container Apps) in rg-ai-studio when the first product needs a demo?
+- Context: ADR 0002 (products/_starter/ADR/0002-azure-deploy.md) costs it at $5.07 a month if the Azure for Students free allowance covers Postgres (12 months, new customers), or $23.20 a month if not, which uses the $80 in about 3.4 months and puts Postgres ($18.13) over the $10-per-resource rule. Nothing is created until you set the repository variable STUDIO_AZURE_APPROVED to yes.
+- Options: A) Yes: create them when a product reaches G3 (check the portal's "Free services" page first; the infra README lists the 10 minutes of one-time steps) B) Yes, but use ACR Standard while the allowance lasts ($0 for 12 months, then $20.28 a month) C) Not yet: keep demos local until a product passes G1
+- Recommended: A, because it is the cheapest path that meets the security rules, and nothing runs until a product needs it
+- If no answer: waits (spending money is on the ask-first list)
+

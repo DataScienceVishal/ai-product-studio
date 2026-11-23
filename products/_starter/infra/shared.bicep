@@ -9,7 +9,8 @@
 // private endpoint. Each starts a flat $0.10 an hour (about $73 a month) charge. The deploy workflow
 // refuses templates that contain them.
 
-param location string = 'uksouth'
+@description('rg-ai-studio is in uksouth (SETUP.md step 3).')
+param location string = resourceGroup().location
 
 param environmentName string = 'cae-studio'
 param logAnalyticsName string = 'log-studio'

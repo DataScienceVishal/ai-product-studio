@@ -11,5 +11,6 @@ param postgresAllowAzureServices = true
 // Never written here: the deploy workflow derives it from the STUDIO_DB_SEED secret and exports it.
 param postgresAdminPassword = readEnvironmentVariable('PG_ADMIN_PASSWORD', '')
 
-// Only Vishal, with Owner, runs shared.bicep with GRANT_PULL_ROLE=true (infra/README.md, setup step 4).
+// The deployer can't create role assignments: Vishal grants AcrPull once (infra/README.md, setup step 5).
+// An Owner deploying shared.bicep directly (for example at handover) can set GRANT_PULL_ROLE=true instead.
 param grantPullRole = readEnvironmentVariable('GRANT_PULL_ROLE', 'false') == 'true'

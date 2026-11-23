@@ -1,6 +1,6 @@
 # Security and privacy gate: product starter (T-6)
 
-> **Latest: re-test on 2026-11-23 at `ce1fa5b`: FAIL, 2 of 8 sections (LLM features, infrastructure). Urgent: none, because nothing is deployed.** The three first-gate Highs are fixed. There is one new High: R1, the global AI budget forgets deleted accounts. See [Re-test (2026-11-23)](#re-test-2026-11-23) at the end. The first-gate report below is unchanged.
+> **Latest: re-test 2 on 2026-11-23 at `93f7aba`: FAIL, 2 of 8 sections (LLM features, privacy). Urgent: none, because nothing is deployed.** R1, R3–R6 and R8–R10 are fixed. Still open, both Medium: R12, verified throwaway trials can still use up the shared AI budget, and R13, the new purge deletes live and paying accounts. See [Re-test 2 (2026-11-23)](#re-test-2-2026-11-23) at the end. Earlier results below are unchanged.
 
 **Gate result: FAIL.** 3 of 8 sections pass (authorization, secrets, dependencies). 5 fail: auth and sessions, input
 handling, LLM features, privacy, infrastructure. Products must not copy the starter until the High and Medium items
@@ -884,3 +884,142 @@ This re-test wrote only this file. The Studio Lead should open:
   - Prices are third-party tracker figures.
   - Model latency in T18-D/E and T22 is simulated.
   - The R1 cost rate depends on the deployment's quota, which T-7 will set.
+
+---
+
+## Re-test 2 (2026-11-23)
+
+**Result: FAIL, 2 of 8 sections** (LLM features, privacy). 6 pass: auth and sessions, authorization, input handling,
+secrets, dependencies, infrastructure. R1, R3, R4, R5, R6, R8, R9 and R10 are fixed, with fresh evidence. Two Medium
+problems keep the gate shut. One is what's left of R2: farmed trials can still use up the shared AI budget. The other
+is new, from the R11 fix: the purge deletes live and paying accounts.
+
+**Urgent: none.** Nothing is deployed (`state/BUDGET.md` lists no resources, and the T-7 templates in `3b66b5b` are
+work in progress). None of the 54 commits holds a live secret.
+
+| | |
+|---|---|
+| Tested | `93f7aba`, exported read-only. `7da307b` changes only DATA.md, NEXT.md and state. The T-7 WIP commit `3b66b5b` on top is out of scope, but four of its defaults are flagged at the end because they decide how R12, R13 and R15 play out. |
+| Suite | 132/132 on `starter_sec2_test` (23 s). |
+| Live | Same set-up as re-test 1: the API on 127.0.0.1:8500 with the new Dockerfile flags (`--no-proxy-headers --no-server-header`) and database `starter_sec2_app`. Port 4573 served only the slow fake Azure endpoint (T22). T18 and T19 used the real `AzureOpenAI` adapter on a mock transport. Databases dropped and servers stopped afterwards. |
+
+### Results by section
+
+| # | Section | Re-test 1 | Re-test 2 | Evidence |
+|---|---|---|---|---|
+| 1 | Auth and sessions | PASS | **PASS** | R9 fixed: 3 verification resends an hour (the 4th gets 429, still 429 two minutes later, 202 an hour later). R10 fixed: after 50,000 other keys, 0 extra reset emails. Hashing now runs outside transactions: peak RSS 350 and 355 MiB at 60 and 200 parallel logins, no 503 at 200. Resets 3.8 ms vs 3.2 ms, and 1 of 8 racing confirms wins. Pre-hijack paths (a), (b) and (e) are blocked. Deferred: R7 (T4c(d) still works) and A4. Accepted: A5 (ADR 0001). |
+| 2 | Authorization | PASS | **PASS** | 48/48 live checks again. A deleted tenant's usage rows lose their tenant id, so per-tenant queries can't return them; check 29 counts 0 rows for the deleted tenant. |
+| 3 | Input handling | PASS | **PASS** | Body limit unchanged: 150 MB, declared or chunked, to login and notes gets 413, and 50 MB to the webhook gets 413, with peak memory at 95 MiB or less. CSRF: the 19 forged requests created nothing. Invitations now drop bare domains (`evil.example/pay` and `bit.ly/x9` are gone). |
+| 4 | LLM features | FAIL | **FAIL** | R1, R2 (its main part), R4, R5 and R8 are fixed (below). Open: R12 (Medium). |
+| 5 | Secrets | PASS | **PASS** | 54 commits on all refs: 0 known-format tokens. The new infra params read every secret with `readEnvironmentVariable(...)`. The untracked `infra/db-setup.sql` takes passwords from psql variables. |
+| 6 | Dependencies | PASS | **PASS** | The lockfiles are unchanged. pip-audit (PyPI and OSV, runtime and dev) and npm audit (frontend, e2e) re-run: 0 known vulnerabilities. |
+| 7 | Privacy | PASS | **FAIL** | Logs are still clean: T5 shows the SQLSTATE only, and every re-test 2 log has 0 personal-data matches. The notice now gives a complaints route (ICO) and mentions abuse monitoring and processing outside the UK. But the new unverified-account purge deletes live and paying accounts (R13, Medium). |
+| 8 | Infrastructure | FAIL | **PASS** | R3 fixed: prod defaults refuse "Pay (test)" (404) and the plan stays trial; mock plans lapse 3 days after their period (402); after the switch to Stripe, checkout works (200) instead of answering 409. R6 fixed: two `X-Forwarded-For` lines now give 429. No `server` header. `e2e.sh` refuses `starter_sec2_guardcheck` (exit 2, nothing created). HSTS and CSP unchanged in prod. |
+
+### Fixed, with fresh evidence
+
+- **R1:** `ai_usage.tenant_id` is now `ON DELETE SET NULL` (live constraint), with `ix_ai_usage_created`. T18-C: each verified trial deleted its account, and the day's total kept its spend (33,470, then 66,940, and so on up to 498,565). 15 usage rows were left unlinked. The provider bill stayed within the 500,000 budget.
+- **R2, main part:**
+  - T18-U: an unverified trial owner gets `403 email_not_verified`, and no provider call is made.
+  - T18-D sent 20 simultaneous summaries to a fresh verified trial, with 3 s of model latency:
+    - with a Linear B note sized to the 30,000 daily cap, 1 ran and 19 got `ai_daily_cap_reached`; 29,985 tokens billed and recorded;
+    - with 20,000 characters of English, 1 ran, with 21,505 billed.
+  - The estimate is now an upper bound: what was billed equalled the reservation.
+- **R4:** T22, with a slow fake Azure that answers after 15 s:
+  - 2 trials × 20 calls: 4 ran and 36 got `429 ai_in_progress`;
+  - 24 trials × 2 calls: 8 ran and 40 got `503 ai_busy` after the 2 s wait.
+  - Meanwhile `/livez` took at most 0.15 s (it was 13.9 s), `/healthz` 1.36 s and login 0.25 s.
+  - Refused calls were settled at 0 tokens, and no row was left `pending`.
+- **R5:** T16 tried seven variants, including fullwidth brackets. No ASCII `<` or `>` from user text reaches the prompt, so every prompt holds exactly one closing tag. Fullwidth look-alikes pass through as text, which is acceptable for a best-effort delimiter.
+- **R6:** T1b(c), with two header lines, now gives 429: the app uses the ingress line. Run without ingress, the image still trusts the header (T1b(a), 15/15). That is accepted by design: the T-7 template uses external ingress with `allowInsecure: false`, and the architect is documenting the requirement.
+- **R8:** the daily sum now has an index on `created_at`.
+- **Also fixed:** R9, R10 and R3 (see the table), the server header and the e2e guard. Tokens no longer stay in history: `takeToken` removes `?token=` with `history.replaceState`.
+
+### Still open
+
+| Id | Severity | Issue | Section |
+|---|---|---|---|
+| R12 | Medium | Verified throwaway trials can still use up the global budget and lock paying tenants out for the rest of the day | LLM |
+| R13 | Medium | The unverified-account purge deletes live accounts, and deletes paying ones without closing them at the provider | Privacy |
+| R14 | Low | A retry after a post-send timeout records 2× the reservation, so one call can go past the strict caps | LLM |
+| R15 | Low | With mock checkout turned on, one demo tenant can use the whole global budget | LLM |
+| R16 | Low | The Help and notice cite "up to 30 days", which Microsoft's current pages no longer state | Privacy |
+| Deferred | Low | R7 `__Host-` cookie (T4c(d) still verifies the attacker's account), A4 per-account lockout, actions pinned by tag, and I4 (no Permissions-Policy or COOP) | Auth, Infra |
+| Accepted | Low | A5 "That email already has an account" on invite (ADR 0001) | Auth |
+
+#### R12 (Medium) Farmed trials can still use up the shared budget
+- **Evidence, T18-C:** the paying tenant was on Pro and summarised a 2,000-character note each round.
+  - In each round, one trial was created, verified, used once (29,985 tokens) and deleted. With the paying tenant's own call, that is about 33,500 tokens a round.
+  - After 15 rounds, the paying tenant got `503 ai_budget_reached` for the rest of the UTC day.
+  - With no paying use, it takes 17 trials (500,000 ÷ 30,000).
+- **What it takes:**
+  - 17 sign-ups take 2 minutes from one IP at the current limit of 10 a minute.
+  - Verification needs one inbox per trial, which a catch-all domain makes free.
+  - In an outbox-only deployment, verification has to be off for trials to use AI at all, and then no inbox is needed.
+  - The T-7 WIP sets `aiGlobalDailyTokens = 100000`, where 4 trials are enough.
+- **Why it's still open:** these are the two parts of the R2 fix that weren't done: a share of the budget kept for paying tenants, and a tighter sign-up throttle.
+- **Fix:**
+  1. Mark trial usage on the row itself, so it survives deletion: add a column `ai_usage.trial: bool` and set it in `reserve()` from `sub.status == "trialing"`. Then refuse a trial call when the day's trial usage plus the estimate would pass half the global budget:
+     ```python
+     # in reserve(), under the global lock, when the caller is a trial
+     trial_today = db.scalar(select(func.coalesce(func.sum(AIUsage.input_tokens + AIUsage.output_tokens), 0))
+                             .where(AIUsage.trial.is_(True), AIUsage.created_at >= _today()))
+     if trial_today + estimate > global_daily_cap * settings.ai_trial_share:  # ai_trial_share: float = 0.5
+         refuse(503, "ai_trial_paused", "Free-trial AI is resting until tomorrow. Paid plans aren't affected.")
+     ```
+  2. Limit sign-up to 20 a day per IP, and add a studio-wide cap on new trials a day (for example 200), logged at 80%.
+  3. Test: 17 trials at their daily cap can't stop a paying tenant's call.
+
+#### R13 (Medium) The purge deletes live and paying accounts
+- **Evidence, T17 v3:** I ran `python -m app.maintenance purge` with the default `REQUIRE_EMAIL_VERIFICATION=true`.
+  - Deleted: an unverified owner who signed up 31 days ago and signed in today. The tenant and its notes are gone.
+  - Deleted: an unverified owner with an active Pro subscription and a Stripe customer. `billing.close` was never called, so Stripe would go on charging a customer the app no longer knows about.
+  - Kept: a verified account that is 31 days old, and an unverified one that is 10 days old.
+- **Cause:** `maintenance.py` removes every tenant whose owner is unverified and older than 30 days. It doesn't look at sign-ins or the payment provider, or at whether verification is even possible. Email is the outbox only, so no owner can ever verify: with the shipped default, every account is deleted on day 31.
+- **The T-7 WIP makes this real:** it runs this purge daily with `requireEmailVerification = true`.
+- **Fix:**
+  1. Run the unverified purge only when email is really delivered: `days = 30 if settings.require_email_verification and settings.email_provider != "outbox" else None`.
+  2. Add `users.last_sign_in_at`, set it in `_start_session`, and purge only owners with no sign-in in 30 days.
+  3. Skip tenants with a `provider_customer` or `provider_ref`. Alternatively, close them at the provider first and skip them if that fails, as `delete_account` does.
+  4. Tests: an unverified owner who signed in this week survives, and so does one with a provider customer. With the outbox, nothing is purged.
+
+#### R14 (Low) A retry can double a call's cost past the strict caps
+- **Evidence, T18-T:** the first attempt timed out after sending, and the retry succeeded.
+  - The reservation was 29,985, but 59,970 was recorded against the trial's 30,000 daily cap.
+  - Per process, the worst case past any cap is one wave of 8 calls at twice their estimate.
+- **Fix:** don't retry once a request has been sent (`ReadTimeout`, `RemoteProtocolError`), and retry only connect errors, 429 and 5xx. Otherwise, reserve `estimate × (ai_retries + 1)`.
+
+#### R15 (Low) With mock checkout on, one demo tenant can use the whole budget
+- **Evidence, T18-G** (`MOCK_CHECKOUT_ENABLED=true`): "Pay (test)" gives Pro, which has no trial daily cap. Six 20,000-character summaries then used 490,555 of the 500,000.
+- **The T-7 WIP makes this worse:** it defaults to `mockCheckoutEnabled = true` with a 100,000 budget, where two calls are enough.
+- **Fix** (step 2 of R3 in re-test 1): in `summarize`, treat `sub.provider == "mock"` as the trial plan, for both the allowance and the daily cap.
+
+#### R16 (Low) A retention period Microsoft no longer states
+- **Evidence:** `app.tsx:360` and `legal.tsx` say Microsoft may keep prompts "for up to 30 days".
+  - Microsoft's current pages (data privacy, change log 17 November 2026; abuse monitoring) say flagged prompts and completions may be stored for review by authorised staff, and give no period.
+  - The 30 days comes from the older page: "stores all prompts and generated content securely for up to thirty (30) days".
+- **Fix:** "Microsoft may keep prompts and answers that its automated abuse checks flag, and authorised Microsoft staff may review them." Keep the line about some deployment types processing data outside the UK.
+
+### For T-7 (not part of this gate)
+These `3b66b5b` defaults need the T-7 security gate's attention:
+- `requireEmailVerification = true` with outbox-only email: R13.
+- `mockCheckoutEnabled = true`: R15.
+- `aiGlobalDailyTokens = 100000`: R12.
+- `postgresAllowAzureServices = true`: this opens the database firewall to every Azure subscription's addresses. Prefer private access; failing that, rely only on TLS and strong role passwords.
+
+### Board tasks to open
+1. **starter: AI trial pool and sign-up throttle (LLM FAIL).** R12, plus R14 and R15. *Medium.*
+2. **starter: safe unverified-account purge (Privacy FAIL).** R13, plus R16. *Medium.*
+
+**To flip the gate**, re-run these, plus the suite:
+- T18-C: 17 or more trials can't stop a paying tenant;
+- T17 v3: the live and paying accounts survive, and nothing is purged with the outbox;
+- T18-T and T18-G.
+
+### Method
+Same harness as re-test 1, with the scripts updated for the new rules:
+- trials verify first;
+- notes are sized to the 30,000 daily cap;
+- in T18-C, the paying tenant's per-minute limit is raised, because it isn't under test.
+
+The new scripts (t18v3, t19v3, t22v3, t17v3) are in the session scratchpad and aren't kept. Gaps are as in re-test 1: no real Azure, Stripe or ingress; simulated latency; prices from third-party trackers.

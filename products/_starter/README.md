@@ -75,6 +75,7 @@ hidden in production.
 
 ## Not done yet
 
-See `NEXT.md`: the Azure deploy workflow and Bicep (T-7: needs the architect's design and a cost entry in
-`state/BUDGET.md` first), Redis-backed rate limits before running more than one replica, a real email adapter
+See `NEXT.md`. The Azure deploy is designed in `ADR/0002-azure-deploy.md` (Bicep in `infra/`, manual workflow
+`.github/workflows/_starter-deploy.yml`); it creates nothing until Vishal approves the costs (Q-5) and the frontend
+is served from the API image (T-16). Also open: Redis-backed rate limits before running more than one replica, a real email adapter
 (paid, needs approval), and frontend unit tests.

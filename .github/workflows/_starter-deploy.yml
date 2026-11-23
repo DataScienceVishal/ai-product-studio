@@ -1,0 +1,429 @@
+# Deploy the product starter to Azure Container Apps (board task T-7; design in
+# products/_starter/ADR/0002-azure-deploy.md, runbook in products/_starter/infra/README.md).
+# Products copy this as <slug>-deploy.yml and change the env block below.
+#
+# Manual only, for now. Every run compiles the Bicep and checks for billable environment features. It
+# deploys only when all three hold; otherwise it stops with a notice:
+#   - the AZURE_CREDENTIALS secret exists (the deployer, Contributor on rg-ai-studio only);
+#   - Vishal has approved the costs in state/BUDGET.md by setting the repository variable
+#     STUDIO_AZURE_APPROVED to "yes";
+#   - the run is on main, so only reviewed code reaches the public address.
+#
+# Release order: build, then scan (both before any Azure sign-in), push by digest, deploy a new revision
+# with no traffic, run migrations as a separate job, smoke-test the new revision, move all traffic to it,
+# smoke-test the public address, roll back if that fails, and retire revisions older than the previous one.
+name: _starter-deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      ai_provider:
+        description: "AI provider. azure uses the AZURE_OPENAI_* secrets and spends tokens (capped per day)."
+        type: choice
+        options: [fake, azure]
+        default: fake
+      billing_provider:
+        description: "Billing provider. stripe (test mode) needs the STARTER_* Stripe secrets."
+        type: choice
+        options: [mock, stripe]
+        default: mock
+      setup_database:
+        description: "Create or refresh this product's database and roles (first deploy, or after a seed rotation)"
+        type: boolean
+        default: false
+      deploy_shared:
+        description: "Also create or update the shared studio resources: registry, environment, logs, Postgres"
+        type: boolean
+        default: false
+      rollback_to:
+        description: "Don't deploy: move all traffic back to this earlier revision (its name is in a run summary)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false # never stop a release halfway
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PRODUCT: starter # Azure-safe slug: ca-starter, caj-starter-migrate, caj-starter-purge
+  PRODUCT_DIR: products/_starter
+  DB_NAME: starter # this product's database; its roles are starter_migrator and starter_app
+  RESOURCE_GROUP: rg-ai-studio
+  # Shared resources: keep in step with infra/shared.bicepparam and main.bicep's defaults.
+  REGISTRY: acrstudioznp96r
+  PG_SERVER: psql-studio-znp96r
+  ENVIRONMENT: cae-studio
+  PULL_IDENTITY: id-studio-acrpull
+  # The task that makes the backend serve the frontend changes these three: the image is then built from
+  # the starter root with both parts, and the smoke test also checks the HTML and its CSP.
+  IMAGE_CONTEXT: products/_starter/backend
+  DOCKERFILE: products/_starter/backend/Dockerfile
+  EXPECT_SPA: "false"
+  # Trivy 0.76.2 (2026-11-05), pinned by digest.
+  TRIVY_IMAGE: aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
+  # Saved Azure outputs go in "$RUNNER_TEMP" (GitHub rejects the runner context in workflow and job env).
+
+jobs:
+  check:
+    name: Check templates, credentials and approval
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      go: ${{ steps.gate.outputs.go }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bicep compiles (no Azure sign-in needed)
+        working-directory: ${{ env.PRODUCT_DIR }}/infra
+        run: |
+          az bicep install --only-show-errors
+          az bicep build --file shared.bicep --outfile "$RUNNER_TEMP/shared.json"
+          az bicep build --file main.bicep --outfile "$RUNNER_TEMP/main.json"
+          az bicep build-params --file shared.bicepparam --outfile "$RUNNER_TEMP/shared.parameters.json"
+          az bicep build-params --file main.bicepparam --outfile "$RUNNER_TEMP/main.parameters.json"
+          bash -n smoke.sh
+
+      - name: No billable environment features
+        run: |
+          # Each of these starts a flat $0.10/hour (about $73 a month) Container Apps charge (ADR 0002).
+          if grep -rnE --include='*.bicep' "maintenanceConfigurations|privateEndpoint|workloadProfileType: *'[^C]" "$PRODUCT_DIR/infra"; then
+            echo "::error::infra uses a billable Container Apps feature: a planned maintenance window, a private endpoint or a Dedicated workload profile."
+            exit 1
+          fi
+
+      - name: Credentials, approval and branch
+        id: gate
+        env:
+          HAS_AZURE: ${{ secrets.AZURE_CREDENTIALS != '' }}
+          APPROVED: ${{ vars.STUDIO_AZURE_APPROVED }}
+        run: |
+          go=false
+          if [ "$HAS_AZURE" != "true" ]; then
+            echo "::notice::AZURE_CREDENTIALS isn't set, so nothing was deployed. The Bicep compiled. See $PRODUCT_DIR/infra/README.md."
+          elif [ "$APPROVED" != "yes" ]; then
+            echo "::notice::Nothing was deployed: the costs in state/BUDGET.md need Vishal's approval first. He approves by setting the repository variable STUDIO_AZURE_APPROVED to yes."
+          elif [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::notice::Nothing was deployed: deploys run from main only, so only reviewed code is published. This run was on $GITHUB_REF."
+          else
+            go=true
+          fi
+          echo "go=$go" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Build, migrate and release
+    needs: check
+    if: needs.check.outputs.go == 'true' && inputs.rollback_to == ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      AI_PROVIDER: ${{ inputs.ai_provider }}
+      BILLING_PROVIDER: ${{ inputs.billing_provider }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the image
+        run: |
+          tag="${GITHUB_SHA::12}-r${GITHUB_RUN_NUMBER}a${GITHUB_RUN_ATTEMPT}"
+          echo "IMAGE_TAG=$tag" >> "$GITHUB_ENV"
+          docker build --pull --tag "local/$PRODUCT:$tag" --file "$DOCKERFILE" "$IMAGE_CONTEXT"
+
+      - name: Scan the image (fixable HIGH and CRITICAL vulnerabilities fail the release)
+        # Before the Azure sign-in, and from a saved tarball instead of the Docker socket, so the scanner
+        # never sees credentials. A justified exception goes in <product folder>/.trivyignore.
+        run: |
+          mkdir -p "$RUNNER_TEMP/scan"
+          docker save "local/$PRODUCT:$IMAGE_TAG" --output "$RUNNER_TEMP/scan/image.tar"
+          ignore=()
+          if [ -f "$PRODUCT_DIR/.trivyignore" ]; then
+            cp "$PRODUCT_DIR/.trivyignore" "$RUNNER_TEMP/scan/.trivyignore"
+            ignore=(--ignorefile /scan/.trivyignore)
+          fi
+          docker run --rm --volume "$RUNNER_TEMP/scan:/scan" "$TRIVY_IMAGE" image \
+            --input /scan/image.tar --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed \
+            --exit-code 1 --no-progress "${ignore[@]}"
+          rm -f "$RUNNER_TEMP/scan/image.tar"
+
+      - name: Sign in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Derive the database passwords
+        env:
+          STUDIO_DB_SEED: ${{ secrets.STUDIO_DB_SEED }}
+        run: |
+          if [ "${#STUDIO_DB_SEED}" -lt 32 ]; then
+            echo "::error::The STUDIO_DB_SEED secret is missing or shorter than 32 characters ($PRODUCT_DIR/infra/README.md, setup step 3)."
+            exit 1
+          fi
+          # HMAC-SHA256 of a label, keyed by the seed: stable across deploys, different for every product and
+          # role, and nothing to store. The seed is read from the environment, never a command line.
+          derive() {
+            python3 -I -c 'import hashlib, hmac, os, sys; print("Pg-" + hmac.new(os.environ["STUDIO_DB_SEED"].encode(), sys.argv[1].encode(), hashlib.sha256).hexdigest()[:40])' "$1"
+          }
+          admin=$(derive "server-admin")
+          migrator=$(derive "$DB_NAME:migrator")
+          app=$(derive "$DB_NAME:app")
+          for value in "$admin" "$migrator" "$app"; do echo "::add-mask::$value"; done
+          {
+            echo "PG_ADMIN_PASSWORD=$admin"
+            echo "PG_MIGRATOR_PASSWORD=$migrator"
+            echo "PG_APP_PASSWORD=$app"
+          } >> "$GITHUB_ENV"
+
+      - name: Shared studio resources (only when asked)
+        if: inputs.deploy_shared
+        working-directory: ${{ env.PRODUCT_DIR }}/infra
+        run: |
+          az bicep install --only-show-errors
+          az deployment group create --resource-group "$RESOURCE_GROUP" --name studio-shared \
+            --parameters shared.bicepparam --only-show-errors --output none
+          echo "Shared resources are in place."
+
+      - name: Shared resources exist and the app can pull images
+        run: |
+          if ! az acr show --name "$REGISTRY" --output none 2>/dev/null \
+            || ! az containerapp env show --resource-group "$RESOURCE_GROUP" --name "$ENVIRONMENT" --output none 2>/dev/null \
+            || ! az postgres flexible-server show --resource-group "$RESOURCE_GROUP" --name "$PG_SERVER" --output none 2>/dev/null; then
+            echo "::error::The shared resources aren't there yet. Run this workflow once with deploy_shared ticked (after Vishal's approval)."
+            exit 1
+          fi
+          principal=$(az identity show --resource-group "$RESOURCE_GROUP" --name "$PULL_IDENTITY" --query principalId --output tsv)
+          registry_id=$(az acr show --name "$REGISTRY" --query id --output tsv)
+          granted=$(az role assignment list --scope "$registry_id" --include-inherited \
+            --query "length([?principalId=='$principal' && ends_with(roleDefinitionId, '7f951dda-4ed3-4680-a7ca-43fe172d538d')])" \
+            --output tsv)
+          if [ "$granted" = "0" ]; then
+            echo "::error::$PULL_IDENTITY can't pull images yet. Vishal runs this once in Azure Cloud Shell ($PRODUCT_DIR/infra/README.md, setup step 5):"
+            echo "az role assignment create --assignee-object-id $principal --assignee-principal-type ServicePrincipal --role AcrPull --scope $registry_id"
+            exit 1
+          fi
+
+      - name: A first deploy needs the database set up
+        if: ${{ !inputs.setup_database }}
+        run: |
+          if ! az containerapp show --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" --output none 2>/dev/null; then
+            echo "::error::ca-$PRODUCT doesn't exist yet: run this first deploy with setup_database ticked."
+            exit 1
+          fi
+
+      - name: Push the image
+        run: |
+          az acr login --name "$REGISTRY" --only-show-errors
+          remote="$REGISTRY.azurecr.io/$PRODUCT:$IMAGE_TAG"
+          docker tag "local/$PRODUCT:$IMAGE_TAG" "$remote"
+          docker push --quiet "$remote"
+          image=$(docker inspect --format '{{index .RepoDigests 0}}' "$remote")
+          echo "IMAGE=$image" >> "$GITHUB_ENV"
+          echo "Pushed $image"
+
+      - name: Product database and roles (only when asked)
+        if: inputs.setup_database
+        run: |
+          command -v psql > /dev/null || { sudo apt-get update -q && sudo apt-get install -y -q postgresql-client; }
+          ip=$(curl -fsS --max-time 10 https://api.ipify.org || true)
+          if ! [[ "$ip" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+            echo "::error::Couldn't read this runner's public IPv4 address."
+            exit 1
+          fi
+          # A firewall rule for this runner only, removed again by the always-run step below.
+          az postgres flexible-server firewall-rule create --resource-group "$RESOURCE_GROUP" --server-name "$PG_SERVER" \
+            --name "gh-run-$GITHUB_RUN_ID" --start-ip-address "$ip" --end-ip-address "$ip" --only-show-errors --output none
+          export PGHOST="$PG_SERVER.postgres.database.azure.com" PGSSLMODE=verify-full \
+            PGSSLROOTCERT=/etc/ssl/certs/ca-certificates.crt PGCONNECT_TIMEOUT=10
+          for attempt in $(seq 1 36); do # firewall changes can take up to five minutes
+            if PGPASSWORD="$PG_ADMIN_PASSWORD" psql -X -w -U studioadmin -d postgres -tAc 'select 1' > /dev/null 2>&1; then
+              break
+            fi
+            if [ "$attempt" -eq 36 ]; then
+              echo "::error::Couldn't reach $PGHOST as the server admin after 6 minutes."
+              exit 1
+            fi
+            sleep 10
+          done
+          PGPASSWORD="$PG_ADMIN_PASSWORD" psql -X -w -U studioadmin -d postgres -v ON_ERROR_STOP=1 \
+            -v db="$DB_NAME" -v migrator="${DB_NAME}_migrator" -v app="${DB_NAME}_app" \
+            -f "$PRODUCT_DIR/infra/db-setup.sql"
+          PGPASSWORD="$PG_MIGRATOR_PASSWORD" psql -X -w -U "${DB_NAME}_migrator" -d "$DB_NAME" -v ON_ERROR_STOP=1 \
+            -v app="${DB_NAME}_app" -f "$PRODUCT_DIR/infra/db-grants.sql"
+          echo "Database $DB_NAME with roles ${DB_NAME}_migrator and ${DB_NAME}_app is ready."
+
+      - name: Remove the runner's database firewall rule
+        if: always() && inputs.setup_database
+        run: |
+          az postgres flexible-server firewall-rule delete --resource-group "$RESOURCE_GROUP" --server-name "$PG_SERVER" \
+            --name "gh-run-$GITHUB_RUN_ID" --yes --only-show-errors --output none 2> /dev/null || true
+
+      - name: Deploy the app and jobs (the new revision gets no traffic yet)
+        working-directory: ${{ env.PRODUCT_DIR }}/infra
+        env:
+          AZURE_OPENAI_ENDPOINT: ${{ inputs.ai_provider == 'azure' && secrets.AZURE_OPENAI_ENDPOINT || '' }}
+          AZURE_OPENAI_API_KEY: ${{ inputs.ai_provider == 'azure' && secrets.AZURE_OPENAI_API_KEY || '' }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT || 'gpt-5-mini' }}
+          BILLING_WEBHOOK_SECRET: ${{ inputs.billing_provider == 'stripe' && secrets.STARTER_BILLING_WEBHOOK_SECRET || '' }}
+          STRIPE_SECRET_KEY: ${{ inputs.billing_provider == 'stripe' && secrets.STARTER_STRIPE_SECRET_KEY || '' }}
+        run: |
+          if [ "$AI_PROVIDER" = "azure" ] && { [ -z "$AZURE_OPENAI_ENDPOINT" ] || [ -z "$AZURE_OPENAI_API_KEY" ]; }; then
+            echo "::error::ai_provider=azure needs the AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY secrets (SETUP.md step 3)."
+            exit 1
+          fi
+          if [ "$BILLING_PROVIDER" = "stripe" ] && { [ -z "$BILLING_WEBHOOK_SECRET" ] || [ -z "$STRIPE_SECRET_KEY" ]; }; then
+            echo "::error::billing_provider=stripe needs the STARTER_BILLING_WEBHOOK_SECRET and STARTER_STRIPE_SECRET_KEY secrets."
+            exit 1
+          fi
+          app="ca-$PRODUCT"
+          live=$(az containerapp show --resource-group "$RESOURCE_GROUP" --name "$app" \
+            --query "properties.configuration.ingress.traffic[?weight==\`100\`] | [0].revisionName" --output tsv 2> /dev/null || true)
+          if [ -z "$live" ]; then # the first release sends traffic to "latest" rather than a revision name
+            live=$(az containerapp show --resource-group "$RESOURCE_GROUP" --name "$app" \
+              --query properties.latestReadyRevisionName --output tsv 2> /dev/null || true)
+          fi
+          host="$PG_SERVER.postgres.database.azure.com"
+          tls="sslmode=verify-full&sslrootcert=/etc/ssl/certs/ca-certificates.crt"
+          export LIVE_REVISION="$live"
+          export REVISION_SUFFIX="r${GITHUB_RUN_NUMBER}a${GITHUB_RUN_ATTEMPT}-${GITHUB_SHA::7}"
+          export DATABASE_URL_APP="postgresql+psycopg://${DB_NAME}_app:${PG_APP_PASSWORD}@${host}:5432/${DB_NAME}?${tls}"
+          export DATABASE_URL_MIGRATE="postgresql+psycopg://${DB_NAME}_migrator:${PG_MIGRATOR_PASSWORD}@${host}:5432/${DB_NAME}?${tls}"
+          az bicep install --only-show-errors
+          az deployment group create --resource-group "$RESOURCE_GROUP" \
+            --name "$PRODUCT-r$GITHUB_RUN_NUMBER-a$GITHUB_RUN_ATTEMPT" --parameters main.bicepparam \
+            --query properties.outputs --output json --only-show-errors > "$RUNNER_TEMP/outputs.json"
+          {
+            echo "LIVE_REVISION=$live"
+            echo "CANDIDATE=$(jq -r .candidateRevision.value "$RUNNER_TEMP/outputs.json")"
+            echo "APP_FQDN=$(jq -r .appFqdn.value "$RUNNER_TEMP/outputs.json")"
+          } >> "$GITHUB_ENV"
+
+      - name: Migrate the database (a separate job, before any traffic moves)
+        run: |
+          job="caj-$PRODUCT-migrate"
+          execution=$(az containerapp job start --resource-group "$RESOURCE_GROUP" --name "$job" \
+            --query name --output tsv --only-show-errors)
+          echo "Started $execution"
+          for attempt in $(seq 1 60); do
+            status=$(az containerapp job execution show --resource-group "$RESOURCE_GROUP" --name "$job" \
+              --job-execution-name "$execution" --query properties.status --output tsv --only-show-errors)
+            case "$status" in
+              Succeeded) echo "Migrations applied."; exit 0 ;;
+              Failed|Stopped|Degraded)
+                echo "::error::Migration $execution ended '$status'. Its output is in log-studio (ContainerAppConsoleLogs for $job)."
+                exit 1 ;;
+            esac
+            sleep 10
+          done
+          echo "::error::Migration $execution was still running after 10 minutes."
+          exit 1
+
+      - name: Smoke-test the new revision before it gets traffic
+        id: candidate
+        run: |
+          fqdn=$(az containerapp revision show --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
+            --revision "$CANDIDATE" --query properties.fqdn --output tsv)
+          bash "$PRODUCT_DIR/infra/smoke.sh" "https://$fqdn"
+
+      - name: Move all traffic to the new revision
+        id: shift
+        if: env.LIVE_REVISION != '' && env.LIVE_REVISION != env.CANDIDATE
+        run: |
+          az containerapp ingress traffic set --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
+            --revision-weight "$CANDIDATE=100" "$LIVE_REVISION=0" --only-show-errors --output none
+
+      - name: Smoke-test the public address
+        run: bash "$PRODUCT_DIR/infra/smoke.sh" "https://$APP_FQDN"
+
+      - name: Roll back to the previous revision
+        if: failure() && steps.shift.outcome != 'skipped' && env.LIVE_REVISION != '' && env.CANDIDATE != ''
+        run: |
+          az containerapp ingress traffic set --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
+            --revision-weight "$LIVE_REVISION=100" "$CANDIDATE=0" --only-show-errors --output none
+          az containerapp revision deactivate --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
+            --revision "$CANDIDATE" --only-show-errors --output none || true
+          echo "::error::$CANDIDATE failed after traffic moved, so all traffic is back on $LIVE_REVISION."
+
+      - name: Retire a new revision that never got traffic
+        if: failure() && steps.shift.outcome == 'skipped' && env.LIVE_REVISION != '' && env.CANDIDATE != ''
+        run: |
+          az containerapp revision deactivate --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
+            --revision "$CANDIDATE" --only-show-errors --output none || true
+          echo "::error::The release stopped before traffic moved; $LIVE_REVISION still serves everyone."
+
+      - name: Retire revisions older than the previous one
+        # The previous revision stays active with 0% traffic, at no cost while it has no replicas, so a
+        # rollback is instant. Anything older is deactivated: it can be re-activated with rollback_to.
+        run: |
+          for rev in $(az containerapp revision list --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
+              --query "[?properties.active].name" --output tsv); do
+            if [ "$rev" != "$CANDIDATE" ] && [ "$rev" != "$LIVE_REVISION" ]; then
+              az containerapp revision deactivate --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
+                --revision "$rev" --only-show-errors --output none
+              echo "Deactivated $rev"
+            fi
+          done
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Deploy of $PRODUCT"
+            echo "- Address: https://${APP_FQDN:-not deployed}"
+            echo "- New revision: ${CANDIDATE:-none} (image ${IMAGE:-not pushed})"
+            echo "- Previous revision, still active for a quick rollback: ${LIVE_REVISION:-none (first deploy)}"
+            echo "- AI provider: $AI_PROVIDER; billing provider: $BILLING_PROVIDER"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  rollback:
+    name: Roll back to an earlier revision
+    needs: check
+    if: needs.check.outputs.go == 'true' && inputs.rollback_to != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TARGET: ${{ inputs.rollback_to }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the revision name
+        run: |
+          if ! [[ "$TARGET" =~ ^ca-${PRODUCT}--[a-z][a-z0-9-]{0,40}[a-z0-9]$ ]]; then
+            echo "::error::rollback_to must be a revision of ca-$PRODUCT, such as ca-$PRODUCT--r12a1-1a2b3c4."
+            exit 1
+          fi
+
+      - name: Sign in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Activate the revision and smoke-test it
+        run: |
+          # The previous revision is usually still active; activating it again is harmless. A revision that
+          # doesn't exist fails at "revision show" below.
+          az containerapp revision activate --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
+            --revision "$TARGET" --only-show-errors --output none || true
+          fqdn=$(az containerapp revision show --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
+            --revision "$TARGET" --query properties.fqdn --output tsv)
+          bash "$PRODUCT_DIR/infra/smoke.sh" "https://$fqdn"
+
+      - name: Move all traffic to it
+        run: |
+          current=$(az containerapp show --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
+            --query "properties.configuration.ingress.traffic[?weight==\`100\`] | [0].revisionName" --output tsv)
+          weights=("$TARGET=100")
+          if [ -n "$current" ] && [ "$current" != "$TARGET" ]; then weights+=("$current=0"); fi
+          az containerapp ingress traffic set --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
+            --revision-weight "${weights[@]}" --only-show-errors --output none
+          fqdn=$(az containerapp show --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
+            --query properties.configuration.ingress.fqdn --output tsv)
+          bash "$PRODUCT_DIR/infra/smoke.sh" "https://$fqdn"
+          {
+            echo "### Rolled back $PRODUCT"
+            echo "- All traffic now goes to $TARGET (was ${current:-unknown})."
+            echo "- The database schema was not rolled back: migrations must stay backward compatible (ADR 0002)."
+          } >> "$GITHUB_STEP_SUMMARY"

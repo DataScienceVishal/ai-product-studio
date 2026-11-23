@@ -15,7 +15,8 @@
 @maxLength(19) // caj-<slug>-migrate has to stay under 32 characters
 param appName string
 
-param location string = 'uksouth'
+@description('rg-ai-studio is in uksouth (SETUP.md step 3).')
+param location string = resourceGroup().location
 
 @description('Image by digest, for example acrstudioznp96r.azurecr.io/starter@sha256:...')
 param image string
@@ -143,7 +144,7 @@ var commonEnv = [
   }
 ]
 
-var webEnv = concat(commonEnv, [
+var webSettings = [
   {
     name: 'CORS_ORIGINS'
     value: '["${appUrl}"]'
@@ -163,10 +164,6 @@ var webEnv = concat(commonEnv, [
   {
     name: 'AI_PROVIDER'
     value: useAzureAi ? 'azure' : 'fake'
-  }
-  {
-    name: 'AZURE_OPENAI_ENDPOINT'
-    value: useAzureAi ? azureOpenAiEndpoint : ''
   }
   {
     name: 'AZURE_OPENAI_DEPLOYMENT'
@@ -192,12 +189,21 @@ var webEnv = concat(commonEnv, [
     name: 'DB_MAX_OVERFLOW'
     value: '2'
   }
-], useAzureAi ? [
+]
+
+// Only with real AI: no empty values, and no key at all in a fake-AI deploy.
+var aiEnv = useAzureAi ? [
+  {
+    name: 'AZURE_OPENAI_ENDPOINT'
+    value: azureOpenAiEndpoint
+  }
   {
     name: 'AZURE_OPENAI_API_KEY'
     secretRef: 'azure-openai-api-key'
   }
-] : [], useStripe ? [
+] : []
+
+var stripeEnv = useStripe ? [
   {
     name: 'BILLING_WEBHOOK_SECRET'
     secretRef: 'billing-webhook-secret'
@@ -206,19 +212,25 @@ var webEnv = concat(commonEnv, [
     name: 'STRIPE_SECRET_KEY'
     secretRef: 'stripe-secret-key'
   }
-] : [])
+] : []
 
-var webSecrets = concat([
+var webEnv = concat(commonEnv, webSettings, aiEnv, stripeEnv)
+
+var databaseSecret = [
   {
     name: 'database-url'
     value: databaseUrl
   }
-], useAzureAi ? [
+]
+
+var aiKeySecret = useAzureAi ? [
   {
     name: 'azure-openai-api-key'
     value: azureOpenAiApiKey
   }
-] : [], useStripe ? [
+] : []
+
+var stripeSecrets = useStripe ? [
   {
     name: 'billing-webhook-secret'
     value: billingWebhookSecret
@@ -227,10 +239,12 @@ var webSecrets = concat([
     name: 'stripe-secret-key'
     value: stripeSecretKey
   }
-] : [])
+] : []
+
+var webSecrets = concat(databaseSecret, aiKeySecret, stripeSecrets)
 
 // Jobs never call the AI or the payment provider, so they get neither key.
-var jobEnv = concat(commonEnv, [
+var jobSettings = [
   {
     name: 'AI_PROVIDER'
     value: 'fake'
@@ -239,7 +253,9 @@ var jobEnv = concat(commonEnv, [
     name: 'BILLING_PROVIDER'
     value: 'mock'
   }
-])
+]
+
+var jobEnv = concat(commonEnv, jobSettings)
 
 var jobResources = {
   cpu: json('0.25')
