@@ -33,6 +33,10 @@ Record each gate decision in the idea or product file's Gate log and in `state/D
 - Minimum for G1: 3 independent pain signals, 2 competitor prices or a clear substitute cost, 1 realistic way to reach buyers.
 - Write down what would prove the idea wrong.
 
+## Proof-test route (added 2026-11-24, T-55)
+
+An idea scoring 63 to 69 with no red flag may run one time-boxed benchmark before its G1 attempt counts. Write the numeric kill test first (metric, dataset, pass mark) in the idea file and commit it before running anything. Use public or synthetic data only. If it passes, the validator re-scores with the result as evidence; if it fails, that counts as a failed gate attempt. The 70 bar does not change.
+
 ## Kill rules
 
 - An idea that fails a gate twice is killed. Write the reason, the lessons and what would revive it in its file, then move the file to `state/ideas/killed/`.
