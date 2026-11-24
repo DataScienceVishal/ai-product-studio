@@ -2,7 +2,7 @@
 
 Ordered by score, then build feasibility. The validator keeps this current.
 
-Updated 2026-11-24 (T-4, T-11, T-22, T-28, T-31, T-36 and T-42 complete, plus the mtd-quarterly-prep second attempt after T-12: 40 scored, 0 PASS, 13 KILL). No idea has passed G1 (70+) yet. Ties are broken by the Build score.
+Updated 2026-11-24 (T-4, T-11, T-22, T-28, T-31, T-36, T-42 and T-44 complete, plus the mtd-quarterly-prep second attempt after T-12: 42 scored, 0 PASS, 15 KILL). No idea has passed G1 (70+) yet. Ties are broken by the Build score.
 
 | Rank | Slug | Stage | Score | One-line pitch | Next step |
 |---|---|---|---|---|---|
@@ -15,9 +15,9 @@ Updated 2026-11-24 (T-4, T-11, T-22, T-28, T-31, T-36 and T-42 complete, plus th
 | 7 | esos-phase4-evidence-pack | G0 (REVISE) | 58 | Builds the ESOS Phase 4 data and evidence pack for the lead assessor | Park (four-yearly; assessors bundle data collection). Ceiling about 62 |
 | 8 | nhs-supplier-scope3-crp-pack | G0 (REVISE) | 57 | Builds an NHS-format carbon reduction plan from a supplier's ledger | Park until NHS publishes the 2028 product-footprint method. Ceiling about 60 |
 | 9 | uk-cbam-import-ledger | G0 (REVISE) | 56 | Per-import ledger, £50k threshold tests and a return pack for UK CBAM from 2027 | Park: most importers fall under the threshold. Ceiling about 62 |
-| 10 | merchant-whatsapp-order-desk | G0 (REVISE) | 56 | Turns tradespeople's WhatsApp messages and photographed lists into draft sales orders in the merchant's ERP | Desk check SalesApe, Klipboard and Otis pages and the BisTrack/Merlin import formats; consider merging with wholesale-email-order-entry-sage |
+| 10 | merchant-whatsapp-order-desk | G0 (REVISE) | 56 | Turns tradespeople's WhatsApp messages and photographed lists into draft sales orders in the merchant's ERP | Desk check SalesApe, Klipboard and Otis pages and the BisTrack/Merlin import formats; consider merging with wholesale-email-order-entry-sage. T-44: fold in the killed merchant-supplier-price-file-loader findings (Merlin and BisTrack price imports, LUCKINSlive, Data Yard) |
 | 11 | fmcg-distributor-claim-reconciler | G0 (REVISE) | 55 | Reads brand scheme circulars, computes what the distributor is owed and matches credit notes | Needs a non-UK sales channel (Q-2); otherwise parked |
-| 12 | wholesale-email-order-entry-sage | G0 (REVISE) | 55 | Turns emailed purchase orders into draft Sage 50/200 sales orders | Desk check: a free or cheap Sage 50/200 test route on Sage's developer pages, and whether Y Meadows supports Sage UK. Re-score only if both hold |
+| 12 | wholesale-email-order-entry-sage | G0 (REVISE) | 55 | Turns emailed purchase orders into draft Sage 50/200 sales orders | Desk check: a free or cheap Sage 50/200 test route on Sage's developer pages, and whether Y Meadows supports Sage UK. Re-score only if both hold. T-44: if revived, add remittance reading (killed sage-remittance-cash-allocator) as a second module, since it has the same Sage desktop buyer and route |
 | 13 | sop-to-induction-course | G0 (REVISE) | 54 | Turns a company's SOPs into induction modules with traced answers and sign-off records | Park; re-score only with a legal forcing function (e.g. construction site inductions) |
 | 14 | rates-2026-bill-recalculator | G0 (REVISE) | 54 | Recomputes each 2026/27 business rates bill from the rateable value, multiplier and reliefs, flags council errors and drafts the query | Park: Paddl already does this for multi-site hospitality at £69 per location a month. Re-score only with 30+ public wrong-bill cases or a segment Paddl doesn't serve |
 | 15 | customs-entry-prep-small-forwarders | G0 (REVISE) | 54 | Pre-fills a checked CDS import entry from the client's invoice and packing list | Park low: free AI drafting tools already exist, and HMRC's 2026 survey puts the job at under half an hour |
@@ -46,6 +46,8 @@ Killed (in `killed/`):
 - nmw-salaried-hours-audit (55, T-42): Fair Work Solutions already sells a UK NMW platform (payroll upload, pay codes and deductions, underpayments per worker and pay period in HMRC's format, monitoring); payroll and rota checks, HMRC's free self-review guide and many advisers surround it. Ceiling about 60.
 - dmcc-checkout-journey-auditor (52, T-42): Total Price already walks browse-to-checkout journeys for hidden fees, urgency timers and pre-ticked extras, with monthly monitoring at £14.99 a month; TrustYourWebsite scans free; the CMA runs agentic AI over journeys itself. Ceiling about 59.
 - uk-export-classification-workbench (50, T-42): the gap is a free ECJU service paused on 12 Oct 2026 with an update due by year end, and the same service came back in 2018 after a four-year suspension; Trademo, Digicust, traide AI and EC Compliance already sell AI dual-use classification from specs; no price; a wrong rating is the buyer's offence. Ceiling about 61.
+- sage-remittance-cash-allocator (57, T-44): RemitClear (a UK firm) already reads remittances and allocates them in Xero, QuickBooks Online and Sage Accounting according to its own site, and Sage 50 importers (PostTrans, Adept, Excel2Sage) already post allocated receipts. Only desktop Sage is left, which is the same blocked route as wholesale-email-order-entry-sage. Ceiling about 62. The file is still in `state/ideas/`; the lead should git mv it.
+- merchant-supplier-price-file-loader (53, T-44): Merlin's Price Update and BisTrack's import already load supplier price files, LUCKINSlive feeds prices into wholesaler ERPs (Profit4, Intact, OrderWise), BMF and NMBS run the Data Yard pool, and TableFlow sells the AI extraction. The only evidence on Pay is a modelled salary. Ceiling about 60. The file is still in `state/ideas/`; the lead should git mv it.
 - mtd-quarterly-prep (64, after T-12, second failure): the benchmark failed the idea's own test. Model-only review time was 59-72% of manual and never halved; the halving needs a merchant-memory rules layer that Dext (bank and supplier rules) and IRIS (remembered categories) already ship. The scan and photo wedge was barely measured, and Dext Solo's £2.50 per client caps Pay.
 
 **Pattern:** every idea lost most of its points on Competition (1 to 5 out of 10; four of the UK batch scored 1). By late 2026 incumbents ship "AI over your documents" as a standard or free feature, so a gap has to be checked on the competitor's own product pages, and the stronger wedges are ones incumbents can't easily follow: a regulatory deadline, deep domain workflow, a channel they don't serve, or liability they won't take.
@@ -106,3 +108,12 @@ Killed (in `killed/`):
   - In bookkeeping, most "AI categorisation" savings come from per-merchant memory, a rules layer incumbents already have. Measure accuracy on the ambiguous lines a human reviews (87.5% here), not on clear lines (98.9%).
   - If the wedge is an input type (scans, photos), benchmark that input first; the easy digital formats only prove what incumbents already sell.
   - Check a model's cost per document against the $80 credit before designing a benchmark.
+
+**Round 8 (T-44): start from a priced job.** Both ideas were killed on the first attempt (57, 53), each with a ceiling of about 60. The validator agrees with the scout: SME "documents into the ledger or ERP" work is now a closed space.
+- In both cases the scout's gap was disproved by sources outside the marketplace listing it had checked:
+  - RemitClear's own homepage shows it already supports QuickBooks and Sage Accounting, which its Xero listing did not show.
+  - Sector data services (LUCKINSlive, Data Yard) already feed supplier prices into merchant ERPs.
+- Lessons for the next scout:
+  - Fetch the competitor's homepage.
+  - Search for the sector's data pool or aggregator, and for the existing desktop import add-ons that set the price of the non-AI half.
+  - Next round, try jobs whose output is a judgement or recommendation (pricing, forecasting, exception detection) rather than extraction.
