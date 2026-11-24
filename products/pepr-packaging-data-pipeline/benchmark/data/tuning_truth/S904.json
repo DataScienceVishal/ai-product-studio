@@ -49,6 +49,7 @@
       },
       "material": {
         "accepted_values": [
+          "tinplate steel",
           "tinplate"
         ],
         "refs": [
@@ -83,7 +84,8 @@
     {
       "colour": {
         "accepted_values": [
-          "grn"
+          "grn",
+          "flint green"
         ],
         "refs": [
           {

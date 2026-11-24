@@ -3,7 +3,8 @@
     {
       "colour": {
         "accepted_values": [
-          "grn"
+          "grn",
+          "flint green"
         ],
         "refs": [
           {
@@ -105,6 +106,10 @@
       },
       "material": {
         "accepted_values": [
+          "polypropylene",
+          "PP copolymer",
+          "PP film",
+          "BOPP",
           "polypropylene film"
         ],
         "refs": [

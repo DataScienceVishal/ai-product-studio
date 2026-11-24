@@ -3,7 +3,8 @@
     {
       "colour": {
         "accepted_values": [
-          "wht"
+          "wht",
+          "bright white"
         ],
         "refs": [
           {
@@ -24,7 +25,11 @@
       },
       "material": {
         "accepted_values": [
-          "polypropylene"
+          "polypropylene",
+          "PP copolymer",
+          "PP film",
+          "BOPP",
+          "polypropylene film"
         ],
         "refs": [
           {
@@ -58,7 +63,8 @@
     {
       "colour": {
         "accepted_values": [
-          "wht"
+          "wht",
+          "bright white"
         ],
         "refs": [
           {
@@ -85,6 +91,10 @@
         }
       },
       "material": {
+        "accepted_values": [
+          "uncoated paper",
+          "wet-strength paper"
+        ],
         "refs": [
           {
             "page": 1,

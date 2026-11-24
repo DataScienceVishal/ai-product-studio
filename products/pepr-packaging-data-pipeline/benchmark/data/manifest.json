@@ -17,18 +17,18 @@
       "carbon_black_components": 8,
       "components": 68,
       "conflict_slots": 22,
-      "missing_slots": 137,
+      "missing_slots": 128,
       "present_slots": 307,
-      "scored_slots": 466,
+      "scored_slots": 457,
       "sheets": 30
     },
     "tuning": {
       "carbon_black_components": 3,
       "components": 14,
       "conflict_slots": 3,
-      "missing_slots": 30,
+      "missing_slots": 28,
       "present_slots": 63,
-      "scored_slots": 96,
+      "scored_slots": 94,
       "sheets": 5
     }
   },

@@ -3,6 +3,7 @@
     {
       "colour": {
         "accepted_values": [
+          "amber tint",
           "amb"
         ],
         "refs": [
@@ -104,7 +105,8 @@
     {
       "colour": {
         "accepted_values": [
-          "blk"
+          "blk",
+          "jet black"
         ],
         "refs": [
           {
@@ -125,7 +127,8 @@
       },
       "material": {
         "accepted_values": [
-          "polyvinyl chloride"
+          "polyvinyl chloride",
+          "rigid PVC film"
         ],
         "refs": [
           {

@@ -3,7 +3,8 @@
     {
       "colour": {
         "accepted_values": [
-          "blu"
+          "blu",
+          "royal blue"
         ],
         "refs": [
           {
@@ -54,7 +55,9 @@
       },
       "material": {
         "accepted_values": [
-          "polyethylene terephthalate"
+          "polyethylene terephthalate",
+          "PET (virgin)",
+          "PET-A"
         ],
         "refs": [
           {

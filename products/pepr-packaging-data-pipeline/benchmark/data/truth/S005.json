@@ -44,7 +44,8 @@
       },
       "material": {
         "accepted_values": [
-          "polystyrene"
+          "polystyrene",
+          "HIPS"
         ],
         "refs": [
           {

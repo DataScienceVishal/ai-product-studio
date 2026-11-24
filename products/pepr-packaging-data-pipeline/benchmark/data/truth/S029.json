@@ -3,7 +3,8 @@
     {
       "colour": {
         "accepted_values": [
-          "wht"
+          "wht",
+          "bright white"
         ],
         "refs": [
           {
@@ -80,6 +81,7 @@
       },
       "material": {
         "accepted_values": [
+          "tinplate steel",
           "tinplate"
         ],
         "refs": [
@@ -168,7 +170,9 @@
       },
       "material": {
         "accepted_values": [
-          "polyethylene terephthalate"
+          "polyethylene terephthalate",
+          "PET (virgin)",
+          "PET-A"
         ],
         "refs": [
           {

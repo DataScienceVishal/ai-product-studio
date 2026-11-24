@@ -37,7 +37,8 @@
       },
       "material": {
         "accepted_values": [
-          "polystyrene"
+          "polystyrene",
+          "HIPS"
         ],
         "refs": [
           {
@@ -167,6 +168,7 @@
       },
       "material": {
         "accepted_values": [
+          "tinplate steel",
           "tinplate"
         ],
         "refs": [

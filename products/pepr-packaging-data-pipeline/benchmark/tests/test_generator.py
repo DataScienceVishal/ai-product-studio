@@ -1,4 +1,5 @@
 import json
+import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -217,24 +218,107 @@ def test_quotes_contain_value_unit_parsed(out):
     d, _ = out
     for t in truths(d, "truth") + truths(d, "tuning_truth"):
         for name, fld in iter_values(t):
-            if name == "weight_g":
-                if fld["status"] == "present":
-                    g = tx.parse_weight(fld["refs"][0]["quote"])
-                    assert g is not None and tx.weight_within(g, fld["value"]), (t["sheet_id"], fld)
-                elif fld["status"] == "conflict":
-                    assert len(fld["conflict_values"]) == 2 and len(fld["refs"]) == 2
-                    for v, r in zip(fld["conflict_values"], fld["refs"]):
-                        g = tx.parse_weight(r["quote"])
-                        assert g is not None and tx.weight_within(g, v), (t["sheet_id"], fld)
-                    assert not tx.weight_within(*fld["conflict_values"])
-            elif fld["status"] == "present" and name in ("material", "colour"):
-                cands = [fld["value"]] + fld.get("accepted_values", [])
-                q = norm(fld["refs"][0]["quote"])
-                assert any(norm(c) in q for c in cands), (t["sheet_id"], name, fld)
-            elif fld["status"] == "present":  # feature: quote is the canonical value or a listed paraphrase
-                q = norm(fld["refs"][0]["quote"])
-                paras = [fld["value"]] + tx.VOCAB[name][fld["value"]]
-                assert q in [norm(p) for p in paras], (t["sheet_id"], name, fld)
+            if name == "weight_g" and fld["status"] == "conflict":
+                assert len(fld["conflict_values"]) == 2 and len(fld["refs"]) == 2
+                for v, r in zip(fld["conflict_values"], fld["refs"]):
+                    assert tx.quote_ok("weight_g", v, r["quote"]), (t["sheet_id"], fld)
+                assert not tx.weight_within(*fld["conflict_values"])
+            elif fld["status"] == "present":
+                assert tx.quote_ok(name, fld["value"], fld["refs"][0]["quote"]), (t["sheet_id"], name, fld)
+
+
+def test_generator_displays_are_listed_variants():
+    for name, mats in generate.COMPONENTS.items():
+        for value, ram, displays in mats:
+            assert value in tx.MATERIAL_VOCAB, value
+            for disp in displays:
+                assert disp in tx.MATERIAL_VOCAB[value], (name, value, disp)
+    for value, displays in generate.COLOURS.items():
+        for disp in displays:
+            assert disp in tx.COLOUR_VOCAB[value], (value, disp)
+    # a wording belongs to exactly one canonical value, per key
+    for key in ("material", "colour") + tuple(tx.VOCAB):
+        seen = {}
+        for canon, words in tx.key_vocab(key).items():
+            for w in words:
+                assert seen.setdefault(tx.norm_text(w), canon) == canon, (key, w)
+
+
+def test_every_present_material_colour_quote_has_listed_variant(out):
+    d, _ = out
+    n = 0
+    for t in truths(d, "truth") + truths(d, "tuning_truth"):
+        for c in t["components"]:
+            for key in ("material", "colour"):
+                f = c[key]
+                if f["status"] == "present":
+                    q = tx.norm_text(f["refs"][0]["quote"])
+                    words = [tx.norm_text(w) for w in tx.key_vocab(key)[f["value"]]]
+                    assert q in words, (t["sheet_id"], key, f)
+                    assert set(f.get("accepted_values", [])) == set(tx.key_vocab(key)[f["value"]]) - {f["value"]}
+                    n += 1
+    assert n > 100
+
+
+def test_quote_ok_rules():
+    ok, bad = tx.quote_ok, lambda *a, **k: not tx.quote_ok(*a, **k)
+    assert ok("material", "PET", "PET (virgin)") and bad("material", "PET", "PETG")
+    assert ok("material", "PETG", "PET-G") and bad("material", "PET", "recycled PET") and ok("material", "rPET", "recycled PET")
+    assert ok("colour", "black (carbon black)", "CB black") and bad("colour", "black", "CB black")
+    assert ok("colour", "black", "Shade: jet black") and bad("colour", "black (carbon black)", "black")
+    assert bad("material", "PET", "PET / HDPE")  # two canonical values in one quote
+    assert ok("closure", "HDPE cap with PE liner", "Cap fitted: HDPE cap, PE wad liner")
+    assert ok("ink_coating", "water-based varnish", "Please note aqueous varnish on this item.")
+    assert bad("ink_coating", "UV-cured ink", "aqueous varnish")
+    assert ok("weight_g", 159.5, "Nett wt 159500 mg (1)") and bad("weight_g", 24.0, "26 g")
+    assert bad("material", "PP", "PP film", page_text="a\nPP cap")  # not on the page
+    assert ok("material", "PP", "PP film | x", page_text="a\nPP film  x")  # '|' counts as whitespace
+    assert ok("material", "PP", "PP film", page_text="1 | bottle | PP film | 2 g")
+    assert tx.canonical("material", "BOPP") == "PP" and tx.canonical("colour", "black") == "black"
+    assert tx.canonical("material", "PP blend") is None
+
+
+def _row_lines(page_text_raw):
+    return [ln for ln in page_text_raw.split("\n") if ln.strip()]
+
+
+def test_quote_ok_whole_row_quotes_text_and_scanned(out):
+    d, m = out
+    checked = {"text": 0, "scanned": 0}
+    for sub_pdf, sub_truth, rows in (("sheets", "truth", m["test"]), ("tuning", "tuning_truth", m["tuning"])):
+        for row in rows:
+            sid = row["sheet_id"]
+            if row["scanned"]:
+                raw = row["page_text"]
+            elif row["template"] in ("table", "matrix", "bom", "prose"):
+                raw = [p.extract_text() for p in PdfReader(d / sub_pdf / f"{sid}.pdf").pages]
+            else:
+                continue
+            t = json.loads((d / sub_truth / f"{sid}.json").read_text())
+            for name, fld in iter_values(t):
+                if fld["status"] != "present":
+                    continue
+                ref = fld["refs"][0]
+                page = raw[ref["page"] - 1]
+                pat = re.compile(r"(?<![a-z0-9-])" + re.escape(norm(ref["quote"])) + r"(?![a-z0-9-])")
+                lines = [ln for ln in _row_lines(page) if pat.search(tx.norm_quote(ln))]
+                if row["scanned"]:
+                    lines = [ln for ln in lines if " | " in ln]  # whole table rows
+                if not lines:
+                    continue
+                for ln in lines:
+                    assert tx.quote_ok(name, fld["value"], ln, page), (sid, name, ln)
+                checked["scanned" if row["scanned"] else "text"] += 1
+    assert checked["text"] > 60 and checked["scanned"] > 10, checked
+
+
+def test_ram_category_scored_only_when_material_present(out):
+    d, _ = out
+    for t in truths(d, "truth"):
+        slots = list(tx.scored_slots(t))
+        for i, c in enumerate(t["components"]):
+            has = any(s == "ram_category" and ci == i for ci, s, _ in slots)
+            assert has == (c["material"]["status"] != "missing")
 
 
 def test_synonyms_and_distractors_make_it_harder(out):

@@ -154,7 +154,11 @@
       },
       "material": {
         "accepted_values": [
-          "polypropylene"
+          "polypropylene",
+          "PP copolymer",
+          "PP film",
+          "BOPP",
+          "polypropylene film"
         ],
         "refs": [
           {

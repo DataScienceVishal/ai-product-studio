@@ -28,3 +28,8 @@ vocabulary, headers/footers, 6 templates, footnote and notes-page conflicts, bur
 slots (307 present / 137 missing / 22 conflict) in the test set; tuning set covers clean, multi+missing, mixed units, scanned+conflict,
 contradictory. Image-only sheets have recorded page text in manifest.json. PDFs are byte-reproducible (test). Runs used: 2 of 3.
 Next: reviewer re-check, then slice 3 (extractor must return all plausible keys, closed feature vocabulary, stop at USD 12 or 3M tokens).
+
+## Status after re-review fix (2026-11-24)
+Re-review items 1, 2, 6, 7, 9 done: closed material/colour vocabularies, `taxonomy.quote_ok()`/`canonical()`, ram_category scored only when material present,
+amendment text in `benchmark/KILL_TEST_AMENDMENT_2.md`. Data regenerated (accepted_values now list every variant; test set 457 slots: 307/128/22). 24 tests pass.
+Still for slice 3: extractor isolation test, layout-aware input for two-column sheets, pre-call budget guard (USD 12 / 3M tokens), tuning prompt examples for "none stated" vs "sleeve: none".

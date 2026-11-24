@@ -114,7 +114,8 @@
     {
       "colour": {
         "accepted_values": [
-          "wht"
+          "wht",
+          "bright white"
         ],
         "refs": [
           {

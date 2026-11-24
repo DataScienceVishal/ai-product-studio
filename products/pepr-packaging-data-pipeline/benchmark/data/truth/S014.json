@@ -39,6 +39,10 @@
       },
       "material": {
         "accepted_values": [
+          "polypropylene",
+          "PP copolymer",
+          "PP film",
+          "BOPP",
           "polypropylene film"
         ],
         "refs": [
@@ -66,7 +70,8 @@
     {
       "colour": {
         "accepted_values": [
-          "blu"
+          "blu",
+          "royal blue"
         ],
         "refs": [
           {
@@ -87,7 +92,8 @@
       },
       "material": {
         "accepted_values": [
-          "polyvinyl chloride"
+          "polyvinyl chloride",
+          "rigid PVC film"
         ],
         "refs": [
           {

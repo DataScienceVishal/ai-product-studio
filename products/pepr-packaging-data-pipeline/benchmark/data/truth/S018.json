@@ -3,7 +3,8 @@
     {
       "colour": {
         "accepted_values": [
-          "wht"
+          "wht",
+          "bright white"
         ],
         "refs": [
           {
@@ -82,7 +83,8 @@
     {
       "colour": {
         "accepted_values": [
-          "blu"
+          "blu",
+          "royal blue"
         ],
         "refs": [
           {
@@ -103,6 +105,10 @@
       },
       "material": {
         "accepted_values": [
+          "polypropylene",
+          "PP copolymer",
+          "PP film",
+          "BOPP",
           "polypropylene film"
         ],
         "refs": [
@@ -211,6 +217,7 @@
       },
       "material": {
         "accepted_values": [
+          "tinplate steel",
           "tinplate"
         ],
         "refs": [

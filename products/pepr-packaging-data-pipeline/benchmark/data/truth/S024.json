@@ -14,7 +14,11 @@
       },
       "material": {
         "accepted_values": [
-          "polypropylene"
+          "polypropylene",
+          "PP copolymer",
+          "PP film",
+          "BOPP",
+          "polypropylene film"
         ],
         "refs": [
           {
@@ -80,6 +84,7 @@
       },
       "material": {
         "accepted_values": [
+          "tinplate steel",
           "tinplate"
         ],
         "refs": [

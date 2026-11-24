@@ -3,6 +3,7 @@
     {
       "colour": {
         "accepted_values": [
+          "amber tint",
           "amb"
         ],
         "refs": [

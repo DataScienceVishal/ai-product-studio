@@ -1,0 +1,10 @@
+### Amendment 2, 2026-11-24 (before any model call, including tuning)
+
+Made before any extractor exists and before any run. Pass marks are unchanged. Answers the re-review (`reviews/T-56-slice2-rereview.md`, items 1, 2, 6, 7, 9). The full rules are in `benchmark/README.md` and `benchmark/taxonomy.py`.
+
+1. **Closed vocabularies for material and colour.** Material and colour are scored like features. The extractor is given the closed canonical lists (`MATERIAL_VOCAB`, `COLOUR_VOCAB` in `taxonomy.py`) and returns one canonical value. A value scores 1 only by exact match, after case and whitespace normalisation, to the truth canonical value or a listed wording of it (for example "BOPP", "PP film" and "polypropylene film" all mean PP; "jet black" means black). No containment matching: "PETG" is not PET, and `black` for truth `black (carbon black)` is wrong (a missed carbon-black flag).
+2. **Quote rule.** After normalisation (case, whitespace, and the `|` cell separator treated as whitespace, on both sides) the quote must appear in the stated page's text, and it must name exactly the extracted value: it contains the canonical value or one listed wording of that value (longest match wins) and no wording of another canonical value for the same key. Whole-row or whole-sentence quotes are allowed. For weights, the quote holds a number and unit (g, kg, mg, oz) that converts to grams within tolerance (1% or 0.1 g, whichever is larger) of the value. Implemented as `taxonomy.quote_ok()`.
+3. **Page text.** Text sheets: pypdf `extract_text()`. Image-only sheets: the page text recorded by the generator in `manifest.json`. Both go through the same normalisation. No OCR.
+4. **ram_category.** Scored only when the truth material is present, so a missing material costs one slot. Test set slots: 457 (307 present, 128 missing, 22 conflict).
+5. **Features are one canonical value each.** Label type, material and coverage, and closure material and liner, are collapsed into one value per feature key. Label coverage is not modelled, so a pass says nothing about coverage.
+6. **False conflict.** Flagging a conflict on a weight whose truth is present scores 0.

@@ -53,7 +53,7 @@ COMPONENTS = {
 }
 WEIGHT_RANGE = {"bottle": (18, 60), "cap": (2, 9), "label": (0.5, 3), "outer carton": (60, 180),
                 "sleeve": (1, 4), "tray": (8, 30), "can": (12, 35), "pouch": (4, 12)}
-CARBON = "black (carbon black)"
+CARBON = tx.CARBON_BLACK
 COLOURS = {"clear": ["clear", "transparent", "clr"], "natural": ["natural", "nat.", "uncoloured"],
            "black": ["black", "blk", "jet black"],
            CARBON: [CARBON, "carbon black pigmented", "black, carbon black", "CB black"],
@@ -202,9 +202,9 @@ def pick_colour(rng, mat):
     return rng.choice(["clear", "natural", "black", "white", "blue", "green", "amber"])
 
 
-def accepted_for(value, displays):
-    v = tx.norm_text(value)
-    return [d for d in displays if v not in tx.norm_text(d)]
+def accepted_for(key, value):
+    """Every listed wording of the value except the canonical one (taxonomy vocab, not just those used here)."""
+    return [w for w in tx.key_vocab(key)[value] if w != value]
 
 
 def make_distractors(rng, tier, name, w):
@@ -524,16 +524,13 @@ def build_sheet(sid, seed, tier, layout, template, n_comp, opt):
             tc["ram_category"] = "missing"
         else:
             pg, q = refs[(i, "material")]
-            tc["material"] = present_str(c["mat"][0], q, pg, accepted_for(c["mat"][0], c["mat"][2]) or None)
+            tc["material"] = present_str(c["mat"][0], q, pg, accepted_for("material", c["mat"][0]) or None)
             tc["ram_category"] = c["mat"][1]
         if "colour" in c["miss"]:
             tc["colour"] = dict(status="missing")
         else:
             pg, q = refs[(i, "colour")]
-            acc = accepted_for(c["col"], COLOURS[c["col"]])
-            if c["col"] == CARBON:
-                acc.append("carbon black")
-            tc["colour"] = present_str(c["col"], q, pg, acc or None)
+            tc["colour"] = present_str(c["col"], q, pg, accepted_for("colour", c["col"]) or None)
         if "weight_g" in c["miss"]:
             tc["weight_g"] = dict(status="missing")
         else:

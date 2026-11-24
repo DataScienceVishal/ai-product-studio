@@ -3,6 +3,7 @@
     {
       "colour": {
         "accepted_values": [
+          "kraft brown",
           "brn"
         ],
         "refs": [
@@ -53,6 +54,10 @@
         }
       },
       "material": {
+        "accepted_values": [
+          "soda-lime glass",
+          "flint glass"
+        ],
         "refs": [
           {
             "page": 1,
@@ -85,7 +90,8 @@
     {
       "colour": {
         "accepted_values": [
-          "blu"
+          "blu",
+          "royal blue"
         ],
         "refs": [
           {
@@ -144,7 +150,8 @@
     {
       "colour": {
         "accepted_values": [
-          "blk"
+          "blk",
+          "jet black"
         ],
         "refs": [
           {
@@ -172,7 +179,11 @@
       },
       "material": {
         "accepted_values": [
-          "polypropylene"
+          "polypropylene",
+          "PP copolymer",
+          "PP film",
+          "BOPP",
+          "polypropylene film"
         ],
         "refs": [
           {

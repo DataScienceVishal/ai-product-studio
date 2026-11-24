@@ -32,7 +32,8 @@
       },
       "material": {
         "accepted_values": [
-          "polyvinyl chloride"
+          "polyvinyl chloride",
+          "rigid PVC film"
         ],
         "refs": [
           {

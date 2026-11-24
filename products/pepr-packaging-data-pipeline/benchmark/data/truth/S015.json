@@ -136,7 +136,9 @@
       },
       "material": {
         "accepted_values": [
-          "polyethylene terephthalate"
+          "polyethylene terephthalate",
+          "PET (virgin)",
+          "PET-A"
         ],
         "refs": [
           {
@@ -204,7 +206,8 @@
       },
       "material": {
         "accepted_values": [
-          "polystyrene"
+          "polystyrene",
+          "HIPS"
         ],
         "refs": [
           {

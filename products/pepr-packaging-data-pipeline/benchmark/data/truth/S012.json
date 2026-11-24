@@ -3,6 +3,7 @@
     {
       "colour": {
         "accepted_values": [
+          "amber tint",
           "amb"
         ],
         "refs": [
@@ -24,6 +25,10 @@
       },
       "material": {
         "accepted_values": [
+          "polypropylene",
+          "PP copolymer",
+          "PP film",
+          "BOPP",
           "polypropylene film"
         ],
         "refs": [
@@ -69,7 +74,8 @@
       },
       "material": {
         "accepted_values": [
-          "polyvinyl chloride"
+          "polyvinyl chloride",
+          "rigid PVC film"
         ],
         "refs": [
           {
