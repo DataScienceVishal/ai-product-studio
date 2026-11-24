@@ -224,3 +224,17 @@ take or wait for a hash slot. C2: tests/test_hash_capacity_slots.py runs on one 
 holds 0 slots after 200, 401, 409, 422, 429, 503 and 500 (mutation: removing `limiter.release()` fails 2 of them).
 Verify: `TEST_DATABASE_URL=...starter_test_t15 .venv/bin/python -m pytest` (310 passed, 1 skipped) and
 `npx vitest run` (111 passed). Not merged to main. Review suggestions S2-S4 left open.
+
+# T-18 slice 3 (db-setup.sql, branch p/_starter/T-18-sql) status
+
+Done: `infra/db-setup.sql` rewritten per ADR 0003 decision 3 (oid validation, roles, `PASSWORD NULL`, limits 12/3, SECURITY LABEL
+behind `\if :{?entra_stub}`, `pgaadauth_list_principals` checks incl. isadmin=0 and no other admin, `GRANT migrator TO CURRENT_USER
+WITH INHERIT FALSE, SET TRUE`, `\connect`, `SET ROLE migrator`, `\ir db-grants.sql`, `RESET ROLE`). `db-grants.sql`: header comment
+only. `infra/test-db-setup.sh` (28 assertions, needs PG16, skips without psql unless REQUIRE_PG=1) wired into the backend job of
+`_starter-ci.yml` (it has a postgres:16 service; the infra job has none).
+Slice 4 (workflow) must pass to psql: `-v db -v app -v migrator -v app_oid -v migrator_oid` (lower-case UUIDs from the main.bicep
+outputs), connect to `postgres` as the Entra admin role (readback name) with the token in PGPASSWORD. No `entra_stub`, no
+`PG_*_VERIFIER` env, no migrator password step: the old second psql call to db-grants.sql must go (setup runs it). `\ir` needs
+db-setup.sql and db-grants.sql in the same directory. Also delete `scram_verifier.py` and its py_compile line in the infra job.
+Not verified: real Azure (SECURITY LABEL / GRANT TO CURRENT_USER permitted, `pgaadauth_list_principals` column casing, principalType
+value `service`). Roles can't be signed in as locally (no password), so privilege tests use SET ROLE and has_database_privilege.
