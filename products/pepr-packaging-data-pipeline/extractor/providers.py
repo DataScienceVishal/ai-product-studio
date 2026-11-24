@@ -1,4 +1,4 @@
-"""Model providers. Interface: complete(system, parts, max_output_tokens) -> Completion.
+"""Model providers. Interface: complete(system, parts, max_output_tokens, budget, label) -> Completion.
 parts: [{"type":"text","text":..} | {"type":"image","media_type":..,"data_b64":..}].
 FakeProvider: deterministic, no network. AzureResponsesProvider: Azure OpenAI v1 Responses API; refuses to run unless
 T56_SPEND_APPROVED=1 (Vishal's spend approval, Q-11). Keys come from the environment only and are never logged."""
@@ -56,7 +56,7 @@ class FakeProvider:
         self.responder = responder
         self.calls = []
 
-    def complete(self, system, parts, max_output_tokens, budget=None, label=""):
+    def complete(self, system, parts, max_output_tokens, budget, label=""):
         self.calls.append(parts)
         if self.responder:
             text = self.responder(system, parts)
@@ -124,8 +124,8 @@ class AzureResponsesProvider:
                 "reasoning": {"effort": self.reasoning_effort}, "store": False,
                 "input": [{"role": "user", "content": content}]}
 
-    def complete(self, system, parts, max_output_tokens, budget=None, label=""):
-        """With `budget`, every 5xx (the model may have run and billed) is recorded at its worst case before the next
+    def complete(self, system, parts, max_output_tokens, budget, label=""):
+        """Every 5xx (the model may have run and billed) is recorded at its worst case before the next
         attempt, and budget.check is re-run before each retry, so one reservation never covers two billable attempts.
         BudgetExceeded propagates and no further call is made. Connect errors and 429 retry free."""
         if self._env.get("T56_SPEND_APPROVED") != "1":  # checked again at call time
@@ -149,11 +149,11 @@ class AzureResponsesProvider:
                 continue
             if status == 429 or status >= 500:
                 last = f"HTTP {status}"
-                if status >= 500 and budget is not None:
+                if status >= 500:
                     budget.record(label, worst_in, max_output_tokens, estimated=True,
                                   note=f"worst case, HTTP {status} on attempt {attempt + 1}")
                     if attempt < self.retries:
-                        budget.check(worst_in, max_output_tokens, label=f"{label} retry {attempt + 2}")
+                        budget.check(worst_in, max_output_tokens + int(self.output_headroom), label=f"{label} retry {attempt + 2}")
                 self._pause(attempt, headers.get("retry-after") or headers.get("Retry-After"))
                 continue
             if status in (401, 403):

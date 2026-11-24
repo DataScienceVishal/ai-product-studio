@@ -173,6 +173,11 @@ ENV = {"T56_SPEND_APPROVED": "1", "AZURE_OPENAI_ENDPOINT": "https://example.open
        "AZURE_OPENAI_API_KEY": "sekret-key-123"}
 
 
+def nb():
+    import tempfile
+    return B.Budget(Path(tempfile.mkdtemp()) / "l.jsonl")
+
+
 def ok_body(text="{}", i=100, o=50):
     return json.dumps({"status": "completed", "model": "gpt-5.4-pro",
                        "output": [{"type": "message", "content": [{"type": "output_text", "text": text}]}],
@@ -191,7 +196,7 @@ def test_azure_refusal_also_at_call_time():
     p = providers.AzureResponsesProvider(env=env, transport=lambda r, t: pytest.fail("must not send"))
     env["T56_SPEND_APPROVED"] = "0"
     with pytest.raises(providers.SpendNotApproved):
-        p.complete("s", [{"type": "text", "text": "x"}], 100)
+        p.complete("s", [{"type": "text", "text": "x"}], 100, budget=nb())
 
 
 def test_cli_refuses_azure_without_approval(monkeypatch, tmp_path):
@@ -207,7 +212,7 @@ def test_azure_request_shape():
         return 200, {}, ok_body()
     p = providers.AzureResponsesProvider(env=ENV, transport=tr, reasoning_effort="medium", timeout=77)
     parts = [{"type": "text", "text": "hi"}, {"type": "image", "media_type": "image/jpeg", "data_b64": "QUJD"}]
-    r = p.complete("sys", parts, 4321)
+    r = p.complete("sys", parts, 4321, budget=nb())
     req, timeout = sent[0]
     body = json.loads(req.data)
     assert req.full_url == "https://example.openai.azure.com/openai/v1/responses" and timeout == 77
@@ -231,7 +236,7 @@ def test_azure_retries_429_with_backoff_then_succeeds():
     seq = iter([(429, {"retry-after": "3"}, b""), (503, {}, b""), (200, {}, ok_body())])
     slept = []
     p = providers.AzureResponsesProvider(env=ENV, transport=lambda r, t: next(seq), sleep=slept.append, backoff=2)
-    assert p.complete("s", [{"type": "text", "text": "x"}], 10).text == "{}"
+    assert p.complete("s", [{"type": "text", "text": "x"}], 10, budget=nb()).text == "{}"
     assert slept == [3.0, 4.0]
 
 
@@ -241,7 +246,7 @@ def test_azure_connect_error_retried_then_clear_error():
     slept = []
     p = providers.AzureResponsesProvider(env=ENV, transport=tr, sleep=slept.append, retries=2)
     with pytest.raises(providers.ProviderError, match="gave up after 3 attempts") as e:
-        p.complete("s", [{"type": "text", "text": "x"}], 10)
+        p.complete("s", [{"type": "text", "text": "x"}], 10, budget=nb())
     assert len(slept) == 2 and not e.value.may_have_run and "sekret" not in str(e.value)
 
 
@@ -252,18 +257,18 @@ def test_azure_timeout_is_not_retried_and_may_have_run():
         raise socket.timeout()
     p = providers.AzureResponsesProvider(env=ENV, transport=tr, sleep=lambda s: None)
     with pytest.raises(providers.ProviderError) as e:
-        p.complete("s", [{"type": "text", "text": "x"}], 500)
+        p.complete("s", [{"type": "text", "text": "x"}], 500, budget=nb())
     assert calls == [1] and e.value.may_have_run and e.value.output_tokens == 500
 
 
 def test_azure_auth_error_and_incomplete_answer():
     p = providers.AzureResponsesProvider(env=ENV, transport=lambda r, t: (401, {}, b"bad"))
     with pytest.raises(providers.ProviderError, match="credentials rejected"):
-        p.complete("s", [{"type": "text", "text": "x"}], 10)
+        p.complete("s", [{"type": "text", "text": "x"}], 10, budget=nb())
     inc = json.dumps({"status": "incomplete", "output": [], "usage": {"input_tokens": 9, "output_tokens": 7}}).encode()
     p = providers.AzureResponsesProvider(env=ENV, transport=lambda r, t: (200, {}, inc))
     with pytest.raises(providers.ProviderError) as e:
-        p.complete("s", [{"type": "text", "text": "x"}], 10)
+        p.complete("s", [{"type": "text", "text": "x"}], 10, budget=nb())
     assert (e.value.input_tokens, e.value.output_tokens) == (9, 7)  # billed anyway, recorded by the caller
 
 
@@ -423,3 +428,22 @@ def test_s2_usd_cap_refuses_retry(tmp_path):
     with pytest.raises(B.BudgetExceeded, match="USD"):
         p.complete("s", X, 1000, budget=b, label="S1")
     assert len(_ledger(tmp_path / "l.jsonl")) == 2
+
+
+def test_s2_extract_pdf_charges_5xx_through_azure_provider(tmp_path):
+    seq = iter([(500, {}, b""), (500, {}, b""), (200, {}, ok_body('{"components": []}'))])
+    p = providers.AzureResponsesProvider(env=ENV, transport=lambda r, t: next(seq), sleep=lambda s: None)
+    b = new_budget(tmp_path)
+    extract.extract_pdf(SHEETS / "S001.pdf", p, b, max_output_tokens=1000)
+    rows = [json.loads(l) for l in (tmp_path / "ledger.jsonl").read_text().splitlines()]
+    assert [r["estimated"] for r in rows] == [True, True, False]
+    assert rows[0]["output_tokens"] == rows[1]["output_tokens"] == 1000 and rows[0]["input_tokens"] > 1000
+    assert (rows[2]["input_tokens"], rows[2]["output_tokens"]) == (100, 50)
+
+
+def test_s2_retry_check_includes_output_headroom(tmp_path):
+    p = providers.AzureResponsesProvider(env=ENV, transport=lambda r, t: (500, {}, b""), sleep=lambda s: None)
+    p.output_headroom = 5000
+    b = B.Budget(tmp_path / "l.jsonl", max_tokens=2500)
+    with pytest.raises(B.BudgetExceeded, match="retry 2"):
+        p.complete("s", X, 1000, budget=b, label="S1")
