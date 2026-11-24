@@ -1,7 +1,7 @@
 # UK cosmetic CPSR assessor workbench
 
 - slug: uk-cosmetic-cpsr-assessor-workbench
-- stage: G0
+- stage: KILLED (validator, T-50, 2026-11-24, score 47)
 - market and segment: UK (and UK/EU) safety-assessor bureaus and Responsible Person services that write Cosmetic Product Safety Reports (CPSR Part A and B) for small cosmetics brands at a per-product fee
 - one-line pitch: The bureau's AI workbench reads each brand's formulation, supplier specs, SDS and certificates, reconciles ingredients, runs the margin-of-safety arithmetic and drafts CPSR Parts A and B with every statement traced to a source, so the qualified assessor reviews and signs instead of writing (found in the bureau-side second pass of T-50; scores blank for the validator)
 
@@ -51,7 +51,36 @@ Honest gaps: no independent count of qualified UK safety assessors or of bureaus
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| 11 | 11 | 7 | 4 | 7 | 2 | 5 | **47** |
+
+Validator checks (T-50, 2026-11-24; vendor pages are marketing, so their claims are unverified):
+- **Pain 11.** The per-product fees on bureau pages (£220-£465, "from £70") show that a CPSR costs money and that assessor labour is the bureau's margin. Two problems: there are no complaints, job ads or reviews about the drafting work itself, and the price war cuts the hours a tool can save on each report. CTPA's notice on non-compliant and possibly fraudulent UK CPSRs (https://www.ctpa.org.uk/news/important-non-compliant-cpsrs-in-the-uk-7866, search summary) shows quality problems, not a bureau that wants a tool.
+- **Pay 11.** Brands pay bureaus per report, but the bureau's own spend on software sets the ceiling. Third-party listings put Cosmetri Product Manager at €49 a user a month (Capterra, https://www.capterra.com/p/233732/Cosmetri-Product-Manager/) and $58-$345 a month (SoftwareSuggest, https://www.softwaresuggest.com/cosmetri). Both are search summaries, they disagree, and neither is from the vendor. The incumbents and OrAIsi publish no prices.
+- **AI 7.** Reading supplier SDS, specs and CoAs is real AI work. The MoS (NOAEL or PoD divided by SED) is arithmetic. The incumbents' moat is a curated toxicology database (Ecomundo says 4,000+ profiles; Coptis Tox), not the model. The Part B reasoning has to stay with the assessor, so the AI share of what the buyer values is small.
+- **Reach 4.** There is no public register or count of UK qualified safety assessors (CTPA and gov.uk searches found none). The only routes are the CTPA and Society of Cosmetic Scientists networks, DGK certificate courses and freelancers on Fiverr and Upwork, and none of them gives a count.
+- **Build 7.** The stack is standard and the Azure cost is fine, but a credible MoS needs a NOAEL or PoD for every ingredient. SCCS opinions, CosIng and CIR reports are free, but they cover a minority of INCI names. ECHA dossier data is uneven and its reuse terms need checking. The studio can't get a lawful, comprehensive free toxicology source in four weeks, and a demo restricted to SCCS-covered ingredients is a narrow one. This is close to the data red flag but doesn't reach it.
+- **Competition 2.** The same job is already sold, in some cases to the same buyer:
+  - **OrAIsi** (fetched): AI for "safety assessors, regulatory affairs managers, and cosmetic manufacturers". It reads formulas, supplier lists and SDS "in any source format", calculates SED, NOAEL and MoS per ingredient and route, and assembles the PIF "with Part A and Part B structured for audit". EU only, with no UK mention, but UK Annexes mostly mirror the EU's, so UK coverage is a content update, not a moat.
+  - **Ecomundo COSMETIC Factory** (fetched): "Automate your MoS calculations in one click", PIF smart-fill templates, a toxicology profile database, AI modules for document conformity (EcoMarket) and document management (EcoGed), and EU/UK compliance with a London office.
+  - **Coptis Tox / Coptis Lab** (vendor page, search summary): generates toxicology profiles for whole formulas automatically and calculates MoS from validated ingredient data.
+  - **Cosmetri (Registrar Corp)**: assessors complete and sign Parts A and B inside the PIF.
+  - **Also:** ToxTool (Cosmetica Italia), ChemComply.io (CPSR and PIF platform) and Biorius MyApps.
+  - **Left over:** UK wording and per-bureau style memory, which any of these can copy within a month.
+- **Risk 5.** This is not off-limits. A CPSR is a product-safety regulatory deliverable, not medical or legal advice to a person, and the signature and liability stay with the qualified assessor. It is health-adjacent, though: consumer toxicology, where a wrong MoS harms end users. A drafting tool also lowers the cost of the "signature mill" reports CTPA warns about. No personal data.
+
+**Verdict: KILL (47, first attempt; ceiling about 55).**
+
+## Kill reason
+The workbench is already a product category. OrAIsi sells the same pitch (read supplier documents and SDS, compute SED, NOAEL and MoS, assemble Part A and B for the assessor to sign) to the same buyer, and Ecomundo, Coptis Tox and Cosmetri already automate MoS, toxicology profiles and assessor sign-off. Their real moat is curated ingredient toxicology data, which the studio can't lawfully assemble from free sources in four weeks. The only gap left is UK wording, and EU vendors can copy that in a month (the UK Annexes largely mirror the EU's). The buyer pool is uncountable (no assessor register), and a per-report price war from £70 caps what a bureau would pay for a seat. The idea is admin, not medical advice, so it isn't off-limits, but it is health-adjacent and could help low-quality report mills.
+
+## Lessons
+- In regulated-document niches, the "AI drafts, professional signs" pattern is already the default pitch of every vertical vendor. Read the comparison table on the nearest AI vendor's page: OrAIsi named Coptis, Ecomundo and Cosmedesk, which settled Competition in one fetch.
+- When the deterministic core depends on a reference dataset (toxicology values), the data owner is the incumbent. Check who curates the data, and its licence, before scoring AI and Build.
+- A bureau price war is evidence against Pay for a bureau-side tool, not for it.
+
+## What would revive it
+A lawful, broad and free (or cheaply licensable, with approval) per-ingredient toxicology source, plus evidence that UK bureaus avoid OrAIsi, Ecomundo and Coptis for a reason those vendors can't fix quickly, such as price (a published price above about £300 a seat a month) or UK-specific failures. Or a UK licensing regime for safety assessors (the committee recommendation) that creates new required records the incumbents don't produce.
 
 ## Gate log
 - 2026-11-24 T-50 second pass (bureau-side): written at G0, scores blank. Weak-to-moderate survivor; strongest evidence is two bureaus' own per-product prices and 24,112 Responsible Persons.
+- 2026-11-24 T-50 validator: KILL, 47/100, first attempt (Pain 11, Pay 11, AI 7, Reach 4, Build 7, Competition 2, Risk 5). OrAIsi sells the same assessor workbench (SDS reading, SED/NOAEL/MoS, Part A/B assembly); Ecomundo, Coptis Tox and Cosmetri already automate MoS, tox profiles and assessor sign-off; tox data is the incumbents' moat; no assessor count. Not off-limits (product-safety compliance, not medical advice; assessor keeps liability), but health-adjacent. Ceiling about 55.
