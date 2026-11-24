@@ -2,7 +2,7 @@
 
 Ordered by score, then build feasibility. The validator keeps this current.
 
-Updated 2026-11-23 (T-4, T-11, T-22, T-28 and T-31 complete: 33 scored, 0 PASS, 5 KILL). No idea has passed G1 (70+) yet. Ties are broken by the Build score.
+Updated 2026-11-24 (T-4, T-11, T-22, T-28, T-31 and T-36 complete: 37 scored, 0 PASS, 9 KILL). No idea has passed G1 (70+) yet. Ties are broken by the Build score.
 
 | Rank | Slug | Stage | Score | One-line pitch | Next step |
 |---|---|---|---|---|---|
@@ -40,6 +40,10 @@ Killed (in `killed/`):
 - margin-scheme-dealer-desk (45): VAT Margin already sells margin-scheme VAT for non-vehicle resellers at £25-£79 a month.
 - tour-operator-contract-rate-loader (59, T-31): TravelBox, Juniper and Travel Compositor already ship AI contract loading, and offshore contract-loading firms sell it as a service.
 - wedding-venue-enquiry-agent (62, T-31, second failure): Perfect Venue, iVvyAI, Mikla and Hyperleap already sell AI enquiry replies, and there is no UK channel-share data or UK price.
+- housing-complaint-response-qa (57, T-36): VerseOne already sells AI-drafted social-housing complaint responses, complaints systems (MRI, Crimson, Neo) sell compliance with the Code, Housemark and HQN sell reviews, and the Ombudsman decisions carry no reuse licence. Not a legal-advice product as scoped. Ceiling about 67.
+- apprenticeship-evidence-preaudit (53, T-36): Bud already alerts on missing, unsigned and overdue evidence and sells "Funding confidence" under its agents line, and Aptem bundles an independent compliance review (ACAR). Minors' data at scale. Ceiling about 63.
+- haulier-audit-workpapers (52, T-36): the buyers are about 50 DVSA-accredited audit providers plus consultants, with no current prices; records platforms (Samsara, Roadsoft, FleetCheck) hold the data. Ceiling about 60.
+- mot-advisory-dealer-risk-score (51, T-36): Car Guide and VehicleStats already predict MOT failures from MOT history, MOTCost is free, and dealers pay £1 to £4 per trade check, which already includes the MOT history. Ceiling about 60.
 
 **Pattern:** every idea lost most of its points on Competition (1 to 5 out of 10; four of the UK batch scored 1). By late 2026 incumbents ship "AI over your documents" as a standard or free feature, so a gap has to be checked on the competitor's own product pages, and the stronger wedges are ones incumbents can't easily follow: a regulatory deadline, deep domain workflow, a channel they don't serve, or liability they won't take.
 
@@ -74,3 +78,12 @@ Killed (in `killed/`):
 - If offshore firms already sell the task as a service (contract loading: Coforge, WNS, Unire, 247tpd), the pain is proven, but buyers already have a cheap option with human checking, and system vendors partner with those firms.
 - A RAG receptionist is a feature of the vertical CRM (Perfect Venue AI Reply, iVvyAI), not a product.
 - A website desk check shows which channels a business publishes, never the volume through each. Ask for evidence the studio can actually collect.
+
+**Round 6 (T-36): public-data proof tests.** All four ideas were killed on the first attempt (57, 53, 52, 51), each with a ceiling below 70. A self-run proof test doesn't help when Competition and Pay fail first.
+- Pay is still the weakest score. No idea had a published price for the job, only salaries, dated audit fees or adjacent per-unit prices.
+- Lessons for the next scout:
+  - In public-sector niches, read the G-Cloud listings before writing the G0 file. Four listings settled housing Competition in minutes, and their pricing PDFs are the next public source for Pay.
+  - "Grounded in a regulator's or ombudsman's decisions" is a moat only if the decisions carry a reuse licence. Non-Crown bodies often publish without the OGL.
+  - If the input is records held in a vertical system (an LMS, fleet software), that system's vendor is the main competitor, and some now bundle a human review too (Aptem ACAR).
+  - Checker-side buyers (auditors, assessors) are a market capped by their headcount. Count them from gov.uk accreditation lists first.
+  - Open datasets with a free government viewer already attract consumer and hobby scoring sites. Search "<dataset> predict/score" and the nearest per-unit data price before scoring Pay.

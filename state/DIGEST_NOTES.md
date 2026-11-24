@@ -12,3 +12,5 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - [_starter] Two earlier starter fixes (cleaner web page serving, pinned base images) were reviewed and passed.
 - [_starter] Safer Azure sign-in for the starter's AI calls: a slow Azure login endpoint can no longer stall every user past the page's time limit. Reviewed twice and merged.
 - [_starter] Starter AI calls hardened: cut-off answers are no longer saved as if complete, and odd replies from Azure still count against the spending caps. Reviewed and merged.
+- [ideas] Scouting round 6 tried "only ideas we can prove from public data": 4 ideas written, all 4 killed (51-57). Still 0 of 39 ideas at the bar. Q-6 now defaults to B (build the restaurant margin copilot as a cheaper entrant) if you don't answer; C (tell us your friend's sector) is still the recommendation.
+- [_starter] Small starter tidy-ups merged (missing-asset 404s, all page routes tested, grouped GitHub Actions update PRs, Node 22 end-of-life note). Reviewed and merged.

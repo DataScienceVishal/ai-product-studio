@@ -1,7 +1,7 @@
 # Operator-licence compliance audit workpapers for haulage auditors
 
 - slug: haulier-audit-workpapers
-- stage: G0
+- stage: KILLED at G0 (validator 52, 2026-11-24, T-36)
 - market and segment: Independent audit providers and transport consultants who carry out operator-licence compliance audits for UK goods-vehicle operators (including those told to commission one by a Traffic Commissioner), plus operators doing a pre-audit self-check. Fleet sizes of 2 to 50 vehicles.
 - one-line pitch: Reads an operator's maintenance (PMI) sheets, driver defect reports, tachograph and driver files, builds the sample the DVSA/Traffic Commissioner Standard Audit Framework asks for, and drafts the audit working papers and findings for the human auditor to verify and sign.
 
@@ -59,13 +59,59 @@
 - A records platform (FleetCheck, Compliance Control) adds an "audit pack" export in a month. Test: read their help pages.
 
 ## Score (validator)
-Draft self-score by the scout (validator to re-score):
+Scout draft: 58 (Pain 12, Pay 9, AI 8, Reach 5, Build 10, Competition 6, Risk 8).
+
+Validator score, 2026-11-24 (T-36):
 
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
-| 12 | 9 | 8 | 5 | 10 | 6 | 8 | 58 |
+| 11 | 7 | 8 | 4 | 9 | 6 | 7 | 52 |
 
-Rationale: Pain 12 (a regulator-rejected audit and curtailment shown in one decision; no volume data); Pay 9 (dated prices only); AI 8 (document reading, but sign-off is human and templates are loose); Reach 5 (small auditor base); Build 10 (clear framework, messy scans); Competition 6 (records platforms exist, none shown to produce audit workpapers); Risk 8 (some personal data, low advice risk).
+**Falsification findings** (all accessed 2026-11-24; "fetched" means the page itself was read)
+- The buyer pool is small.
+  - DVSA's earned recognition scheme lists 50 authorised audit providers, 48 of which cover HGV (https://www.gov.uk/government/publications/dvsa-earned-recognition-authorised-audit-providers/dvsa-earned-recognition-scheme-authorised-audit-providers, fetched; updated 13 November 2026).
+  - Add the RHA and Logistics UK audit teams and an uncounted number of independent consultants.
+  - Revenue estimate (method shown, not sourced): 50 to 300 auditors × £50 to £150 a month = £2.5k to £45k a month at full penetration, which a two-person business would never reach.
+- No current price for an audit or for auditor software:
+  - Transport LDP lists "Independent Compliance Audit" and "Audit-Ready Support" with no prices (https://ldp-transport.prod01.london.platform-os.com/consultancy-pricing, fetched).
+  - Logistics UK's audit page returned 404, and the RHA publishes no price (search).
+  - The only figures found are a 2005 average of £500 to £600 a day (https://archive.commercialmotor.com/article/8th-september-2005/36/is-for-audit, search summary), the 2020 Fieldfisher fixed fees above, and compliance-partner retainers of £450 to £750+ a month (a consultancy's own sales page, search summary).
+  - The buyer would be the auditor, and nothing shows auditors buy workpaper software at all.
+- The records platforms own the data and are adding AI:
+  - Samsara launched Smart Compliance for UK and EU fleets in April 2026 (tachograph downloads, infringement management, driver coaching; https://logisticsbusiness.com/transport-distribution/lorries-vans-trailers/smart-compliance-for-eu-and-uk-fleets/, search result).
+  - Roadsoft brings an AI assistant to the UK that archives tachograph follow-up "in an auditable compliance dossier" (trans.info, search result).
+  - FleetCheck and Compliance Control already sell "audit-ready reporting".
+  - None of them produces Standard Audit Framework workpapers, but an "audit pack" export is a short step for any of them.
+- Regulatory stance:
+  - The Traffic Commissioners warn that AI-drafted documents can contain wrong caselaw references, and say AI "cannot replace human judgement" (annual report, fetched).
+  - The operator decides whether an audit is sufficient, and providers use their own templates (gov.uk guidance, fetched). A workpapers tool has no standard format to target.
+- Data licence: no problem. The gov.uk guidance and Traffic Commissioner decisions are under the OGL.
+- Risk 7: driver personal data (licence numbers, infringement and disciplinary records).
+
+**Scores in brief.**
+- Pain 11: one fetched decision; no figures on how many audits are commissioned.
+- Pay 7: only prices from 2005 and 2020 plus sales-page retainers, and no price for auditor software.
+- AI 8: document reading of scanned records, but templates are loose and sign-off is human.
+- Reach 4: about 50 accredited providers plus an unknown number of consultants.
+- Build 9: handwritten PMI sheets and inconsistent scans.
+- Competition 6: no workpapers tool found, but the records platforms are adjacent.
+- Risk 7.
+
+**Verdict: KILL (first attempt; ceiling below 70).**
+- The independent-audit requirement is real, and a rejected audit can halve a licence.
+- But the buyer for a workpapers tool is a small group of auditors (50 accredited providers plus consultants). They use their own templates and publish no prices, so the revenue ceiling is tiny.
+- The records platforms that hold the operator's data (Samsara, FleetCheck, Compliance Control, Roadsoft) are adding AI and "audit-ready" exports.
+- Even with the best plausible evidence (Pain 13, Pay 10, AI 9, Reach 5, Build 10, Competition 6, Risk 7), the score tops out at about 60.
+
+**Lessons**
+- Selling tools to the professional who checks a regulated business (auditors, assessors) caps the market at the number of such professionals. Count them first (here, an accreditation list on gov.uk).
+- Accreditation and approved-provider lists on gov.uk are a fast, public way to size the market for checker-side ideas.
+
+**What would revive it**
+- A current published audit price of at least £1,500, plus evidence that many hundreds of audits a year are commissioned (for example, a count of "independent audit" undertakings in Traffic Commissioner decisions over 12 months).
+- And a selling partner with transport-consultancy contacts.
+- Or a pivot to selling operators a continuous self-check (not the independent audit itself), which then competes directly with FleetCheck and Samsara.
 
 ## Gate log
 - 2026-11-24 scout round 6 (T-36): G0 drafted. Needs a current audit price and a count of audit providers.
+- 2026-11-24 | validator | G0→G1 | KILL 52 | Buyer pool is about 50 DVSA-accredited audit providers plus consultants with their own templates and no published prices (only 2005 and 2020 figures found), while records platforms (Samsara Smart Compliance, Roadsoft AI, FleetCheck, Compliance Control) own the data and add audit-ready exports; ceiling about 60.

@@ -1,7 +1,7 @@
 # MOT-advisory repair-risk score for independent used-car dealers
 
 - slug: mot-advisory-dealer-risk-score
-- stage: G0
+- stage: KILLED at G0 (validator 51, 2026-11-24, T-36)
 - market and segment: UK independent used-car dealers (and small fleet remarketers) buying stock at auction or part-exchange, with 20 to 150 cars in stock, who need a fast read on likely repair and prep cost before they bid.
 - one-line pitch: Reads a car's full official MOT history, including the free-text advisories and failures, and returns a plain-English repair-risk and likely-cost estimate (brakes, suspension, corrosion, tyres, clocking flags) before the dealer bids.
 
@@ -59,13 +59,62 @@
 - Vehicle registration data is not personal data in the same way, but MOT history can be linked to owners by third parties; the tool should not store owner information.
 
 ## Score (validator)
-Draft self-score by the scout (validator to re-score):
+Scout draft: 59 (Pain 10, Pay 7, AI 11, Reach 5, Build 12, Competition 6, Risk 8).
+
+Validator score, 2026-11-24 (T-36):
 
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
-| 10 | 7 | 11 | 5 | 12 | 6 | 8 | 59 |
+| 9 | 6 | 8 | 5 | 12 | 3 | 8 | 51 |
 
-Rationale: Pain 10 (margin pressure and repair surprises, but no dealer-specific loss figure); Pay 7 (substitute inspection £79 to £267, no dealer tool price); AI 11 (text modelling with a public-data backtest); Reach 5; Build 12 (open data, clear pipeline); Competition 6 (no dealer predictor found, but HPI and Auto Trader sit next door); Risk 8.
+**Falsification findings** (all accessed 2026-11-24; "fetched" means the page itself was read)
+- Others already predict next-MOT failures from MOT history:
+  - **Car Guide.** Car Guide uses "make, model, mileage, engine size and previous MOT history to ... predict which components are likely to fail on the next MOT". It flags ex-taxis and unrecorded accident damage and is pitched at motorists, car dealers, warranty firms and underwriters, with data available through an API (https://www.just-auto.com/interview/car-guide-using-ai-to-predict-parts-failures, fetched; interview dated May 2022, so it is not known whether the product is still live).
+  - **VehicleStats.** VehicleStats estimates the chance of failing the next MOT with a logistic regression on DVSA data (https://www.vehiclestats.co.uk/how-we-calculate-risk, search summary; the fetch returned 403).
+  - **MOTCost.** MOTCost publishes a free "failure cost guide" for advisory items (https://motcost.pages.dev/check-mot-history, search result).
+  - **Others.** MotorIQ and Payment Assist estimate repairs for consumers (search results).
+- Dealer recon-cost tools already exist:
+  - autobizCarcheck calculates reconditioning cost from a cost grid during trade-in appraisal. It is a European product priced in euros, and the page doesn't mention MOT history (https://office.autobiz.com/en/autobizcarcheck/, fetched).
+  - Glass's dealer tools cover recon and repair cost (https://glass.co.uk/sector/dealers/, search result).
+- Pay anchor, and it is low. Trade vehicle checks cost:
+  - MotorCheck: £3.30 a check pay-as-you-go, or from £1.20 on monthly plans (https://partner.motorcheck.co.uk/auto-trade, search summary);
+  - The Auto Experts: £2.99 to £3.99 a check, or £30 a month;
+  - MyCarCheck: £1.40 a check.
+  - These already include the MOT history, and gov.uk shows it free. A risk score is an add-on to a £1 to £4 data product. Estimate: at about 100 cars checked a month, even £1 extra per check is £100 a month per dealer, and nothing shows dealers would pay it.
+- Cheapest substitutes:
+  - the free gov.uk MOT history, read by an experienced buyer;
+  - BCA's Car Check and Standard Mechanical Report, which give buyers the condition data "to make your own estimation of the cost of reconditioning", with claims accepted within 48 hours or 500 miles on the mechanical report (https://episerver.bca.com/en/es/MM/Getting-Started/c/Professional-buyer/Appraisal-and-Mechanical-Report/Carcheck1, search summary).
+- AI advantage is weaker than claimed. Testers record most MOT defects and advisories by choosing items from DVSA's standard defect list in the MOT inspection manual, then adding a location. Only some entries are free text (validator's knowledge; not verified this run). So much of the "free text" maps through a lookup table, and the competitors above already model failure risk on structured history.
+- Data licence: OK.
+  - The bulk download is under OGL v3.0 (fetched).
+  - The API quota is 500,000 requests a day at 15 requests a second (https://documentation.history.mot.api.gov.uk/mot-history-api/rate-limits/, fetched). Getting a key needs an application that records the applicant and their "use of the data", so it is ask-first.
+  - The privacy notice says the data "is intended to be used for services, applications and research that will contribute to improved road safety" (https://www.gov.uk/government/publications/dvsa-privacy-notices/mot-history-api-privacy-notice, fetched). That states an intent, not a restriction, but a dealer bidding tool's link to road safety is thin, and DVSA could weigh that when granting a key.
+  - No red flag.
+
+**Scores in brief.**
+- Pain 9: no dealer-side loss figure; the cited studies are search summaries, the private-buyer study isn't about dealers, and the survey is from 2019.
+- Pay 6: trade checks cost £1.20 to £4, with no dealer price for a risk score.
+- AI 8: the defect wording is mostly standardised, and others already model failure.
+- Reach 5: many dealers, but a cheap per-check product needs volume, and the channel is unknown.
+- Build 12: open data and a clear pipeline.
+- Competition 3: Car Guide, VehicleStats, MOTCost, MotorIQ, autobiz and Glass's, with HPI next door.
+- Risk 8.
+
+**Verdict: KILL (first attempt; ceiling below 70).**
+- MOT-history failure prediction is already done (Car Guide, which is pitched at dealers, and VehicleStats), and advisory repair-cost guides are free (MOTCost).
+- Dealers' reference price is a £1 to £4 trade vehicle check that already includes the MOT history.
+- The open data makes the product easy to build, but it is just as easy for anyone else to build, and the advisory text is mostly standard DVSA wording, so the AI moat is thin.
+- Even with the best plausible evidence (Pain 11, Pay 9, AI 10, Reach 6, Build 12, Competition 4, Risk 8), the score tops out at about 60.
+
+**Lessons**
+- An open dataset with a free government viewer sets the price anchor at zero for the data and at a few pounds for the value-added check. Look up the per-unit price of the nearest data product before scoring Pay.
+- Ideas built on famous open datasets (MOT, Companies House, Land Registry) attract hobby and consumer sites quickly. Search for "<dataset> risk/score/predict" sites as well as for incumbents.
+- Before crediting AI for "free text", check whether the regulator's form uses a fixed code list.
+
+**What would revive it**
+- A published dealer price (at least £20 a month, or at least £1 extra per check) for a repair-risk product, plus evidence that Car Guide and VehicleStats no longer sell to the trade.
+- Or a backtest on the DVSA bulk data showing that the advisory wording beats an age, mileage and model baseline by at least 10 points of recall. Even then, the per-check pricing limits the upside.
 
 ## Gate log
 - 2026-11-24 scout round 6 (T-36): G0 drafted. Weakest on Pay; the backtest is the strongest evidence the studio can collect itself.
+- 2026-11-24 | validator | G0→G1 | KILL 51 | Car Guide (dealer-pitched ML next-MOT failure prediction) and VehicleStats already model failure risk from MOT history, MOTCost gives advisory cost guides free, and dealers' price anchor is a £1-£4 trade vehicle check that already includes MOT history; ceiling about 60.

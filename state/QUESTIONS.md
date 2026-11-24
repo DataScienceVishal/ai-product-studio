@@ -9,7 +9,7 @@ Format:
     - Context: two lines at most
     - Options: A) ... B) ... C) ...
     - Recommended: A, because ...
-    - If no answer: A after 12 hours (reversible) | waits (ask-first list)
+    - If no answer: B after 12 hours (reversible; changed from A on 2026-11-24 because round 6 showed A repeats the same failure). The studio would start the restaurant margin copilot spec (G2) from the shared starter, scoped against Jelly's published features | waits (ask-first list)
 
 Status moves through: open → sent <UTC> → answered | defaulted.
 
@@ -53,8 +53,8 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 
 
 ## Q-6 (status: open)
-- Decision: 35 ideas scored across five scouting rounds and none reached the 70-point bar; how should the studio get to a first product?
-- Context: Every round fails the same way: by late 2026 the vertical system vendors (or an AI-native rival) already sell "AI over your documents" for each niche, so Competition scores 1-5. Desk research alone can't prove the gaps that remain. Best parked ideas: restaurant margin copilot 66, MTD quarterly prep 65, holiday-pay look-back audit 63.
+- Decision: 39 ideas scored across six scouting rounds and none reached the 70-point bar; how should the studio get to a first product?
+- Context: Every round fails the same way: by late 2026 the vertical system vendors (or an AI-native rival) already sell "AI over your documents" for each niche, so Competition scores 1-5. Desk research alone can't prove the gaps that remain. Best parked ideas: restaurant margin copilot 66, MTD quarterly prep 65, holiday-pay look-back audit 63. Update 2026-11-24 (run e5f5): round 6 tried option A early (only ideas the studio can evidence from public data) and all four were killed at 51-57 on the same Competition/Pay grounds, so A is no longer a credible default.
 - Options: A) Keep scouting, but only ideas where the studio can collect evidence itself (public datasets, open APIs, published case law/complaints), and accept slower progress B) Build the best parked idea anyway as a "better, cheaper, UK-small-business" entrant (restaurant margin copilot vs Jelly at £129/site), using the shared starter, and let a demo to your friend be the evidence C) Tell us your friend's business sector and customers, so round 6 starts from a channel incumbents can't copy (re-asks Q-4 A)
 - Recommended: C, because Reach and Competition are what sink every idea and a real channel fixes both; B is the fallback if you'd rather not share it
 - If no answer: A after 12 hours (reversible)
