@@ -68,19 +68,20 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - If no answer: waits (spending money is on the ask-first list); until then the studio behaves as C
 - Answer: B (Telegram reply "2B" to the 08:00 digest, 10:04:31Z). No mini deployment; the studio may run the MTD benchmark on the pro model, at most 20 documents (about $15), then stops. Model spend cap for T-12: $15.
 
-## Q-8 (status: sent 2026-11-24T15:00Z as 1)
+## Q-8 (status: sent 2026-11-24T15:00Z as 1; 2026-11-24T23:14Z Vishal asked how to add the sign-in, steps given in chat; treat as leaning A, waits for him to confirm it's added)
 - Decision: How should GitHub deploy jobs sign in to Azure once Postgres uses Entra ID (T-18)?
 - Context: In the new design the deploy service principal is also the database admin. Its secret (AZURE_CREDENTIALS) can be read by a workflow on any branch, agent branches included. Security says the "demo data only" limit can't end while that is true. The fix is a federated (OIDC) credential that trusts only main. Adding one is a directory change, which needs your yes.
 - Options: A) Add a federated credential limited to main on the deploy app registration (about 5 minutes in the portal; the studio writes the exact steps and switches the workflow to OIDC), then delete the client secret (recommended) B) Keep the secret and accept the risk in writing: demo data only stays in force until handover C) Leave it for now and decide before the first real deploy
 - Recommended: A, because it takes the only long-lived database admin credential out of reach of non-main branches
 - If no answer: waits (ask-first list). The studio builds T-18 behind the demo-data condition (behaves as C), and nothing is deployed until Q-5's approval setting is flipped anyway
 
-## Q-9 (status: sent 2026-11-24T15:00Z as 2)
+## Q-9 (status: answered 2026-11-24T23:14Z)
 - Decision: May the studio sign up for free trials (no card, studio email) of incumbent tools, to test whether their weak spots are real?
 - Context: After 11 rounds and 47 ideas, none has reached 70. A wedge check on the five best near-misses (round11-wedge-summary.md) found no new segment that lifts any of them; the deciding question for the best one (pEPR packaging data, 68) is whether Repackd's spec-sheet extraction is weak on messy real documents, and desk research can't answer that. Creating accounts is on the ask-first list.
 - Options: A) Yes to free, no-card trials of named incumbents (Repackd first, then Jelly for the restaurant idea), test data only, nothing in your name; the studio logs each sign-up in DECISIONS.md (recommended) B) No trials; keep scouting new niches only C) Build the best parked idea anyway (restaurant margin copilot, 66) and let a demo to your friend be the evidence
 - Recommended: A, because it is the only cheap way to turn a 66-68 near-miss into a pass or a clean kill
 - If no answer: waits (ask-first). Meanwhile the studio keeps scouting (behaves as B)
+- Answer: A (Vishal in chat, 2026-11-24T23:14Z). Free, no-card trials of named incumbents (Repackd first, then Jelly), test data only, nothing in Vishal's name; log each sign-up in DECISIONS.md.
 
 ## Q-10 (status: answered 2026-11-24T20:10:27Z)
 - Decision: Should the G1 rubric score Competition on the studio's wedge against incumbents (price, fit, segment they don't serve) rather than on whether a rival exists?
@@ -98,9 +99,10 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - If no answer: waits (spending is on the ask-first list); the studio builds and tests the extractor on the fake model meanwhile and makes no Azure call
 - Answer: A (Telegram reply "2A" to the 19:30 digest, 20:10:29Z). T-56 may spend up to $12 on gpt-5.4-pro (tuning + one test run); the extractor's guard enforces the cap.
 
-## Q-12 (status: open, queued 2026-11-24T20:35Z for the next digest; rewritten 2026-11-24 by run 591a after the price correction, not yet sent)
+## Q-12 (status: answered 2026-11-24T23:14Z)
 - Decision: The pEPR test costs more than we thought. How should it run?
 - Context: The model is dearer than the studio assumed. gpt-5.4-pro lists at $30/$180 per million tokens (OpenAI and Microsoft pages), not $15/$120. At the real price, total model spend so far is about $15 of the $80 credit, not the ~$10 reported. T-56 has used $3.09 of your $12. Tuning was accurate (97.9% of fields right, every conflict flagged), but it cost $0.62 a sheet, twice the cost pass mark of $0.316 that was written before any run. So the 30-sheet test on this model would cost about $18.50 and would fail the cost mark even if accuracy passes.
 - Options: A) Add a cheap deployment (gpt-5-mini or similar, about 5 minutes in Azure AI Foundry) and name it in AZURE_OPENAI_DEPLOYMENT_MINI. The studio writes a dated amendment switching the test to it before running. Expected cost about $1-2 inside the $12 already approved, and it is the model a product would use (recommended). B) Raise T-56's cap to $30 and run once on gpt-5.4-pro as pre-registered. That settles accuracy, but the cost mark will almost surely fail, which kills pEPR on cost. C) Stop: pEPR stays parked at 68 with tuning evidence only.
 - Recommended: A, because on the pro model the test can only end in a cost failure. A mini model tests what a sellable product would actually run on, for about a tenth of the money.
 - If no answer: waits (spending and Azure changes are on the ask-first list). No model calls are made meanwhile.
+- Answer: A (Vishal in chat, 2026-11-24T23:14Z). Vishal adds a cheap deployment and sets AZURE_OPENAI_DEPLOYMENT_MINI; until that variable exists, no T-56 model calls. Then write the dated amendment and run inside the existing $12.
