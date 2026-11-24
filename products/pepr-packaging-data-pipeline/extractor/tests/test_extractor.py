@@ -927,11 +927,16 @@ class _OkProv(providers.FakeProvider):
     pass
 
 
+FIRST_RUN = {"set": "test", "provider": "fake", "deployment": "gpt-5-mini", "price_model": "gpt-5-mini",
+             "usd_per_m_in": 0.25, "usd_per_m_out": 2.0, "max_output_tokens": 6000, "reasoning_effort": None}
+
+
 def _resume_setup(tmp_path, with_out=("S001", "S002"), with_rows=("S001", "S002")):
     out = tmp_path / "o"
     out.mkdir()
     for sid in with_out:
         (out / f"{sid}.json").write_text(json.dumps({"sheet_id": sid, "components": [], "pages": [], "warnings": [], "usage": {}}))
+    (out / "run.json").write_text(json.dumps(FIRST_RUN))
     led = tmp_path / "l.jsonl"
     b = B.Budget(led, model=MINI)
     for sid in with_rows:
@@ -992,3 +997,43 @@ def test_resume_preflight_reserves_only_remaining_sheets(tmp_path):
         (out / f"S{i:03d}.json").write_text("{}")
         B.Budget(led, model=MINI).record(f"S{i:03d}", 0, 0)
     assert _resume(tmp_path, out, led) == 0 and len(list(out.glob("S0*.json"))) == 30
+
+
+def test_resume_does_not_overwrite_first_run_json_and_writes_run_resume_json(tmp_path):
+    out, led = _resume_setup(tmp_path)
+    assert _resume(tmp_path, out, led) == 0
+    assert json.loads((out / "run.json").read_text()) == FIRST_RUN
+    assert json.loads((out / "run-resume.json").read_text())["deployment"] == "gpt-5-mini"
+
+
+@pytest.mark.parametrize("env,key", [({"T56_MAX_OUTPUT_TOKENS": "16000"}, "max_output_tokens")])
+def test_resume_with_different_settings_exits_7_before_any_call(monkeypatch, tmp_path, capsys, env, key):
+    out, led = _resume_setup(tmp_path)
+    for k, v in env.items():
+        monkeypatch.setenv(k, v)
+    before = len(_ledger(led))
+    assert _resume(tmp_path, out, led, "--charge-worst-case", "S003") == 7
+    assert key in capsys.readouterr().err
+    assert len(_ledger(led)) == before and not (out / "S003.json").exists() and not (out / "run-resume.json").exists()
+
+
+@pytest.mark.parametrize("field,value", [("deployment", "gpt-5.4-pro"), ("price_model", "gpt-5.4-pro"),
+                                         ("reasoning_effort", "low"), ("max_output_tokens", 9000), ("set", "tuning")])
+def test_resume_settings_mismatch_each_field(tmp_path, field, value):
+    first = dict(FIRST_RUN, **{field: value})
+    (tmp_path / "run.json").write_text(json.dumps(first))
+    msg = run._resume_settings_error(tmp_path / "run.json", FIRST_RUN)
+    assert msg and field in msg
+    assert run._resume_settings_error(tmp_path / "run.json", first) is None
+
+
+def test_resume_without_first_run_json_exits_7(tmp_path, capsys):
+    out, led = _resume_setup(tmp_path)
+    (out / "run.json").unlink()
+    assert _resume(tmp_path, out, led) == 7 and "run.json" in capsys.readouterr().err
+
+
+def test_second_resume_gets_its_own_file(tmp_path):
+    out, led = _resume_setup(tmp_path)
+    assert _resume(tmp_path, out, led) == 0 and _resume(tmp_path, out, led) == 0
+    assert (out / "run-resume.json").exists() and (out / "run-resume-2.json").exists()

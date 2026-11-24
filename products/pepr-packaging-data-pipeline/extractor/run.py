@@ -54,6 +54,19 @@ def resolve_max_output_tokens(flag, env=None):
     return n
 
 
+RESUME_MUST_MATCH = ("set", "deployment", "price_model", "reasoning_effort", "max_output_tokens")
+
+
+def _resume_settings_error(first_path, info):
+    """None if the first run's run.json matches this run on the settings that must not change, else a message."""
+    try:
+        first = json.loads(Path(first_path).read_text())
+    except (OSError, ValueError):
+        return f"--resume needs the first run's {first_path} to compare settings; it is missing or unreadable"
+    diff = [f"{k}: first run {first.get(k)!r}, now {info.get(k)!r}" for k in RESUME_MUST_MATCH if first.get(k) != info.get(k)]
+    return ("settings differ from the first run (" + "; ".join(diff) + "); set the same env or flags as the first run") if diff else None
+
+
 def _ledger_rows(ledger):
     p = Path(ledger)
     return [json.loads(ln) for ln in p.read_text().splitlines() if ln.strip()] if p.exists() else []
@@ -130,7 +143,17 @@ def main(argv=None):
     info = {"set": a.set, "provider": a.provider, "deployment": provider.deployment, "price_model": budget.model,
             "usd_per_m_in": p_in, "usd_per_m_out": p_out, "max_output_tokens": max_out,
             "reasoning_effort": getattr(provider, "reasoning_effort", None)}
-    (out / "run.json").write_text(json.dumps(info, indent=1, sort_keys=True))
+    if a.resume:  # same settings as the first run, or nothing is called; the first run.json is never overwritten
+        msg = _resume_settings_error(out / "run.json", info)
+        if msg:
+            print(f"refused: {msg}", file=sys.stderr)
+            return 7
+        n = 1
+        while (out / ("run-resume.json" if n == 1 else f"run-resume-{n}.json")).exists():
+            n += 1
+        (out / ("run-resume.json" if n == 1 else f"run-resume-{n}.json")).write_text(json.dumps(info, indent=1, sort_keys=True))
+    else:
+        (out / "run.json").write_text(json.dumps(info, indent=1, sort_keys=True))
     print("run: " + ", ".join(f"{k} {v}" for k, v in info.items()))
     pdfs = sorted(SETS[a.set].glob("S*.pdf"))
     incomplete = []

@@ -109,3 +109,5 @@ Provider: a failure after the request was sent (ConnectionResetError, Connection
 Resume command (same env as the first test run, T56_SPEND_APPROVED=1 and the recorded effort and max output tokens):
 `T56_SPEND_APPROVED=1 T56_REASONING_EFFORT=<recorded> T56_MAX_OUTPUT_TOKENS=<recorded> /usr/bin/python3 -m extractor.run --set test --provider azure --out results/test1 --resume --charge-worst-case S017`
 Tests: 197 pass.
+
+Resume settings guard: `--resume` compares deployment, price_model, reasoning_effort, max_output_tokens and set with the first run.json (exit 7 on any difference or a missing run.json, before any call or charge); it never overwrites run.json and writes run-resume.json (run-resume-2.json, ...). Use the same env as the first run (test1: reasoning_effort medium, max_output_tokens 6000). 206 tests pass.
