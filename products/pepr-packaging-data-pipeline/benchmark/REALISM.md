@@ -70,9 +70,9 @@ Reasons:
 
 ### Concrete changes (at most 5), and an optional public set
 
-Do not alter the 30 test sheets or their seed after any run on them has been scored. Put these into a separate "realism supplement" set (new seed, about 10 sheets), run and reported separately like the public-PDF check in amendment 7, with any scorer change dated before its first run.
+Do not alter the 30 test sheets or their seed after any run on them has been scored. Put these into a separate "realism supplement" set (new seed, about 10 sheets), run and reported separately like the public-PDF check in Amendment 1, item 7, with any scorer change dated before its first run.
 
-1. **Weight forms.** Add sheets where weight appears as "37.00gm ± 2.00gm", "1.38 oz (+/- 0.04 oz)", and as a bare number under a row label "Weight (g)"; truth is the nominal value. Fix or amend `parse_weight` and `quote_ok` first so correct answers are not scored wrong ("gm", unit in label).
+1. **Weight forms.** Add sheets where weight appears as "37.00gm ± 2.00gm", "1.38 oz (+/- 0.04 oz)", and as a bare number under a row label "Weight (g)"; truth is the nominal value. `parse_weight` now accepts "gm", "gms", "gram" and "grams" (Amendment 3, 2026-11-24); a unit only in the row label ("Weight (g)" over a bare number) still needs a dated scorer amendment first.
 2. **Weight absent but not "missing" in the usual way.** Film, label and paper components that give only gsm, µm, gauge or case weight in lb or kg; truth is `missing` for unit weight. Tests fabrication from areal weight.
 3. **Multi-variant and one-item sheets.** A catalogue-style sheet with 5 to 15 SKU rows or thickness columns, with the target item code in the title and in the truth. Also single-component sheets with "various closure options", secondary-packaging lines without weights (inner liner, outer box, pallet) and no component list.
 4. **Material and colour wording.** Blends ("rPET 30% + PET 70%"), recycled-content text inside the material cell, "Finish: Clear" with no Colour row, colour codes ("WhiteSolid W1229"), "Variable Coloured", plus marketing recyclability lines ("100% recyclable", "Recyclable*") and resin-code text. Decide in writing what truth says for a blend before generating.
@@ -83,3 +83,10 @@ Do not alter the 30 test sheets or their seed after any run on them has been sco
 ## Sources (all accessed 2026-11-24)
 
 Rows 1-13 URLs in the table above. Search queries used: PET bottle technical data sheet (surfaced the Vision sheets), glass jar product specification (surfaced Colorlites, Uline, British Glass TEC 4 reference), stretch and shrink film TDS (Veritiv, Plastotecnica, SAICA), tray TDS (Duni, Pactiv, CPET), label material data sheets (Avery Dennison), mailer and corrugated specs (KB Packaging; corrugated searches returned guides rather than supplier spec sheets), closure specs (emballator, Berry, Bericap pages seen in search results only, not opened). Not opened or failed: Fasson EU test host (503), 3M cgs160 (403), Emballator PS-185 and PS-409 (404), Dow all-PE pouch (empty page).
+
+## Corrections after review (2026-11-24, reviews/T-56-realism.md)
+- Section 2 item 2: "37.00gm" is now parsed (Amendment 3). The bare number under a "Glass weight (g)" label is still not parsed.
+- The generator's colour labels also include "Finish colour" (`generate.py:64`).
+- Where the text says "7 of 13", the list that follows names 8 documents; read it as 8 of 13.
+- SAICA (row 13): the fetch tool reported 15 pages but only 3 grades were read; the page count is unverified.
+- Copying any public PDF into the repo needs a logged decision under Amendment 1, item 7's licence condition. Links and own labels only until then.
