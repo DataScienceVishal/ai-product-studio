@@ -65,3 +65,10 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Options: A) Add a mini deployment and the env var (about 5 minutes in Azure AI Foundry; recommended) B) Keep pro only: the studio runs the full benchmark at most 20 documents (~$15) and stops C) No more model spend for now: T-12 stays at the pilot
 - Recommended: A, because it makes the benchmark and every product affordable and keeps pro for rare hard cases
 - If no answer: waits (spending money is on the ask-first list); until then the studio behaves as C
+
+## Q-8 (status: open)
+- Decision: How should GitHub deploy jobs sign in to Azure once Postgres uses Entra ID (T-18)?
+- Context: In the new design the deploy service principal is also the database admin. Its secret (AZURE_CREDENTIALS) can be read by a workflow on any branch, agent branches included. Security says the "demo data only" limit can't end while that is true. The fix is a federated (OIDC) credential that trusts only main. Adding one is a directory change, which needs your yes.
+- Options: A) Add a federated credential limited to main on the deploy app registration (about 5 minutes in the portal; the studio writes the exact steps and switches the workflow to OIDC), then delete the client secret (recommended) B) Keep the secret and accept the risk in writing: demo data only stays in force until handover C) Leave it for now and decide before the first real deploy
+- Recommended: A, because it takes the only long-lived database admin credential out of reach of non-main branches
+- If no answer: waits (ask-first list). The studio builds T-18 behind the demo-data condition (behaves as C), and nothing is deployed until Q-5's approval setting is flipped anyway
