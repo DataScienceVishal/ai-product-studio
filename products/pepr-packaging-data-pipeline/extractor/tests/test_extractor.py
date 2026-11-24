@@ -499,6 +499,17 @@ def test_supplement_refuses_before_test_set_in_ledger(tmp_path, capsys):
     assert run.main(["--set", "supplement", "--provider", "fake", "--out", str(tmp_path / "o2")]) == 6
 
 
+def test_supplement_refuses_on_malformed_ledger(tmp_path, capsys):
+    out = tmp_path / "o"
+    out.mkdir()
+    good = json.dumps({"sheet_id": "S001", "input_tokens": 1, "output_tokens": 1, "usd": 0.0})
+    for bad in ("{not json\n", good + "\n[1, 2]\n", good + "\n{truncated"):
+        (out / "ledger.jsonl").write_text(bad)
+        assert run.main(["--set", "supplement", "--provider", "fake", "--out", str(out)]) == 6
+        assert "unreadable" in capsys.readouterr().err
+    assert not list(out.glob("S8*.json"))
+
+
 def test_prompt_does_not_exclude_listed_outer_case_components():
     s = prompt.system_prompt()
     assert "unless the sheet gives them a material" not in s

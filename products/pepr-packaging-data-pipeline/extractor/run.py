@@ -21,7 +21,19 @@ def _ledger_has_test_entries(ledger):
     ids = {p.stem for p in SETS["test"].glob("S*.pdf")}
     if not Path(ledger).exists():
         return False
-    return any(json.loads(ln).get("sheet_id") in ids for ln in Path(ledger).read_text().splitlines() if ln.strip())
+    entries = [json.loads(ln) for ln in Path(ledger).read_text().splitlines() if ln.strip()]  # parse every line: no short-circuit
+    return any(e.get("sheet_id") in ids for e in entries)
+
+def _supplement_gate(ledger):
+    """Return an error message if the supplement must not run, else None. An unreadable ledger never allows it."""
+    try:
+        has_test = _ledger_has_test_entries(ledger)
+    except (ValueError, AttributeError, TypeError, OSError, UnicodeDecodeError) as e:
+        return f"refused: the ledger {ledger} is unreadable ({type(e).__name__}: {e}); the supplement will not run on an unreadable ledger"
+    if not has_test:  # Amendment 4: never before the test set
+        return ("refused: the supplement runs only after the test set (no test-set entries in the ledger); "
+                "it would otherwise use budget the --set test preflight needs")
+    return None
 
 
 def make_provider(name):
@@ -48,11 +60,12 @@ def main(argv=None):
         print(f"refused: {e}", file=sys.stderr)
         return 2
     ledger = Path(a.ledger) if a.ledger else (DEFAULT_LEDGER if a.provider == "azure" else out / "ledger.jsonl")
+    if a.set == "supplement":
+        msg = _supplement_gate(ledger)
+        if msg:
+            print(msg, file=sys.stderr)
+            return 6
     budget = budget_mod.Budget(ledger)
-    if a.set == "supplement" and not _ledger_has_test_entries(ledger):  # Amendment 4: never before the test set
-        print("refused: the supplement runs only after the test set (no test-set entries in the ledger); "
-              "it would otherwise use budget the --set test preflight needs", file=sys.stderr)
-        return 6
     pdfs = sorted(SETS[a.set].glob("S*.pdf"))
     if a.set == "test":  # run once only: do not start a run the guard would cut short
         try:
