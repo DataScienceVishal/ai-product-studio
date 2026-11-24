@@ -59,6 +59,8 @@ param azureOpenAiApi string = 'auto'
 param aiPricePerMillionTokens string = '2.00'
 
 @description('Tokens recorded for all tenants together per UTC day. Every call is checked against it with its upper-bound estimate, so the total stays under it. At the default price 100,000 tokens cost at most $0.20 a day (about $6.00 a month), the budget in state/BUDGET.md. Valid only for the price above: size it as 6.10 / (30 x price) x 1,000,000. Trials share half.')
+// Sizing: a call reserves 287 + note bytes + 17 + 1,200 (+1,500 on the Responses API only) before it runs, then settles to actual use,
+// so cap / reservation is a floor on calls, not a daily limit. Until selling is unlocked all tenants share the trial half. See README, "Sizing the daily AI cap".
 param aiGlobalDailyTokens int = 100000
 
 @description('mock or stripe (test mode only). The workflow only offers these two values.')

@@ -33,7 +33,7 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 
 | What | Command | Where it runs |
 |---|---|---|
-| Backend unit and API tests (391 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
+| Backend unit and API tests (466 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
 | Migrations match the models | `alembic upgrade head && alembic check` | every push |
 | Frontend type check and build | `cd frontend && npm run build` | every push (CI `frontend`) |
 | Browser end-to-end core flow | `./scripts/e2e.sh` | pushes to main and manual runs (CI `e2e`) |
@@ -159,6 +159,18 @@ $6.10 allows only 6.10 / (30 x 120) x 1,000,000, about 1,690 tokens a day: one o
 day that deployment could cost up to $360 a month, far over the $80 credit. Change the deployment, set
 `aiPricePerMillionTokens` and `aiGlobalDailyTokens` together; `infra/cost-guard.sh` fails the build when
 tokens x price x 30 passes $6.10. Raising the budget needs Vishal's approval.
+
+**Calls per day.** A call reserves its upper bound before it runs, and `settle()` replaces the reservation with the
+tokens actually used. The reservation is `system prompt (287 bytes) + note bytes + 17 + 1,200 answer budget`, plus
+`AI_REASONING_HEADROOM` (1,500) only on the Responses API (Bicep `auto` picks chat unless the endpoint ends in
+`/openai/v1/responses`). So the cap is not a daily call count: a call is refused once less than its reservation is
+left, and `cap / reservation` is a floor (calls that all run at once, or each use their full budget). Short answers
+leave room for more.
+Worked example (Responses API, 1 KB note): reservation about 287 + 1,000 + 17 + 2,700 = 4,004, so 100,000 admits at
+least 24 such calls (100,000 / 4,004). A 20,000-character note reserves 23k to 83k (multibyte text), which can exceed the 30k trial cap on
+its own. Until `unlock selling`, `LIMITED_PROVIDERS` (mock, Stripe test) makes every tenant draw on the trial half
+(`AI_TRIAL_SHARE` 0.5, 50,000 of 100,000). Size the cap from the reservation of your typical note, then check the cost
+with the formula above.
 
 ## Azure OpenAI sign-in
 
