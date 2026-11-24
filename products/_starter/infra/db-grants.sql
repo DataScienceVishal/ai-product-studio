@@ -1,6 +1,7 @@
--- Run as the product's migrator role, in the product's own database, right after db-setup.sql:
+-- Run as the product's migrator role, in the product's own database. db-setup.sql does it with
+-- SET ROLE <db>_migrator and \ir db-grants.sql (ADR 0003), so the migrator needs no password:
 --
---   PGPASSWORD=<migrator> psql -v ON_ERROR_STOP=1 -v app=<db>_app -d <db> -U <db>_migrator -f db-grants.sql
+--   SET ROLE <db>_migrator;  \ir db-grants.sql   (with -v app=<db>_app set)
 --
 -- Tables and sequences that the migrator creates from now on (every Alembic migration) are readable and
 -- writable by the app role, which can't change the schema. The GRANTs cover anything that already exists.

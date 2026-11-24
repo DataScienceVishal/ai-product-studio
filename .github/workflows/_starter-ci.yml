@@ -48,6 +48,13 @@ jobs:
         env:
           DATABASE_URL: postgresql+psycopg://studio:studio@localhost:5432/starter_test
         run: alembic upgrade head && alembic check && alembic downgrade base
+      - name: db-setup.sql against Postgres 16 with a stub Entra provider (ADR 0003 slice 3)
+        env:
+          REQUIRE_PG: "1"
+          PGHOST: localhost
+          PGUSER: studio
+          PGPASSWORD: studio
+        run: bash ../infra/test-db-setup.sh
       - run: python -m pytest -q
       - name: Known vulnerabilities in the runtime dependencies
         run: pipx run pip-audit==2.10.1 --require-hashes -r requirements.txt
