@@ -1,0 +1,113 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "blue"
+          }
+        ],
+        "status": "present",
+        "value": "blue"
+      },
+      "features": {
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "no barrier layer"
+            }
+          ],
+          "status": "present",
+          "value": "no barrier layer"
+        },
+        "ink_coating": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PE/PET laminate"
+          }
+        ],
+        "status": "present",
+        "value": "PE/PET laminate"
+      },
+      "name": "pouch",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "5.5 g"
+          }
+        ],
+        "status": "present",
+        "value": 5.5
+      }
+    },
+    {
+      "colour": {
+        "status": "missing"
+      },
+      "features": {
+        "adhesive": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "hot-melt adhesive"
+            }
+          ],
+          "status": "present",
+          "value": "hot-melt adhesive"
+        },
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "HDPE cap with PE liner"
+            }
+          ],
+          "status": "present",
+          "value": "HDPE cap with PE liner"
+        },
+        "sleeve": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polyethylene terephthalate"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PET"
+          }
+        ],
+        "status": "present",
+        "value": "PET"
+      },
+      "name": "bottle",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "50.8 g"
+          }
+        ],
+        "status": "present",
+        "value": 50.8
+      }
+    }
+  ],
+  "layout": "prose",
+  "seed": 20261125,
+  "sheet_id": "S903",
+  "source": "synthetic",
+  "tier": "moderate"
+}

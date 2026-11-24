@@ -1,0 +1,204 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "natural"
+          }
+        ],
+        "status": "present",
+        "value": "natural"
+      },
+      "features": {
+        "adhesive": {
+          "status": "missing"
+        },
+        "sleeve": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PETG shrink sleeve"
+            }
+          ],
+          "status": "present",
+          "value": "PETG shrink sleeve"
+        }
+      },
+      "material": {
+        "status": "missing"
+      },
+      "name": "bottle",
+      "ram_category": "missing",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.0562 kg"
+          }
+        ],
+        "status": "present",
+        "value": 56.2
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "white"
+          }
+        ],
+        "status": "present",
+        "value": "white"
+      },
+      "features": {
+        "adhesive": {
+          "status": "missing"
+        },
+        "sleeve": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PVC shrink sleeve"
+            }
+          ],
+          "status": "present",
+          "value": "PVC shrink sleeve"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "corrugated board"
+          }
+        ],
+        "status": "present",
+        "value": "corrugated board"
+      },
+      "name": "outer carton",
+      "ram_category": "paper_board",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "142 g"
+          }
+        ],
+        "status": "present",
+        "value": 142.0
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "brown"
+          }
+        ],
+        "status": "present",
+        "value": "brown"
+      },
+      "features": {
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "HDPE cap with PE liner"
+            }
+          ],
+          "status": "present",
+          "value": "HDPE cap with PE liner"
+        },
+        "label": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polystyrene"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PS"
+          }
+        ],
+        "status": "present",
+        "value": "PS"
+      },
+      "name": "tray",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.0185 kg"
+          }
+        ],
+        "status": "present",
+        "value": 18.5
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "white"
+          }
+        ],
+        "status": "present",
+        "value": "white"
+      },
+      "features": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "sleeve": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PVC shrink sleeve"
+            }
+          ],
+          "status": "present",
+          "value": "PVC shrink sleeve"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "high-density polyethylene"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "HDPE"
+          }
+        ],
+        "status": "present",
+        "value": "HDPE"
+      },
+      "name": "cap",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "8.8 g"
+          }
+        ],
+        "status": "present",
+        "value": 8.8
+      }
+    }
+  ],
+  "layout": "multi_component",
+  "seed": 20261124,
+  "sheet_id": "S018",
+  "source": "synthetic",
+  "tier": "moderate"
+}

@@ -1,0 +1,178 @@
+{
+  "components": [
+    {
+      "colour": {
+        "status": "missing"
+      },
+      "features": {
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "HDPE cap with PE liner"
+            }
+          ],
+          "status": "present",
+          "value": "HDPE cap with PE liner"
+        },
+        "ink_coating": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "paper"
+          }
+        ],
+        "status": "present",
+        "value": "paper"
+      },
+      "name": "label",
+      "ram_category": "paper_board",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "2200 mg"
+          }
+        ],
+        "status": "present",
+        "value": 2.2
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "clear"
+          }
+        ],
+        "status": "present",
+        "value": "clear"
+      },
+      "features": {
+        "adhesive": {
+          "status": "missing"
+        },
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "EVOH barrier layer"
+            }
+          ],
+          "status": "present",
+          "value": "EVOH barrier layer"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "UV-cured ink"
+            }
+          ],
+          "status": "present",
+          "value": "UV-cured ink"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "corr. board"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "corr. board"
+          }
+        ],
+        "status": "present",
+        "value": "corrugated board"
+      },
+      "name": "outer carton",
+      "ram_category": "paper_board",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.1062 kg"
+          }
+        ],
+        "status": "present",
+        "value": 106.2
+      }
+    },
+    {
+      "colour": {
+        "status": "missing"
+      },
+      "features": {
+        "adhesive": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "water-based adhesive"
+            }
+          ],
+          "status": "present",
+          "value": "water-based adhesive"
+        },
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PP cap, no liner"
+            }
+          ],
+          "status": "present",
+          "value": "PP cap, no liner"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "full wrap PP label"
+            }
+          ],
+          "status": "present",
+          "value": "full wrap PP label"
+        },
+        "sleeve": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polystyrene"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PS"
+          }
+        ],
+        "status": "present",
+        "value": "PS"
+      },
+      "name": "tray",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.0243 kg"
+          }
+        ],
+        "status": "present",
+        "value": 24.3
+      }
+    }
+  ],
+  "layout": "scanned",
+  "seed": 20261125,
+  "sheet_id": "S905",
+  "source": "synthetic",
+  "tier": "messy"
+}

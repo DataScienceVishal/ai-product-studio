@@ -1,0 +1,68 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "natural"
+          }
+        ],
+        "status": "present",
+        "value": "natural"
+      },
+      "features": {
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "EVOH barrier layer"
+            }
+          ],
+          "status": "present",
+          "value": "EVOH barrier layer"
+        },
+        "sleeve": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PETG shrink sleeve"
+            }
+          ],
+          "status": "present",
+          "value": "PETG shrink sleeve"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "tinplate"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "tinplate steel"
+          }
+        ],
+        "status": "present",
+        "value": "steel"
+      },
+      "name": "can",
+      "ram_category": "steel",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "14.3 g"
+          }
+        ],
+        "status": "present",
+        "value": 14.3
+      }
+    }
+  ],
+  "layout": "table",
+  "seed": 20261124,
+  "sheet_id": "S010",
+  "source": "synthetic",
+  "tier": "clean"
+}

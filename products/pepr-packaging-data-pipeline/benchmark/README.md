@@ -7,10 +7,11 @@ Kill test and pass mark: `state/ideas/pepr-packaging-data-pipeline.md`, section 
 ```
 benchmark/
   truth.schema.json     JSON Schema for one sheet's truth
-  gen/                  deterministic generator (slice 2)
-  sheets/S001.pdf ...   30 synthetic test sheets
-  tuning/T001.pdf ...   5 tuning sheets, different seed (prompt tuning only)
-  truth/S001.json ...   hand-specified truth, one per sheet
+  generate.py           deterministic generator (slice 2); tests in tests/
+  data/sheets/S001.pdf ...        30 synthetic test sheets
+  data/tuning/S901.pdf ...        5 tuning sheets, different seed (prompt tuning only)
+  data/truth/, data/tuning_truth/ truth JSON, one per sheet (written by the generator)
+  data/manifest.json              tiers, layouts, messiest 10, tuning ids
   public/               genuinely public spec PDFs (licence noted), reported separately
   score.py              scorer (slice 4)
 ```

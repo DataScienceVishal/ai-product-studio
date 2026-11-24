@@ -1,0 +1,159 @@
+{
+  "components": [
+    {
+      "colour": {
+        "status": "missing"
+      },
+      "features": {
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "EVOH barrier layer"
+            }
+          ],
+          "status": "present",
+          "value": "EVOH barrier layer"
+        },
+        "label": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polypropylene",
+          "PP film"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PP film"
+          }
+        ],
+        "status": "present",
+        "value": "PP"
+      },
+      "name": "label",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "700 mg"
+          }
+        ],
+        "status": "present",
+        "value": 0.7
+      }
+    },
+    {
+      "colour": {
+        "accepted_values": [
+          "blk"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "blk"
+          }
+        ],
+        "status": "present",
+        "value": "black"
+      },
+      "features": {
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "UV-cured ink"
+            }
+          ],
+          "status": "present",
+          "value": "UV-cured ink"
+        },
+        "label": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polypropylene",
+          "PP blk"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PP blk"
+          }
+        ],
+        "status": "present",
+        "value": "PP"
+      },
+      "name": "cap",
+      "ram_category": "plastic",
+      "weight_g": {
+        "status": "missing"
+      }
+    },
+    {
+      "colour": {
+        "accepted_values": [
+          "blk"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "blk"
+          }
+        ],
+        "status": "present",
+        "value": "black"
+      },
+      "features": {
+        "adhesive": {
+          "status": "missing"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "paper label, wash-off"
+            }
+          ],
+          "status": "present",
+          "value": "paper label, wash-off"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "recycled PET"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "rPET"
+          }
+        ],
+        "status": "present",
+        "value": "rPET"
+      },
+      "name": "tray",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.575 oz"
+          }
+        ],
+        "status": "present",
+        "value": 16.3
+      }
+    }
+  ],
+  "layout": "scanned",
+  "seed": 20261124,
+  "sheet_id": "S024",
+  "source": "synthetic",
+  "tier": "messy"
+}

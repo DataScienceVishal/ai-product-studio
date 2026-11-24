@@ -1,0 +1,196 @@
+{
+  "components": [
+    {
+      "colour": {
+        "accepted_values": [
+          "nat."
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "nat."
+          }
+        ],
+        "status": "present",
+        "value": "natural"
+      },
+      "features": {
+        "adhesive": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "water-based adhesive"
+            }
+          ],
+          "status": "present",
+          "value": "water-based adhesive"
+        },
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "EVOH barrier layer"
+            }
+          ],
+          "status": "present",
+          "value": "EVOH barrier layer"
+        },
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PP cap, no liner"
+            }
+          ],
+          "status": "present",
+          "value": "PP cap, no liner"
+        },
+        "sleeve": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "tinplate",
+          "tinplate"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "tinplate"
+          }
+        ],
+        "status": "present",
+        "value": "steel"
+      },
+      "name": "can",
+      "ram_category": "steel",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "34.6 g"
+          }
+        ],
+        "status": "present",
+        "value": 34.6
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "white"
+          }
+        ],
+        "status": "present",
+        "value": "white"
+      },
+      "features": {
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "no barrier layer"
+            }
+          ],
+          "status": "present",
+          "value": "no barrier layer"
+        },
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PP cap, no liner"
+            }
+          ],
+          "status": "present",
+          "value": "PP cap, no liner"
+        },
+        "ink_coating": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "status": "missing"
+      },
+      "name": "pouch",
+      "ram_category": "missing",
+      "weight_g": {
+        "conflict_values": [
+          4.1,
+          6.6
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "4.1 g"
+          },
+          {
+            "page": 2,
+            "quote": "6.6 g"
+          }
+        ],
+        "status": "conflict"
+      }
+    },
+    {
+      "colour": {
+        "status": "missing"
+      },
+      "features": {
+        "closure": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "water-based varnish"
+            }
+          ],
+          "status": "present",
+          "value": "water-based varnish"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "paper label, wash-off"
+            }
+          ],
+          "status": "present",
+          "value": "paper label, wash-off"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "paper"
+          }
+        ],
+        "status": "present",
+        "value": "paper"
+      },
+      "name": "label",
+      "ram_category": "paper_board",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.060 oz"
+          }
+        ],
+        "status": "present",
+        "value": 1.7
+      }
+    }
+  ],
+  "layout": "scanned",
+  "seed": 20261124,
+  "sheet_id": "S023",
+  "source": "synthetic",
+  "tier": "messy"
+}

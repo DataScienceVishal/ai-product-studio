@@ -1,0 +1,130 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "black"
+          }
+        ],
+        "status": "present",
+        "value": "black"
+      },
+      "features": {
+        "adhesive": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "water-based adhesive"
+            }
+          ],
+          "status": "present",
+          "value": "water-based adhesive"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "full wrap PP label"
+            }
+          ],
+          "status": "present",
+          "value": "full wrap PP label"
+        }
+      },
+      "material": {
+        "status": "missing"
+      },
+      "name": "cap",
+      "ram_category": "missing",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.0056 kg"
+          }
+        ],
+        "status": "present",
+        "value": 5.6
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "black"
+          }
+        ],
+        "status": "present",
+        "value": "black"
+      },
+      "features": {
+        "adhesive": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "hot-melt adhesive"
+            }
+          ],
+          "status": "present",
+          "value": "hot-melt adhesive"
+        },
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "EVOH barrier layer"
+            }
+          ],
+          "status": "present",
+          "value": "EVOH barrier layer"
+        },
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "HDPE cap with PE liner"
+            }
+          ],
+          "status": "present",
+          "value": "HDPE cap with PE liner"
+        },
+        "label": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PVC"
+          }
+        ],
+        "status": "present",
+        "value": "PVC"
+      },
+      "name": "sleeve",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "2.6 g"
+          }
+        ],
+        "status": "present",
+        "value": 2.6
+      }
+    }
+  ],
+  "layout": "prose",
+  "seed": 20261124,
+  "sheet_id": "S011",
+  "source": "synthetic",
+  "tier": "moderate"
+}

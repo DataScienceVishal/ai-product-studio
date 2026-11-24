@@ -1,0 +1,78 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "natural"
+          }
+        ],
+        "status": "present",
+        "value": "natural"
+      },
+      "features": {
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "HDPE cap with PE liner"
+            }
+          ],
+          "status": "present",
+          "value": "HDPE cap with PE liner"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "water-based varnish"
+            }
+          ],
+          "status": "present",
+          "value": "water-based varnish"
+        },
+        "sleeve": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PETG shrink sleeve"
+            }
+          ],
+          "status": "present",
+          "value": "PETG shrink sleeve"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "aluminum"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "aluminium"
+          }
+        ],
+        "status": "present",
+        "value": "aluminium"
+      },
+      "name": "can",
+      "ram_category": "aluminium",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "19.5 g"
+          }
+        ],
+        "status": "present",
+        "value": 19.5
+      }
+    }
+  ],
+  "layout": "table",
+  "seed": 20261124,
+  "sheet_id": "S009",
+  "source": "synthetic",
+  "tier": "clean"
+}

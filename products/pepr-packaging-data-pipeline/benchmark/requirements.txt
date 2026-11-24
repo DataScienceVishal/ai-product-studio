@@ -1,0 +1,7 @@
+reportlab==5.0.1
+Pillow==13.0.0.post1
+pypdfium2==5.14.0
+numpy==2.5.3
+pypdf==6.17.0
+jsonschema==4.26.0
+pytest==9.1.1

@@ -1,0 +1,109 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "white"
+          }
+        ],
+        "status": "present",
+        "value": "white"
+      },
+      "features": {
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PP cap, no liner"
+            }
+          ],
+          "status": "present",
+          "value": "PP cap, no liner"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "sleeve": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PETG shrink sleeve"
+            }
+          ],
+          "status": "present",
+          "value": "PETG shrink sleeve"
+        }
+      },
+      "material": {
+        "status": "missing"
+      },
+      "name": "pouch",
+      "ram_category": "missing",
+      "weight_g": {
+        "status": "missing"
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "blue"
+          }
+        ],
+        "status": "present",
+        "value": "blue"
+      },
+      "features": {
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "EVOH barrier layer"
+            }
+          ],
+          "status": "present",
+          "value": "EVOH barrier layer"
+        },
+        "label": {
+          "status": "missing"
+        },
+        "sleeve": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PVC shrink sleeve"
+            }
+          ],
+          "status": "present",
+          "value": "PVC shrink sleeve"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polypropylene"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PP film"
+          }
+        ],
+        "status": "present",
+        "value": "PP"
+      },
+      "name": "label",
+      "ram_category": "plastic",
+      "weight_g": {
+        "status": "missing"
+      }
+    }
+  ],
+  "layout": "missing_fields",
+  "seed": 20261124,
+  "sheet_id": "S020",
+  "source": "synthetic",
+  "tier": "moderate"
+}

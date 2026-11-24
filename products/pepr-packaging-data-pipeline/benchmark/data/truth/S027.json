@@ -1,0 +1,175 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "amber"
+          }
+        ],
+        "status": "present",
+        "value": "amber"
+      },
+      "features": {
+        "adhesive": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "hot-melt adhesive"
+            }
+          ],
+          "status": "present",
+          "value": "hot-melt adhesive"
+        },
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "no barrier layer"
+            }
+          ],
+          "status": "present",
+          "value": "no barrier layer"
+        },
+        "label": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "status": "missing"
+      },
+      "name": "tray",
+      "ram_category": "missing",
+      "weight_g": {
+        "status": "missing"
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "brown"
+          }
+        ],
+        "status": "present",
+        "value": "brown"
+      },
+      "features": {
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "HDPE cap with PE liner"
+            }
+          ],
+          "status": "present",
+          "value": "HDPE cap with PE liner"
+        },
+        "sleeve": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "kraft"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "kraft"
+          }
+        ],
+        "status": "present",
+        "value": "kraft paper"
+      },
+      "name": "outer carton",
+      "ram_category": "paper_board",
+      "weight_g": {
+        "conflict_values": [
+          130.1,
+          131.6
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "130.1 g"
+          },
+          {
+            "page": 2,
+            "quote": "131.6 g"
+          }
+        ],
+        "status": "conflict"
+      }
+    },
+    {
+      "colour": {
+        "accepted_values": [
+          "nat."
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "nat."
+          }
+        ],
+        "status": "present",
+        "value": "natural"
+      },
+      "features": {
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "water-based varnish"
+            }
+          ],
+          "status": "present",
+          "value": "water-based varnish"
+        },
+        "label": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "PE/PET lam."
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PE/PET lam."
+          }
+        ],
+        "status": "present",
+        "value": "PE/PET laminate"
+      },
+      "name": "pouch",
+      "ram_category": "plastic",
+      "weight_g": {
+        "conflict_values": [
+          11.5,
+          14.0
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.0115 kg"
+          },
+          {
+            "page": 2,
+            "quote": "14 g"
+          }
+        ],
+        "status": "conflict"
+      }
+    }
+  ],
+  "layout": "contradictory",
+  "seed": 20261124,
+  "sheet_id": "S027",
+  "source": "synthetic",
+  "tier": "messy"
+}

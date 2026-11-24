@@ -1,0 +1,78 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "natural"
+          }
+        ],
+        "status": "present",
+        "value": "natural"
+      },
+      "features": {
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PP cap, no liner"
+            }
+          ],
+          "status": "present",
+          "value": "PP cap, no liner"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "UV-cured ink"
+            }
+          ],
+          "status": "present",
+          "value": "UV-cured ink"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "full wrap PP label"
+            }
+          ],
+          "status": "present",
+          "value": "full wrap PP label"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "aluminum"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "aluminium"
+          }
+        ],
+        "status": "present",
+        "value": "aluminium"
+      },
+      "name": "can",
+      "ram_category": "aluminium",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "23.5 g"
+          }
+        ],
+        "status": "present",
+        "value": 23.5
+      }
+    }
+  ],
+  "layout": "table",
+  "seed": 20261124,
+  "sheet_id": "S008",
+  "source": "synthetic",
+  "tier": "clean"
+}

@@ -1,0 +1,182 @@
+{
+  "components": [
+    {
+      "colour": {
+        "accepted_values": [
+          "nat."
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "nat."
+          }
+        ],
+        "status": "present",
+        "value": "natural"
+      },
+      "features": {
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PP cap, no liner"
+            }
+          ],
+          "status": "present",
+          "value": "PP cap, no liner"
+        },
+        "sleeve": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "aluminum",
+          "Al"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "Al"
+          }
+        ],
+        "status": "present",
+        "value": "aluminium"
+      },
+      "name": "can",
+      "ram_category": "aluminium",
+      "weight_g": {
+        "conflict_values": [
+          23.6,
+          26.6
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "23.6 g"
+          },
+          {
+            "page": 2,
+            "quote": "26.6 g"
+          }
+        ],
+        "status": "conflict"
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "green"
+          }
+        ],
+        "status": "present",
+        "value": "green"
+      },
+      "features": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PP cap, no liner"
+            }
+          ],
+          "status": "present",
+          "value": "PP cap, no liner"
+        },
+        "sleeve": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PETG shrink sleeve"
+            }
+          ],
+          "status": "present",
+          "value": "PETG shrink sleeve"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "high-density polyethylene"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "HDPE"
+          }
+        ],
+        "status": "present",
+        "value": "HDPE"
+      },
+      "name": "cap",
+      "ram_category": "plastic",
+      "weight_g": {
+        "status": "missing"
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "clear"
+          }
+        ],
+        "status": "present",
+        "value": "clear"
+      },
+      "features": {
+        "adhesive": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "UV-cured ink"
+            }
+          ],
+          "status": "present",
+          "value": "UV-cured ink"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "paper label, wash-off"
+            }
+          ],
+          "status": "present",
+          "value": "paper label, wash-off"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polyethylene terephthalate"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PET"
+          }
+        ],
+        "status": "present",
+        "value": "PET"
+      },
+      "name": "bottle",
+      "ram_category": "plastic",
+      "weight_g": {
+        "status": "missing"
+      }
+    }
+  ],
+  "layout": "contradictory",
+  "seed": 20261124,
+  "sheet_id": "S029",
+  "source": "synthetic",
+  "tier": "messy"
+}

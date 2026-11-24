@@ -1,0 +1,231 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "green"
+          }
+        ],
+        "status": "present",
+        "value": "green"
+      },
+      "features": {
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "EVOH barrier layer"
+            }
+          ],
+          "status": "present",
+          "value": "EVOH barrier layer"
+        },
+        "sleeve": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PE/PET laminate"
+          }
+        ],
+        "status": "present",
+        "value": "PE/PET laminate"
+      },
+      "name": "pouch",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "11.3 g"
+          }
+        ],
+        "status": "present",
+        "value": 11.3
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "brown"
+          }
+        ],
+        "status": "present",
+        "value": "brown"
+      },
+      "features": {
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "EVOH barrier layer"
+            }
+          ],
+          "status": "present",
+          "value": "EVOH barrier layer"
+        },
+        "label": {
+          "status": "missing"
+        },
+        "sleeve": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PVC shrink sleeve"
+            }
+          ],
+          "status": "present",
+          "value": "PVC shrink sleeve"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polypropylene"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PP"
+          }
+        ],
+        "status": "present",
+        "value": "PP"
+      },
+      "name": "cap",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.007 kg"
+          }
+        ],
+        "status": "present",
+        "value": 7.0
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "natural"
+          }
+        ],
+        "status": "present",
+        "value": "natural"
+      },
+      "features": {
+        "adhesive": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "water-based adhesive"
+            }
+          ],
+          "status": "present",
+          "value": "water-based adhesive"
+        },
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PP cap, no liner"
+            }
+          ],
+          "status": "present",
+          "value": "PP cap, no liner"
+        },
+        "label": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "paper"
+          }
+        ],
+        "status": "present",
+        "value": "paper"
+      },
+      "name": "label",
+      "ram_category": "paper_board",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.0007 kg"
+          }
+        ],
+        "status": "present",
+        "value": 0.7
+      }
+    },
+    {
+      "colour": {
+        "status": "missing"
+      },
+      "features": {
+        "adhesive": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "hot-melt adhesive"
+            }
+          ],
+          "status": "present",
+          "value": "hot-melt adhesive"
+        },
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "HDPE cap with PE liner"
+            }
+          ],
+          "status": "present",
+          "value": "HDPE cap with PE liner"
+        },
+        "label": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PETG"
+          }
+        ],
+        "status": "present",
+        "value": "PETG"
+      },
+      "name": "sleeve",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "1.7 g"
+          }
+        ],
+        "status": "present",
+        "value": 1.7
+      }
+    }
+  ],
+  "layout": "multi_component",
+  "seed": 20261124,
+  "sheet_id": "S017",
+  "source": "synthetic",
+  "tier": "moderate"
+}

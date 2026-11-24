@@ -1,0 +1,78 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "natural"
+          }
+        ],
+        "status": "present",
+        "value": "natural"
+      },
+      "features": {
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "EVOH barrier layer"
+            }
+          ],
+          "status": "present",
+          "value": "EVOH barrier layer"
+        },
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PP cap, no liner"
+            }
+          ],
+          "status": "present",
+          "value": "PP cap, no liner"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "full wrap PP label"
+            }
+          ],
+          "status": "present",
+          "value": "full wrap PP label"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "aluminum"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "aluminium"
+          }
+        ],
+        "status": "present",
+        "value": "aluminium"
+      },
+      "name": "cap",
+      "ram_category": "aluminium",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "4.1 g"
+          }
+        ],
+        "status": "present",
+        "value": 4.1
+      }
+    }
+  ],
+  "layout": "table",
+  "seed": 20261125,
+  "sheet_id": "S902",
+  "source": "synthetic",
+  "tier": "clean"
+}

@@ -1,0 +1,133 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "amber"
+          }
+        ],
+        "status": "present",
+        "value": "amber"
+      },
+      "features": {
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "EVOH barrier layer"
+            }
+          ],
+          "status": "present",
+          "value": "EVOH barrier layer"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "sleeve": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PETG shrink sleeve"
+            }
+          ],
+          "status": "present",
+          "value": "PETG shrink sleeve"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "corrugated board"
+          }
+        ],
+        "status": "present",
+        "value": "corrugated board"
+      },
+      "name": "outer carton",
+      "ram_category": "paper_board",
+      "weight_g": {
+        "status": "missing"
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "natural"
+          }
+        ],
+        "status": "present",
+        "value": "natural"
+      },
+      "features": {
+        "adhesive": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "hot-melt adhesive"
+            }
+          ],
+          "status": "present",
+          "value": "hot-melt adhesive"
+        },
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "no barrier layer"
+            }
+          ],
+          "status": "present",
+          "value": "no barrier layer"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "UV-cured ink"
+            }
+          ],
+          "status": "present",
+          "value": "UV-cured ink"
+        },
+        "sleeve": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "aluminum"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "aluminium"
+          }
+        ],
+        "status": "present",
+        "value": "aluminium"
+      },
+      "name": "can",
+      "ram_category": "aluminium",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.0235 kg"
+          }
+        ],
+        "status": "present",
+        "value": 23.5
+      }
+    }
+  ],
+  "layout": "prose",
+  "seed": 20261124,
+  "sheet_id": "S012",
+  "source": "synthetic",
+  "tier": "moderate"
+}

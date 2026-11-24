@@ -1,0 +1,182 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "black"
+          }
+        ],
+        "status": "present",
+        "value": "black"
+      },
+      "features": {
+        "adhesive": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "water-based adhesive"
+            }
+          ],
+          "status": "present",
+          "value": "water-based adhesive"
+        },
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "full wrap PP label"
+            }
+          ],
+          "status": "present",
+          "value": "full wrap PP label"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polypropylene"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PP"
+          }
+        ],
+        "status": "present",
+        "value": "PP"
+      },
+      "name": "cap",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.0062 kg"
+          }
+        ],
+        "status": "present",
+        "value": 6.2
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "blue"
+          }
+        ],
+        "status": "present",
+        "value": "blue"
+      },
+      "features": {
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "HDPE cap with PE liner"
+            }
+          ],
+          "status": "present",
+          "value": "HDPE cap with PE liner"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "sleeve": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PVC shrink sleeve"
+            }
+          ],
+          "status": "present",
+          "value": "PVC shrink sleeve"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "kraft paper"
+          }
+        ],
+        "status": "present",
+        "value": "kraft paper"
+      },
+      "name": "outer carton",
+      "ram_category": "paper_board",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "171.2 g"
+          }
+        ],
+        "status": "present",
+        "value": 171.2
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "white"
+          }
+        ],
+        "status": "present",
+        "value": "white"
+      },
+      "features": {
+        "adhesive": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "hot-melt adhesive"
+            }
+          ],
+          "status": "present",
+          "value": "hot-melt adhesive"
+        },
+        "label": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polystyrene"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PS"
+          }
+        ],
+        "status": "present",
+        "value": "PS"
+      },
+      "name": "tray",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.497 oz"
+          }
+        ],
+        "status": "present",
+        "value": 14.1
+      }
+    }
+  ],
+  "layout": "mixed_units",
+  "seed": 20261125,
+  "sheet_id": "S904",
+  "source": "synthetic",
+  "tier": "moderate"
+}

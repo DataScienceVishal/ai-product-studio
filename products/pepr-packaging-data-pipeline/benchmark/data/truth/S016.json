@@ -1,0 +1,195 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "brown"
+          }
+        ],
+        "status": "present",
+        "value": "brown"
+      },
+      "features": {
+        "adhesive": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "water-based adhesive"
+            }
+          ],
+          "status": "present",
+          "value": "water-based adhesive"
+        },
+        "label": {
+          "status": "missing"
+        },
+        "sleeve": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PETG shrink sleeve"
+            }
+          ],
+          "status": "present",
+          "value": "PETG shrink sleeve"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polyethylene terephthalate"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PET"
+          }
+        ],
+        "status": "present",
+        "value": "PET"
+      },
+      "name": "bottle",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "54.1 g"
+          }
+        ],
+        "status": "present",
+        "value": 54.1
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "blue"
+          }
+        ],
+        "status": "present",
+        "value": "blue"
+      },
+      "features": {
+        "adhesive": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "hot-melt adhesive"
+            }
+          ],
+          "status": "present",
+          "value": "hot-melt adhesive"
+        },
+        "closure": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "water-based varnish"
+            }
+          ],
+          "status": "present",
+          "value": "water-based varnish"
+        },
+        "sleeve": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PVC shrink sleeve"
+            }
+          ],
+          "status": "present",
+          "value": "PVC shrink sleeve"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "recycled PET"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "rPET"
+          }
+        ],
+        "status": "present",
+        "value": "rPET"
+      },
+      "name": "tray",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "22400 mg"
+          }
+        ],
+        "status": "present",
+        "value": 22.4
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "natural"
+          }
+        ],
+        "status": "present",
+        "value": "natural"
+      },
+      "features": {
+        "adhesive": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "water-based adhesive"
+            }
+          ],
+          "status": "present",
+          "value": "water-based adhesive"
+        },
+        "closure": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polypropylene"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PP film"
+          }
+        ],
+        "status": "present",
+        "value": "PP"
+      },
+      "name": "label",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.0029 kg"
+          }
+        ],
+        "status": "present",
+        "value": 2.9
+      }
+    }
+  ],
+  "layout": "mixed_units",
+  "seed": 20261124,
+  "sheet_id": "S016",
+  "source": "synthetic",
+  "tier": "moderate"
+}

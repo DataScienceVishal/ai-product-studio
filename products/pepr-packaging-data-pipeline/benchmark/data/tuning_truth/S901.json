@@ -1,0 +1,68 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "natural"
+          }
+        ],
+        "status": "present",
+        "value": "natural"
+      },
+      "features": {
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "UV-cured ink"
+            }
+          ],
+          "status": "present",
+          "value": "UV-cured ink"
+        },
+        "sleeve": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PETG shrink sleeve"
+            }
+          ],
+          "status": "present",
+          "value": "PETG shrink sleeve"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "recycled PET"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "rPET"
+          }
+        ],
+        "status": "present",
+        "value": "rPET"
+      },
+      "name": "tray",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "8.8 g"
+          }
+        ],
+        "status": "present",
+        "value": 8.8
+      }
+    }
+  ],
+  "layout": "table",
+  "seed": 20261125,
+  "sheet_id": "S901",
+  "source": "synthetic",
+  "tier": "clean"
+}
