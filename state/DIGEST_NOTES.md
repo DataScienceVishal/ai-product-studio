@@ -15,3 +15,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - [ideas] Scouting round 6 tried "only ideas we can prove from public data": 4 ideas written, all 4 killed (51-57). Still 0 of 39 ideas at the bar. Q-6 now defaults to B (build the restaurant margin copilot as a cheaper entrant) if you don't answer; C (tell us your friend's sector) is still the recommendation.
 - [_starter] Small starter tidy-ups merged (missing-asset 404s, all page routes tested, grouped GitHub Actions update PRs, Node 22 end-of-life note). Reviewed and merged.
 - [_starter] Sign-in now holds up under bursts: junk or rate-limited requests can no longer queue for the password-check slots and block real users. Reviewed twice and merged.
+- [_starter] Test runs no longer trip over each other when several agents test at once (each run gets its own throwaway database). Reviewed twice and merged.
