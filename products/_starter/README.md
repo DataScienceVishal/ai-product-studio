@@ -41,8 +41,9 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 Backend tests use a real Postgres at `TEST_DATABASE_URL` (default `postgresql+psycopg://studio:studio@localhost:5432/starter_test`).
 Each pytest run creates its own database `<db>_t<epoch>_<pid>_<rand>` (through the server's `postgres` database, so the
 user needs the CREATE DATABASE right) and drops it at the end, even when tests fail, so several runs can share one
-Postgres at the same time. Databases left by killed runs are dropped by the next run once they are over 6 hours old; by
-hand: `psql .../postgres -c 'DROP DATABASE "<name>" WITH (FORCE)'`. `TEST_DATABASE_SHARED=1` uses the URL as-is
+Postgres at the same time. SIGTERM still drops it; SIGKILL cannot, so databases left by killed runs (marked with the comment
+`starter-pytest-ephemeral`, owned by the same user) are dropped by the next run once over 6 hours old. The base name
+must be letters, digits and underscores (max 41). By hand, only drop names you can see are yours: `psql .../postgres -c 'DROP DATABASE "<name>" WITH (FORCE)'`. `TEST_DATABASE_SHARED=1` uses the URL as-is
 (one shared database, reset at start; do not run two at once). CI's Postgres user is the superuser, so it needs no opt-out.
 The tests prove tenant isolation (and that every private route needs sign-in and every write needs the CSRF
 header), session revocation, rate limits, the AI cap under concurrency, the billing provider contract, idempotent
