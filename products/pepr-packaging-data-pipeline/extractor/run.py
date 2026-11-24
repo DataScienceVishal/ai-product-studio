@@ -54,6 +54,36 @@ def resolve_max_output_tokens(flag, env=None):
     return n
 
 
+def _ledger_rows(ledger):
+    p = Path(ledger)
+    return [json.loads(ln) for ln in p.read_text().splitlines() if ln.strip()] if p.exists() else []
+
+
+def _resume_plan(pdfs, out, ledger, budget, charge, note, max_out):
+    """-> (pdfs still to run, skipped sheet ids). Charges worst-case rows first. Raises ValueError on an inconsistent state:
+    an output with no ledger row of this price model, or a final (non-estimated) row with no output."""
+    ids = {p.stem for p in pdfs}
+    for sid in charge:
+        if sid not in ids:
+            raise ValueError(f"--charge-worst-case {sid}: not a sheet of this set")
+        if (out / f"{sid}.json").exists() or any(r.get("sheet_id") == sid for r in _ledger_rows(ledger)):
+            raise ValueError(f"--charge-worst-case {sid}: it already has an output or a ledger row; not charging twice")
+        budget.record(sid, budget_mod.WORST_INPUT_TOKENS, max_out, estimated=True, note=note)
+        print(f"charged {sid}: worst case {budget_mod.WORST_INPUT_TOKENS} in + {max_out} out at {budget.model} prices")
+    rows = [r for r in _ledger_rows(ledger) if r.get("model") == budget.model]
+    todo, skipped = [], []
+    for pdf in pdfs:
+        sid = pdf.stem
+        mine = [r for r in rows if r.get("sheet_id") == sid]
+        has_out = (out / f"{sid}.json").exists()
+        if has_out and not mine:
+            raise ValueError(f"{sid} has an output but no {budget.model} ledger row; fix by hand, nothing was called")
+        if not has_out and any(not r.get("estimated") for r in mine):
+            raise ValueError(f"{sid} has a billed ledger row but no output; fix by hand, nothing was called")
+        (skipped if has_out else todo).append(sid if has_out else pdf)
+    return todo, skipped
+
+
 def make_provider(name):
     if name == "fake":
         return providers.FakeProvider()
@@ -69,6 +99,14 @@ def main(argv=None):
     ap.add_argument("--max-output-tokens", type=int, default=None,
                     help="output cap per call, reasoning included (default: env T56_MAX_OUTPUT_TOKENS, else "
                          f"{extract.MAX_OUTPUT_TOKENS}); a sheet that runs out is reported incomplete, not truncated")
+    ap.add_argument("--resume", action="store_true",
+                    help="skip sheets that already have <out>/SXXX.json and a ledger row of this price model; "
+                         "an output without a ledger row, or a final (non-estimated) row without output, stops the run")
+    ap.add_argument("--charge-worst-case", metavar="SHEET", action="append", default=[],
+                    help="with --resume: first append one worst-case estimated ledger row for SHEET (a call that may have "
+                         "been billed but left no output); refused if SHEET already has an output or a ledger row")
+    ap.add_argument("--charge-note", default="connection reset in run bb8d test1, may have been billed",
+                    help="note written on the --charge-worst-case row")
     ap.add_argument("--no-score", action="store_true")
     a = ap.parse_args(argv)
 
@@ -96,6 +134,17 @@ def main(argv=None):
     print("run: " + ", ".join(f"{k} {v}" for k, v in info.items()))
     pdfs = sorted(SETS[a.set].glob("S*.pdf"))
     incomplete = []
+    if a.charge_worst_case and not a.resume:
+        print("refused: --charge-worst-case needs --resume", file=sys.stderr)
+        return 2
+    if a.resume:
+        try:
+            pdfs, skipped = _resume_plan(pdfs, out, ledger, budget, a.charge_worst_case, a.charge_note, max_out)
+        except ValueError as e:
+            print(f"refused: {e}", file=sys.stderr)
+            return 7
+        print(f"resume: skipped {len(skipped)} sheet(s) with output and ledger row: {', '.join(skipped) or '-'}; "
+              f"to run: {', '.join(p.stem for p in pdfs) or '-'}")
     if a.set == "test":  # run once only: do not start a run the guard would cut short
         try:
             budget_mod.preflight(budget, len(pdfs), a.max_output_tokens)

@@ -857,3 +857,138 @@ def test_low_and_minimal_efforts_accepted_medium_default():
     for e in ("minimal", "low"):
         assert providers.AzureResponsesProvider(env=dict(ENV, T56_DEPLOYMENT=MINI), reasoning_effort=e).reasoning_effort == e
     assert providers.AzureResponsesProvider(env=ENV).reasoning_effort == "medium"
+
+
+# ---- connection resets after send; --resume --------------------------------------------------------------
+import http.client as _hc
+
+
+def _reset_then_ok(exc, n=1):
+    seq = [exc] * n + [(200, {}, ok_body())]
+    def tr(req, timeout):
+        x = seq.pop(0)
+        if isinstance(x, BaseException):
+            raise x
+        return x
+    return tr
+
+
+@pytest.mark.parametrize("exc", [ConnectionResetError(104, "reset"), ConnectionAbortedError(), BrokenPipeError(),
+                                 _hc.RemoteDisconnected("closed"), _hc.IncompleteRead(b"ab"), OSError("odd"),
+                                 urllib.error.URLError(ConnectionResetError(104, "reset"))])
+def test_post_send_error_is_charged_at_worst_case_then_retried(tmp_path, exc):
+    slept = []
+    p = providers.AzureResponsesProvider(env=dict(ENV, T56_DEPLOYMENT=MINI), transport=_reset_then_ok(exc), sleep=slept.append, backoff=2)
+    b = B.Budget(tmp_path / "l.jsonl", model=MINI)
+    r = p.complete("s", X, 1000, budget=b, label="S1")
+    assert r.output_tokens == 50 and slept == [2]
+    rows = _ledger(tmp_path / "l.jsonl")
+    assert len(rows) == 1 and rows[0]["estimated"] and rows[0]["output_tokens"] == 1000 and rows[0]["model"] == MINI
+    assert "after send" in rows[0]["note"] or "reading the response" in rows[0]["note"]
+
+
+def test_connect_errors_before_send_stay_free(tmp_path):
+    p = providers.AzureResponsesProvider(env=dict(ENV, T56_DEPLOYMENT=MINI),
+                                         transport=_reset_then_ok(urllib.error.URLError(ConnectionRefusedError())),
+                                         sleep=lambda s: None)
+    p.complete("s", X, 1000, budget=B.Budget(tmp_path / "l.jsonl", model=MINI))
+    assert not (tmp_path / "l.jsonl").exists()
+
+
+def test_resets_exhausting_retries_charge_each_and_fail_the_sheet_not_the_run(monkeypatch, tmp_path, capsys):
+    def tr(req, timeout):
+        raise ConnectionResetError(104, "reset")
+    p = providers.AzureResponsesProvider(env=dict(ENV, T56_DEPLOYMENT=MINI), transport=tr, sleep=lambda s: None, retries=2)
+    b = B.Budget(tmp_path / "l.jsonl", model=MINI)
+    with pytest.raises(providers.ProviderError, match="gave up") as e:
+        p.complete("s", X, 1000, budget=b, label="S1")
+    assert not e.value.fatal and len(_ledger(tmp_path / "l.jsonl")) == 3
+    # whole run: every sheet fails after retries, run completes, empty outputs with warnings
+    monkeypatch.setattr(run, "make_provider", lambda name: providers.AzureResponsesProvider(
+        env=dict(ENV, T56_DEPLOYMENT=MINI), transport=tr, sleep=lambda s: None, retries=1))
+    rc = run.main(["--set", "tuning", "--provider", "azure", "--out", str(tmp_path / "o"), "--no-score",
+                   "--ledger", str(tmp_path / "l3.jsonl")])
+    assert rc == 0 and len(list((tmp_path / "o").glob("S9*.json"))) == 5
+    assert "gave up" in json.loads((tmp_path / "o" / "S901.json").read_text())["warnings"][0]
+    assert len(_ledger(tmp_path / "l3.jsonl")) == 10
+
+
+def test_reset_retry_is_refused_by_the_guard(tmp_path):
+    def tr(req, timeout):
+        raise ConnectionResetError()
+    p = providers.AzureResponsesProvider(env=dict(ENV, T56_DEPLOYMENT=PRO), transport=tr, sleep=lambda s: None)
+    b = B.Budget(tmp_path / "l.jsonl", model=PRO, max_usd=0.4)  # one 1000-token worst case is USD 0.18
+    with pytest.raises(B.BudgetExceeded):
+        p.complete("s", X, 1000, budget=b, label="S1")
+    assert len(_ledger(tmp_path / "l.jsonl")) == 2
+
+
+class _OkProv(providers.FakeProvider):
+    pass
+
+
+def _resume_setup(tmp_path, with_out=("S001", "S002"), with_rows=("S001", "S002")):
+    out = tmp_path / "o"
+    out.mkdir()
+    for sid in with_out:
+        (out / f"{sid}.json").write_text(json.dumps({"sheet_id": sid, "components": [], "pages": [], "warnings": [], "usage": {}}))
+    led = tmp_path / "l.jsonl"
+    b = B.Budget(led, model=MINI)
+    for sid in with_rows:
+        b.record(sid, 1000, 500)
+    return out, led
+
+
+def _resume(tmp_path, out, led, *extra, st="test"):
+    return run.main(["--set", st, "--provider", "fake", "--out", str(out), "--ledger", str(led), "--no-score", "--resume", *extra])
+
+
+def test_resume_skips_done_sheets_and_never_recalls_them(tmp_path, capsys):
+    out, led = _resume_setup(tmp_path)
+    before = {s: (out / f"{s}.json").read_text() for s in ("S001", "S002")}
+    assert _resume(tmp_path, out, led) == 0
+    cap = capsys.readouterr().out
+    assert "skipped 2 sheet(s)" in cap and "S001, S002" in cap
+    assert len(list(out.glob("S0*.json"))) == 30
+    assert {s: (out / f"{s}.json").read_text() for s in before} == before
+    assert sum(1 for r in _ledger(led) if r["sheet_id"] in ("S001", "S002")) == 2
+
+
+def test_resume_output_without_ledger_row_stops(tmp_path, capsys):
+    out, led = _resume_setup(tmp_path, with_rows=("S001",))
+    assert _resume(tmp_path, out, led) == 7 and "S002 has an output but no" in capsys.readouterr().err
+    assert not (out / "S003.json").exists()
+
+
+def test_resume_final_ledger_row_without_output_stops(tmp_path, capsys):
+    out, led = _resume_setup(tmp_path, with_out=("S001",))
+    assert _resume(tmp_path, out, led) == 7 and "S002 has a billed ledger row but no output" in capsys.readouterr().err
+    assert not (out / "S003.json").exists()
+
+
+def test_resume_charge_worst_case_then_run_the_sheet(tmp_path, capsys):
+    out, led = _resume_setup(tmp_path, with_out=("S001",), with_rows=("S001",))
+    assert _resume(tmp_path, out, led, "--charge-worst-case", "S002") == 0
+    rows = [r for r in _ledger(led) if r["sheet_id"] == "S002"]
+    assert rows[0]["estimated"] and rows[0]["note"] == "connection reset in run bb8d test1, may have been billed"
+    assert rows[0]["input_tokens"] == B.WORST_INPUT_TOKENS and rows[0]["output_tokens"] == 6000
+    assert len(rows) == 2 and (out / "S002.json").exists()  # charged row, then the real call
+
+
+def test_charge_worst_case_refuses_double_charge_and_needs_resume(tmp_path, capsys):
+    out, led = _resume_setup(tmp_path)
+    assert _resume(tmp_path, out, led, "--charge-worst-case", "S001") == 7
+    assert run.main(["--set", "test", "--provider", "fake", "--out", str(out), "--ledger", str(led),
+                     "--charge-worst-case", "S005"]) == 2
+    assert len(_ledger(led)) == 2
+
+
+def test_resume_preflight_reserves_only_remaining_sheets(tmp_path):
+    out, led = _resume_setup(tmp_path, with_out=(), with_rows=())
+    # mini pre-flight: 30 sheets need ~0.53, 2 remaining sheets + 1 call need ~0.052
+    B.Budget(led, model=PRO).record("x", 0, int((12 - 0.06) * 1e6 / 180))  # a pro-priced row: USD 0.06 left, few tokens
+    assert _resume(tmp_path, out, led) == 4
+    for i in range(1, 29):
+        (out / f"S{i:03d}.json").write_text("{}")
+        B.Budget(led, model=MINI).record(f"S{i:03d}", 0, 0)
+    assert _resume(tmp_path, out, led) == 0 and len(list(out.glob("S0*.json"))) == 30

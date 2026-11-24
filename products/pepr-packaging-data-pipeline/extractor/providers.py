@@ -2,10 +2,12 @@
 parts: [{"type":"text","text":..} | {"type":"image","media_type":..,"data_b64":..}].
 FakeProvider: deterministic, no network. AzureResponsesProvider: Azure OpenAI v1 Responses API; refuses to run unless
 T56_SPEND_APPROVED=1 (Vishal's spend approval, Q-11). Keys come from the environment only and are never logged."""
+import http.client
 import json
 import os
 import re
 import socket
+import ssl
 import time
 import urllib.error
 import urllib.request
@@ -24,6 +26,12 @@ class Completion:
     input_tokens: int
     output_tokens: int  # includes reasoning tokens
     model: str
+
+
+# OSErrors (reset, abort, broken pipe, TLS) and http.client errors (RemoteDisconnected, IncompleteRead) that can happen
+# after the request was sent. Timeouts are handled before this and are never retried. Connection refused / DNS failures
+# are not in here: they never reached the model and stay free.
+POST_SEND_ERRORS = (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, ssl.SSLError, http.client.HTTPException)
 
 
 class ProviderError(RuntimeError):
@@ -154,17 +162,27 @@ class AzureResponsesProvider:
             except urllib.error.URLError as e:
                 if isinstance(getattr(e, "reason", None), (socket.timeout, TimeoutError)):
                     raise ProviderError("timeout", worst_in, max_output_tokens, may_have_run=True) from None
+                if isinstance(getattr(e, "reason", None), POST_SEND_ERRORS):  # the request may have been delivered
+                    self._charge_and_retry(budget, label, attempt, worst_in, max_output_tokens, headers=None,
+                                           why=f"{type(e.reason).__name__} after send")
+                    last = f"connection {type(e.reason).__name__}"
+                    continue
                 last = f"connection error ({type(e.reason).__name__})"  # never reached the model: no cost, retry
                 self._pause(attempt, None)
+                continue
+            except (OSError, http.client.HTTPException) as e:  # urllib wraps pre-send failures in URLError, so a raw one came
+                # while reading the response (e.g. ConnectionResetError): the model may have run
+                self._charge_and_retry(budget, label, attempt, worst_in, max_output_tokens, headers=None,
+                                       why=f"{type(e).__name__} while reading the response")
+                last = f"connection {type(e).__name__}"
                 continue
             if status == 429 or status >= 500:
                 last = f"HTTP {status}"
                 if status >= 500:
-                    budget.record(label, worst_in, max_output_tokens, estimated=True,
-                                  note=f"worst case, HTTP {status} on attempt {attempt + 1}")
-                    if attempt < self.retries:
-                        budget.check(worst_in, max_output_tokens + int(self.output_headroom), label=f"{label} retry {attempt + 2}")
-                self._pause(attempt, headers.get("retry-after") or headers.get("Retry-After"))
+                    self._charge_and_retry(budget, label, attempt, worst_in, max_output_tokens, headers,
+                                           why=f"HTTP {status}")
+                else:
+                    self._pause(attempt, headers.get("retry-after") or headers.get("Retry-After"))
                 continue
             if status in (401, 403):
                 raise ProviderError(f"credentials rejected (HTTP {status})", fatal=True)
@@ -172,6 +190,15 @@ class AzureResponsesProvider:
                 raise ProviderError(f"request rejected (HTTP {status}): {raw[:300].decode('utf-8', 'replace')}", fatal=True)
             return self._parse(raw, worst_in, max_output_tokens)
         raise ProviderError(f"gave up after {self.retries + 1} attempts: {last}")
+
+    def _charge_and_retry(self, budget, label, attempt, worst_in, max_out, headers, why):
+        """A failure after the request was sent: the model may have run and billed. Record the worst case now, re-run the
+        guard before another attempt (BudgetExceeded propagates, no further call), then back off."""
+        budget.record(label, worst_in, max_out, estimated=True, note=f"worst case, {why} on attempt {attempt + 1}")
+        if attempt < self.retries:
+            budget.check(worst_in, max_out + int(self.output_headroom), label=f"{label} retry {attempt + 2}")
+        ra = (headers or {}).get("retry-after") or (headers or {}).get("Retry-After")
+        self._pause(attempt, ra)
 
     def _pause(self, attempt, retry_after):
         if attempt >= self.retries:
