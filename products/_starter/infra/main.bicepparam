@@ -16,6 +16,9 @@ param mockCheckoutEnabled = readEnvironmentVariable('MOCK_CHECKOUT_ENABLED', 'fa
 param requireEmailVerification = readEnvironmentVariable('REQUIRE_EMAIL_VERIFICATION', 'true') == 'true'
 param emailProvider = readEnvironmentVariable('EMAIL_PROVIDER', 'outbox')
 
+// The deploy workflow sets DB_AUTH=entra (ADR 0003, slice 4). Without it the template keeps the pre-T-18 behaviour.
+param dbAuth = readEnvironmentVariable('DB_AUTH', 'password')
+
 // The purge job stays on the live revision's image and email settings until the release passes.
 param purgeImage = readEnvironmentVariable('PURGE_IMAGE', '')
 param purgeRequireEmailVerification = readEnvironmentVariable('PURGE_REQUIRE_EMAIL_VERIFICATION', '')

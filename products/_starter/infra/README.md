@@ -6,6 +6,8 @@ Why it looks like this, with costs and sources: `../ADR/0002-azure-deploy.md`. T
    you ──► GitHub Actions: _starter-deploy (manual)
               1 build image ─► 2 scan (Trivy) ─► 3 sign in to Azure ─► 4 read the live release (stop on errors)
               5 push by digest ─► 6 deploy main.bicep: new revision at 0% traffic, purge job unchanged
+              6b database step: psql as the Entra admin (the deploy principal, token as password) runs
+                 db-setup.sql: roles, identity mapping, grants (every release, no secret)
               7 migration job (alembic upgrade head)
               8 smoke-test the new revision ─► 9 move 100% traffic ─► 10 smoke-test the public URL
               11 only now: the purge job gets the new image
@@ -27,8 +29,9 @@ Why it looks like this, with costs and sources: `../ADR/0002-azure-deploy.md`. T
 | `shared.bicep`, `shared.bicepparam` | the shared studio resources. Deployed once, with `deploy_shared` ticked |
 | `modules/postgres.bicep` | the shared Postgres server, used by `shared.bicep` |
 | `main.bicep`, `main.bicepparam` | one product: web app, migration job, purge job. Deployed on every release |
-| `db-setup.sql`, `db-grants.sql` | create a product's database and its two roles (run by the workflow) |
-| `scram_verifier.py` | turns a password into the SCRAM verifier `db-setup.sql` sends, so no password reaches the server |
+| `db-setup.sql`, `db-grants.sql` | create a product's database and its two passwordless roles, mapped to the product's identities (run by the workflow; keep the two files side by side) |
+| `jwt-oid.sh` | prints the object id inside an Entra token (stdin), so the workflow can find its own Entra admin entry |
+| `test-db-setup.sh`, `test-deploy-workflow.sh`, `test-bicep-identities.sh` | checks that run without Azure (CI) |
 | `live-release.sh` | reads what a release starts from; any Azure read error stops the release |
 | `purge-job.sh` | keeps the purge job on the image and email settings of the revision that serves traffic |
 | `cost-guard.sh` | refuses compiled templates with features that have a fixed charge |
@@ -53,14 +56,12 @@ Nothing here costs money until step 4. Do the steps only after approving the cos
      az provider register --namespace "$ns"
    done
    ```
-3. **Add two settings in GitHub** (repo → Settings → Secrets and variables → Actions):
-   - Secret `STUDIO_DB_SEED`: 64 random hex characters, for example from `openssl rand -hex 32` in Cloud
-     Shell. Every database password is derived from it, so nobody ever types or stores one. Don't paste it
-     anywhere else.
-   - Variable (Variables tab, not Secrets) `STUDIO_AZURE_APPROVED` = `yes`. This is your approval. Without
-     it the workflow only checks the templates.
-4. **First run:** Actions → `_starter-deploy` → Run workflow on `main`, with **deploy_shared** and
-   **setup_database** ticked. It creates the shared resources (Postgres takes 5 to 10 minutes). It then
+3. **Add one setting in GitHub** (repo → Settings → Secrets and variables → Actions): the variable
+   (Variables tab, not Secrets) `STUDIO_AZURE_APPROVED` = `yes`. This is your approval. Without it the
+   workflow only checks the templates. There is no database secret: sign-in is Microsoft Entra (ADR 0003).
+4. **First run:** Actions → `_starter-deploy` → Run workflow on `main`, with **deploy_shared** ticked. It also
+   makes the deploy principal the server's Entra admin and sets a random, throwaway admin password that
+   nobody ever sees. It creates the shared resources (Postgres takes 5 to 10 minutes). It then
    stops at "Shared resources exist and the app can pull images" and prints one command.
 5. **Grant image pulls.** Run that printed command in Cloud Shell. It looks like:
    ```bash
@@ -70,10 +71,13 @@ Nothing here costs money until step 4. Do the steps only after approving the cos
    First-deploy check: the Entra admin's `principalName` (`postgresEntraAdminName`, default
    `sp-ai-studio-deployer`) is a guess. Read it back (`az postgres flexible-server microsoft-entra-admin list`
    or the portal) and confirm ARM accepted it and which Postgres role name it created. Use that name when granting
-   the app and migrate roles.
-6. **Run the workflow again** with only **setup_database** ticked. This is the first real release. Its only
-   revision takes traffic as soon as it is ready, a minute before its migration has run, so for that minute
-   the API answers errors. Harmless before anyone uses it; later releases never do this.
+   the app and migrate roles (the deploy workflow signs in to Postgres as that role).
+6. **Run the workflow again** with nothing ticked. This is the first real release. It deploys, then creates
+   the database and roles as the Entra admin, then migrates. Its only revision takes traffic as soon as it is
+   ready, before the roles and migration exist, so for that minute the API answers errors. Harmless before
+   anyone uses it; later releases never do this.
+7. **Phase 2 (ADR 0003, decision 2)** is a separate change, not part of this slice: once the first release
+   passes its smoke tests, `postgresPasswordAuth` goes to `Disabled`.
 
 ## Releasing
 
@@ -91,7 +95,6 @@ Nothing here costs money until step 4. Do the steps only after approving the cos
     exists: the app then refuses to start without it.
   - `mock_checkout`: shows the demo "Pay (test)" button. Off by default: it gives a paid plan away (with the
     trial's AI allowance).
-  - `setup_database`: tick it on a product's first release, or when rotating the seed (below).
   - `deploy_shared`: only when `shared.bicep` changes, and only from the starter's workflow. Shared changes
     can cost money, so ask first.
 - The run summary shows the public address, the new revision, the image digest, the previous revision and
@@ -116,23 +119,31 @@ stays as it was.
   counters, so it is a second bucket for anyone who knows that address. After a security fix, release once
   more so the vulnerable revision is retired.
 
-## Rotating the database seed
+## Database sign-in (Entra, ADR 0003)
 
-Every database password comes from `STUDIO_DB_SEED`. The server admin password is set only by `deploy_shared`,
-and each product's role passwords only by `setup_database`.
+There is nothing to rotate: no database password exists for the app or the migrator. Each release signs in to
+Postgres as the deploy principal (its Entra token is the password, passed only through `PGPASSWORD` and
+masked) and re-applies `db-setup.sql`. The roles `<db>_app` and `<db>_migrator` have `PASSWORD NULL` and are
+mapped to the object ids of `id-<slug>-app` and `id-<slug>-migrate`, so only a token for that identity works.
 
-1. Vishal replaces the `STUDIO_DB_SEED` secret.
-2. Run the **starter's** workflow with **deploy_shared** and **setup_database** both ticked. The admin password
-   changes first, then the starter's roles, then its release goes out with the new passwords.
-3. Run every other product's workflow with **setup_database** ticked. Until it runs, a product keeps working
-   on its old passwords.
+- **Cut a role off at once:** as the admin, `ALTER ROLE <db>_app NOLOGIN`. To replace an identity: `NOLOGIN`
+  first (cached managed-identity tokens live up to 24 hours), delete the identity, then release: it
+  recreates it with a new object id, re-labels the role and sets `LOGIN`.
+- **The deploy principal was recreated** (new object id): run `deploy_shared` so it becomes an admin, remove
+  the old `administrators` entry through ARM (the release stops while any other admin is listed), and from the
+  old admin run `GRANT <role> TO <new admin> WITH ADMIN OPTION` for every product role (PostgreSQL 16 only
+  gives ADMIN OPTION to the creator), then `ALTER DATABASE ... OWNER TO` the new admin role.
 
-During each run, the revision being replaced can't open new database connections once its roles have the
-new password, so expect a few minutes of errors. Revisions released before the rotation can't be rolled back
-to afterwards: they hold the old passwords.
+### First-deploy checklist (only Azure can show these; record the answers in the T-18 review)
 
-If the admin password and the seed disagree, the database step stops at once with "The server admin password
-doesn't match STUDIO_DB_SEED": run step 2 again.
+1. The Contributor deploy principal can create the `administrators` child (`deployer()`).
+2. An Entra admin may run `SECURITY LABEL FOR "pgaadauth"` and `GRANT <role> TO CURRENT_USER WITH INHERIT
+   FALSE, SET TRUE` (fallback: `pgaadauth_create_principal_with_oid`).
+3. `pgaadauth_list_principals`: the column casing, `principalType` is exactly `service` for a managed identity,
+   `(true)` lists the deploy principal under the name `current_user` returns and nothing else, an unqualified
+   call resolves to Azure's function, and a new label replaces the old mapping.
+4. Container Apps jobs get a user-assigned token with `lifecycle: Main`; `/healthz` says `"db":"ok"`.
+5. `rolpassword IS NULL` for both roles, and a sign-in as `<db>_app` with the migrator identity's token is refused.
 
 ## Making a product from the starter
 
@@ -143,7 +154,7 @@ doesn't match STUDIO_DB_SEED": run step 2 again.
 3. Copy the workflow to `.github/workflows/<slug>-deploy.yml` and change the env block: `PRODUCT`,
    `PRODUCT_DIR`, `DB_NAME` (letters, digits and underscores), and the `STARTER_*` Stripe secret names.
 4. Add rows for `ca-<slug>`, `caj-<slug>-migrate` and `caj-<slug>-purge` to `state/BUDGET.md` before the first
-   release, which runs with `setup_database` ticked.
+   release. The database step runs on every release, so there is nothing to tick.
 
 ## Costs
 
@@ -183,15 +194,16 @@ Rules the templates keep. Breaking one changes the bill:
 | "can't pull images yet" | AcrPull not granted | setup step 5 |
 | "couldn't read ca-<slug> ... instead of guessing" | an Azure error (throttling, an expired sign-in) | run it again; nothing was changed |
 | "no revision ... has 100% of the traffic" | traffic was split by hand | `rollback_to` the revision that should serve, then release |
-| "has no working release yet: run this first release with setup_database" | first release of a product | tick `setup_database` |
-| "The server admin password doesn't match STUDIO_DB_SEED" | the seed changed without `deploy_shared` | rotating the seed, step 2 |
+| "main.bicep's identity object ids are missing" | the deploy step's outputs lack the two principal ids | check `main.bicep` outputs `appIdentityPrincipalId`, `migrateIdentityPrincipalId` |
+| "has Entra admins besides the deploy principal" | someone added an admin (Bicep never removes one) | remove the extra `administrators` entry through ARM, release again |
+| "is not an Entra admin of psql-studio-..." or "refused the deploy principal's token" | `deploy_shared` never ran since T-18, or the principal was recreated | run with `deploy_shared` ticked |
 | Trivy fails | a fixable HIGH or CRITICAL vulnerability in the image | rebuild later (new base image), or add the CVE id to `<product>/.trivyignore` with a comment saying why |
 | Migration job `Failed` | a migration error; the old revision still serves and the schema is unchanged | read `ContainerAppConsoleLogs` in `log-studio`, fix, release again |
 | "The purge job couldn't be pointed back" | an Azure error during a rollback | run `rollback_to` with the revision that serves traffic |
-| `/healthz` answers `"db":"down"` | wrong database password, or the server is stopped | re-run with `setup_database`; start the server |
+| `/healthz` answers `"db":"down"` | role not mapped to the identity, or the server is stopped | release again (re-applies the mapping); start the server |
 | A name "is already in use" | someone else owns `acrstudioznp96r` or `psql-studio-znp96r` | change the suffix in `shared.bicepparam`, `main.bicep` and the workflow env |
 | A charge named "Environment Management Hour" | a Dedicated profile, private endpoint or maintenance window got added | remove it; see ADR decision 1 |
-| "Couldn't remove the firewall rule gh-run-..." warning | an Azure error after a database setup | delete the rule with the command in the warning |
+| "Couldn't remove the firewall rule gh-run-..." warning | an Azure error after the database step | delete the rule with the command in the warning |
 
 ## Checks you can run without Azure
 
