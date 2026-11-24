@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from . import vocab
 
 IMAGE_TOKENS_WORST = 6000  # conservative upper bound per page image (high detail, tiled)
-REASONING_EFFORTS = ("low", "medium", "high")
+REASONING_EFFORTS = ("medium", "high", "xhigh")  # gpt-5.4-pro rejects "low" (HTTP 400, run e08c)
 
 
 @dataclass(frozen=True)
@@ -98,7 +98,7 @@ class AzureResponsesProvider:
         endpoint = endpoint or env.get("AZURE_OPENAI_ENDPOINT", "")
         if not endpoint:
             raise ValueError("AZURE_OPENAI_ENDPOINT is not set")
-        effort = reasoning_effort or env.get("T56_REASONING_EFFORT", "low")
+        effort = reasoning_effort or env.get("T56_REASONING_EFFORT", "medium")
         if effort not in REASONING_EFFORTS:
             raise ValueError(f"reasoning effort must be one of {REASONING_EFFORTS}")
         root = endpoint.strip().rstrip("/")

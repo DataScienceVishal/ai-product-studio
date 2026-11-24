@@ -228,7 +228,7 @@ def test_azure_request_shape(nb):
 
 def test_azure_default_reasoning_effort_is_explicit_and_validated():
     p = providers.AzureResponsesProvider(env=ENV)
-    assert p.reasoning_effort == "low" and p.deployment == "gpt-5.4-pro"
+    assert p.reasoning_effort == "medium" and p.deployment == "gpt-5.4-pro"
     with pytest.raises(ValueError):
         providers.AzureResponsesProvider(env=ENV, reasoning_effort="max")
 
