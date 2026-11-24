@@ -82,14 +82,14 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Recommended: A, because it is the only cheap way to turn a 66-68 near-miss into a pass or a clean kill
 - If no answer: waits (ask-first). Meanwhile the studio keeps scouting (behaves as B)
 
-## Q-10 (status: open)
+## Q-10 (status: sent 2026-11-24T19:30Z as 1)
 - Decision: Should the G1 rubric score Competition on the studio's wedge against incumbents (price, fit, segment they don't serve) rather than on whether a rival exists?
 - Context: 17 rounds, 53 ideas scored, 0 passed. The validator re-scored five real, paying UK AI products as launch-day ideas and they land at 57-66 too (Jelly 62, Dext 62, RemitClear 66), so the bar as written rejects products that are succeeding. See state/ideas/META-REVIEW.md.
 - Options: A) Yes: Competition is scored on a nameable, evidenced wedge; the 70 bar stays; parked ideas are re-scored, with pEPR (68) first after its benchmark (recommended) B) Keep the rubric as it is and keep scouting new theses C) Skip the gate for one bet: build pEPR now as a cheaper Repackd alternative and let a demo be the evidence
 - Recommended: A, because it fixes the measured calibration fault without lowering the bar, and the pEPR benchmark (T-56) supplies the evidence either way
 - If no answer: A after 12 hours (reversible; pipeline.md is edited and the change logged)
 
-## Q-11 (status: open)
+## Q-11 (status: sent 2026-11-24T19:30Z as 2)
 - Decision: May the pEPR proof test (T-56) spend up to $12 of Azure OpenAI credit on the gpt-5.4-pro model?
 - Context: The benchmark is built and reviewed: 30 synthetic packaging spec sheets plus 5 tuning sheets, with a pass mark written before any run. A pass lifts pEPR (68) towards the 70 bar; a fail kills it. At the assumed pro price a sheet costs about $0.25-0.30, so the run is ~$9.50 plus ~$2.50 of tuning. The extractor's guard stops before any call could cross $12 or 3M tokens. Spend so far: T-12 ~$3.40 of its $15.
 - Options: A) Yes, up to $12 for T-56 (recommended) B) Yes, but test set only, no tuning (~$9.50) C) No model spend: pEPR stays parked at 68
