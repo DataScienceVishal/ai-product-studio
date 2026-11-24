@@ -34,6 +34,11 @@ absent "PG_ADMIN_PASSWORD never goes to GITHUB_ENV or GITHUB_OUTPUT" 'PG_ADMIN_P
 absent "no psql run as the migrator" 'psql.*-U +"?\$\{?DB_NAME\}?_migrator'
 absent "db-grants.sql is not called separately (db-setup.sql runs it)" 'psql.*db-grants\.sql|-f .*db-grants'
 absent "no set -x (the token must never be traced)" 'set +-[a-z]*x'
+# no live operator instruction to use the removed seed (ADR, reviews and NEXT.md are history and excluded)
+root=$(cd "$here/../../.." && pwd)
+live=$(grep -rIlE 'STUDIO_DB_SEED' "$root/.github" "$root/products/_starter" "$root/SECURITY.md" 2> /dev/null \
+  | grep -vE '/(ADR|reviews)/|/NEXT\.md$|/test-deploy-workflow\.sh$' || true)
+[ -z "$live" ] && ok "no workflow, script, README or SECURITY.md mentions STUDIO_DB_SEED" || bad "STUDIO_DB_SEED still in: $live"
 [ ! -e "$here/scram_verifier.py" ] && ok "scram_verifier.py is deleted" || bad "scram_verifier.py is deleted"
 if grep -q 'scram_verifier' "$ci"; then bad "CI infra job no longer compiles scram_verifier.py"; else ok "CI infra job no longer compiles scram_verifier.py"; fi
 

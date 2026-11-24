@@ -1,5 +1,10 @@
 # ADR 0002: Azure deploy path for the starter
 
+> **Superseded in part by ADR 0003 (passwordless Postgres via Entra ID): `STUDIO_DB_SEED` and derived database passwords are removed.**
+> Every passage below about the seed, derived role passwords, `setup_database` or seed rotation is kept as history and
+> marked "(superseded by ADR 0003)". Database sign-in is now described in `ADR/0003-entra-postgres.md` and the
+> "Database sign-in" runbook in `infra/README.md`. The rest of this ADR still stands.
+
 - Status: proposed (2026-11-23, board task T-7). Revised the same day after the T-7 review
   (`reviews/T-7-azure-deploy.md`): C1, C2, I1 to I5 and the conditions on decision 5 are addressed below.
   Nothing is created until Vishal approves the costs. Products inherit this design. Change it only with a
@@ -163,7 +168,7 @@ Neither is affordable or reliable here:
    (passwordless Entra ID sign-in, then `passwordAuth: Disabled`) or with private networking, whichever comes
    first, and it must end **before G4, before any handover, and before `unlock selling`**.
 2. **The compensating controls stay as built:**
-   - every password is 43 characters, 160 bits from HMAC-SHA256 of the role's name keyed by `STUDIO_DB_SEED`;
+   - every password is 43 characters, 160 bits from HMAC-SHA256 of the role's name keyed by `STUDIO_DB_SEED`; (superseded by ADR 0003)
    - TLS 1.3 only, and every client uses `sslmode=verify-full` against Azure's current roots (DigiCert Global
      Root G2 and Microsoft RSA Root CA 2017, both in the image's CA bundle);
    - the server admin password exists only inside GitHub Actions runs, and no app or job has it;
@@ -185,7 +190,7 @@ needs Vishal's approval.
 
 | Secret | Comes from | Reaches the app as |
 |---|---|---|
-| `DATABASE_URL` (app role, migrator role) | derived in the workflow from `STUDIO_DB_SEED` | Container Apps secret `database-url`, referenced by `secretRef` |
+| `DATABASE_URL` (app role, migrator role) | derived in the workflow from `STUDIO_DB_SEED` | Container Apps secret `database-url`, referenced by `secretRef` | (superseded by ADR 0003)
 | `AZURE_OPENAI_API_KEY` | the Actions secret (SETUP.md step 3), whenever it exists | secret `azure-openai-api-key`; wired into the app only with `ai_provider=azure` |
 | `BILLING_WEBHOOK_SECRET`, `STRIPE_SECRET_KEY` | the Actions secrets `STARTER_BILLING_WEBHOOK_SECRET` and `STARTER_STRIPE_SECRET_KEY`, whenever they exist | secrets `billing-webhook-secret`, `stripe-secret-key`; wired in only with `billing_provider=stripe` |
 
@@ -208,10 +213,10 @@ needs Vishal's approval.
   is not.
 - With the mock billing provider, no webhook secret is set and the app makes a random one per process. That
   is correct for one replica.
-- **Rotating `STUDIO_DB_SEED`:** only `deploy_shared` sets the server admin password and only
+- **Rotating `STUDIO_DB_SEED`:** only `deploy_shared` sets the server admin password and only (superseded by ADR 0003)
   `setup_database` sets a product's role passwords. Rotation is therefore: new seed, then the starter's
   workflow with both ticked, then every other product's workflow with `setup_database` (runbook, "Rotating
-  the database seed"). A revision released before the rotation holds the old password and can't be rolled
+  the database seed"). A revision released before the rotation holds the old password and can't be rolled (superseded by ADR 0003)
   back to afterwards. If the admin password and the seed disagree, the database step stops at once with a
   message that says so, instead of waiting 6 minutes.
 
@@ -248,7 +253,7 @@ needs Vishal's approval.
   only). Otherwise it compiles the Bicep and stops with a notice.
 - **The main-only check guards against accidents, not against a determined branch.** Repository secrets are
   readable by workflows on any branch, and a branch can edit the workflow. The real boundary is a GitHub
-  environment holding `AZURE_CREDENTIALS` and `STUDIO_DB_SEED` with a main-only deployment-branch rule.
+  environment holding `AZURE_CREDENTIALS` and `STUDIO_DB_SEED` with a main-only deployment-branch rule. (superseded by ADR 0003)
   GitHub Free can't use environments in private repositories ("Users with GitHub Free plans can only
   configure environments for public repositories"); GitHub Pro can, and the GitHub Student Developer Pack
   includes Pro. Which plan this account has is not checked yet: a question for Vishal, then a follow-up.
@@ -294,7 +299,7 @@ only in a later release (expand, then contract). Reviewers check this on every m
 - Caveats about the previous revision, while it stays active: it is reachable at its own revision address
   until the next release, and it keeps its own in-process rate-limit counters, so it is a second bucket for
   anyone who knows that address. After a security fix, release again so the vulnerable revision is retired.
-  After a seed rotation it can't reach the database (decision 6).
+  After a seed rotation it can't reach the database (decision 6). (superseded by ADR 0003)
 
 ### 10. Retention purge as a scheduled job that follows the live revision
 
@@ -310,7 +315,7 @@ enough), with one retry. It costs about 450 vCPU-seconds a month, inside the fre
   `EMAIL_PROVIDER`, so the purge treats unverified accounts the way the app does. Today the app deletes
   unverified accounts only once real email is sent, and email is outbox-only, so the purge deletes no account
   either way.
-- Its database URL is refreshed on every release, because a seed rotation in the same run has already changed
+- Its database URL is refreshed on every release, because a seed rotation in the same run has already changed (superseded by ADR 0003)
   the password.
 - The migration job is different: it runs only when the workflow starts it, before traffic moves, and it keeps
   the image of the latest release attempt.
@@ -414,7 +419,7 @@ jobs, which share the same free grant, and a database on the same server.
    > **If no answer:** waits (spending money is ask-first).
 
 2. **One-time setup only an Owner can do** (infra/README.md, about 10 minutes): check the "Free services"
-   page; register the resource providers; add the `STUDIO_DB_SEED` secret; set `STUDIO_AZURE_APPROVED=yes`;
+   page; register the resource providers; add the `STUDIO_DB_SEED` secret; set `STUDIO_AZURE_APPROVED=yes`; (superseded by ADR 0003)
    after the first shared deploy, grant AcrPull with the one command the workflow prints.
 3. **A smaller question (reversible):** does this GitHub account have Pro (for example through the Student
    Developer Pack)? If yes, the deploy secrets move into a main-only environment (decision 8).
@@ -450,7 +455,7 @@ jobs, which share the same free grant, and a database on the same server.
 | A migration isn't backward compatible | A rollback can't help, because the old code meets the new schema | Expand/contract rule (decision 9); reviewers check each migration |
 | A release passes but the purge job can't be moved | Traffic and the purge job go back to the previous revision | Run it again |
 | A rollback can't move the purge job back | The run says so | `rollback_to` the revision that serves traffic |
-| The seed changes without `deploy_shared` | The database step stops at once and says why | Rotation procedure (decision 6) |
+| The seed changes without `deploy_shared` | The database step stops at once and says why | Rotation procedure (decision 6) | (superseded by ADR 0003)
 | AcrPull not granted yet | The workflow stops early and prints the exact command | Vishal runs it once |
 | A new CVE in the base image | Trivy fails the release | Rebuild later, or a justified `.trivyignore` entry; T-19 pins and refreshes the base image |
 | Too many database connections | `too many clients` from Postgres | Per-role limits and small pools (decision 4); beyond about 3 products, connection pooling or a bigger SKU (approval) |
@@ -463,7 +468,7 @@ Already on the board: T-16 (serve the SPA from the backend: needed before any br
 OpenAI through a managed identity), T-18 (passwordless Postgres, which ends decision 5's conditions), T-19
 (pin the base image and actions), T-20 (compile the Bicep in CI). New:
 
-1. After Vishal answers the plan question, move `AZURE_CREDENTIALS` and `STUDIO_DB_SEED` into a main-only
+1. After Vishal answers the plan question, move `AZURE_CREDENTIALS` and `STUDIO_DB_SEED` into a main-only (superseded by ADR 0003)
    GitHub environment and add `environment:` to the deploy and rollback jobs (decision 8).
 2. A registry cleanup that keeps the last few images per product (decision 3).
 3. Only if the allowance doesn't apply: a stop/start schedule for Postgres.
