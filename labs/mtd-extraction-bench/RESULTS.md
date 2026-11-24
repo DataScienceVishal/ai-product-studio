@@ -78,6 +78,7 @@ The scan transcription itself was good (amount and description 100%, date 93.8%,
 - Review seconds are assumptions, not measured with people. The 120 s silent-error cost is a guess; at 60 s the model-only text formats would be 62 to 68% (still not halved).
 - The 502 calls were recorded at $0. If they were billed, spend is at most $7.95.
 - No comparison with Dext or a PDF converter (needs an account; ask Vishal first).
+- QA additions (see QA-FULL.md): (a) merchant coverage of the rules is 92.7% of scored lines (356 of 384) because every document contains each merchant of its persona once; re-running the calibrated scoring with only a random half of the rules gives 54.4% (not halved), a quarter 64.1%, none 72.9%. So the 35.4% needs about 80% or more of spend to be at known merchants. (b) 20 of the 37 merchant keys in the full run also appear in the pilot merchant list, so the full run is not independent of the pilot; but the risky-category cap adds nothing (no rules, cap on: 72.9%; no rules, no cap: 71.8%), so the pilot-derived `RISKY_CATS` is not what produces the 35.4%. (c) 112 of 384 lines (29%) are truth-flagged ambiguous with our own labels; model category accuracy is 98.9% on the 272 non-ambiguous lines against 87.5% on the ambiguous ones. (d) Silent-error cost sensitivity, model only, 12 docs pooled: 60 s 65.6%, 120 s 71.8%, 240 s 84.3%; calibrated 34.1 / 35.4 / 37.9%. Model-only misses the halving bar at every cost tried, including 0 s (59.3%).
 
 ---
 
