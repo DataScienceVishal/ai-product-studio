@@ -3,10 +3,17 @@ from __future__ import annotations
 
 import os
 import re
+import secrets
+import signal
+import time
+import warnings
 
+import psycopg
 import pytest
 from fastapi.testclient import TestClient
+from psycopg import sql
 from sqlalchemy import text
+from sqlalchemy.engine import make_url
 
 from app import models  # noqa: F401  (register tables)
 from app.ai import FakeAI
@@ -16,19 +23,109 @@ from app.db import Base, Database
 from app.email import OutboxEmail
 from app.main import create_app
 
-TEST_DB = os.environ.get("TEST_DATABASE_URL", "postgresql+psycopg://studio:studio@localhost:5432/starter_test")
+_BASE_URL = os.environ.get("TEST_DATABASE_URL", "postgresql+psycopg://studio:studio@localhost:5432/starter_test")
+# Each pytest run gets its own database, `<db>_t<epoch>_<pid>_<rand>`, so runs in parallel (agents, dev + CI on one
+# host) never wipe each other's data. TEST_DATABASE_SHARED=1 uses the URL as-is (needs no CREATE DATABASE right).
+SHARED = os.environ.get("TEST_DATABASE_SHARED") == "1"
+_BASE = make_url(_BASE_URL)
+_BASE_NAME = _BASE.database or "starter_test"
+_STALE_AFTER_SECONDS = 6 * 3600
+_BASE_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,40}$")
+# Only databases carrying this comment (set at creation) are ever dropped by the stale cleanup.
+_MARKER = "starter-pytest-ephemeral"
+if SHARED:
+    TEST_DB = _BASE_URL
+    _RUN_NAME = _BASE_NAME
+else:
+    _RUN_NAME = f"{_BASE_NAME}_t{int(time.time())}_{os.getpid()}_{secrets.token_hex(3)}"
+    TEST_DB = _BASE.set(database=_RUN_NAME).render_as_string(hide_password=False)
 PASSWORD = "correct horse battery"
+
+
+def pytest_configure(config) -> None:
+    """SIGTERM (a timeout, a cut-off agent run) becomes KeyboardInterrupt so the per-run DB is still dropped.
+    SIGKILL cannot be caught; its leftovers are reclaimed by the stale cleanup of a later run."""
+    try:
+        signal.signal(signal.SIGTERM, lambda signum, frame: (_ for _ in ()).throw(KeyboardInterrupt()))
+    except ValueError:  # not the main thread
+        pass
+
+
+def _check_base_name(name: str) -> None:
+    if not _BASE_NAME_RE.match(name):
+        pytest.exit(f"TEST_DATABASE_URL database name {name!r} is not allowed: use letters, digits and underscores "
+                    f"only (max 41 characters, not starting with a digit), or set TEST_DATABASE_SHARED=1.", 2)
+
+
+def _admin_conn():
+    extra = {k: v for k, v in _BASE.query.items() if isinstance(v, str)}
+    return psycopg.connect(host=_BASE.host, port=_BASE.port, user=_BASE.username, password=_BASE.password,
+                           dbname="postgres", autocommit=True, connect_timeout=10, **extra)
+
+
+def _stale_pattern(base: str) -> re.Pattern:
+    return re.compile(rf"^{re.escape(base)}_t(\d{{10}})_\d{{1,7}}_[0-9a-f]{{6}}$")
+
+
+def _drop_stale(conn, base: str, now: float | None = None) -> list[str]:
+    """Drop databases this conftest made and a killed run left behind: exact generated name, our comment marker,
+    owned by the current user, older than a few hours. Never raises."""
+    now = time.time() if now is None else now
+    pattern = _stale_pattern(base)
+    rows = conn.execute(
+        "SELECT d.datname FROM pg_database d WHERE shobj_description(d.oid, 'pg_database') = %s "
+        "AND d.datdba = (SELECT oid FROM pg_roles WHERE rolname = current_user)", (_MARKER,)).fetchall()
+    dropped = []
+    for (name,) in rows:
+        match = pattern.match(name)
+        if not match or now - int(match.group(1)) <= _STALE_AFTER_SECONDS:
+            continue
+        try:
+            conn.execute(sql.SQL("DROP DATABASE IF EXISTS {} WITH (FORCE)").format(sql.Identifier(name)))
+            dropped.append(name)
+        except psycopg.Error as exc:
+            warnings.warn(f"could not drop stale test database {name}: {exc}")
+    return dropped
+
+
+def _create_run_db(conn, name: str) -> None:
+    try:
+        conn.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
+    except psycopg.errors.InsufficientPrivilege:
+        pytest.exit("The test database user needs the CREATEDB privilege (ALTER ROLE <user> CREATEDB), "
+                    "or set TEST_DATABASE_SHARED=1 to use the shared database.", 2)
+    conn.execute(sql.SQL("COMMENT ON DATABASE {} IS {}").format(sql.Identifier(name), sql.Literal(_MARKER)))
 
 
 @pytest.fixture(scope="session")
 def database():
-    db = Database(TEST_DB)
-    with db.engine.begin() as conn:  # a clean schema, whatever another branch left behind
-        conn.execute(text("DROP SCHEMA public CASCADE"))
-        conn.execute(text("CREATE SCHEMA public"))
-    Base.metadata.create_all(db.engine)
-    yield db
-    db.dispose()
+    if SHARED:
+        db = Database(TEST_DB)
+        with db.engine.begin() as conn:  # a clean schema, whatever another branch left behind
+            conn.execute(text("DROP SCHEMA public CASCADE"))
+            conn.execute(text("CREATE SCHEMA public"))
+        try:
+            Base.metadata.create_all(db.engine)
+            yield db
+        finally:
+            db.dispose()
+        return
+    _check_base_name(_BASE_NAME)
+    admin = _admin_conn()
+    try:
+        _drop_stale(admin, _BASE_NAME)
+        _create_run_db(admin, _RUN_NAME)
+        try:
+            db = Database(TEST_DB)
+            try:
+                Base.metadata.create_all(db.engine)
+                yield db
+            finally:
+                db.dispose()
+        finally:
+            admin.execute(sql.SQL("DROP DATABASE IF EXISTS {} WITH (FORCE)").format(sql.Identifier(_RUN_NAME)))
+    finally:
+        admin.close()
 
 
 @pytest.fixture(autouse=True)

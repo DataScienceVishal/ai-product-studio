@@ -1,3 +1,15 @@
+# T-37 status
+
+Done: backend/tests/conftest.py gives each pytest run its own database (`<db>_t<epoch>_<pid>_<rand>`, created via the
+`postgres` maintenance DB, dropped at session end in a finally). `TEST_DATABASE_SHARED=1` keeps the old shared behaviour.
+Review fixes (reviews/T-37.md): stale cleanup drops only exact-shape names (10-digit epoch, pid, 6 hex) that carry the
+`starter-pytest-ephemeral` database comment, are owned by the current user and are older than 6 h; each drop is
+try/except. Base db name must match `^[A-Za-z_][A-Za-z0-9_]{0,40}$` (else pytest.exit); all SQL uses psycopg
+sql.Identifier/Literal. No CREATEDB: one clear exit message. SIGTERM raises KeyboardInterrupt (DB dropped); SIGKILL still
+leaks until a later run reclaims it after 6 h. Tests: backend/tests/test_testdb_cleanup.py.
+Left: nothing.
+Verify: `cd backend && pytest` (336 passed, 1 skipped), also two at once; `cd frontend && npx vitest run`.
+
 # T-35 status
 
 Done: `/assets/` with no assets folder is a plain 404 (spa.py registers both spellings; test added, GET and HEAD);
