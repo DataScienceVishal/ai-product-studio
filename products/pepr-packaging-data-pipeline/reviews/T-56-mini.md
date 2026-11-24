@@ -133,3 +133,9 @@ Tests: `/usr/bin/python3 -m pytest -q extractor/tests benchmark/tests` gives **1
 - **Do the S017 charge after the consistency checks.** `_resume_plan` writes the `--charge-worst-case` row before it checks the other sheets. If that check then exits 7, the charge is already in the ledger, and re-running the same command is refused because S017 now has a row. That is loud and safe, but confusing. Checking everything first and charging last would avoid it.
 - **`ssl.SSLError` wrapped in `URLError` is charged at worst case.** This includes certificate failures during the handshake, which happen before send. It is conservative, at most 4 times USD 0.017 a sheet. Acceptable, but a comment would help.
 - **Refresh the NEXT.md resume command.** It should show the recorded values (`T56_REASONING_EFFORT=medium T56_MAX_OUTPUT_TOKENS=6000`) instead of `<recorded>`.
+
+**Resume re-review, commit 91b9318: PASS.**
+- **Blocker 1 is resolved.** With `--resume`, the run compares `set`, `deployment`, `price_model`, `reasoning_effort` and `max_output_tokens` with the first run's `run.json`. If any differ, or `run.json` is missing or unreadable, it exits 7 before any charge, call or write. The first `run.json` is never overwritten; each resume writes its own record to `run-resume[-n].json`.
+- **The real `results/test1/run.json` exists.** It records test, gpt-5-mini, gpt-5-mini, medium and 6000. I checked it offline: those settings match, and `max_output_tokens` 16000 is refused.
+- **Tests:** 206 passed. No Azure calls, no scoring.
+- **Suggestion, not blocking:** a `--set test` run *without* `--resume` into an `--out` that already holds outputs still overwrites `run.json` and re-calls every sheet. Consider refusing that case unless a new, empty `--out` is given.
