@@ -9,7 +9,7 @@ Compiled locally with Bicep v0.32.4; cost-guard passes.
 Decision: new `dbAuth` param in main.bicep, default `password`. In password mode DB_AUTH and AZURE_CLIENT_ID are NOT set (the app
 defaults to password) so the deployed app behaves as before; the identities are created and attached in both modes ($0).
 Slice 4 (workflow) must pass `dbAuth=entra` (add `param dbAuth = readEnvironmentVariable('DB_AUTH', 'password')` to main.bicepparam).
-Side effect to know: shared.bicep now always enables Entra auth and adds the deployer as admin (ADR phase 1), with passwordAuth Enabled.
+Side effect to know: shared.bicep now always enables Entra auth and adds the deployer as admin, with passwordAuth Disabled (password sign-in is off from the first deploy).
 Left: slices 3 to 7 (db-setup.sql, workflow, delete seed, phase 2 flip, OIDC). `postgresEntraAdminName` defaults to
 `sp-ai-studio-deployer`. Verify: `az bicep build` both files, then `bash infra/test-bicep-identities.sh shared.json main.json`.
 

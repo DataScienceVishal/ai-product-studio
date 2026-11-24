@@ -122,7 +122,7 @@ credential is the one that remains (decision 5).
 1. Refuse `app_oid` / `migrator_oid` (psql variables from the workflow) unless they match a lowercase UUID.
 2. `CREATE ROLE <db>_migrator LOGIN` and `<db>_app LOGIN` if missing (as today).
 3. `ALTER ROLE … WITH LOGIN CONNECTION LIMIT 3 | 12 PASSWORD NULL`: limits unchanged, and no password can
-   ever work for these roles, even in phase 1.
+   ever work for these roles.
 4. `SECURITY LABEL … 'aadauth,oid=<oid>,type=service'` (never `admin`). Re-running re-maps, so a recreated
    identity heals on the next release.
 5. Check: `pgaadauth_list_principals(false)` for each role must give the oid, `service` and `isadmin = 0`, or
@@ -166,7 +166,7 @@ The admin role itself gets no connection limit (it is used once per release, by 
   `set -x` in the step; the token never goes into an `az`, `curl` or `psql` argument, only `PGPASSWORD`.
 - **Admin drift (N1):** the same step fails if `.../administrators` lists any object id other than the
   deployer's (incremental Bicep never removes one).
-- **Phase 1 password (B3):** generated **inside** the `deploy_shared` step, masked before any use, handed to
+- **Admin password (B3):** generated **inside** the `deploy_shared` step, masked before any use, handed to
   `az deployment group create` only through that step's own environment (`readEnvironmentVariable()` in
   `shared.bicepparam` into the `@secure()` param, passed through untransformed), and never written to
   `$GITHUB_ENV`, `$GITHUB_OUTPUT`, a file or a command-line argument. Today's `PG_ADMIN_PASSWORD` in
@@ -180,7 +180,7 @@ The admin role itself gets no connection limit (it is used once per release, by 
 - **Dead after this, delete in the build:** `STUDIO_DB_SEED` and the "Derive the database passwords" step;
   `infra/scram_verifier.py`, its syntax check in the workflow and its tests; the verifier checks in
   `db-setup.sql`; `PG_*_PASSWORD`; the seed warning in the rollback step; the seed parts of `infra/README.md`
-  (setup step 3, "Rotating the database seed"). `adminPassword` stays as a random per-run value until phase 2.
+  (setup step 3, "Rotating the database seed"). `adminPassword` stays as a random per-run value.
 - **Rollback (0002 decision 9):** unchanged mechanics. Identities are not tied to revisions, so the previous
   revision keeps signing in after a rollback. The old caveat "after a seed rotation it can't reach the
   database" is gone. New caveat: no revision built before T-18 can be rolled back to (none exist in Azure).
@@ -256,7 +256,7 @@ sign-in is a server setting, not a meter. `state/BUDGET.md` gains two $0 rows pe
 
 | What goes wrong | What happens | What to do |
 |---|---|---|
-| Admin creation refused for the SP | `deploy_shared` fails in phase 1; password sign-in is already disabled on the server | Vishal adds the SP as Entra admin in the portal (Authentication pane), then re-run |
+| Admin creation refused for the SP | `deploy_shared` fails at the admin step; password sign-in is already disabled on the server | Vishal adds the SP as Entra admin in the portal (Authentication pane), then re-run |
 | `SECURITY LABEL` refused on Azure | `db-setup.sql` stops before any grant | Switch to `pgaadauth_create_principal_with_oid` on the empty roles (first deploy only) |
 | The deploy SP is recreated (new object id) (N2) | The next `deploy_shared` adds the new SP as admin; the old admin entry and role stay and still own every product database | Runbook: `ALTER DATABASE … OWNER TO` the new admin role, delete the old `administrators` entry through ARM, then `DROP ROLE` the old one |
 | Connection flood on the 35 slots (N7) | The admin has no reserved slot, so the release's db step waits | The 6-minute retry covers it; if not, release again later |
