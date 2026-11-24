@@ -245,6 +245,23 @@ Written 2026-11-24, before any extractor exists and before any run. Per `playboo
 - **Fail:** counts as a failed G1 attempt (the idea has already had one REVISE at 68, so a fail kills it under the two-attempt rule). Lessons and what would revive it go in this file, then it moves to `state/ideas/killed/`.
 - No pass mark is changed after seeing results. Any change needs a new dated entry here before the next run.
 
+### Amendment, 2026-11-24 (before any run)
+
+Made before any extractor exists and before any run. Pass marks are unchanged.
+
+1. **Ground truth.** Truth is written by the generator from the same data model that renders each sheet, not by hand. It lives at `benchmark/data/truth/` (tuning sheets: `benchmark/data/tuning_truth/`). It was spot-checked by hand against the PDFs. Every present value carries a page and a quote that is tested to appear on that page.
+2. **Scoring rules (fixed before any run).**
+   - (a) A conflict weight scores 1 only if the extractor flags a conflict and reports both truth values, each within tolerance (1% or 0.1 g, whichever is larger). A silent pick scores 0.
+   - (b) The value-in-quote check parses number and unit from the quote (g, kg, mg, oz), converts to grams and applies the same tolerance. Strings must match after case and whitespace normalisation and listed synonyms. Feature quotes must be the canonical value or a listed paraphrase.
+   - (c) Image-only (scanned) sheets are checked against the page text the generator rendered onto the raster, stored in `benchmark/data/manifest.json`. Whitespace and case normalised substring match. No OCR in scoring.
+   - (d) Components are matched by normalised name first (listed name variants), with material as a tie-break only when the truth material is present. One-to-one, greedy.
+3. **Missing features.** Every feature key that is plausible for a component type (map in `benchmark/taxonomy.py`) is labelled in truth as present or `missing`. The extractor must return all plausible keys for every component, using `missing` when the sheet does not state one. Only plausible keys are scored. Features are returned as one value from a closed vocabulary; sheets use paraphrases.
+4. **Budget counting.** The 3M token cap counts input + output + reasoning + image tokens, tuning included. Model: Azure OpenAI deployment `gpt-5.4-pro`. Price basis: USD 15 per 1M input and USD 120 per 1M output (incl. reasoning), from `state/BUDGET.md`; GBP at 0.79 per USD. The GBP 0.25 per sheet check is computed on that basis. Added hard cap: USD 12 of model spend for the whole proof test (tuning + test run), enforced by the extractor guard; it stops at whichever cap comes first.
+5. **Conflict count.** The test set has 22 conflict cases (7 in the moderate tier, 15 in the messy tier). The 80% conflict bar therefore needs at least 18 of 22. The test set has 68 components and 466 scored slots (307 present, 137 missing, 22 conflict).
+6. **Tuning set.** The 5 tuning sheets (different seed) cover one clean sheet, one multi-component sheet with missing fields, one mixed-units sheet, one scanned sheet with a conflict and one contradictory sheet.
+7. **Public PDFs (realism check).** Slice 4 must search for genuinely public supplier spec PDFs whose licence permits use and report the extractor's result on them separately (hand-labelled), or state that none were found and where it looked. They do not change the pass mark.
+8. **Wording fix.** "Hand-written ground truth (`benchmark/truth/*.json`)" in the Metric and Dataset paragraphs above is superseded by item 1.
+
 ## Gate log
 - 2026-11-23 scout round 2: G0 file written. Competitor own-page check done for Valpak (via BRC release) only; PackTotal own page not reachable (403 on aggregator). Open items listed above.
 - 2026-11-23 | validator | G0→G1 | REVISE 68 | Scored as the merged pEPR and PPT data layer: the studio's strongest official pain so far (automatic red for missing evidence, red factor rising to 2.0 by 2028-29), but Clarity already sells bulk RAM ratings, missing-data flags and fee modelling from £4,995 a year and gov.uk gives the RPD file generator away, so only an unverified upstream extraction gap is left.
