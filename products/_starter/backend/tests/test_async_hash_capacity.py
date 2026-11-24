@@ -113,9 +113,12 @@ def test_every_route_that_hashes_or_verifies_takes_capacity_first():
         if "hash_password(" in source or "verify_password(" in source:
             hashing.append(route)
             calls = [d.call for d in route.dependant.dependencies]
-            assert security.hash_capacity in calls, f"{route.path} hashes but does not take hash_capacity"
-            # before any dependency that opens a database session
-            assert calls.index(security.hash_capacity) == 0, f"{route.path}: hash_capacity must come first"
+            capacity = [c for c in calls if getattr(c, "is_hash_capacity", False)]
+            assert capacity, f"{route.path} hashes but does not take hash_capacity_after(gate)"
+            # route-level dependencies run first, and the slot dependency runs only after its gate (a sub-dependency)
+            assert calls.index(capacity[0]) == 0, f"{route.path}: the capacity dependency must come first"
+            sub = next(d for d in route.dependant.dependencies if d.call is capacity[0])
+            assert [d.call for d in sub.dependencies] == [capacity[0].gate], f"{route.path}: the gate must precede the slot"
     assert {r.path for r in hashing} >= {"/api/auth/signup", "/api/auth/login", "/api/auth/password-reset/confirm",
                                           "/api/invitations/accept", "/api/account", "/api/account/me"}
 

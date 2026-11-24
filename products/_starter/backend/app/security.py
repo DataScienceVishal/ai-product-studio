@@ -1,12 +1,14 @@
 """Password hashing (argon2id) and opaque tokens. Only token hashes are ever stored."""
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import secrets
-import asyncio
 import threading
 import weakref
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
+
+from fastapi import Depends
 
 import anyio
 
@@ -43,7 +45,7 @@ def _busy():
 # Hashing capacity is taken in async code, before the request is given a worker thread, so a login burst
 # waits on the event loop (cheap) instead of parking up to 40 threadpool threads and starving /healthz.
 # One limiter per event loop (a limiter belongs to the loop it is first used on).
-_limiters: "weakref.WeakKeyDictionary" = weakref.WeakKeyDictionary()
+_limiters: "weakref.WeakKeyDictionary[asyncio.AbstractEventLoop, anyio.CapacityLimiter]" = weakref.WeakKeyDictionary()
 
 
 def _limiter() -> anyio.CapacityLimiter:
@@ -54,20 +56,26 @@ def _limiter() -> anyio.CapacityLimiter:
     return limiter
 
 
-async def hash_capacity() -> AsyncIterator[None]:
-    """FastAPI dependency for routes that hash or verify a password. List it BEFORE any dependency that
-    opens a database session, so no pooled connection is held while waiting. Waits at most
-    HASH_WAIT_SECONDS for a slot, then answers the friendly 503 without ever occupying a worker thread.
-    The slot is held until the request is done, so the argon2 call in the route finds a slot free."""
-    limiter = _limiter()
-    with anyio.move_on_after(HASH_WAIT_SECONDS) as scope:
-        await limiter.acquire()
-    if scope.cancelled_caught:
-        raise _busy()
-    try:
-        yield
-    finally:
-        limiter.release()
+def hash_capacity_after(gate: Callable) -> Callable:
+    """Dependency factory for routes that hash or verify a password. `gate` holds every cheap check (rate
+    limits, session/auth, input validation); FastAPI runs it first, so a request it rejects never takes a
+    slot and never queues behind real sign-ins. Then waits at most HASH_WAIT_SECONDS for a slot and answers
+    the friendly 503 without occupying a worker thread. The slot is held until the request is done."""
+
+    async def hash_capacity(_gate=Depends(gate)) -> AsyncIterator[None]:
+        limiter = _limiter()
+        with anyio.move_on_after(HASH_WAIT_SECONDS) as scope:
+            await limiter.acquire()
+        if scope.cancelled_caught:
+            raise _busy()
+        try:
+            yield
+        finally:
+            limiter.release()
+
+    hash_capacity.is_hash_capacity = True  # type: ignore[attr-defined]
+    hash_capacity.gate = gate  # type: ignore[attr-defined]
+    return hash_capacity
 
 
 class _Slot:

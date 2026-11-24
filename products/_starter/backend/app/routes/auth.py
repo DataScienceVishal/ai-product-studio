@@ -19,7 +19,7 @@ from ..errors import AppError
 from ..logs import bind
 from ..models import AuthSession, EmailVerification, PasswordReset, Subscription, Tenant, User
 from ..ratelimit import client_ip
-from ..security import (hash_capacity, hash_password, needs_rehash, new_token, password_problem, token_hash,
+from ..security import (hash_capacity_after, hash_password, needs_rehash, new_token, password_problem, token_hash,
                         verify_password)
 
 log = logging.getLogger("app.auth")
@@ -111,14 +111,30 @@ def me_payload(db: Session, user: User, tenant: Tenant) -> dict:
     }
 
 
-@router.post("/signup", status_code=201, dependencies=[Depends(hash_capacity)])
-def signup(data: SignUp, request: Request, response: Response, db: Session = Depends(get_db)):
+# Cheap gates (rate limits, input checks) run BEFORE a hash slot is taken, so a rejected request never queues.
+async def _signup_gate(data: SignUp, request: Request) -> None:
     settings = request.app.state.settings
     _limit(request, f"signup:{client_ip(request)}")
     request.app.state.limiter.check(f"signup-day:{client_ip(request)}", settings.signups_per_ip_per_day, 86400)
     problem = password_problem(data.password)
     if problem:
         raise AppError(422, "weak_password", problem)
+
+
+async def _login_gate(data: SignIn, request: Request) -> None:
+    _limit(request, f"login-ip:{client_ip(request)}", f"login-email:{data.email.strip().lower()}")
+
+
+async def _reset_gate(data: ResetConfirm, request: Request) -> None:
+    _limit(request, f"reset-confirm:{client_ip(request)}")
+    problem = password_problem(data.new_password)
+    if problem:
+        raise AppError(422, "weak_password", problem)
+
+
+@router.post("/signup", status_code=201, dependencies=[Depends(hash_capacity_after(_signup_gate))])
+def signup(data: SignUp, request: Request, response: Response, db: Session = Depends(get_db)):
+    settings = request.app.state.settings
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     if db.scalar(select(func.count()).select_from(Tenant).where(Tenant.created_at >= today)) >= settings.new_trials_per_day:
         raise AppError(429, "signups_paused", "We're not taking more sign-ups today. Please try again tomorrow.")
@@ -146,10 +162,9 @@ def signup(data: SignUp, request: Request, response: Response, db: Session = Dep
     return me_payload(db, user, tenant)
 
 
-@router.post("/login", dependencies=[Depends(hash_capacity)])
+@router.post("/login", dependencies=[Depends(hash_capacity_after(_login_gate))])
 def login(data: SignIn, request: Request, response: Response, db: Session = Depends(get_db)):
     email = data.email.strip().lower()
-    _limit(request, f"login-ip:{client_ip(request)}", f"login-email:{email}")
     user = db.scalar(select(User).where(User.email == email))
     db.commit()  # no transaction (or pooled connection) held while the password is checked
     if not verify_password(user.password_hash if user else None, data.password):
@@ -219,12 +234,8 @@ def reset_request(data: ResetRequest, request: Request, background: BackgroundTa
     return {"status": "If that email has an account, we've sent a reset link."}
 
 
-@router.post("/password-reset/confirm", status_code=204, dependencies=[Depends(hash_capacity)])
+@router.post("/password-reset/confirm", status_code=204, dependencies=[Depends(hash_capacity_after(_reset_gate))])
 def reset_confirm(data: ResetConfirm, request: Request, db: Session = Depends(get_db)) -> Response:
-    _limit(request, f"reset-confirm:{client_ip(request)}")
-    problem = password_problem(data.new_password)
-    if problem:
-        raise AppError(422, "weak_password", problem)
     new_hash = hash_password(data.new_password)  # before the transaction
     now = datetime.now(timezone.utc)
     # Consume the link in one statement, so two simultaneous clicks can't both use it.
