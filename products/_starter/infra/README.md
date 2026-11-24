@@ -67,6 +67,10 @@ Nothing here costs money until step 4. Do the steps only after approving the cos
    az role assignment create --assignee-object-id <principal id> --assignee-principal-type ServicePrincipal \
      --role AcrPull --scope /subscriptions/<sub>/resourceGroups/rg-ai-studio/providers/Microsoft.ContainerRegistry/registries/acrstudioznp96r
    ```
+   First-deploy check: the Entra admin's `principalName` (`postgresEntraAdminName`, default
+   `sp-ai-studio-deployer`) is a guess. Read it back (`az postgres flexible-server microsoft-entra-admin list`
+   or the portal) and confirm ARM accepted it and which Postgres role name it created. Use that name when granting
+   the app and migrate roles.
 6. **Run the workflow again** with only **setup_database** ticked. This is the first real release. Its only
    revision takes traffic as soon as it is ready, a minute before its migration has run, so for that minute
    the API answers errors. Harmless before anyone uses it; later releases never do this.
@@ -207,3 +211,8 @@ The business deploys `shared.bicep` into its own subscription with an Owner acco
 `GRANT_PULL_ROLE=true` so the AcrPull role is created too. It then deploys `main.bicep`. Before any real
 customer data arrives, Postgres must move to private networking or passwordless sign-in (T-18), and secrets
 should move to Key Vault (ADR decisions 5 and 6).
+
+`shared.bicep` makes whoever deploys it the Postgres Entra admin (`deployer()`). The default type is
+`ServicePrincipal`, which fits the studio workflow. An Owner user deploying at handover must also set
+`postgresEntraAdminType` to `User` (or `Group`), for example `--parameters postgresEntraAdminType=User`, and
+`postgresEntraAdminName` to the role name they want, otherwise ARM rejects or mislabels the admin.

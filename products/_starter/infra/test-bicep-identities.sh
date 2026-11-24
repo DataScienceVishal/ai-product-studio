@@ -86,12 +86,19 @@ check "passwordAuth defaults to Enabled (phase 1), allows only Enabled or Disabl
   "$PG"' | (.parameters.passwordAuth.defaultValue == "Enabled") and (.parameters.passwordAuth.allowedValues | sort) == ["Disabled","Enabled"]' "$shared"
 check "shared.bicep passwordAuth parameter defaults to Enabled" \
   '.parameters.postgresPasswordAuth.defaultValue == "Enabled"' "$shared"
-check "administrators child: the deployer as ServicePrincipal in our tenant, API 2024-08-01" \
+check "shared.bicep passes passwordAuth, entraAdminName and entraAdminType to the postgres module" \
+  '[.resources[] | select(.type == "Microsoft.Resources/deployments" and .name == "studio-postgres")][0].properties.parameters
+   | (.passwordAuth.value == "[parameters('"'"'postgresPasswordAuth'"'"')]")
+     and (.entraAdminName.value == "[parameters('"'"'postgresEntraAdminName'"'"')]")
+     and (.entraAdminType.value == "[parameters('"'"'postgresEntraAdminType'"'"')]")' "$shared"
+check "postgresEntraAdminType allows ServicePrincipal, User, Group and defaults to ServicePrincipal" \
+  '.parameters.postgresEntraAdminType.defaultValue == "ServicePrincipal" and (.parameters.postgresEntraAdminType.allowedValues | sort) == ["Group","ServicePrincipal","User"]' "$shared"
+check "administrators child: the deployer, typed by entraAdminType, in our tenant, API 2024-08-01" \
   "$PG"' | [.resources[] | select(.type == "Microsoft.DBforPostgreSQL/flexibleServers/administrators")] as $a
    | ($a | length == 1)
      and ($a[0].apiVersion == "2024-08-01")
      and ($a[0].name | contains("deployer().objectId"))
-     and ($a[0].properties.principalType == "ServicePrincipal")
+     and ($a[0].properties.principalType == "[parameters('"'"'entraAdminType'"'"')]")
      and ($a[0].properties.tenantId == "[tenant().tenantId]")' "$shared"
 check "administrators depend on the server settings and the firewall rule (one change at a time)" \
   "$PG"' | [.resources[] | select(.type == "Microsoft.DBforPostgreSQL/flexibleServers/administrators")][0].dependsOn

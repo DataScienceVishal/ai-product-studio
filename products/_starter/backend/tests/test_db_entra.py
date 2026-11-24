@@ -193,6 +193,7 @@ def test_healthz_is_503_down_when_the_token_fetch_fails(app, connects):
         def get(self, timeout=None):
             raise RuntimeError(SECRET)
 
+    app.state.db.dispose()  # the fixture's own engine; its teardown disposes only what is in app.state.db
     app.state.db = Database(URL, db_auth="entra", token_provider=Broken())
     response = TestClient(app, base_url="https://testserver").get("/healthz")
     assert response.status_code == 503

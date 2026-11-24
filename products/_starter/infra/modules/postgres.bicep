@@ -29,6 +29,14 @@ param passwordAuth string = 'Enabled'
 @description('Postgres role name of the Entra admin (the deploy service principal, SETUP.md step 3). The workflow reads the real value back.')
 param entraAdminName string = 'sp-ai-studio-deployer'
 
+@description('Type of the deploying principal (deployer()): ServicePrincipal for the workflow, User or Group for an Owner account.')
+@allowed([
+  'ServicePrincipal'
+  'User'
+  'Group'
+])
+param entraAdminType string = 'ServicePrincipal'
+
 param tags object = {}
 
 resource server 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
@@ -116,14 +124,14 @@ resource azureServices 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@
 }
 
 // ADR 0003, decision 2: the deploy service principal is the Entra admin. The name is the principal's object id;
-// deployer() is whoever runs the deployment, so deploy shared resources only from the workflow.
+// deployer() is whoever runs the deployment: set entraAdminType to match (User when an Owner account deploys).
 // https://learn.microsoft.com/azure/templates/microsoft.dbforpostgresql/2024-08-01/flexibleservers/administrators
 // https://learn.microsoft.com/azure/azure-resource-manager/bicep/bicep-functions-deployment#deployer
 resource entraAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2024-08-01' = {
   parent: server
   name: deployer().objectId
   properties: {
-    principalType: 'ServicePrincipal'
+    principalType: entraAdminType
     principalName: entraAdminName
     tenantId: tenant().tenantId
   }

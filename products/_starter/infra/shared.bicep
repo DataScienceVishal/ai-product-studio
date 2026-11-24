@@ -45,6 +45,14 @@ param postgresPasswordAuth string = 'Enabled'
 @description('Postgres role name of the Entra admin (the deploy service principal).')
 param postgresEntraAdminName string = 'sp-ai-studio-deployer'
 
+@description('Type of the principal that deploys this template, which becomes the Postgres Entra admin: ServicePrincipal for the studio workflow, User (or Group) when an Owner account deploys at handover.')
+@allowed([
+  'ServicePrincipal'
+  'User'
+  'Group'
+])
+param postgresEntraAdminType string = 'ServicePrincipal'
+
 @description('Create the AcrPull role assignment here. Needs Owner, so only Vishal sets it; the Contributor deployer leaves it false.')
 param grantPullRole bool = false
 
@@ -153,6 +161,7 @@ module postgres 'modules/postgres.bicep' = {
     allowAzureServices: postgresAllowAzureServices
     passwordAuth: postgresPasswordAuth
     entraAdminName: postgresEntraAdminName
+    entraAdminType: postgresEntraAdminType
     tags: tags
   }
 }
