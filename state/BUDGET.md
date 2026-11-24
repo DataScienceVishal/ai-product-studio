@@ -3,7 +3,7 @@
 Cap: $80 of Azure for Students credit, resource group `rg-ai-studio` only.
 Ask Vishal first if one resource would cost more than $10 a month or the projected total would pass $80.
 
-Month-to-date spend: not reported yet (board task T-2)
+Month-to-date spend: see the spend report below (spend unknown (no_data), updated 2026-11-24T17:39:39Z)
 
 | Resource | Product | Created (UTC) | Estimated $ per month | Status |
 |---|---|---|---|---|
@@ -35,3 +35,18 @@ Price per token for gpt-5.4-pro is not confirmed. As an assumption, the gpt-5-pr
 A full T-12 benchmark at ~650k output tokens would be about $78 at that price. Vishal chose Q-7 B (2026-11-24): pro only, at most 20 documents in total, hard cap $15 of model spend for T-12.
 
 T-12 total so far: ~$7.89 recorded (≤$11.35 worst case) of the $15 Q-7 B cap; the 20-document call limit is used up, so T-12 makes no more model calls.
+
+<!-- spend:auto:start -->
+## Spend report (written daily by .github/workflows/azure-spend.yml)
+
+- Updated: 2026-11-24T17:39:39Z. Covers resource group rg-ai-studio only; Cost Management data can lag by up to a day.
+- Status: no_data: Azure returned no cost rows (new subscription, data lag, or an unsupported offer). Spend is unknown.
+- Cost rows returned: month to date 0, since start 0, by resource 0
+- Projected monthly cost from the table above: $17015.20
+- Last alert level: 0% (since 2026-11-01)
+- Inventory: 0 resources in rg-ai-studio, 0 not in the table above
+
+| Resource | Type | Cost this month | In the table above? |
+|---|---|---|---|
+| (no resources or costs seen) | - | - | - |
+<!-- spend:auto:end -->
