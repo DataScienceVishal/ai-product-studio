@@ -18,6 +18,17 @@ param adminPassword string
 @description('Open the firewall to Azure IP addresses (the 0.0.0.0 rule). ADR 0002, decision 5 explains why.')
 param allowAzureServices bool = true
 
+@description('Password sign-in. Enabled while phase 1 of ADR 0003 runs (the Entra admin is added after the server exists); phase 2 flips this to Disabled, in shared.bicepparam and here, as its own change.')
+@allowed([
+  'Enabled'
+  'Disabled'
+])
+#disable-next-line secure-secrets-in-params
+param passwordAuth string = 'Enabled'
+
+@description('Postgres role name of the Entra admin (the deploy service principal, SETUP.md step 3). The workflow reads the real value back.')
+param entraAdminName string = 'sp-ai-studio-deployer'
+
 param tags object = {}
 
 resource server 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
@@ -33,8 +44,11 @@ resource server 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
     administratorLogin: adminLogin
     administratorLoginPassword: adminPassword
     authConfig: {
-      activeDirectoryAuth: 'Disabled' // follow-up: passwordless Entra ID sign-in for the apps
-      passwordAuth: 'Enabled'
+      // flexibleServers 2024-08-01 AuthConfig: activeDirectoryAuth, passwordAuth, tenantId
+      // https://learn.microsoft.com/azure/templates/microsoft.dbforpostgresql/2024-08-01/flexibleservers
+      activeDirectoryAuth: 'Enabled'
+      passwordAuth: passwordAuth
+      tenantId: tenant().tenantId
     }
     storage: {
       storageSizeGB: 32
@@ -98,6 +112,24 @@ resource azureServices 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@
   }
   dependsOn: [
     serverSettings // after the parameters, for the same reason
+  ]
+}
+
+// ADR 0003, decision 2: the deploy service principal is the Entra admin. The name is the principal's object id;
+// deployer() is whoever runs the deployment, so deploy shared resources only from the workflow.
+// https://learn.microsoft.com/azure/templates/microsoft.dbforpostgresql/2024-08-01/flexibleservers/administrators
+// https://learn.microsoft.com/azure/azure-resource-manager/bicep/bicep-functions-deployment#deployer
+resource entraAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2024-08-01' = {
+  parent: server
+  name: deployer().objectId
+  properties: {
+    principalType: 'ServicePrincipal'
+    principalName: entraAdminName
+    tenantId: tenant().tenantId
+  }
+  dependsOn: [
+    serverSettings // the server takes one change at a time
+    azureServices
   ]
 }
 

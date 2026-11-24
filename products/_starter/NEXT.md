@@ -1,3 +1,18 @@
+# T-18 Bicep slices 1 and 2 status (ADR 0003, branch p/_starter/T-18-bicep)
+
+Done: slice 1 (main.bicep: `id-<slug>-app` and `id-<slug>-migrate`, web + purge on pull + app identity, migrate job on
+pull + migrate identity, pull `lifecycle: None`, DB identity `Main`, outputs for client and principal ids) and slice 2
+(postgres.bicep / shared.bicep: `authConfig` with `activeDirectoryAuth: Enabled`, `tenantId`, `passwordAuth` param
+default `Enabled`; `administrators` child named `deployer().objectId`, dependsOn serverSettings + azureServices).
+`infra/test-bicep-identities.sh` (18 jq checks on the compiled JSON) runs in the CI infra job after the compile.
+Compiled locally with Bicep v0.32.4; cost-guard passes.
+Decision: new `dbAuth` param in main.bicep, default `password`. In password mode DB_AUTH and AZURE_CLIENT_ID are NOT set (the app
+defaults to password) so the deployed app behaves as before; the identities are created and attached in both modes ($0).
+Slice 4 (workflow) must pass `dbAuth=entra` (add `param dbAuth = readEnvironmentVariable('DB_AUTH', 'password')` to main.bicepparam).
+Side effect to know: shared.bicep now always enables Entra auth and adds the deployer as admin (ADR phase 1), with passwordAuth Enabled.
+Left: slices 3 to 7 (db-setup.sql, workflow, delete seed, phase 2 flip, OIDC). `postgresEntraAdminName` defaults to
+`sp-ai-studio-deployer`. Verify: `az bicep build` both files, then `bash infra/test-bicep-identities.sh shared.json main.json`.
+
 # T-18 app-side (Entra database sign-in) status
 
 Done: `DB_AUTH=password|entra` (config.py). `app/dbauth.py`: URL validation (postgres only, no password, user present,

@@ -178,6 +178,8 @@ jobs:
           az bicep build --file main.bicep --outdir "$out"
           az bicep build-params --file shared.bicepparam --outfile "$out/shared.parameters.json"
           az bicep build-params --file main.bicepparam --outfile "$out/main.parameters.json"
+      - name: Identity and Entra assertions on the compiled templates (ADR 0003 slices 1 and 2)
+        run: bash products/_starter/infra/test-bicep-identities.sh "$RUNNER_TEMP/bicep/shared.json" "$RUNNER_TEMP/bicep/main.json"
       - name: Cost guard on the compiled templates
         run: bash products/_starter/infra/cost-guard.sh "$RUNNER_TEMP/bicep/shared.json" "$RUNNER_TEMP/bicep/main.json"
       - name: Script syntax
