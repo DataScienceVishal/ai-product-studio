@@ -1,146 +1,180 @@
 # Restaurant margin copilot: SPEC
 
-**DRAFT, pending Q-6.** Written so building can start at once if the studio defaults to option B. Nothing here is validated: the idea scored 66 at G0 (REVISE), and the T-9 evidence says no feature gap survives against Jelly or MarketMan. Under option B the demo is the evidence. Selling is locked; every price below is a hypothesis.
+**DRAFT, revised 2026-11-24 after SPEC-CHECK (REVISE).** Selling is locked; every price is a hypothesis.
 
-Sources for market facts are in `state/ideas/restaurant-margin-copilot.md` (T-9 section). "Own page" means the vendor's page was fetched on 2026-11-23. "Unverified" means a listing or search summary only.
+**Status and dependencies (read first)**
+- **Process.** Q-6's written default was A. The studio logged a deliberate exception to build under option B (`state/QUESTIONS.md` Q-6; `state/DECISIONS.md` 2026-11-24T05:41Z). It skips the G1 gate: the idea scored 66 at G0 (REVISE) and its last G1 attempt is unspent. Nothing here is validated.
+- **Option B is really "B plus Q-7 A".** The pro deployment's daily cap allows about 1,690 tokens a day (starter README, "Sizing the daily AI cap"); one invoice needs about 5,500. Without Q-7 A (a mini model or a larger approved budget), no live extraction runs on Azure. Model-free parts are built first, on the fake AI (section 4).
+- **Evidence.** T-9 found no feature gap against Jelly or MarketMan. Under B the demo is the evidence, judged by the outcome defined in section 9.
+
+Market facts are sourced in `COMPETITORS.md` and `state/ideas/restaurant-margin-copilot.md`. "Own page" means the vendor page was read on 2026-11-23 or 24.
 
 ## 1. Ideal customer profile
 
 | | |
 |---|---|
-| Business | UK independent restaurant, gastropub or café, 1 to 3 sites, table or counter service, food-led (not drinks-led). |
-| Size | Roughly 5 to 40 staff, one head chef or chef-owner. Turnover and supplier count are not evidenced; treat as assumptions to test. |
-| Market | UK only at first: UK suppliers (Brakes, Bidfood, Booker, local butchers and greengrocers), pounds, VAT, UK units (kg, litres, case sizes). |
-| Does costing today | The owner or head chef, on a spreadsheet or in their head, late in the evening. Many do not cost at all. In some businesses a bookkeeper keys the invoices into accounts software but never sees recipes. |
-| Buys | The owner (often the chef-owner). Card payment, monthly, no procurement. |
-| Uses | Chef or owner weekly (the message), a manager or bookkeeper to upload invoices. |
-| Purchase trigger | A visible price shock (butter, beef, oil) or a bad month where sales were fine but profit was not. The trade-body survey (88% name food and drink cost inflation as top non-tax concern) shows the pressure; it does not show independents' willingness to pay (T-9: no UK evidence found). |
+| Business | UK independent restaurant, gastropub or cafe, 1 to 3 sites, food-led (not drinks-led). |
+| Size | About 5 to 40 staff, one head chef or chef-owner. Turnover and supplier count are not evidenced; assumptions to test. |
+| Market | UK only: UK suppliers (Brakes, Bidfood, Booker, local butchers), pounds, VAT, UK units. |
+| Does costing today | Owner or head chef, on a spreadsheet or in their head, late in the evening. Many do not cost at all. A bookkeeper may key invoices into accounts but never sees recipes. |
+| Buys | The owner, often the chef-owner. Card, monthly, no procurement. |
+| Uses | Chef or owner reads the weekly message; a manager or bookkeeper uploads invoices. |
+| Trigger | A visible price shock (butter, beef, oil) or a month where sales were fine but profit was not. 88% of hospitality firms name food and drink cost inflation as a top non-tax concern (trade-body survey, see idea file); that shows pressure, not willingness to pay (T-9: no UK evidence found). |
 
-Not our customer: groups of 4+ sites (Nory, Apicbase, Access), single-supplier shops already served free by Bidfood MyRecipes.
+Not our customer: groups of 4+ sites (Nory, Apicbase, Access) and single-supplier shops served free by Bidfood MyRecipes.
 
 ## 2. Jobs to be done and the core flow
 
-Jobs, in the owner's words (our paraphrase, not quotes):
+Jobs (our paraphrase, not customer quotes):
 1. Tell me when a price rise has hurt a dish, before the month ends.
 2. Do it without me typing prices into a spreadsheet.
 3. Tell me what to do about it, in plain English.
 
-**Core flow (the demo must nail this, in under 10 minutes from sign-up):**
+**Core flow. The demo must nail this, with a fresh upload, in under 10 minutes from sign-up:**
 
 1. **Sign up and add a site.** Name, VAT-inclusive or not, target GP% (default 65%).
-2. **Send an invoice.** Upload a phone photo or PDF, or forward by email (email-in behind an adapter, mock in demo). The upload returns instantly; a job is queued.
-3. **Extract lines (async).** One model call per invoice produces supplier, date, and per line: description, pack text, quantity, unit price, line total, VAT. Totals are checked in code (lines sum to invoice total); a mismatch flags the invoice for review.
-4. **Match to ingredients, with a confirm step.** Deterministic first: exact and fuzzy match against the site's alias table. Only unmatched lines go to the model, batched in one call, which proposes an ingredient and a pack-size conversion (e.g. "5kg case" to cost per kg) with a confidence. The owner confirms in a single screen ("12 lines, 9 matched, 3 to check"). A confirmed match is remembered, so each supplier line is confirmed once.
-5. **Recalculate costs and GP.** Cost per ingredient updates; each dish's cost and GP% is recomputed in code (no model in the arithmetic). Before any recipes exist, the product still works as a **price-change alert** ("beef mince up 12% vs your last invoice").
-6. **Recipes in.** Paste a menu or recipe text (or a spreadsheet); one model call turns it into structured recipes with portion weights; the owner confirms. Skippable at first.
-7. **Weekly "fixes" message.** Each Monday, an email (WhatsApp later, behind an adapter) such as: "Beef mince up 12%. Your burger GP fell from 68% to 61%. Three options: raise price by 40p, cut patty from 180g to 165g, or ask your butcher about the 10kg case." Numbers come from code; the model only words the message and proposes options from a fixed menu of levers (re-price, portion, swap supplier, drop or feature the dish).
-8. **Notify when async work finishes** ("Invoice ready: 14 lines, 2 to check") by email and in-app.
+2. **Upload an invoice** (phone photo or PDF). It returns at once and a job is queued.
+3. **Extract lines (async).** One model call per invoice gives supplier, date and, per line, description, pack text, quantity, unit price, line total, VAT. Code checks that lines sum to the invoice total; a mismatch flags the invoice for review.
+4. **Match to ingredients, with one confirm screen.** Exact and fuzzy match against the site's alias table first; only unmatched lines go to the model, batched in one call, which proposes an ingredient and a pack conversion (for example "5kg case" to cost per kg) with a confidence. The owner confirms ("12 lines, 9 matched, 3 to check"). Confirmed matches are remembered.
+5. **Recalculate.** Ingredient costs and each dish's cost and GP% are recomputed in code, never by the model. With no recipes yet it still shows price changes ("beef mince up 12% vs your last invoice"). This is a fast first-value step, not a differentiator.
+6. **Recipes in.** Paste menu or recipe text; one model call structures it with portion weights; the owner confirms. Skippable at first.
+7. **Weekly fixes message.** Each Monday, an email with numbers from code and options from a fixed lever menu (re-price, portion, swap supplier, drop or feature the dish). Worked example, which the code must reproduce exactly: a 14 pound burger costs 4.48 (GP 68.0%), beef is 60% of cost. Beef up 12% makes cost 4.80 and GP 65.7%. Fixes: raise the price by 1.00 (GP back to 68.0%), or cut the patty from 180 g to 165 g (GP about 67.5%), or ask the butcher about a bulk case.
+8. **Notify when async work finishes** ("Invoice ready: 14 lines, 2 to check") in-app and by email.
 
 ## 3. Wedge versus Jelly and MarketMan (honest)
 
-Facts from own pages (2026-11-23): Jelly is £129 per site per month, cancel anytime monthly, one-off setup fee of unstated amount, claims same-day set-up, does invoice scanning, recipe costing, GP report and price alerts. MarketMan Starter is $249 a month with 50 AI scans, recipe costing and price-change flags. Unverified: KitchenIQ $89, Profito from EUR 34 (capped at 5 invoices on Starter).
+Own-page facts: Jelly is 129 pounds per location per month, plus a one-off setup fee (amount not stated) and a POS pass-on fee from 15 pounds; monthly cancel anytime. Its homepage advertises "human-checked AI" reading every invoice line, "Daily notifications the moment a supplier moves a price" and "margin warnings actioned the same day"; its pricing page lists "Live price tracking" and "Recipe & menu costing". MarketMan Starter is 249 US dollars a month with 50 AI scans. Unverified listings: KitchenIQ 89 US dollars, Profito from 34 euros (5 invoices a month).
 
-**We are not better on features. Jelly covers the same job.** The strongest two angles, in order:
+**We are not better on features, and day-one price alerts are NOT a differentiator.** Jelly has them. What is left:
 
-1. **Weekly written fixes message plus invoice-only value on day one (the product wedge).** Competitors show alerts and dashboards; T-9 found no own-page text for written fix suggestions at Jelly (KitchenIQ "suggested pricing" is unverified). Dashboards need someone to open them; a message that arrives and says what to do suits a chef with no time. Value starts before any recipe is entered, so minutes-to-first-value is short. Caveat: Jelly could add this in weeks, so it is a head start, not a moat. Whether it changes behaviour is exactly what the demo and a pilot must show.
-2. **Price well under £129 with no setup fee (the commercial wedge).** A £39 to £69 band undercuts Jelly by about half or more, and is above Profito's capped entry tier but with a real invoice allowance. Caveat: cheap tools already exist ($25 to $89), so price alone does not win; it only removes an objection if the fixes message works. Evidence that independents refuse £129 is still missing.
+1. **Less product for much less money, no setup fee (the main wedge).** No POS link, ordering, supplier connections or human check, at 39 to 69 pounds against 129 plus setup. This is not "the same job for a third of the price". Our accuracy must still stand up against a human-checked rival, so the wrong-auto-match limit in section 8 is not loosened.
+2. **The written weekly fixes message (thin, a demo hook).** Jelly shows alerts and warnings; T-9 found no own-page text for plain-English, numbered "do this" options. Jelly could add it in weeks. It helps most owners who use nothing today; it is not a reason to leave Jelly.
 
-Not chosen as the lead:
-- **Setup time in minutes.** Jelly claims same-day set-up on its own page, so "fast" is table stakes. We keep it as a measured demo metric, not a claim.
-- **Accountant or bookkeeper-led channel.** Potentially the strongest fix for Reach and Competition (one bookkeeper serves many independents; Jelly's own page lists Xero, so they sell to the owner, not the practice). But it needs real conversations, which are locked, and it is Q-6 option C territory. Keep it as the first thing to test once selling unlocks; design multi-client access later, not in the MVP.
+Not chosen: setup speed (Jelly claims same-day, so it is a measured demo metric only) and a bookkeeper-led channel (possibly strongest for reach, but needs conversations, which are locked; first thing to test after unlock).
 
-## 4. MVP scope (about 2 to 3 weeks of builder work on `products/_starter`)
+## 4. MVP scope: Must, Should, Won't
 
-**IN**
-- Reuse the starter as is: sign-in, tenancy, billing (mock), AI cap, logs.
-- Site and settings (one site per account in MVP; schema allows several).
-- Invoice upload (JPEG, PNG, PDF, up to 5 pages), stored per tenant; email-in as an adapter with a mock (no real inbound mail).
-- Async job queue in Postgres (table plus worker loop; no new infrastructure), status page, in-app and email notification through the existing email adapter (mock until Q-5 approves a real one).
-- Extraction to structured JSON with schema validation and arithmetic check; a "needs review" state.
-- Ingredient catalogue, alias table, fuzzy matching, one-call model fallback for unmatched lines, confirm screen, pack-size conversion to a base unit (g, ml, each).
-- Recipe import from pasted text or CSV, confirm screen, dish GP table sorted by margin.
-- Price-change detection per ingredient and per dish GP delta week on week.
-- Weekly fixes message: scheduled job, email only, numbers from code, wording from one short model call (template fallback if the call fails).
-- Demo tenant seeded with synthetic data (section 6); delete-my-data and data inventory from the starter.
-- Evaluation harness: scripts that score extraction and matching against the synthetic ground truth.
+Target: about 3 weeks of builder runs on `products/_starter`, if everything listed under Must fits. Starter gaps found by SPEC-CHECK are scoped explicitly.
 
-**OUT (not in MVP)**
-- POS, Xero or accounting integrations; supplier ordering or EDI; stock-takes and wastage; allergen management.
-- WhatsApp (adapter stub only), real inbound email, SMS.
-- Multi-site roll-ups, bookkeeper or practice multi-client view, roles beyond owner and staff.
-- Credit-note reconciliation, delivery-note matching, handwritten invoices.
-- Menu price optimisation beyond the fixed lever menu; any learning across customers.
-- Live payments, public landing page, outreach of any kind (all locked).
-- Real customer data. The MVP is demonstrated on synthetic data only.
+**Build order (model-free first, so Q-7 delays never stall the build)**
+- **Week 1, on the fake AI:** synthetic invoice generator with ground truth (named task, 2 to 3 days); ingredient catalogue, alias and fuzzy matching, pack conversion; GP arithmetic and price-change detection; weekly message from a template; file storage and upload limits; job queue and worker. Test: the section 2 burger example equals the code output.
+- **Week 1 to 2, needs Q-7 A:** image and PDF input in the AI adapter, extraction prompt, confirm screen, held-out benchmark run.
+- **Week 2 to 3:** recipe import, message wording by model, demo tenant, end-to-end test, Azure deploy.
 
-## 5. Pricing hypothesis (GBP, hypothesis only, selling is locked)
+**Must**
+- Starter as is: sign-in, tenancy, billing (mock), logs, delete-my-data.
+- One site per account (schema allows several).
+- **File storage:** starter has none and no Blob is budgeted. Store invoice images and PDFs as Postgres `bytea` with a size cap and a retention period; add them to `DATA.md` and the purge. Blob only after asking.
+- **Upload limit:** `max_body_bytes` is 1,000,000 (`backend/app/config.py:28`). Raise it on the upload route only (about 10 MB), cap at 5 pages, downscale images on the server.
+- **Async worker that survives scale to zero:** `ca-starter` scales 0 to 1, so an in-app polling loop stops when the app sleeps. Use a Container Apps job (like `caj-starter-purge`) that drains the queue, started on upload, plus a scheduled job for the Monday message. Cost them in `state/BUDGET.md`. The worker has its own deadline and retries (`ai_deadline_seconds` is 25 s; pro needs 70 to 150 s).
+- **Image and PDF input in the AI adapter** (none exists today), with PDF-to-image rendering. A new dependency needs pip-audit. Budget about 2 days.
+- **AI cap sizing:** set `AI_GLOBAL_DAILY_TOKENS` and `AI_PRICE_PER_MILLION_TOKENS` together for the chosen deployment (cost guard enforces $6.10 a month). On pro, one invoice exceeds the daily cap; so live runs need Q-7 A.
+- Extraction to schema-validated JSON with arithmetic check and a "needs review" state.
+- Catalogue, alias table, fuzzy match, one-call model fallback, confirm screen, base-unit conversion (g, ml, each).
+- Recipe import from pasted text, confirm screen, dish GP table sorted by margin.
+- Price-change detection per ingredient; weekly GP delta per dish.
+- Weekly fixes email: numbers from code, wording from one short model call, template fallback.
+- Demo tenant on synthetic data (section 6) and the evaluation harness (section 8).
 
-| Plan | Price per site | Includes |
+**Should (only if Must is done and green)**
+- A third degraded-variant type; second email recipient; "what if I raise the price" calculator in code.
+- Azure Document Intelligence free tier as an OCR pre-step (unverified, check in week 1).
+
+**Won't (this MVP)**
+- Recipe CSV import, email-in (even as a mock; it adds nothing to the demo), WhatsApp, SMS.
+- POS, Xero or accounting links; ordering or EDI; stock-takes, wastage, allergens.
+- Multi-site roll-ups, bookkeeper multi-client view, roles beyond owner and staff.
+- Credit notes, delivery-note matching, handwritten invoices.
+- Price optimisation beyond the lever menu; learning across customers.
+- Live payments, public landing page, outreach, real customer data.
+
+## 5. Pricing hypothesis (GBP, selling locked)
+
+Per-invoice model cost, measured in T-12 (`state/BUDGET.md`): about 27,600 output tokens for 5 documents, roughly 5,500 per document. At the assumed 120 US dollars per million, that is about 0.66 dollars, **about 0.52 pounds per invoice on pro** (price assumption, check the Azure list). On a mini model at the starter's 2 dollar blend the token cost is about 1 cent; allowing for image input and retries, **assume 0.03 to 0.10 pounds per invoice on mini, to be measured**. Dext sells line extraction at 0.40 pounds per document (own page), which caps what buyers may think it is worth.
+
+| Plan | Price per site | Invoice cap | Model cost at cap (pro / mini) | Includes |
+|---|---|---|---|---|
+| Free trial | 14 days, no card | 10 invoices | about 5.20 / 0.30 to 1.00 | full flow |
+| Starter | 39 per month | 25 a month | about 13 / 0.75 to 2.50 | price alerts, weekly message, recipes up to 40 dishes |
+| Standard | 69 per month | 60 a month | about 31 / 1.80 to 6 | unlimited recipes, second email recipient |
+| Early customers | first 5: free 3 months, then 50% off for 12 months | as plan | | 20-minute feedback call, anonymised results |
+
+The caps are chosen so both models work: on pro, Starter leaves about two thirds of the price and Standard about 55%, before hosting (a stopgap, not a business); on mini the margin is above 90%. Extra invoices cost a per-invoice top-up or are blocked by a hard per-tenant cap. If Q-7 is not A, the plan holds only for the demo and the trial; **no real pilot should run on pro.** 25 invoices a month may be too few for a kitchen with 4 suppliers; test it in the demo, not by assumption.
+
+Value tie (assumption-based): a site turning over 400,000 a year loses 4,000 per GP point, about 333 a month. 39 to 69 pays for itself if the message recovers a fraction of a point. The turnover figure is unchecked.
+
+Anchors (sources in `COMPETITORS.md`): Jelly 129 plus setup (own page); MarketMan from 249 US dollars (own page); Dext 24.17 pounds, 250 documents (own page); KitchenIQ 89 US dollars and Profito from 34 euros with a 5-invoice cap (unverified).
+
+## 6. Demo plan (synthetic data only)
+
+- **Fictional business:** "The Crown & Anchor", 60-cover gastropub, 24-dish menu, 4 suppliers (broadliner-like x2, cash and carry, local butcher).
+- **Tuning set vs held-out set.** Generate 30 invoices over 8 weeks across 3 layouts for tuning. Generate a separate **held-out set of at least 3 further layouts (about 5 invoices each) that are never used to tune prompts or matching**; the generator for them is written after the prompts are frozen. Layouts imitate general structure only; no real branding.
+- **Degraded variants:** two types in Must (phone photo with skew and shadow; split-page PDF), a third in Should.
+- **Story arc:** weeks 1 to 4 stable; week 5 beef mince +12%; the burger falls from 68.0% to 65.7% and the Monday message gives the section 2 fixes. Seed data and message come from code.
+- **Demo script (5 minutes):** sign up; upload a **fresh, uncached invoice photo** and watch it queue and finish live; confirm 3 matches; see the dish table change; open the weekly message. Pre-processed data may fill the history only; the live upload is never replaced by a cached result. A run that takes 2 minutes is shown as such.
+
+## 7. Cost and async design
+
+- Every AI step is a queued job, never in a web request. One call per invoice (downscaled, needed pages only, strict schema, short output); matching and all arithmetic in code; the model is used for extraction, unmatched-line matching (batched), recipe parsing and message wording. No cache is needed for the bar; a hash cache may exist to avoid double charges, but the demo never relies on it.
+- **Model routing:** the adapter takes a named deployment per task, so extraction can move to mini with one setting (`AZURE_OPENAI_DEPLOYMENT_MINI`); pro only for low-confidence pages.
+- Benchmark spend: roughly 20 documents on pro (about 15 dollars, Q-7 option B) without Q-7 A; the full 30 plus held-out set needs it.
+
+## 8. Success metrics (demo, synthetic data)
+
+| Metric | Target | Method |
 |---|---|---|
-| Free trial | 14 days, no card | 15 invoices, full flow |
-| Starter | £39 per month | 40 invoices a month, price alerts, weekly fixes message, recipes up to 40 dishes |
-| Standard | £69 per month | 120 invoices a month, unlimited recipes, second email recipient (bookkeeper) |
-| Early customer offer | First 5 customers: free for 3 months, then 50% off for 12 months, in return for a 20-minute feedback call and permission to use anonymised results | |
+| Line extraction, clean, tuning set | at least 95% of lines fully correct | harness vs ground truth |
+| Line extraction, **held-out layouts** | at least 90% | same harness, held-out set, run once after prompts freeze |
+| Line extraction, degraded photos | at least 85% | harness |
+| Wrong invoices flagged by total check | at least 90% | harness |
+| Auto-match wrong rate | under 3% (accuracy against a human-checked rival) | harness |
+| Pack and unit conversion | at least 95% | harness |
+| Fresh upload to first GP report | under 10 minutes of owner time; price change visible in under 3 | timed script, 3 runs |
+| Confirm effort | under 10 clicks per invoice after week 1 | click count |
+| Cost per invoice | measured on pro and mini, written down; target under 0.10 on mini | token log |
+| Weekly message | numbers 100% equal to code; fixes rated "sensible and actionable" by at least 4 of 5 | see below |
 
-Value tie (arithmetic with assumptions, not a market fact): if a site turns over £400,000 a year, one percentage point of GP is £4,000 a year, about £333 a month. At £39 to £69 the product pays for itself if it recovers a fraction of one point, or saves roughly an hour of costing time a week at an owner's time value. The turnover figure is an assumption to check.
+**Fixes message review.** Reviewers: the `reviewer` agent, the `validator` agent, and the `gtm` agent in a "restaurant owner" role (three distinct roles, not the builder); Vishal as optional fourth and fifth. Written rubric, each scored yes or no: (1) every number matches the code; (2) the cause is named (which ingredient, how much); (3) each option is a real lever with its effect in pounds or points; (4) options are consistent (for example, a +40p fix is never claimed to restore 7 points); (5) under 120 words and plain English. Pass: at least 4 of 5 criteria for at least 2 of 3 reviewers on 5 sample messages.
 
-Anchors: Jelly £129 per site plus setup fee (own page); MarketMan from $249 (own page); KitchenIQ $89, Profito from EUR 34 with 5-invoice cap (unverified); Kitchen Porter Tech US$25 per location (listing, manual entry). Our band sits in the gap between the cheap capped tools and Jelly.
-
-Cost check: at pro-model prices, invoice extraction is the cost driver (about 70 to 150 s and several thousand tokens per document). Margins at £39 depend on moving to a mini model (Q-7); see section 7.
-
-## 6. Demo plan (synthetic data, no real customer data)
-
-- **Fictional business:** "The Crown & Anchor", a 60-cover gastropub, one site, 24-dish menu, 4 suppliers (a Brakes-like and a Bidfood-like broadliner, a Booker-like cash and carry, a local butcher).
-- **Invoices:** 30 synthetic invoices over 8 weeks (generated from templates with known ground truth): about 10 per layout style (broadliner multi-page with pack codes like "12x1L", cash and carry with VAT columns, a butcher's plain one-page). Include 6 degraded variants: phone photo with skew and shadow, a credit note, a split-page PDF, a handwritten-style total. Layouts imitate general structure only; no real supplier branding or logos.
-- **Story arc:** weeks 1 to 4 stable; week 5 the butcher's beef mince rises 12% and olive oil rises 15%; the burger GP falls from 68% to 61% and the Monday message arrives with three fixes. This is the 5-minute demo.
-- **Demo script (5 minutes):** upload an invoice photo, watch the queue, confirm 3 matches, see the dish table change, open the weekly message, ask "what if I raise the burger by 40p" (computed in code, not by the model).
-- **Pre-computed fixtures:** because live pro calls take 70 to 150 s each, the demo tenant is seeded with processed results, and the live upload uses one invoice processed in advance in the same code path (cached by file hash), with a true live run shown only as a "this takes about 2 minutes" async example.
-
-## 7. Cost and async design (premium model only until Q-7)
-
-- Only gpt-5.4-pro is reachable: slow (70 to 150 s per document) and expensive. The starter's own guidance (README, "Sizing the daily AI cap") works out that at an assumed $120 per million output tokens the current $6.10 monthly budget allows about 1,690 tokens a day. That is one or two documents. The full 30-invoice benchmark would need Vishal's approval to spend; without Q-7 the studio is limited to roughly 20 documents (about $15, per Q-7 option B).
-- **Design rules:** every AI step is a queued job, never inside a web request; the UI shows "processing, we will email you"; one call per invoice (image downscaled, only needed pages, strict JSON schema, short output); deterministic matching and all arithmetic in code; model used only for extraction, unmatched-line matching (batched), recipe parsing and message wording; cache by file hash so a re-upload costs nothing; per-tenant and global caps from the starter.
-- **Model routing:** write the adapter to take a named deployment per task, so extraction can move to the mini deployment (`AZURE_OPENAI_DEPLOYMENT_MINI`) with one setting. Keep pro for hard or low-confidence pages only.
-- Azure Document Intelligence free tier (500 pages a month, first 2 pages per request) is a possible cheap OCR pre-step; unverified, to check in week 1.
-
-## 8. Success metrics for the demo (what proves it works, on synthetic data)
-
-| Metric | Target |
-|---|---|
-| Line extraction accuracy (description, quantity, unit price, line total all correct) | at least 95% of lines on clean invoices; at least 85% on degraded variants |
-| Invoice total check catches wrong extraction | at least 90% of wrong invoices flagged for review |
-| Match accuracy, first confirmed pass (auto-matched lines that are correct) | at least 90%; wrong auto-match rate under 3% (wrong prices destroy trust) |
-| Pack-size and unit conversion correct | at least 95% |
-| Time to first GP report from sign-up with demo data | under 10 minutes of owner time (definition of done); invoices-only price alert in under 3 minutes |
-| Owner confirm effort | under 10 clicks per invoice after the first week |
-| Cost per invoice | known and written down; target under £0.10 on the mini model (assumption to test) |
-| Weekly message | numbers 100% match the code-computed values; 3 reviewers rate fixes as sensible and actionable |
-
-The pilot (after selling unlocks, not before): activation = first invoice confirmed within 24 hours; weekly use = at least 1 invoice a week and the message opened for 4 weeks; value = hours saved per week and any price or portion change the owner made because of a message.
+**Pilot (after unlock, not before):** activation = first invoice confirmed within 24 hours of sign-up; weekly use = at least 1 invoice a week and the message opened for 4 weeks; value = owner hours saved a week (self-reported) and any price or portion change made because of a message.
 
 ## 9. Risks and kill criteria
 
 Risks:
-- **Crowded market, no feature gap (T-9).** Jelly, MarketMan, Profito, KitchenIQ and Access all cover the job. We win only on message quality, price and, later, channel.
-- **Willingness to pay of independents is unproven.** No UK evidence found at £39 or £129.
-- **Free substitute:** Bidfood MyRecipes is free for Bidfood customers; single-supplier kitchens may not need us. Number of suppliers per independent is unknown.
-- **Synthetic accuracy is not real accuracy.** Passing the benchmark does not prove crumpled real photos work.
-- **Copy risk:** a competitor adds a fixes message in weeks.
-- **Model cost and latency** until Q-7; margins unclear on pro.
-- Low regulatory risk (business documents). Keep personal data minimal.
+- Crowded market with no feature gap (T-9); we win on price and message only.
+- Willingness to pay of independents is unproven at 39 or 129.
+- Jelly could add a fixes message, a low tier, or already has daily alerts.
+- Synthetic accuracy is not real accuracy; crumpled real photos are untested.
+- Free substitute (Bidfood MyRecipes) for single-supplier kitchens; supplier count unknown.
+- Model cost and latency depend on Q-7; unit economics fail on pro.
+- Low regulatory risk (business documents); keep personal data minimal.
 
-Kill or stop criteria (checked at the end of weeks 1, 2 and 3):
-1. End of week 1: line extraction below 90% on clean synthetic invoices with the best available model, or cost per invoice cannot get under £0.25 even with the mini model.
-2. End of week 2: auto-match wrong rate above 5% after the confirm step is tuned, or confirming takes more than about 20 clicks per invoice.
-3. Before any outreach: Jelly or another vendor ships a written fixes message at a price under £60, and we have no channel advantage.
-4. Once selling unlocks: 10 owner or bookkeeper conversations with fewer than 3 saying they would pay £39 or more.
-5. If Q-7 is not answered, the benchmark cannot run: stop at the week-1 prototype rather than build blind.
+**Demo-evidence outcome (what "the demo is the evidence" means).** After the 5-minute demo, Vishal's friend says he would show it to at least 2 named kinds of customer (for example a gastropub owner and a cafe owner) at 39 pounds or more. If not, stop at G3 and do not polish for G4. Recorded in `state/DECISIONS.md`; check once, within a week of the demo being ready.
+
+**Kill and stop criteria.** Dates assume build starts 2026-11-25 and slip day for day if Q-7 or the start slips.
+
+| # | Criterion | Date | Check method |
+|---|---|---|---|
+| 1 | Line extraction under 90% on the clean tuning set with the best available model (pro measured; mini when Q-7 = A), or cost per invoice cannot get under 0.25 pounds on mini | 2026-12-02 | harness report in `products/restaurant-margin-copilot/` |
+| 2 | Held-out layout accuracy under 80%, or degraded photos under 75% after one prompt revision | 2026-12-09 | harness, held-out run, once |
+| 3 | Auto-match wrong rate above 5% after the confirm step is tuned, or more than about 20 clicks per invoice | 2026-12-09 | harness and click count |
+| 4 | Competitor trigger: Jelly or KitchenIQ publishes a written weekly "what to do" message **at under 60 pounds a month**, or Jelly adds a tier under 60 | re-checked every Tuesday from 2026-12-02 | re-read Jelly homepage and pricing page and the KitchenIQ listing; log in `COMPETITORS.md` |
+| 5 | Q-7 is not A by 2026-12-02 | 2026-12-02 | `state/QUESTIONS.md`; stop at the model-free prototype |
+| 6 | Friend demo outcome (above) fails | within 7 days of demo-ready | DECISIONS entry |
+| 7 | After unlock: 10 owner or bookkeeper conversations with fewer than 3 saying they would pay 39 pounds or more | after unlock | conversation log |
 
 ## 10. Open questions
 
-- Q-6 and Q-7 answers (this spec is only useful under option B; option C would change the channel and scope).
-- Is a bookkeeper-led channel realistic through the friend's UK network? It would fix Reach and may change the user (bookkeeper) and price (per client).
-- Exact Jelly setup fee and fair-use limit (not stated on the pricing page).
-- Do independents buy from several suppliers, or mostly one broadliner? (No figure found.)
-- Real inbound email and a real email sender need paid services (ask first, Q-5).
-- Do we show the weekly message by WhatsApp? Needs a paid business account (ask first).
+- Q-7 answer (mini model or budget); without it this is a prototype only.
+- Postgres `bytea` storage versus Blob (Blob needs approval and a BUDGET entry).
+- Is a bookkeeper channel real through the friend's network? It changes user and price.
+- Jelly's exact setup fee and fair-use limit; do independents buy from one broadliner or several?
+- Real inbound and outbound email need paid services (Q-5); WhatsApp needs a paid business account.
+
+## Changes after SPEC-CHECK
+
+1. Demo arithmetic corrected: 14 pound burger, GP 68.0% to 65.7%, fixes +1.00 or 165 g patty; code must reproduce it, with a test and a rubric line catching inconsistent fixes.
+2. Wedge restated: day-one alerts dropped (Jelly has daily price notifications and live price tracking); "less product for much less money, no setup fee" plus the thin fixes message. COMPETITORS.md section 3(c), the Jelly row and the "missing" bullet corrected.
+3. Unit economics: about 0.52 pounds per invoice on pro and 0.03 to 0.10 assumed on mini; invoice caps lowered (trial 10, Starter 25, Standard 60) so both work; real pilots need Q-7 A.
+4. Starter gaps added to scope (file storage, upload limit, scale-to-zero worker and scheduled job, image and PDF input, cap sizing); build ordered model-free first; CSV import and email-in moved to Won't.
+5. Kill criteria dated with check methods; held-out layouts, a degraded-photo kill line, a defined friend-demo outcome, named reviewer roles and rubric added; the cached-invoice-only demo removed; process status (Q-6 exception, Q-7 A dependency) put at the top.
