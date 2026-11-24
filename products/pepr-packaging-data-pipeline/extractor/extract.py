@@ -146,7 +146,7 @@ def extract_pdf(pdf_path, provider, budget, sheet_id=None, max_output_tokens=MAX
         elif e.input_tokens or e.output_tokens:
             budget.record(sheet_id, e.input_tokens, e.output_tokens, note=f"failed: {e}")
         raise
-    budget.record(sheet_id, res.input_tokens, res.output_tokens, model=res.model)
+    budget.record(sheet_id, res.input_tokens, res.output_tokens, served_model=res.model)
     modes = [{"page": p["page"], "input": p["mode"], "chars": p["chars"]} for p in pages]
     try:
         comps, warns = clean_output(parse_json(res.text))
@@ -155,4 +155,5 @@ def extract_pdf(pdf_path, provider, budget, sheet_id=None, max_output_tokens=MAX
         comps, warns = [], ["model answer was not valid JSON"]
     return {"sheet_id": sheet_id, "components": comps, "pages": modes, "warnings": warns,
             "usage": {"input_tokens": res.input_tokens, "output_tokens": res.output_tokens,
-                      "usd": round(budget_mod.usd(res.input_tokens, res.output_tokens), 6), "model": res.model}}
+                      "usd": round(budget_mod.usd(res.input_tokens, res.output_tokens, budget.model), 6), "model": res.model,
+                      "price_model": budget.model, "deployment": budget.deployment or budget.model}}

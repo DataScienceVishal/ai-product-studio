@@ -11,6 +11,7 @@ import urllib.error
 import urllib.request
 from dataclasses import dataclass
 
+from . import budget as budget_mod
 from . import vocab
 
 IMAGE_TOKENS_WORST = 6000  # conservative upper bound per page image (high detail, tiled)
@@ -51,6 +52,8 @@ class FakeProvider:
     feature key as missing (valid shape, no values). `responder(system, parts) -> str` lets tests script the answer."""
     name = "fake"
     output_headroom = 0
+    deployment = "gpt-5-mini"  # offline stand-in priced like the cheap deployment
+    price_model = "gpt-5-mini"
 
     def __init__(self, responder=None):
         self.responder = responder
@@ -106,7 +109,14 @@ class AzureResponsesProvider:
             if root.lower().endswith(suffix):
                 root = root[: -len(suffix)]
         self.url = root.rstrip("/") + "/openai/v1/responses"
-        self.deployment = deployment or env.get("T56_DEPLOYMENT", "gpt-5.4-pro")
+        # T56_DEPLOYMENT, else AZURE_OPENAI_DEPLOYMENT_MINI, else refuse: no hard-coded default deployment
+        self.deployment = deployment or env.get("T56_DEPLOYMENT") or env.get("AZURE_OPENAI_DEPLOYMENT_MINI") or ""
+        if not self.deployment:
+            raise ValueError("no deployment: set T56_DEPLOYMENT or AZURE_OPENAI_DEPLOYMENT_MINI")
+        try:
+            self.price_model = budget_mod.price_model_for_deployment(self.deployment)
+        except budget_mod.UnknownModel as e:
+            raise ValueError(f"refused: {e}") from None
         self._key = api_key or env.get("AZURE_OPENAI_API_KEY", "") or "proxy-injected"
         self.reasoning_effort = effort
         self.output_headroom = 0  # max_output_tokens already covers reasoning; the guard reserves all of it
@@ -183,5 +193,10 @@ class AzureResponsesProvider:
         except (ValueError, AttributeError, TypeError):
             raise ProviderError("unreadable response", worst_in, max_out, may_have_run=True) from None
         if status not in (None, "completed") or not text:
-            raise ProviderError(f"no usable answer (status {status!r})", used_in, used_out)
+            why = (data.get("incomplete_details") or {}).get("reason") if isinstance(data.get("incomplete_details"), dict) else None
+            detail = f", {why}" if why else ""
+            if status == "incomplete":
+                raise ProviderError(f"incomplete: output budget exhausted (status 'incomplete'{detail}; "
+                                    f"max_output_tokens {max_out}, raise T56_MAX_OUTPUT_TOKENS)", used_in, used_out)
+            raise ProviderError(f"no usable answer (status {status!r}{detail})", used_in, used_out)
         return Completion(text, used_in, used_out, data.get("model", self.deployment))

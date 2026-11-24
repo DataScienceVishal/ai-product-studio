@@ -28,8 +28,13 @@ def oracle_for(truth):
     return lambda system, parts: "```json\n" + json.dumps({"components": comps}) + "\n```"
 
 
+PRO = "gpt-5.4-pro"
+P_IN, P_OUT = B.PRICES[PRO]
+MINI = "gpt-5-mini"
+
+
 def new_budget(tmp_path, **kw):
-    return B.Budget(tmp_path / "ledger.jsonl", **kw)
+    return B.Budget(tmp_path / "ledger.jsonl", model=PRO, **kw)
 
 
 # ---- item 3: isolation ----------------------------------------------------------------------------
@@ -119,7 +124,7 @@ def test_ram_mapping_matches_generator_materials():
 
 def test_budget_refuses_worst_case_over_usd_cap(tmp_path):
     b = new_budget(tmp_path)
-    b.record("x", 0, int(11.5e6 / B.USD_PER_M_OUT), note="seed")  # USD 11.5 spent
+    b.record("x", 0, int(11.5e6 / P_OUT), note="seed")  # USD 11.5 spent
     with pytest.raises(B.BudgetExceeded):
         b.check(10_000, 12_000)  # worst 0.15 + 1.44 > 0.5 left
     b.check(1000, 1000)  # 0.015 + 0.12 fits
@@ -134,16 +139,16 @@ def test_budget_refuses_token_cap(tmp_path):
 
 def test_budget_exact_boundary(tmp_path):
     b = new_budget(tmp_path, max_usd=1.0)
-    b.check(0, int(1e6 / B.USD_PER_M_OUT))  # 8333 tokens = USD 0.99996: allowed
+    b.check(0, int(1e6 / P_OUT))  # 8333 tokens = USD 0.99996: allowed
     with pytest.raises(B.BudgetExceeded):
-        b.check(0, int(1e6 / B.USD_PER_M_OUT) + 2)
+        b.check(0, int(1e6 / P_OUT) + 2)
 
 
 def test_ledger_persists_and_is_shared(tmp_path):
     b = new_budget(tmp_path)
-    b.record("S1", 1000, 500, model="m")
+    b.record("S1", 1000, 500)
     b2 = new_budget(tmp_path)
-    assert b2.tokens == 1500 and b2.spent_usd == pytest.approx(1000 * B.USD_PER_M_IN / 1e6 + 500 * B.USD_PER_M_OUT / 1e6)
+    assert b2.tokens == 1500 and b2.spent_usd == pytest.approx(1000 * P_IN / 1e6 + 500 * P_OUT / 1e6)
     e = json.loads((tmp_path / "ledger.jsonl").read_text().splitlines()[0])
     assert e["sheet_id"] == "S1" and e["usd"] == pytest.approx(0.12) and e["price_in"] == 30.0 and e["price_out"] == 180.0
 
@@ -170,13 +175,13 @@ def test_failed_call_that_may_have_run_is_charged_worst_case(tmp_path):
 # ---- Azure provider (no network: transport is injected) -------------------------------------------
 
 ENV = {"T56_SPEND_APPROVED": "1", "AZURE_OPENAI_ENDPOINT": "https://example.openai.azure.com/",
-       "AZURE_OPENAI_API_KEY": "sekret-key-123"}
+       "AZURE_OPENAI_API_KEY": "sekret-key-123", "T56_DEPLOYMENT": PRO}
 
 
 @pytest.fixture
 def nb(tmp_path):
     """Budget factory; every call in one test shares tmp_path/l.jsonl (cleaned up by pytest)."""
-    return lambda: B.Budget(tmp_path / "l.jsonl")
+    return lambda: B.Budget(tmp_path / "l.jsonl", model=PRO)
 
 
 def ok_body(text="{}", i=100, o=50):
@@ -332,13 +337,13 @@ def test_default_max_output_tokens_is_6000():
 
 def test_preflight_arithmetic(tmp_path):
     B.preflight(new_budget(tmp_path / "fresh"), 30, 6000)
-    need = 30 * 0.316 + B.usd(B.WORST_INPUT_TOKENS, 6000)
+    need = 30 * 0.316 + B.usd(B.WORST_INPUT_TOKENS, 6000, PRO)
     b = new_budget(tmp_path / "short")
-    b.record("x", 0, int((12 - need + 0.05) * 1e6 / B.USD_PER_M_OUT))
+    b.record("x", 0, int((12 - need + 0.05) * 1e6 / P_OUT))
     with pytest.raises(B.BudgetExceeded, match="short by"):
         B.preflight(b, 30, 6000)
     b2 = new_budget(tmp_path / "enough")
-    b2.record("x", 0, int((12 - need - 0.05) * 1e6 / B.USD_PER_M_OUT))
+    b2.record("x", 0, int((12 - need - 0.05) * 1e6 / P_OUT))
     B.preflight(b2, 30, 6000)
 
 
@@ -349,7 +354,7 @@ def test_preflight_token_analogue(tmp_path):
 
 def test_cli_refuses_to_start_test_set_when_budget_short(tmp_path, capsys):
     ledger = tmp_path / "ledger.jsonl"
-    B.Budget(ledger).record("tuning", 0, int(5e6 / B.USD_PER_M_OUT))  # USD 5 spent: 7 left < ~11.2 needed
+    B.Budget(ledger, model=PRO).record("tuning", 0, int(11.9e6 / P_OUT))  # USD 11.9 spent: 0.1 left < ~0.55 needed (fake = mini price)
     rc = run.main(["--set", "test", "--provider", "fake", "--out", str(tmp_path / "o"), "--ledger", str(ledger)])
     assert rc == 4 and "short by" in capsys.readouterr().err
     assert not list((tmp_path / "o").glob("S*.json"))
@@ -378,10 +383,10 @@ def _ledger(path):
 
 def test_s2_three_5xx_then_200_records_three_worst_cases_plus_real(tmp_path):
     seq = iter([(500, {}, b""), (502, {}, b""), (503, {}, b""), (200, {}, ok_body())])
-    b = B.Budget(tmp_path / "l.jsonl")
+    b = B.Budget(tmp_path / "l.jsonl", model=PRO)
     p = providers.AzureResponsesProvider(env=ENV, transport=lambda r, t: next(seq), sleep=lambda s: None)
     res = p.complete("s", X, 1000, budget=b, label="S1")
-    b.record("S1", res.input_tokens, res.output_tokens, model=res.model)  # what extract_pdf does
+    b.record("S1", res.input_tokens, res.output_tokens, served_model=res.model)  # what extract_pdf does
     rows = _ledger(tmp_path / "l.jsonl")
     assert len(rows) == 4
     assert [r["estimated"] for r in rows] == [True, True, True, False]
@@ -397,7 +402,7 @@ def test_s2_429_and_connect_errors_are_free(tmp_path):
         if v == "conn":
             raise urllib.error.URLError(ConnectionRefusedError("no"))
         return v
-    b = B.Budget(tmp_path / "l.jsonl")
+    b = B.Budget(tmp_path / "l.jsonl", model=PRO)
     p = providers.AzureResponsesProvider(env=ENV, transport=tr, sleep=lambda s: None)
     p.complete("s", X, 1000, budget=b, label="S1")
     assert not (tmp_path / "l.jsonl").exists() and b.tokens == 0
@@ -409,7 +414,7 @@ def test_s2_retry_refused_when_next_attempt_could_cross_cap(tmp_path):
         calls.append(1)
         return 500, {}, b""
     # cap fits the first attempt's worst case (1002 tokens) twice over, but not three times
-    b = B.Budget(tmp_path / "l.jsonl", max_tokens=2500)
+    b = B.Budget(tmp_path / "l.jsonl", model=PRO, max_tokens=2500)
     b.check(2, 1000)
     p = providers.AzureResponsesProvider(env=ENV, transport=tr, sleep=lambda s: None)
     with pytest.raises(B.BudgetExceeded, match="retry 3"):
@@ -418,7 +423,7 @@ def test_s2_retry_refused_when_next_attempt_could_cross_cap(tmp_path):
 
 
 def test_s2_final_5xx_is_charged_and_gives_up(tmp_path):
-    b = B.Budget(tmp_path / "l.jsonl")
+    b = B.Budget(tmp_path / "l.jsonl", model=PRO)
     p = providers.AzureResponsesProvider(env=ENV, transport=lambda r, t: (500, {}, b""), sleep=lambda s: None, retries=2)
     with pytest.raises(providers.ProviderError, match="gave up after 3 attempts") as e:
         p.complete("s", X, 1000, budget=b, label="S1")
@@ -426,7 +431,7 @@ def test_s2_final_5xx_is_charged_and_gives_up(tmp_path):
 
 
 def test_s2_usd_cap_refuses_retry(tmp_path):
-    b = B.Budget(tmp_path / "l.jsonl", max_usd=0.4)  # worst case 1000 out + 2 in = USD 0.18006 per attempt
+    b = B.Budget(tmp_path / "l.jsonl", model=PRO, max_usd=0.4)  # worst case 1000 out + 2 in = USD 0.18006 per attempt
     p = providers.AzureResponsesProvider(env=ENV, transport=lambda r, t: (500, {}, b""), sleep=lambda s: None)
     with pytest.raises(B.BudgetExceeded, match="USD"):
         p.complete("s", X, 1000, budget=b, label="S1")
@@ -448,7 +453,7 @@ def test_s2_extract_pdf_charges_5xx_through_azure_provider(tmp_path):
 def test_s2_retry_check_includes_output_headroom(tmp_path):
     p = providers.AzureResponsesProvider(env=ENV, transport=lambda r, t: (500, {}, b""), sleep=lambda s: None)
     p.output_headroom = 5000
-    b = B.Budget(tmp_path / "l.jsonl", max_tokens=2500)
+    b = B.Budget(tmp_path / "l.jsonl", model=PRO, max_tokens=2500)
     with pytest.raises(B.BudgetExceeded, match="retry 2"):
         p.complete("s", X, 1000, budget=b, label="S1")
 
@@ -479,7 +484,7 @@ def test_oracle_through_pipeline_scores_100_percent_on_supplement(tmp_path):
 
 def test_cli_supplement_set_fake(tmp_path, capsys):
     (tmp_path / "o").mkdir()
-    (tmp_path / "o" / "ledger.jsonl").write_text(json.dumps({"sheet_id": "S001", "input_tokens": 1, "output_tokens": 1, "usd": 0.0}) + "\n")
+    (tmp_path / "o" / "ledger.jsonl").write_text(json.dumps({"sheet_id": "S001", "input_tokens": 1, "output_tokens": 1, "usd": 0.0, "model": MINI}) + "\n")
     run.main(["--set", "supplement", "--provider", "fake", "--out", str(tmp_path / "o")])
     assert len(list((tmp_path / "o").glob("S8*.json"))) == 12 and "OVERALL" in capsys.readouterr().out
 
@@ -495,14 +500,14 @@ def test_supplement_refuses_before_test_set_in_ledger(tmp_path, capsys):
     assert "after the test set" in capsys.readouterr().err
     assert not list((tmp_path / "o").glob("S8*.json"))
     (tmp_path / "o2").mkdir()  # a tuning-only ledger is not enough either
-    (tmp_path / "o2" / "ledger.jsonl").write_text(json.dumps({"sheet_id": "S901", "input_tokens": 1, "output_tokens": 1, "usd": 0.0}) + "\n")
+    (tmp_path / "o2" / "ledger.jsonl").write_text(json.dumps({"sheet_id": "S901", "input_tokens": 1, "output_tokens": 1, "usd": 0.0, "model": MINI}) + "\n")
     assert run.main(["--set", "supplement", "--provider", "fake", "--out", str(tmp_path / "o2")]) == 6
 
 
 def test_supplement_refuses_on_malformed_ledger(tmp_path, capsys):
     out = tmp_path / "o"
     out.mkdir()
-    good = json.dumps({"sheet_id": "S001", "input_tokens": 1, "output_tokens": 1, "usd": 0.0})
+    good = json.dumps({"sheet_id": "S001", "input_tokens": 1, "output_tokens": 1, "usd": 0.0, "model": MINI})
     for bad in ("{not json\n", good + "\n[1, 2]\n", good + "\n{truncated"):
         (out / "ledger.jsonl").write_text(bad)
         assert run.main(["--set", "supplement", "--provider", "fake", "--out", str(out)]) == 6
@@ -594,20 +599,21 @@ def test_tuning1_s902_misses_would_now_be_dropped_not_scored_untraced():
 
 def _old_ledger(path):
     """Two rows priced at the old 15/120 (stored usd understates), one S-row, as in results/ledger.jsonl."""
-    rows = [{"sheet_id": "S001", "input_tokens": 10_000, "output_tokens": 2_000, "usd": 0.39},
-            {"sheet_id": "S001", "input_tokens": 1_000, "output_tokens": 1_000, "usd": 0.135},
-            {"sheet_id": "S002", "input_tokens": 0, "output_tokens": 5_000, "usd": 0.6}]
+    rows = [{"sheet_id": "S001", "input_tokens": 10_000, "output_tokens": 2_000, "usd": 0.39, "model": PRO},
+            {"sheet_id": "S001", "input_tokens": 1_000, "output_tokens": 1_000, "usd": 0.135, "model": PRO},
+            {"sheet_id": "S002", "input_tokens": 0, "output_tokens": 5_000, "usd": 0.6, "model": PRO}]
     path.write_text("".join(json.dumps(r) + "\n" for r in rows))
 
 
-def test_price_constants_are_30_180():
-    assert (B.USD_PER_M_IN, B.USD_PER_M_OUT) == (30.0, 180.0)
-    assert B.usd(1_000_000, 1_000_000) == pytest.approx(210.0)
+def test_price_table():
+    assert B.PRICES == {"gpt-5.4-pro": (30.0, 180.0), "gpt-5-mini": (0.25, 2.00)}
+    assert B.usd(1_000_000, 1_000_000, PRO) == pytest.approx(210.0)
+    assert B.usd(1_000_000, 1_000_000, MINI) == pytest.approx(2.25)
 
 
 def test_budget_spent_is_repriced_from_tokens_not_stored_usd(tmp_path):
     _old_ledger(tmp_path / "l.jsonl")
-    b = B.Budget(tmp_path / "l.jsonl")
+    b = B.Budget(tmp_path / "l.jsonl", model=PRO)
     want = (11_000 * 30 + 8_000 * 180) / 1e6
     assert b.spent_usd == pytest.approx(want) and want == pytest.approx(1.77)
     assert b.spent_usd != pytest.approx(0.39 + 0.135 + 0.6)
@@ -619,9 +625,180 @@ def test_score_cost_check_uses_tokens_at_current_price(tmp_path):
     assert per["S001"] == pytest.approx((11_000 * 30 + 3_000 * 180) / 1e6)
     assert per["S002"] == pytest.approx(0.9)
     # a sheet whose stored usd passes 0.316 but whose repriced cost fails
-    (tmp_path / "m.jsonl").write_text(json.dumps({"sheet_id": "S1", "input_tokens": 0, "output_tokens": 1_500, "usd": 0.18}) + "\n")
+    (tmp_path / "m.jsonl").write_text(json.dumps({"sheet_id": "S1", "input_tokens": 0, "output_tokens": 1_500, "usd": 0.18, "model": PRO}) + "\n")
     per = score.read_ledger_cost(tmp_path / "m.jsonl", {"S1"})
     assert per["S1"] == pytest.approx(0.27) and per["S1"] <= 0.316
-    (tmp_path / "n.jsonl").write_text(json.dumps({"sheet_id": "S1", "input_tokens": 0, "output_tokens": 1_900, "usd": 0.228}) + "\n")
+    (tmp_path / "n.jsonl").write_text(json.dumps({"sheet_id": "S1", "input_tokens": 0, "output_tokens": 1_900, "usd": 0.228, "model": PRO}) + "\n")
     per = score.read_ledger_cost(tmp_path / "n.jsonl", {"S1"})
     assert per["S1"] == pytest.approx(0.342) and per["S1"] > score.USD_PER_SHEET_MAX
+
+
+# ---- Amendment 6: price follows the model ---------------------------------------------------------------
+
+def _row(model, i=1_000_000, o=1_000_000, sid="S001"):
+    return {"sheet_id": sid, "input_tokens": i, "output_tokens": o, "usd": 0.0, "model": model}
+
+
+def test_mixed_model_ledger_is_priced_per_row(tmp_path):
+    l = tmp_path / "l.jsonl"
+    l.write_text("".join(json.dumps(r) + "\n" for r in
+                         [_row(PRO, sid="S901"), _row(MINI, sid="S001"), _row(MINI, 2_000_000, 0, sid="S002")]))
+    b = B.Budget(l, model=MINI)
+    assert b.spent_usd == pytest.approx(210.0 + 2.25 + 0.5)
+    per = score.read_ledger_cost(l, {"S001", "S002", "S901"})
+    assert per == pytest.approx({"S901": 210.0, "S001": 2.25, "S002": 0.5})
+
+
+@pytest.mark.parametrize("bad", ["", None, "gpt-5.4", "gpt-5-mini-2025-08-07"])
+def test_ledger_row_with_unknown_or_empty_model_fails_loudly(tmp_path, bad):
+    l = tmp_path / "l.jsonl"
+    row = _row(bad)
+    if bad is None:
+        del row["model"]
+    l.write_text(json.dumps(row) + "\n")
+    with pytest.raises(B.UnknownModel):
+        B.Budget(l, model=MINI)
+    with pytest.raises(B.UnknownModel):
+        score.read_ledger_cost(l, {"S001"})
+
+
+def test_unknown_model_cannot_check_or_record(tmp_path):
+    with pytest.raises(B.UnknownModel):
+        B.Budget(tmp_path / "l.jsonl", model="gpt-9")
+    b = B.Budget(tmp_path / "l.jsonl")  # no model: reading is fine, charging is not
+    with pytest.raises(B.UnknownModel):
+        b.check(1, 1)
+    with pytest.raises(B.UnknownModel):
+        b.record("S1", 1, 1)
+
+
+def test_budget_check_and_failed_call_charge_use_the_called_models_price(tmp_path):
+    b = B.Budget(tmp_path / "l.jsonl", model=MINI, max_usd=1.0)
+    b.check(0, 400_000)  # 0.8 at mini; at pro price this would be refused
+    with pytest.raises(B.BudgetExceeded):
+        b.check(0, 600_000)  # 1.2
+    e = b.record("S1", 10, 1_000_000, estimated=True, note="worst case")  # model defaults to the budget's
+    assert e["model"] == MINI and e["usd"] == pytest.approx(2.0 + 0.0000025) and (e["price_in"], e["price_out"]) == (0.25, 2.0)
+
+
+def test_failed_call_row_is_worst_case_at_mini_price(tmp_path):
+    class Boom(providers.FakeProvider):
+        def complete(self, *a, **k):
+            raise providers.ProviderError("timeout", 100, 6000, may_have_run=True)
+    b = B.Budget(tmp_path / "l.jsonl", model=MINI, deployment="gpt-5-mini")
+    with pytest.raises(providers.ProviderError):
+        extract.extract_pdf(SHEETS / "S001.pdf", Boom(), b, max_output_tokens=6000)
+    e = json.loads((tmp_path / "l.jsonl").read_text())
+    assert e["model"] == MINI and e["deployment"] == "gpt-5-mini" and e["usd"] == pytest.approx(100 * 0.25e-6 + 6000 * 2e-6)
+
+
+def test_preflight_with_mini_price_passes_with_8_91_left(tmp_path):
+    b = B.Budget(tmp_path / "l.jsonl", model=MINI)
+    b.record("tuning", 0, 0, model=PRO)  # seed row shape
+    b.spent_usd = 3.091  # tuning1 restated at the pro price
+    B.preflight(b, 30, 6000)
+    b.spent_usd = 12.0 - 0.5
+    with pytest.raises(B.BudgetExceeded, match="short by"):
+        B.preflight(b, 30, 6000)
+
+
+def test_preflight_still_refuses_pro_with_8_91_left(tmp_path):
+    b = B.Budget(tmp_path / "l.jsonl", model=PRO)
+    b.spent_usd = 3.091
+    with pytest.raises(B.BudgetExceeded):
+        B.preflight(b, 30, 6000)
+
+
+def _sheet_cost(l, model, n_in, n_out, nsheets=30):
+    rows = [_row(model, n_in, n_out, sid=f"S{i:03d}") for i in range(1, nsheets + 1)]
+    l.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    return score.read_ledger_cost(l, {r["sheet_id"] for r in rows})
+
+
+def test_cost_mark_per_row_price(tmp_path):
+    per = _sheet_cost(tmp_path / "a.jsonl", MINI, 20_000, 15_000)  # 0.005 + 0.03
+    assert max(per.values()) == pytest.approx(0.035) and sum(per.values()) / 30 <= score.USD_PER_SHEET_MAX
+    per = _sheet_cost(tmp_path / "b.jsonl", PRO, 20_000, 15_000)  # same tokens at the pro price
+    assert sum(per.values()) / 30 > score.USD_PER_SHEET_MAX
+
+
+def test_deployment_fallback_order():
+    base = {"T56_SPEND_APPROVED": "1", "AZURE_OPENAI_ENDPOINT": "https://x"}
+    both = dict(base, T56_DEPLOYMENT=PRO, AZURE_OPENAI_DEPLOYMENT_MINI=MINI)
+    p = providers.AzureResponsesProvider(env=both)
+    assert (p.deployment, p.price_model) == (PRO, PRO)
+    p = providers.AzureResponsesProvider(env=dict(base, AZURE_OPENAI_DEPLOYMENT_MINI=MINI))
+    assert (p.deployment, p.price_model) == (MINI, MINI)
+    assert providers.AzureResponsesProvider(env=both, deployment=MINI).deployment == MINI  # explicit argument first
+    with pytest.raises(ValueError, match="no deployment"):  # no hard-coded pro default
+        providers.AzureResponsesProvider(env=base)
+    with pytest.raises(ValueError, match="no price"):
+        providers.AzureResponsesProvider(env=dict(base, T56_DEPLOYMENT="gpt-9-turbo"))
+
+
+def test_unknown_deployment_refuses_the_run(monkeypatch, tmp_path, capsys):
+    monkeypatch.setenv("T56_SPEND_APPROVED", "1")
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://x")
+    monkeypatch.delenv("AZURE_OPENAI_DEPLOYMENT_MINI", raising=False)
+    monkeypatch.setenv("T56_DEPLOYMENT", "mystery")
+    assert run.main(["--set", "tuning", "--provider", "azure", "--out", str(tmp_path / "o")]) == 2
+    assert "refused" in capsys.readouterr().err
+    monkeypatch.delenv("T56_DEPLOYMENT")
+    assert run.main(["--set", "tuning", "--provider", "azure", "--out", str(tmp_path / "o")]) == 2
+
+
+def test_run_log_and_ledger_record_the_deployment(monkeypatch, tmp_path, capsys):
+    monkeypatch.delenv("T56_MAX_OUTPUT_TOKENS", raising=False)
+    assert run.main(["--set", "tuning", "--provider", "fake", "--out", str(tmp_path / "o"), "--no-score"]) == 0
+    assert "deployment gpt-5-mini" in capsys.readouterr().out
+    info = json.loads((tmp_path / "o" / "run.json").read_text())
+    assert info["deployment"] == "gpt-5-mini" and info["usd_per_m_out"] == 2.0 and info["max_output_tokens"] == 6000
+    rows = _ledger(tmp_path / "o" / "ledger.jsonl")
+    assert rows and all(r["model"] == MINI and r["deployment"] == "gpt-5-mini" for r in rows)
+
+
+def test_azure_ledger_row_uses_price_name_not_served_model_name(nb, tmp_path):
+    body = json.dumps({"status": "completed", "model": "gpt-5-mini-2025-08-07",
+                       "output": [{"type": "message", "content": [{"type": "output_text", "text": '{"components": []}'}]}],
+                       "usage": {"input_tokens": 100, "output_tokens": 50}}).encode()
+    p = providers.AzureResponsesProvider(env=dict(ENV, T56_DEPLOYMENT=MINI), transport=lambda r, t: (200, {}, body))
+    b = B.Budget(tmp_path / "l.jsonl", model=p.price_model, deployment=p.deployment)
+    extract.extract_pdf(SHEETS / "S001.pdf", p, b)
+    row = _ledger(tmp_path / "l.jsonl")[0]
+    assert row["model"] == MINI and row["served_model"] == "gpt-5-mini-2025-08-07"
+    assert B.Budget(tmp_path / "l.jsonl", model=MINI).spent_usd == pytest.approx(100 * 0.25e-6 + 50 * 2e-6)
+
+
+def test_max_output_tokens_env_and_flag():
+    assert run.resolve_max_output_tokens(None, env={}) == 6000
+    assert run.resolve_max_output_tokens(None, env={"T56_MAX_OUTPUT_TOKENS": "16000"}) == 16000
+    assert run.resolve_max_output_tokens(9000, env={"T56_MAX_OUTPUT_TOKENS": "16000"}) == 9000
+    for bad in ("abc", "10", "0"):
+        with pytest.raises(ValueError):
+            run.resolve_max_output_tokens(None, env={"T56_MAX_OUTPUT_TOKENS": bad})
+
+
+def test_incomplete_response_is_reported_billed_and_written_as_missing(tmp_path, capsys):
+    inc = json.dumps({"status": "incomplete", "incomplete_details": {"reason": "max_output_tokens"}, "output": [],
+                      "usage": {"input_tokens": 900, "output_tokens": 6000}}).encode()
+    p = providers.AzureResponsesProvider(env=dict(ENV, T56_DEPLOYMENT=MINI), transport=lambda r, t: (200, {}, inc))
+    with pytest.raises(providers.ProviderError, match="incomplete: output budget exhausted") as e:
+        p.complete("s", X, 6000, budget=B.Budget(tmp_path / "x.jsonl", model=MINI))
+    assert e.value.output_tokens == 6000 and not e.value.fatal
+    # through the CLI: billed in the ledger, sheet written with no components and a warning, run continues
+    class P(providers.FakeProvider):
+        def complete(self, s, parts, m, **kw):
+            raise providers.ProviderError("incomplete: output budget exhausted", 900, 6000)
+    import pytest as _p
+    mp = _p.MonkeyPatch()
+    mp.setattr(run, "make_provider", lambda name: P())
+    try:
+        rc = run.main(["--set", "tuning", "--provider", "fake", "--out", str(tmp_path / "o"), "--no-score"])
+    finally:
+        mp.undo()
+    assert rc == 0
+    pred = json.loads((tmp_path / "o" / "S901.json").read_text())
+    assert pred["components"] == [] and "incomplete" in pred["warnings"][0]
+    rows = _ledger(tmp_path / "o" / "ledger.jsonl")
+    assert len(rows) == 5 and rows[0]["output_tokens"] == 6000 and rows[0]["model"] == MINI
+    assert "without an answer" in capsys.readouterr().err
