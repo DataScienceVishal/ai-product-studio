@@ -16,3 +16,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - [_starter] Small starter tidy-ups merged (missing-asset 404s, all page routes tested, grouped GitHub Actions update PRs, Node 22 end-of-life note). Reviewed and merged.
 - [_starter] Sign-in now holds up under bursts: junk or rate-limited requests can no longer queue for the password-check slots and block real users. Reviewed twice and merged.
 - [_starter] Test runs no longer trip over each other when several agents test at once (each run gets its own throwaway database). Reviewed twice and merged.
+- [_starter] Starter can now share sign-in rate limits across several app copies through Redis (optional; nothing new on Azure), and two test-tooling fixes landed. Both reviewed twice and merged.
