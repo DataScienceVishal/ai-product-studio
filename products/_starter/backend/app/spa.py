@@ -66,7 +66,8 @@ def install(app: FastAPI, dist: str) -> bool:
     async def no_asset(request: Request) -> Response:
         raise StarletteHTTPException(404)  # /assets itself is not a file: 404 here, not a 307 to /assets/
 
-    app.add_route("/assets", no_asset, methods=["GET", "HEAD"], include_in_schema=False)
+    for asset_path in ("/assets", "/assets/"):  # both spellings: no redirect_slashes 307 when there is no assets/ folder
+        app.add_route(asset_path, no_asset, methods=["GET", "HEAD"], include_in_schema=False)
 
     def fallback(request: Request) -> Response | None:
         if request.method not in ("GET", "HEAD") or _is_reserved(request.url.path):

@@ -339,6 +339,9 @@ enough), with one retry. It costs about 450 vCPU-seconds a month, inside the fre
 - Both base images (`node:22-slim`, `python:3.12-slim`) are pinned by digest; `.github/dependabot.yml` proposes
   digest refreshes weekly (patch-level only: new Node majors and Python minors are ignored). Each product
   copied from the starter needs its own Dependabot docker entry.
+- Node 22 reaches end of life in April 2027 and the Dependabot ignore blocks Node majors (so Node 24 never
+  arrives by itself), so the move to a newer Node LTS must be planned by February 2027. Check the first
+  Dependabot docker PR is digest-only (same tag, new `sha256`), which proves the ignore rules work.
 - Not yet: actions by commit SHA (T-30), and the `postgres:16` CI service image, which Dependabot doesn't scan.
 
 ## What a deployed demo can do (email is outbox-only)
