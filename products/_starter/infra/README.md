@@ -201,6 +201,7 @@ Rules the templates keep. Breaking one changes the bill:
 | "no revision ... has 100% of the traffic" | traffic was split by hand | `rollback_to` the revision that should serve, then release |
 | "main.bicep's identity object ids are missing" | the deploy step's outputs lack the two principal ids | check `main.bicep` outputs `appIdentityPrincipalId`, `migrateIdentityPrincipalId` |
 | "has Entra admins besides the deploy principal" | someone added an admin (Bicep never removes one) | remove the extra `administrators` entry through ARM, release again |
+| "has characters this workflow doesn't allow" (the Entra admin name) | `postgresEntraAdminName` holds something outside letters, digits and `_ . @ - ` or is over 63 characters | set it to a name like `sp-ai-studio-deployer` (an Owner's UPN when the type is `User`) and run with `deploy_shared` ticked |
 | "is not an Entra admin of psql-studio-..." or "refused the deploy principal's token" | `deploy_shared` never ran since T-18, or the principal was recreated | run with `deploy_shared` ticked |
 | Trivy fails | a fixable HIGH or CRITICAL vulnerability in the image | rebuild later (new base image), or add the CVE id to `<product>/.trivyignore` with a comment saying why |
 | Migration job `Failed` | a migration error; the old revision still serves and the schema is unchanged | read `ContainerAppConsoleLogs` in `log-studio`, fix, release again |
@@ -232,4 +233,5 @@ should move to Key Vault (ADR decisions 5 and 6).
 `shared.bicep` makes whoever deploys it the Postgres Entra admin (`deployer()`). The default type is
 `ServicePrincipal`, which fits the studio workflow. An Owner user deploying at handover must also set
 `postgresEntraAdminType` to `User` (or `Group`), for example `--parameters postgresEntraAdminType=User`, and
-`postgresEntraAdminName` to the role name they want, otherwise ARM rejects or mislabels the admin.
+`postgresEntraAdminName` to the role name they want, otherwise ARM rejects or mislabels the admin. When `postgresEntraAdminType` is `User`,
+`postgresEntraAdminName` must be the Owner's UPN (for example `owner@business.com`).

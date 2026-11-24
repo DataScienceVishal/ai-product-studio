@@ -93,6 +93,8 @@ check "shared.bicep passes passwordAuth, entraAdminName and entraAdminType to th
      and (.entraAdminType.value == "[parameters('"'"'postgresEntraAdminType'"'"')]")' "$shared"
 check "postgresEntraAdminType allows ServicePrincipal, User, Group and defaults to ServicePrincipal" \
   '.parameters.postgresEntraAdminType.defaultValue == "ServicePrincipal" and (.parameters.postgresEntraAdminType.allowedValues | sort) == ["Group","ServicePrincipal","User"]' "$shared"
+check "module entraAdminType allows ServicePrincipal, User, Group and defaults to ServicePrincipal (direct callers)" \
+  "$PG"' | (.parameters.entraAdminType.defaultValue == "ServicePrincipal") and (.parameters.entraAdminType.allowedValues | sort) == ["Group","ServicePrincipal","User"]' "$shared"
 check "administrators child: the deployer, typed by entraAdminType, in our tenant, API 2024-08-01" \
   "$PG"' | [.resources[] | select(.type == "Microsoft.DBforPostgreSQL/flexibleServers/administrators")] as $a
    | ($a | length == 1)
