@@ -77,3 +77,22 @@ Either way, add one line to the README.
 - **S4.** The ledger has no file lock. Run tuning and test sequentially and never in parallel; say so in `run.py`'s docstring.
 - **S5.** `clean_output(raw, page_modes)`: `page_modes` is unused. Remove it.
 - **S6.** `IMAGE_TOKENS_WORST=6000` is a reasonable upper bound. After the first scanned tuning sheet, record the billed image tokens.
+
+## Re-review (fce0c59): PASS
+
+Tests: `/usr/bin/python3 -m pytest -q extractor/tests benchmark/tests` gives **73 passed in 6.66s** (8 new tests).
+
+- **C1, fixed.**
+  - `MAX_OUTPUT_TOKENS` is now 6000, so the worst-case reservation per call is about USD 0.72 of output plus input.
+  - `budget.preflight` runs for `--set test`. It exits with code 4 and prints the shortfall unless the remaining budget is at least `30 x 0.316 + usd(20000, max_output_tokens)` (USD 10.50 at 6000), and it applies the same kind of check in tokens.
+  - I checked the margin: the largest estimated input across the 30 test sheets is 16,913 tokens, below the 20,000 assumed in the pre-flight. So if the mean per-sheet cost stays within the bar, the guard cannot cut the run short.
+  - If the run does get cut short, pass mark 5 would have failed anyway.
+- **C2, settled.** The Studio Lead decision is logged on main (`state/DECISIONS.md` line 157, before any run). 4b is now `conflict_flagged / conflict_slots`, as the kill test wrote it. Rule (a)'s both-values requirement still counts in field accuracy, and the both-values rate is reported as information. The README is updated to match. No amendment is needed, because this follows the text written before any run.
+- **S1, fixed.** A non-missing value under a feature key that is not in the vocabulary now counts as untraced.
+- **S3, fixed.** HTTP 400, 401 and 403 now set `fatal`, and `run.py` stops with code 5.
+- **S4, fixed.** `run.py`'s docstring now says to run tuning and test sequentially, because the ledger has no file lock.
+- **S5, fixed.** The unused `page_modes` parameter is removed.
+- **Still open (non-blocking).**
+  - S2: a 5xx retry can bill more than one attempt under a single reservation. The USD 1.5 gap between the USD 10.50 pre-flight and the USD 12 cap absorbs a few such retries.
+  - S6: record the billed image tokens after the first scanned tuning sheet.
+  - Confirm the accepted reasoning effort on the first tuning call.
