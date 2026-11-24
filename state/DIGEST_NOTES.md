@@ -11,3 +11,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - [_starter] Starter app can now talk to the studio's Azure model (new API style), keeps no copy of prompts on Azure, and CI now refuses an AI budget priced above $6.10 a month. Reviewed and merged.
 - [_starter] Two earlier starter fixes (cleaner web page serving, pinned base images) were reviewed and passed.
 - [_starter] Safer Azure sign-in for the starter's AI calls: a slow Azure login endpoint can no longer stall every user past the page's time limit. Reviewed twice and merged.
+- [_starter] Starter AI calls hardened: cut-off answers are no longer saved as if complete, and odd replies from Azure still count against the spending caps. Reviewed and merged.
