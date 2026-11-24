@@ -42,3 +42,41 @@ Count: 17 dropped, 1 written (weak), 1 left unwritten for lack of checks (Cyber 
 - Accounts and CT600: look for iXBRL tagging bureaus (DataTracks and others) selling to accountants, and test whether tagging is still sold per filing with AI competitors.
 - Cyber Essentials: check CyberSmart, Vanta UK pages and the 3 Nov 2026 funding scheme on gov.uk before any file.
 - A different cut for the next round: look for jobs priced per unit by UK bureaus where the output is judgement and the input is an image or audio, not a document, since document-to-field extraction is closed.
+
+## Second pass (bureau-side)
+
+Brief: sell to the bureau itself (AI workbench; bureau keeps client and liability). Time about 20 minutes, 22 searches and 8 page fetches on 2026-11-24. Evidence is mostly search summaries except where "fetched" is stated. No prompt-injection attempts seen. Several hits were pages.dev sites (low trust, noted).
+
+### Written (1 file, G0, scores blank)
+| Slug | Pitch | Per-unit prices (own pages) | Count | Independent pain | Why an incumbent can't trivially follow | Biggest doubt |
+|---|---|---|---|---|---|---|
+| uk-cosmetic-cpsr-assessor-workbench | Assessor bureau workbench drafting CPSR Parts A and B from formulation and supplier documents | Euverify £250 / £370 / £465 + VAT by ingredient count (https://euverify.com/cpsr/, fetched); Oxford Biosciences £220 up to 20 ingredients, "from £70" (https://oxbio-site.pages.dev/regulatory-compliance/uk, fetched) | 24,112 UK Responsible Persons, 861,686 notifications (https://www.gov.uk/government/news/new-data-on-uk-cosmetic-product-safety-notifications, fetched); number of assessor bureaus NOT found | Nov 2026 parliamentary committee report on beauty regulation (https://www.itv.com/news/2026-11-03/hair-and-beauty-products-less-regulated-than-ballpoint-pens-report, secondary) | Assessor sign-off liability stays with the bureau; brand-side vendors won't sign | OrAIsi (https://oraisi-website.pages.dev/en/index.html) already sells an AI PIF/CPSR platform to assessors (EU focus, no UK mention); price race to £70; arithmetic is deterministic; no bureau count |
+
+Weak survivor. Not written: leasehold information packs (below).
+
+### Dropped at the kill test (bureau type, evidence)
+1. Bookkeeping and VAT-return bureaus: Combinely (VAT return checks, Burgess Hodgson 75% claim), Dext AI Assist, Acxite (https://www.accountingweb.co.uk/node/227017, search 2026-11-24).
+2. Personal tax return outsourcing: QX TaxReady already runs AI plus human review at fixed per-return prices for over 500 firms (https://qxaccounting.com/uk/tax-outsourcing-support). The bureaus are building their own AI.
+3. R&D tax claim preparers: SmartClaim, WhisperClaims, Boast.AI, Thomson Reuters Neo.Tax AI (https://www.accountingweb.co.uk/node/230372; G2 Swanson Reed TaxTrex https://www.g2.com/products/swanson-reed-specialist-r-d-advisors).
+4. Conveyancing personal-search bureaus: Search Acumen REI (LLM for CON29 extraction, https://www.legalfutures.co.uk/associate-news/1-in-10-of-uks-top-200-law-firms-using-ai-to-improve-accuracy-and-insight-into-con29-searches) and SearchFlow AI.
+5. Certified translation agencies: £18-£80 a page on agency pages (https://translayte.com/blog/cost-of-translation-uk); post-editing tools are a mature category, and a certified sign-off is by the translator. Not checked in depth; dropped on reasoning.
+6. Grant-writing bureaus: Plinth AI Grant Writer (£150 a month, https://blog.plinth.org.uk/an-update-on-no-win-no-fee/), SwiftBid (from £149 an application, https://swiftbid.pages.dev/grant-writing; low-trust domain), ZenGrants on Capterra UK (https://www.capterra.co.uk/software/1112343/ZenGrants).
+7. Surveyor and asbestos report-writing bureaus: GoReport from £149 a user a month (https://goreport.com/how-one-london-practice-reduced-report-writing-time-by-50/), Blooming Surveys pay-per-report; no outsourced per-report price exists, only bundled survey prices.
+8. Biodiversity net gain assessors: Gentian True Sight, AiDash BNGAI inside LandTech (https://land.tech/blog/smarter-faster-biodiversity-planning-with-bngai-by-aidash-and-landtech); no consultant per-site price found.
+9. HACCP and food-safety documentation: Fiverr gigs at $50-$400 and FoodReady AI (https://sourceforge.net/software/product/Beacon-by-SystemPath/ for context); no UK bureau price page found.
+10. Safety data sheet authoring: SDS Studio €59 an SDS pay-as-you-go, ULGHS $275, SDS Manager UK (https://sdsmanager.com/uk/sds-authoring); cheaper than any bureau and already software.
+11. DSAR and redaction bureaus: DPAS £1.50-£2.50 a page, Penningtons AI-assisted DSAR service, Smartbox.ai about £17 a case (https://www.penningtonslaw.com/sector/technology/dsar-support-service/; Smartbox claim via Microsoft blog https://www.microsoft.com/en-gb/industry/blog/?p=70397).
+12. Planning-application agents: RICS reports generative AI already used for planning statements and heritage assessments; PAI by Studio Bark; Government PlanAssist on the council side (https://ww3.rics.org/uk/en/journals/land-journal/ai-planning-officers-development.html). No agent price page found.
+13. Payroll bureau query desks: Sage Copilot, PayFit Copilot, Ask The Payroll Centre for bureau operators (https://thepayrollcentre.co.uk/asktpc/).
+14. Motor repair-estimate audit bureaus: no UK per-claim bureau price or AI vendor found; only a £125 + VAT fraud desk review (DWF); insurance-adjacent, so left (see off-limits note).
+15. Recruitment RPO, customs brokerage, export documentation, EPC assessors, R&D-adjacent ISO 9001 consultancies: not searched this pass; customs, origin, EPC and SAP are covered in rounds 12 and 13; RPO and ISO dropped on reasoning only (large AI-native field, unverified).
+
+### Near-miss, not written: leasehold information packs (LPE1)
+- Per-unit prices: £125-£500 in a conveyancer's fee schedule; Norwich £150 inc VAT, Southwark £269 (council pages in search results: https://norwich.gov.uk/info/20047/leaseholders/1214/buying_and_selling_the_property/5, https://www.southwark.gov.uk/preassignmentinformation; not fetched).
+- Forcing function is unproven: Service and Administration Charges (England) Regulations 2026 made 10 Nov 2026 with first duties from 1 April 2027 and 1 November 2027 (https://www.propertymark.co.uk/resource/key-dates-confirmed-for-leasehold-service-charge-reforms.html, fetched), but the £200 + VAT cap and 15-working-day pack deadline appear only in a Dwellant blog and solicitor commentary; the Propertymark page and the government response page (fetched) do not mention it.
+- No tool found that generates LPE1 packs (August page, fetched, says no), but block-management suites (Inox, MRI, Re-Leased) can add it, packs are produced in-house by managing agents (not a bureau), and the buyer count is unknown. Revisit if the pack cap gets a made instrument.
+
+### Lessons for the next scout
+- The bureaus themselves are the ones already buying or building AI (QX, Penningtons, DPAS, Plinth). Where a bureau price page does not mention AI, an AI vendor usually sells to the same bureau already (OrAIsi, Combinely, SmartClaim).
+- Bureau-side evidence is thin: no register of assessors, no bureau counts and few price pages. Counting bureaus is the step that failed most often; check CTPA, CIEEM, ARMA and CIAT membership lists first.
+- Prices that bureaus publish are collapsing (£70 CPSR, £1.50 a page redaction), which caps what a bureau pays a workbench.
