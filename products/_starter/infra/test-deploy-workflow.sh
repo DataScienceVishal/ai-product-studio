@@ -157,6 +157,26 @@ printf 'notajwt' | bash "$here/jwt-oid.sh" > /dev/null 2>&1 && bad "jwt-oid fail
 out=$(printf 'a.%s.c' "$(printf 'not json' | b64url)" | bash "$here/jwt-oid.sh" 2>&1 >/dev/null || true)
 grep -q 'not json' <<< "$out" && bad "jwt-oid errors don't echo the token" || ok "jwt-oid errors don't echo the token"
 
+# ---- T-60: OIDC sign-in, no stored credential, main only -------------------------------------------------------------
+absent "no stored AZURE_CREDENTIALS or creds: input" 'AZURE_CREDENTIALS|creds:'
+absent "no environment: on any job (it would change the OIDC subject)" '^    environment:'
+present "uses client-id from the secret" 'client-id: \$\{\{ secrets\.AZURE_CLIENT_ID \}\}'
+present "uses tenant-id from the secret" 'tenant-id: \$\{\{ secrets\.AZURE_TENANT_ID \}\}'
+present "uses subscription-id from the secret" 'subscription-id: \$\{\{ secrets\.AZURE_SUBSCRIPTION_ID \}\}'
+logins=$(grep -c 'uses: azure/login@' "$wf")
+tokens=$(grep -cE '^      id-token: write' "$wf")
+[ "$logins" -ge 1 ] && [ "$tokens" = "$logins" ] && ok "every login job has its own id-token: write ($logins)" || bad "every login job has its own id-token: write (logins $logins, grants $tokens)"
+if grep -E '^permissions:' -A3 "$wf" | grep -q 'id-token'; then bad "id-token is not granted at workflow level"; else ok "id-token is not granted at workflow level"; fi
+guards=$(grep -c 'Only from main (the Azure sign-in trusts main only)' "$wf")
+[ "$guards" = "$logins" ] && ok "every login job refuses to run off main" || bad "every login job refuses to run off main"
+# the guard step must come before the sign-in
+g1=$(grep -n 'Only from main (the Azure' "$wf" | head -1 | cut -d: -f1); l1=$(grep -n 'uses: azure/login@' "$wf" | head -1 | cut -d: -f1)
+[ -n "$g1" ] && [ "$g1" -lt "$l1" ] && ok "the main-only guard runs before the sign-in" || bad "the main-only guard runs before the sign-in"
+# location is explicit (T-61)
+for f in main shared; do
+  grep -qE "^param location = 'francecentral'" "$here/$f.bicepparam" && ok "$f.bicepparam sets location = francecentral" || bad "$f.bicepparam sets location = francecentral"
+done
+
 # ---- syntax tools, when present -----------------------------------------------------------------------------------
 bash -n "$here/jwt-oid.sh" && ok "bash -n jwt-oid.sh" || bad "bash -n jwt-oid.sh"
 if command -v actionlint > /dev/null; then

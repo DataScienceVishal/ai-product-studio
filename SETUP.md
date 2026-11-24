@@ -36,42 +36,61 @@ Pro works in shorter bursts; Max gives the team much more room. A personal plan 
 
 ## 3. Azure (10 min)
 
-In the Azure portal, open **Cloud Shell** (the `>_` icon, Bash) and run:
+Azure for Students only allows new resources in `francecentral`, `swedencentral`, `spaincentral`, `polandcentral` and `italynorth`. The studio uses `francecentral`. The resource group `rg-ai-studio` itself is in `uksouth` (a group's region only holds its metadata, so that is fine; the resources in it go to francecentral).
+
+GitHub signs in to Azure with **OIDC**: no password or JSON secret is stored anywhere. In the Azure portal, open **Cloud Shell** (the `>_` icon, Bash) and run:
 
 ```bash
-az group create --name rg-ai-studio --location uksouth
+az group create --name rg-ai-studio --location uksouth   # skip if it exists
 SUB=$(az account show --query id -o tsv)
-az ad sp create-for-rbac --name sp-ai-studio-deployer --role Contributor \
-  --scopes /subscriptions/$SUB/resourceGroups/rg-ai-studio --json-auth
+az identity create --resource-group rg-ai-studio --name id-github-deploy --location francecentral
+PRINCIPAL=$(az identity show -g rg-ai-studio -n id-github-deploy --query principalId -o tsv)
+az identity federated-credential create --resource-group rg-ai-studio --identity-name id-github-deploy \
+  --name github-main \
+  --issuer https://token.actions.githubusercontent.com \
+  --subject repo:DataScienceVishal/ai-product-studio:ref:refs/heads/main \
+  --audiences api://AzureADTokenExchange
+az role assignment create --assignee-object-id $PRINCIPAL --assignee-principal-type ServicePrincipal \
+  --role Contributor --scope /subscriptions/$SUB/resourceGroups/rg-ai-studio
+# Print the three values for GitHub:
+az identity show -g rg-ai-studio -n id-github-deploy --query clientId -o tsv
+az account show --query tenantId -o tsv
+echo $SUB
 ```
 
-Copy the JSON the last command prints. Then in GitHub open the repo's **Settings → Secrets and variables → Actions → New repository secret** and add:
+Then in GitHub open the repo's **Settings → Secrets and variables → Actions → New repository secret** and add:
 
 | Name | Value |
 |---|---|
-| `AZURE_CREDENTIALS` | the JSON from Cloud Shell |
+| `AZURE_CLIENT_ID` | the identity's client id (first printed value) |
+| `AZURE_TENANT_ID` | the tenant id (second value) |
+| `AZURE_SUBSCRIPTION_ID` | the subscription id (third value) |
 | `AZURE_OPENAI_ENDPOINT` | your Azure OpenAI endpoint, such as `https://<resource>.openai.azure.com/` |
 | `AZURE_OPENAI_API_KEY` | your Azure OpenAI key |
 | `AZURE_OPENAI_DEPLOYMENT` | your deployment name, such as `gpt-5-mini` |
 
+These three IDs are not secrets in themselves; the trust lives in the federated credential. That credential matches **only** runs on `main` (`...:ref:refs/heads/main`), so the Azure workflows sign in from `main` only and refuse to run anywhere else.
+
+**Do not add `environment:` to a job that signs in to Azure.** A job with an environment gets the subject `repo:DataScienceVishal/ai-product-studio:environment:<name>`, which does not match, and the login fails. If you later want a GitHub environment (for example `production` with a required reviewer), add one more federated credential first:
+
+```bash
+az identity federated-credential create --resource-group rg-ai-studio --identity-name id-github-deploy \
+  --name github-env-production \
+  --issuer https://token.actions.githubusercontent.com \
+  --subject repo:DataScienceVishal/ai-product-studio:environment:production \
+  --audiences api://AzureADTokenExchange
+```
+
 Optional: also add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` here as Actions secrets (the values from step 2). The daily `azure-spend` workflow then pings you when spend first passes 50%, 75% and 95% of the $80 cap, and when the report fails. Without them, alerts still reach you through the next digest.
 
-Recommended: give the daily spend report its own read-only identity instead of the deployer. In Cloud Shell:
+The daily spend report signs in as the same identity. Contributor on the group is enough to list resources; the Cost Management query may also need the **Cost Management Reader** role on the subscription or group. If the report says cost data is unavailable, add it:
 
 ```bash
-SUB=$(az account show --query id -o tsv)
-az ad sp create-for-rbac --name sp-ai-studio-cost --role Reader \
-  --scopes /subscriptions/$SUB/resourceGroups/rg-ai-studio --json-auth
+az role assignment create --assignee-object-id $PRINCIPAL --assignee-principal-type ServicePrincipal \
+  --role "Cost Management Reader" --scope /subscriptions/$SUB/resourceGroups/rg-ai-studio
 ```
 
-Then add the **Cost Management Reader** role for the same app (use the `clientId` from the JSON it printed):
-
-```bash
-az role assignment create --assignee <clientId> --role "Cost Management Reader" \
-  --scope /subscriptions/$SUB/resourceGroups/rg-ai-studio
-```
-
-Save that JSON as the Actions secret `AZURE_COST_CREDENTIALS`. Without it, the report uses `AZURE_CREDENTIALS`.
+Temporary fallback, only if you already created one: an Actions secret `AZURE_COST_CREDENTIALS` (service principal JSON) is used when the OIDC secrets are missing. Once OIDC works, delete it, and delete the old `AZURE_CREDENTIALS` secret and its client secret (`sp-ai-studio-deployer`) too.
 
 Put your Azure OpenAI resource in `rg-ai-studio` (or move it there), so its token spend counts in the daily report. The report covers that resource group only.
 
