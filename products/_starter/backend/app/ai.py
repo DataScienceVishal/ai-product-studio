@@ -31,6 +31,7 @@ import httpx
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
+from .config import REASONING_EFFORTS
 from .errors import AppError
 from .models import AIUsage
 
@@ -262,8 +263,8 @@ class AzureOpenAI:
             raise ValueError("AZURE_OPENAI_API must be auto, chat or responses")
         if api == "auto":
             api = "responses" if endpoint.strip().rstrip("/").lower().endswith("/openai/v1/responses") else "chat"
-        if reasoning_effort not in ("", "low", "medium", "high"):
-            raise ValueError("AZURE_OPENAI_REASONING_EFFORT must be low, medium or high")
+        if reasoning_effort and reasoning_effort not in REASONING_EFFORTS:
+            raise ValueError(f"AZURE_OPENAI_REASONING_EFFORT must be one of {', '.join(REASONING_EFFORTS)}")
         self.api = api
         self.reasoning_effort = reasoning_effort  # sent on the responses path only; empty means not sent
         # Responses reasoning tokens count inside max_output_tokens: add headroom so reasoning can't eat the answer.

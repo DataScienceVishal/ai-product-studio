@@ -33,7 +33,7 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 
 | What | Command | Where it runs |
 |---|---|---|
-| Backend unit and API tests (466 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
+| Backend unit and API tests (469 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
 | Migrations match the models | `alembic upgrade head && alembic check` | every push |
 | Frontend type check and build | `cd frontend && npm run build` | every push (CI `frontend`) |
 | Browser end-to-end core flow | `./scripts/e2e.sh` | pushes to main and manual runs (CI `e2e`) |
@@ -91,7 +91,7 @@ AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
 | `RATE_LIMIT_REDIS_THREADS` | 8 by default (>= 1): size of the limiter's own thread pool for Redis checks, kept apart from the shared worker threads. Only matters with `RATE_LIMIT_REDIS_URL` (the in-memory limiter has no pool) |
 | `RATE_LIMIT_REDIS_QUEUE_TIMEOUT` | 1.0 by default (seconds, > 0, <= 30): longest a login-style gate waits for a free Redis pool thread. On timeout the in-memory check answers at once and it counts as a Redis failure (breaker trips). Only matters with `RATE_LIMIT_REDIS_URL` |
 | `AI_PROVIDER` | `fake` (default) or `azure` |
-| `AZURE_OPENAI_REASONING_EFFORT` | empty (not sent) | optional `low`, `medium` or `high` (see Azure OpenAI API) |
+| `AZURE_OPENAI_REASONING_EFFORT` | empty (not sent) | optional `low`, `medium`, `high` or `xhigh`; gpt-5.4-pro rejects `low`, so `medium` is its cheapest (see Azure OpenAI API) |
 | `FRONTEND_TIMEOUT_SECONDS` | `30` | how long the browser waits before aborting; served at `/api/config`, max 600 |
 | `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_KEY` | the key is a placeholder in cloud runs; the network secret injects the real one |
 | `BILLING_PROVIDER` | `mock` (default) or `stripe` (test keys only; live keys are refused) |
@@ -127,11 +127,13 @@ endpoint may be the resource root or end in `/openai/v1`, `/openai/v1/responses`
 Reasoning tokens count inside the output budget, and an `incomplete` answer with no text is billed and shown as
 a friendly error. A reasoning model can take about 8 s for one word.
 
-**Reasoning effort.** `AZURE_OPENAI_REASONING_EFFORT` (`low`, `medium` or `high`; empty by default; `minimal`, `none` and `xhigh` are left out
-on purpose, since only some models accept them: add them to `REASONING_EFFORTS` when a deployment needs one) is sent as
-`reasoning: {"effort": ...}` on the Responses path only. A bad value stops the app at startup. Pro models
-(gpt-5.4-pro) may accept only `high` and reject `low`, so leave it unset unless you have tested the value
-against the deployment.
+**Reasoning effort.** `AZURE_OPENAI_REASONING_EFFORT` (`low`, `medium`, `high` or `xhigh`; empty by default; `minimal` and `none`
+are left out on purpose, since only some models accept them: add them to `REASONING_EFFORTS` in `config.py`, the single
+list `ai.py` also uses, when a deployment needs one) is sent as `reasoning: {"effort": ...}` on the Responses path only.
+A bad value stops the app at startup. The studio's gpt-5.4-pro deployment rejects `low` (HTTP 400, "Supported values
+are: 'medium', 'high', and 'xhigh'"), so `medium` is its cheapest setting; other deployments accept `low`. An HTTP 400 from the
+model on this field is a config error: the app does not retry it and shows `ai_rejected` (502) with a generic message; the
+status is in the logs. Fix the value rather than retrying.
 
 **Latency versus the browser's abort.** The browser aborts after `FRONTEND_TIMEOUT_SECONDS` (default 30). The
 backend serves that number at `GET /api/config` and the SPA reads it once at startup (falling back to 30 s if the

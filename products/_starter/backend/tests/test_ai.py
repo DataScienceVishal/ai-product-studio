@@ -534,10 +534,10 @@ def test_settings_accept_only_known_auth_modes(monkeypatch):
 ROOT = "https://res.openai.azure.com"
 
 
-def _resp_az(handler, endpoint=ROOT, api="auto", retries=1, provider=None):
+def _resp_az(handler, endpoint=ROOT, api="auto", retries=1, provider=None, reasoning_effort=""):
     return AzureOpenAI(endpoint, "gpt-5.4-pro", "k" if provider is None else "", api=api, retries=retries,
-                       token_provider=provider, client=httpx.Client(transport=httpx.MockTransport(handler)),
-                       sleep=lambda _: None)
+                       token_provider=provider, reasoning_effort=reasoning_effort,
+                       client=httpx.Client(transport=httpx.MockTransport(handler)), sleep=lambda _: None)
 
 
 def _responses_ok(text="ok", n_in=13, n_out=28, status="completed"):
@@ -883,6 +883,42 @@ def test_invalid_reasoning_effort_is_rejected_by_provider_and_settings():
         Settings(azure_openai_reasoning_effort="extreme")
     assert Settings(azure_openai_reasoning_effort=" High ").azure_openai_reasoning_effort == "high"
     assert Settings().azure_openai_reasoning_effort == ""
+
+
+def test_xhigh_is_accepted_and_sent():
+    from app.config import Settings
+    assert Settings(azure_openai_reasoning_effort="XHigh").azure_openai_reasoning_effort == "xhigh"
+    assert _effort_payload("responses", reasoning_effort="xhigh")["reasoning"] == {"effort": "xhigh"}
+    assert _effort_payload("responses", reasoning_effort="low")["reasoning"] == {"effort": "low"}  # other deployments accept it
+
+
+def test_reasoning_efforts_has_one_source_of_truth():
+    import inspect
+    from app.config import REASONING_EFFORTS, Settings
+    assert REASONING_EFFORTS == ("low", "medium", "high", "xhigh")
+    assert ai_module.REASONING_EFFORTS is REASONING_EFFORTS
+    assert '"low"' not in inspect.getsource(AzureOpenAI.__init__)
+    for value in REASONING_EFFORTS:  # provider and settings agree on every value
+        AzureOpenAI(ROOT, "d", "k", api="responses", reasoning_effort=value)
+        assert Settings(azure_openai_reasoning_effort=value).azure_openai_reasoning_effort == value
+    for bad in ("extreme", "minimal", "none"):
+        with pytest.raises(ValueError):
+            AzureOpenAI(ROOT, "d", "k", api="responses", reasoning_effort=bad)
+
+
+def test_model_400_on_reasoning_effort_is_a_non_retried_config_error():
+    calls = []
+    msg = "Unsupported value: 'low'. Supported values are: 'medium', 'high', and 'xhigh'."
+
+    def handler(request):
+        calls.append(1)
+        return httpx.Response(400, json={"error": {"message": msg, "param": "reasoning.effort"}})
+
+    with pytest.raises(AppError) as error:
+        _resp_az(handler, api="responses", retries=3, reasoning_effort="low").complete("s", "u")
+    assert error.value.code == "ai_rejected" and error.value.status == 502
+    assert len(calls) == 1  # not retried
+    assert "xhigh" not in error.value.message  # the model's text is not shown to the customer
 
 
 def test_deadline_must_sit_below_the_frontend_timeout():

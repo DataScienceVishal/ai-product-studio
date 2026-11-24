@@ -11,7 +11,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from .dbauth import validate_entra_url
 
 MIN_WEBHOOK_SECRET = 32
-REASONING_EFFORTS = ("low", "medium", "high")
+# The one list of accepted values (ai.py imports it). gpt-5.4-pro rejects "low"; other deployments accept it.
+REASONING_EFFORTS = ("low", "medium", "high", "xhigh")
 FRONTEND_TIMEOUT_MARGIN_SECONDS = 2.0
 MAX_TIMEOUT_SECONDS = 600.0  # the frontend also clamps to this (a larger setTimeout overflows and fires at once)
 
@@ -77,7 +78,7 @@ class Settings(BaseSettings):
     # SPA reads it once at startup, so this is the single source. The app refuses to start if ai_deadline_seconds +
     # FRONTEND_TIMEOUT_MARGIN_SECONDS exceeds it, because a call the browser has already abandoned is still billed.
     frontend_timeout_seconds: float = Field(default=30.0, gt=0, le=MAX_TIMEOUT_SECONDS, allow_inf_nan=False)
-    # Optional reasoning effort for the Responses API: low, medium or high; empty means "not sent" (model default).
+    # Optional reasoning effort for the Responses API: low, medium, high or xhigh (gpt-5.4-pro rejects low); empty means "not sent" (model default).
     # Pro models may accept only high (they reject low), so it is unset by default.
     azure_openai_reasoning_effort: str = ""
     ai_retries: int = 1
@@ -111,7 +112,7 @@ class Settings(BaseSettings):
     def _safe_settings(self) -> "Settings":
         effort = self.azure_openai_reasoning_effort.strip().lower()
         if effort and effort not in REASONING_EFFORTS:
-            raise ValueError("AZURE_OPENAI_REASONING_EFFORT must be low, medium or high (or empty to leave it unset)")
+            raise ValueError(f"AZURE_OPENAI_REASONING_EFFORT must be one of {', '.join(REASONING_EFFORTS)} (or empty to leave it unset)")
         self.azure_openai_reasoning_effort = effort
         if self.ai_deadline_seconds + FRONTEND_TIMEOUT_MARGIN_SECONDS > self.frontend_timeout_seconds:
             raise ValueError(f"AI_DEADLINE_SECONDS ({self.ai_deadline_seconds:g}) must be at least "
