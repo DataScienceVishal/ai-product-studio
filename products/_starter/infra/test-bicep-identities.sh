@@ -56,8 +56,8 @@ for spec in "ca:app:migrate" "purge:app:migrate" "migrate:migrate:app"; do
       and (sets($r) | map(select(.identity | contains("id-{0}-'"$db"'"))) | (length == 1) and (.[0].lifecycle == "Main"))' "$main"
 done
 
-check "dbAuth parameter allows password and entra, defaults to password" \
-  '.parameters.dbAuth.defaultValue == "password" and (.parameters.dbAuth.allowedValues | sort) == ["entra","password"]' "$main"
+check "dbAuth parameter allows password and entra, defaults to entra" \
+  '.parameters.dbAuth.defaultValue == "entra" and (.parameters.dbAuth.allowedValues | sort) == ["entra","password"]' "$main"
 # Bicep inlines the env arrays into each resource, so look at the container env expression itself.
 ENV_ca='[$t.resources[] | select(.type == "Microsoft.App/containerApps")][0].properties.template.containers[0].env'
 ENV_purge='[$t.resources[] | select(.type == "Microsoft.App/jobs" and (.name | contains("purge")))][0].properties.template.containers[0].env'

@@ -9,7 +9,7 @@
   (`ManagedIdentityToken`, `AZURE_CLIENT_ID`) and pass it as the password in SQLAlchemy `do_connect`. The URL
   has no password and keeps `sslmode=verify-full`. `DB_AUTH=password` (default) stays for local and CI.
 - Nothing exists in Azure yet (`state/BUDGET.md`: all "planned"), so there is no live data to migrate. The
-  two phases below happen in the first real deploy session.
+  password sign-in is off from the first deploy (decision 2).
 
 ## The picture
 
@@ -92,15 +92,14 @@ credential is the one that remains (decision 5).
   soon" while the ARM API and Bicep reference already have it.
 - **Deploy shared resources only from the workflow.** `deployer()` would make whoever deploys an admin; a
   run from Cloud Shell would add Vishal as an admin with the wrong `principalType`.
-- **Phase 1 (first shared deploy): both methods on.** The admin is a child of the server, so it can only be
-  added after the server exists; keeping `passwordAuth: Enabled` for that first deploy avoids a server nobody
-  can enter if the admin step fails. Only `studioadmin` has a password, and it is now **random per
-  `deploy_shared` run**, made and used only inside that step (decision 4, "Phase 1 password"). An Owner or Contributor can reset
-  it through ARM if ever needed, so nothing is lost by not keeping it. App and migrator roles have no password
-  from the start.
-- **Phase 2 (same session, after the starter's first Entra release passes its smoke tests):**
-  `postgresPasswordAuth=Disabled`, run `deploy_shared` again. Enabling Entra on an existing server restarts
-  it (Microsoft FAQ); on a fresh server that is moot.
+- **Passwords are off from the first deploy (phase 2 is the starting state).** Servers are created with
+  `passwordAuth: Disabled`; there is no interim phase with both methods on. The Entra admin is set through the
+  ARM management plane (the `administrators` child, written by the deploy service principal), which does not
+  need password sign-in, so re-running `deploy_shared` recovers a failed admin step on a server nobody can
+  enter by password. Only `studioadmin` has a password; it is **random per `deploy_shared` run**, made and
+  used only inside that step (decision 4), never kept, and unusable while password sign-in is off. App and
+  migrator roles have no password at all. Enabling Entra on an existing server restarts it (Microsoft FAQ);
+  on a fresh server that is moot.
 - **Phase 2 must stay done.** The phase 2 PR sets `Disabled` both in `shared.bicepparam` and as the module's
   default, and from then on **every release** reads `az postgres flexible-server show --query authConfig` and
   fails unless `passwordAuth == 'Disabled'` and `activeDirectoryAuth == 'Enabled'`. A later default, a
@@ -243,7 +242,7 @@ the `administrators` child with `deployer()`; the role name for the admin (readb
 on the still-empty roles); Container Apps jobs hand out user-assigned tokens with `lifecycle: Main`; the
 app's `/healthz` says `"db":"ok"`; the `pgaadauth_list_principals` column casing (N4); after phase 2,
 re-deploying with `administratorLoginPassword` still set is accepted and `studioadmin` is refused. Also the
-security review's list: `authConfig` shows `passwordAuth: Disabled` and `activeDirectoryAuth: Enabled`; a
+security review's list: the server was created with `passwordAuth: Disabled` (first deploy, not flipped later); `authConfig` shows `passwordAuth: Disabled` and `activeDirectoryAuth: Enabled`; a
 sign-in as `<db>_app` with the migrator identity's token is refused; the administrators list holds only the
 deploy SP; `rolpassword IS NULL` for both roles on Azure.
 

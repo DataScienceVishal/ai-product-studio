@@ -79,9 +79,11 @@ Nothing here costs money until step 4. Do the steps only after approving the cos
 7. **Phase 2 (ADR 0003, decision 2) is in force:** `postgresPasswordAuth` is `Disabled` in `shared.bicepparam`
    and as the default in `shared.bicep` and `modules/postgres.bicep`, and `dbAuth` defaults to `entra`. Every
    release runs `check-auth-config.sh` (before the image is pushed) and stops unless the server shows
-   `activeDirectoryAuth=Enabled` and `passwordAuth=Disabled`. Only the very first `deploy_shared` on an empty
-   resource group is a risk: if the Entra admin step fails there, the server has no way in; re-run it, or
-   deploy once with `postgresPasswordAuth=Enabled` and flip it back straight after.
+   `activeDirectoryAuth=Enabled` and `passwordAuth=Disabled`. The server is created with passwords off from the first
+   `deploy_shared`. If the Entra admin step fails there, nobody can sign in, but the admin is set through the
+   management plane, so fix the cause and re-run `deploy_shared`. Check with
+   `az postgres flexible-server microsoft-entra-admin list --resource-group rg-ai-studio --server-name <server>`:
+   it must list exactly the deploy service principal.
 
 ## Releasing
 
