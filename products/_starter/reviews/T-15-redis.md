@@ -80,3 +80,32 @@ and failures never 500. Two cheap things must change before this goes into the s
 
 **CHANGES**: two small fixes, items 1 and 2 above. Everything else is solid, and the tests are behavioural and
 catch real regressions. Re-review should only need the two diffs and their tests.
+
+## Re-review (head e7bba21, fixes on top of aa3d177)
+
+Tests on e7bba21: backend `python3.13 -m pytest -q -o addopts=""` -> **354 passed, 1 skipped**; frontend `npx vitest run`
+-> **5 files, 111 passed**; `tests/test_ratelimit_redis.py` 18 passed.
+
+1. **Event loop: fixed.** `off_loop` (`app/ratelimit.py`) runs the gate body in `anyio.to_thread` when
+   `limiter.blocking` (Redis is configured), and inline for the in-memory limiter, so the existing async-login slot
+   tests are unchanged. All four async gates use it: signup, login and reset-confirm in `routes/auth.py`, and accept in
+   `routes/team.py`. Every other limiter caller is a sync route, so it already runs in the threadpool.
+   `test_slow_limiter_does_not_block_the_event_loop` is a real guard: I forced `off_loop` to always run inline, and
+   that test failed (1 failed, 17 passed); it passes again once reverted.
+   Cheap rejects still happen before any hash slot. `hash_capacity(_gate=Depends(gate))` (`security.py:65`) resolves
+   the gate before `limiter.acquire()`. The gate is still the same async callable, now awaiting a thread, and an
+   `AppError` raised in the thread comes back through `run_sync`, so a 429 or 422 never takes a slot.
+2. **Prefix: fixed.** `create_app` passes `rl:<app_name>:<env>:`. A test on one shared FakeServer shows product B is
+   not locked out by product A.
+
+Earlier suggestions also addressed: limit settings are `Field(ge=1)` and `hit()` raises `ValueError` for `limit < 1`
+without touching Redis or its backoff; email keys are a sha256 prefix (`email_key`) for login and reset-request; the
+Retry-After test now checks the countdown.
+
+Remaining (non-blocking, follow-up when Redis is actually provisioned): the Redis-backed gates share AnyIO's default
+40-token threadpool with every sync route. With healthy Redis each gate holds a thread for about 1 ms. A burst of
+auth requests against a slow Redis (up to 200 ms per call, and login makes 2 calls) can queue sync routes behind them
+until the 5 s backoff starts. A dedicated `anyio.CapacityLimiter` (for example 8) passed to `run_sync` in `off_loop`
+would cap that. Log it in NEXT.md as a precondition for raising `maxReplicas`.
+
+**Verdict: PASS.**
