@@ -61,7 +61,9 @@ EXCEPTIONS to the one-cell quote rule, each for one row only:
 UNIT WEIGHT ABSENT. If a component gives only grams per square metre (gsm), thickness (micrometres, gauge), or a case, pallet or board weight,
 weight_g is missing; never compute a unit weight from them.
 CATALOGUE. If the title names one item code and the sheet lists many codes or sizes, extract only the row of that item.
-Secondary packaging lines (inner liner, outer box, pallet) are not components unless the sheet gives them a material and describes them as part of the item.
+PACKING NOTES. Lines under a packing, secondary-packaging or palletisation heading that only describe how the supplier ships the item
+(inner liner, outer box, pallet) and have no rows of their own (no material or weight rows) are not components. Anything the sheet lists as a
+component with its own rows (for example "Component: outer case", even if its Material row says n/a) stays a component.
 
 {RAM_NOTE}
 Output JSON shape: {{"components":[{{"name":..,"material":F,"colour":F,"weight_g":F,"features":{{key:F,..}}}},..]}}"""

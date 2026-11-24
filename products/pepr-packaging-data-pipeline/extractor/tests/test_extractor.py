@@ -478,6 +478,8 @@ def test_oracle_through_pipeline_scores_100_percent_on_supplement(tmp_path):
 
 
 def test_cli_supplement_set_fake(tmp_path, capsys):
+    (tmp_path / "o").mkdir()
+    (tmp_path / "o" / "ledger.jsonl").write_text(json.dumps({"sheet_id": "S001", "input_tokens": 1, "output_tokens": 1, "usd": 0.0}) + "\n")
     run.main(["--set", "supplement", "--provider", "fake", "--out", str(tmp_path / "o")])
     assert len(list((tmp_path / "o").glob("S8*.json"))) == 12 and "OVERALL" in capsys.readouterr().out
 
@@ -486,3 +488,23 @@ def test_prompt_has_amendment_4_lines():
     s = prompt.system_prompt()
     for need in ("largest share", "Weight (g) | 25.5", "gsm", "title names one item code"):
         assert need in s
+
+
+def test_supplement_refuses_before_test_set_in_ledger(tmp_path, capsys):
+    assert run.main(["--set", "supplement", "--provider", "fake", "--out", str(tmp_path / "o")]) == 6
+    assert "after the test set" in capsys.readouterr().err
+    assert not list((tmp_path / "o").glob("S8*.json"))
+    (tmp_path / "o2").mkdir()  # a tuning-only ledger is not enough either
+    (tmp_path / "o2" / "ledger.jsonl").write_text(json.dumps({"sheet_id": "S901", "input_tokens": 1, "output_tokens": 1, "usd": 0.0}) + "\n")
+    assert run.main(["--set", "supplement", "--provider", "fake", "--out", str(tmp_path / "o2")]) == 6
+
+
+def test_prompt_does_not_exclude_listed_outer_case_components():
+    s = prompt.system_prompt()
+    assert "unless the sheet gives them a material" not in s
+    assert 'Component: outer case", even if its Material row says n/a) stays a component' in s
+    # S019-style wording really is on a test sheet and has Material n/a
+    text = " ".join(p["text"] for p in pdfio.read_pages(SHEETS / "S019.pdf")).lower()
+    assert "outer case" in text and "n/a" in text
+    comp = json.loads((DATA / "truth" / "S019.json").read_text())["components"]
+    assert any(c["name"] == "outer carton" and c["material"]["status"] == "missing" for c in comp)

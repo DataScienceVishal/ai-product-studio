@@ -82,7 +82,7 @@ Pass mark 4b (Studio Lead decision, 2026-11-24, before any run) is the kill test
 
 12 extra sheets S801-S812 (seed 20261126) that add the wording and layout problems found in `REALISM.md`: weight forms ("37.00gm +/- 2.00gm", oz with tolerance, a bare number under "Weight (g)"), blends and recycled-content wording, "Finish: Clear", an out-of-vocabulary colour code, only gsm / micrometre / case weights (truth `missing`), a catalogue sheet with a target item, "various closure options" and secondary-packaging lines, a two-block layout, a unit-in-header table, a French page and an AES-encrypted PDF.
 Generate: `python3 supplement.py` (writes `supplement/`, byte-for-byte reproducible). Score: `python3 score.py --set supplement --pred DIR`; run: `python3 -m extractor.run --set supplement ...`.
-It is reported separately with the same pass marks (no messy-10 mark) and does not decide the kill test. Decisions D1-D4: `KILL_TEST_AMENDMENT_4.md`. Truth gains the optional field `target_item`.
+Run it only after the test-set run (the CLI refuses otherwise: it shares the USD 12 ledger and must not eat the test preflight budget). It is reported separately with the same pass marks (no messy-10 mark) and does not decide the kill test. Decisions D1-D4: `KILL_TEST_AMENDMENT_4.md`. Truth gains the optional field `target_item`.
 
 ## Regenerate and test
 

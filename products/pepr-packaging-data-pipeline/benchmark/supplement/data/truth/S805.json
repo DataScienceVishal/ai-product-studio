@@ -2,7 +2,17 @@
   "components": [
     {
       "colour": {
-        "status": "missing"
+        "accepted_values": [
+          "WhiteSolid"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "WhiteSolid"
+          }
+        ],
+        "status": "present",
+        "value": "white"
       },
       "features": {
         "ink_coating": {

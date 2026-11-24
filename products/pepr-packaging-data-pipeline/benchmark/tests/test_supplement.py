@@ -55,7 +55,7 @@ def test_every_truth_quote_passes_quote_ok_on_its_page():
             fields = [(k, c[k]) for k in ("material", "colour", "weight_g")] + list(c["features"].items())
             for k, fl in fields:
                 for r in fl.get("refs", []):
-                    assert tx.quote_ok(k, fl["value"], r["quote"], pages[r["page"] - 1]), (t["sheet_id"], k, r)
+                    assert tx.quote_ok(k, fl["value"], r["quote"], pages[r["page"] - 1], fl.get("accepted_values", [])), (t["sheet_id"], k, r)
 
 
 def test_realism_items_1_to_5_covered_and_target_item():
@@ -96,7 +96,16 @@ def test_d3_areal_and_case_weights_truth_missing_and_fabrication_counted():
     ("rPET 30% + PET", "rPET", False),  # one share missing
     ("rPET (PCR 100%)", "rPET", True),  # single material with recycled content is not a blend
     ("PET 100%", "PET", True),
-    ("PET 70% + PETG 30%", "PET", True),
+    ("PET 70% + PETG 30%", "PET", False),  # PET/rPET family only
+    ("70% rPET - 30% PET", "rPET", True),  # share-before-name with a separator
+    ("70% rPET - 30% PET", "PET", False),
+    ("30% rPET 70% PET", "PET", True),
+    ("PET 100% | PP 100%", "PET", False),  # joined cells
+    ("PET 70% + rPET 30% + HDPE 100%", "HDPE", False),  # three materials
+    ("PET 70% + rPET 30% + HDPE 100%", "PET", False),
+    ("PET 70% + rPET 20%", "PET", False),  # shares do not sum to 100
+    ("rPET 30% + 70% PET", "PET", False),  # mixed reading directions
+    ("PET 70% + rPET 30.5%", "PET", True),  # +-1 rounding
     ("HDPE 50% + PP 50%", "PP", False),  # tie without PET: no unique winner
 ])
 def test_quote_ok_blends(quote, value, ok):
@@ -118,6 +127,14 @@ def test_blend_rule_does_not_apply_to_other_keys():
     ("Weight (oz) 1.5", 42.52, True),
     ("Weight 25.5", 25.5, False),  # no unit anywhere
     ("Weight (mm) 25.5", 25.5, False),
+    ("Weight (g) 25.5 mm", 25.5, False),
+    ("Weight (g) 25.5 ml", 25.5, False),
+    ("Weight (g) 25.5 x 30", 25.5, False),
+    ("Weight (g) 25.5 gsm", 25.5, False),
+    ("Gauge (g) 25", 25.0, False),
+    ("Height (mm) 120 Weight (g) 25.5", 25.5, False),
+    ("Weight (g) 25.5 \u00b1 0.5", 25.5, True),
+    ("Weight (g) 25.5 +/- 0.5 g", 25.5, True),
     ("Weight (g) 25.5", 30.0, False),  # wrong value
     ("Weight (kg) 25.5", 25.5, False),  # unit converted, so not 25.5 g
     ("25.5", 25.5, False),
@@ -137,3 +154,21 @@ def test_score_supplement_set_loads_with_empty_predictions(tmp_path):
     assert len(truths) == 12 and messy == set() and all(len(v) >= 1 for v in texts.values())
     r = score.score_set(truths, preds, texts, messy, None, require_cost=False)
     assert r["overall"]["field_accuracy"] < 0.1
+
+
+def test_s805_whitesolid_alias_only_via_truth_accepted_values():
+    t = json.loads((SUPP / "data" / "truth" / "S805.json").read_text())
+    col = t["components"][0]["colour"]
+    assert col["value"] == "white" and col["accepted_values"] == ["WhiteSolid"]
+    assert "WhiteSolid" not in json.dumps(tx.COLOUR_VOCAB)  # not added to the vocabulary
+    assert not tx.quote_ok("colour", "white", "WhiteSolid")
+    assert tx.quote_ok("colour", "white", "WhiteSolid", extra_words=["WhiteSolid"])
+    pages = ["WhiteSolid"]
+    mk = lambda q: {"components": [{"name": "cap", "material": {"status": "missing"}, "weight_g": {"status": "missing"},
+                                    "colour": {"status": "present", "value": "white", "refs": [{"page": 1, "quote": q}]},
+                                    "features": {}}]}
+    assert score.score_sheet(t, mk("WhiteSolid"), pages)["untraced"] == 0
+    black = mk("WhiteSolid")
+    black["components"][0]["colour"]["value"] = "black"
+    assert score.score_sheet(t, black, pages)["untraced"] == 1  # the alias does not trace another value
+    assert score.score_sheet(t, mk("Colour WhiteSolid W1229"), pages)["untraced"] == 1  # not on the page

@@ -26,8 +26,11 @@ RAM = {"PET": "plastic", "rPET": "plastic", "PETG": "plastic", "HDPE": "plastic"
        "paper": "paper_board", "corrugated board": "paper_board", "kraft paper": "paper_board"}
 
 
-def pres(value, quote, page=1):
-    return {"status": "present", "value": value, "refs": [{"page": page, "quote": quote}]}
+def pres(value, quote, page=1, accepted=None):
+    f = {"status": "present", "value": value, "refs": [{"page": page, "quote": quote}]}
+    if accepted:
+        f["accepted_values"] = accepted
+    return f
 
 
 MISS = {"status": "missing"}
@@ -157,7 +160,7 @@ def s804(rng):  # item 4: recycled content in the cell, "Finish: Clear", marketi
     return s, comps, dict(items=[4], template="table")
 
 
-def s805(rng):  # item 4: colour code only ("WhiteSolid W1229" is not in the closed vocabulary -> missing)
+def s805(rng):  # item 4: colour wording "WhiteSolid" (truth white; the wording is a scorer-only accepted_values alias)
     s = Sheet(rng)
     d = s.doc
     s.text("Screw cap 38 mm, tamper evident", "title")
@@ -169,7 +172,7 @@ def s805(rng):  # item 4: colour code only ("WhiteSolid W1229" is not in the clo
     pw = s.kv("Weight", f"{w} g")
     s.kv("Liner", "TBC")
     s.text("Resin identification: SPI code 5 (PP). 100% recyclable.")
-    comps = [comp("cap", pres("PP", "PP", pm), MISS, pres(w, f"{w} g", pw))]
+    comps = [comp("cap", pres("PP", "PP", pm), pres("white", "WhiteSolid", 1, ["WhiteSolid"]), pres(w, f"{w} g", pw))]
     return s, comps, dict(items=[4], template="table")
 
 
@@ -186,7 +189,8 @@ def s806(rng):  # item 3: catalogue, one target item
              ("PB-250-28", "250 ml", "28/410", "PET", "Amber"), ("PB-500-28", "500 ml", "28/410", "PET", "Clear"),
              ("PB-500-38", "500 ml", "38/400", "PET", "Green"), ("HB-250-24", "250 ml", "24/410", "HDPE", "White"),
              ("HB-500-28", "500 ml", "28/410", "HDPE", "Natural"), ("HB-1000-38", "1000 ml", "38/400", "HDPE", "White")]
-    weights = [round(rng.uniform(14, 90), 1) for _ in codes]
+    weights = [round((10 + 0.1 * int(v.split()[0]) if m == "PET" else 12 + 0.07 * int(v.split()[0])) + rng.uniform(-1.5, 1.5), 1)
+               for _, v, _, m, _ in codes]
     target = 1
     page = d.page
     for (c, v, n, m, col), w in zip(codes, weights):

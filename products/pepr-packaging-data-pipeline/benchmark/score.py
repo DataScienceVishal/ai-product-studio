@@ -87,7 +87,7 @@ def _slot_key(slot):
     return slot[9:] if slot.startswith("features.") else slot
 
 
-def _traced(slot, field, page_texts):
+def _traced(slot, field, page_texts, tfield=None):
     """True if a non-missing predicted field is fully traced. ram_category needs none."""
     key = _slot_key(slot)
     st = _pred_status(field)
@@ -101,13 +101,24 @@ def _traced(slot, field, page_texts):
         if not (isinstance(r, dict) and isinstance(r.get("page"), int) and 1 <= r["page"] <= len(page_texts)
                 and isinstance(r.get("quote"), str)):
             return False
+    extra = _extra_words(key, tfield)
+    truth_val = _canon(key, tfield.get("value")) if extra else None
     for v in values:  # each value needs a ref whose quote names it, and every ref must check out for some value
-        if not any(tx.quote_ok(key, _canon(key, v), r["quote"], page_texts[r["page"] - 1]) for r in refs):
+        if not any(tx.quote_ok(key, _canon(key, v), r["quote"], page_texts[r["page"] - 1], extra if _canon(key, v) == truth_val else ()) for r in refs):
             return False
     for r in refs:
-        if not any(tx.quote_ok(key, _canon(key, v), r["quote"], page_texts[r["page"] - 1]) for v in values):
+        if not any(tx.quote_ok(key, _canon(key, v), r["quote"], page_texts[r["page"] - 1], extra if _canon(key, v) == truth_val else ()) for v in values):
             return False
     return True
+
+
+def _extra_words(key, tfield):
+    """Truth accepted_values that are not listed vocabulary wordings (scorer-only aliases such as "WhiteSolid", Amendment 4).
+    Vocabulary wordings are already honoured by quote_ok, so existing truth adds nothing here."""
+    if not isinstance(tfield, dict) or key not in ("material", "colour") and key not in tx.VOCAB:
+        return ()
+    known = {tx.norm_text(w) for ws in tx.key_vocab(key).values() for w in ws}
+    return tuple(w for w in tfield.get("accepted_values", []) if tx.norm_text(w) not in known)
 
 
 def _canon(key, v):
@@ -162,16 +173,18 @@ def score_sheet(truth, pred, page_texts):
                 c["conflict_ok"] += ok
             c["correct"] += ok
     # every non-missing predicted value, matched or not, must be traced
-    for comp in pcomps:
+    matched = {j: i for i, j in pairs.items()}
+    for j, comp in enumerate(pcomps):
         if not isinstance(comp, dict):
             continue
+        tcomp = tcomps[matched[j]] if j in matched else None
         feats = comp.get("features") if isinstance(comp.get("features"), dict) else {}
         for slot in ["material", "colour", "weight_g"] + [f"features.{k}" for k in feats]:
             f = _get(comp, slot)
             if _pred_status(f) in ("present", "conflict"):
                 c["traced_values"] += 1
                 if _slot_key(slot) not in tx.VOCAB and slot not in ("material", "colour", "weight_g") \
-                        or not _traced(slot, f, page_texts):
+                        or not _traced(slot, f, page_texts, _get(tcomp, slot) if tcomp else None):
                     c["untraced"] += 1
     for j in extra:  # unmatched extracted component: one wrong field per slot it would have
         comp = pcomps[j] if isinstance(pcomps[j], dict) else {}

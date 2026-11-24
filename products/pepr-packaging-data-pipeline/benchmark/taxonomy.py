@@ -190,37 +190,39 @@ _PCT_BEFORE = re.compile(r"(\d+(?:\.\d+)?)\s*%\s*(?:of\s+)?$")
 
 
 def blend_winner(text):
-    """Canonical material with the largest stated share in a blend quote (already norm_quote'd), tie -> "PET".
-    None unless the quote names several materials and every one carries a percentage, or if the tie excludes PET."""
+    """Amendment 4 D1 (as tightened after review). Canonical material with the largest stated share in a PET/rPET blend
+    quote (already norm_quote'd), tie -> "PET". None unless the quote names exactly PET and rPET, each with a share, all
+    shares read in ONE direction (share before every name, or after every name), and the shares sum to 100 +-1."""
     hits = sorted(_hits("material", text))
-    if len(hits) < 2:
+    if len(hits) != 2 or {h[2] for h in hits} != {"PET", "rPET"}:
         return None
+    before = bool(_PCT_BEFORE.search(text[:hits[0][0]]))  # share-before-name if the first name follows a share
     shares = {}
     for s, e, canon in hits:
-        m = _PCT_AFTER.match(text[e:]) or _PCT_BEFORE.search(text[:s])
+        m = _PCT_BEFORE.search(text[:s]) if before else _PCT_AFTER.match(text[e:])
         if not m:
             return None
-        shares[canon] = shares.get(canon, 0.0) + float(m.group(1))
-    if len(shares) < 2:
+        shares[canon] = float(m.group(1))
+    if abs(sum(shares.values()) - 100) > 1:
         return None
-    top = max(shares.values())
-    leaders = [c for c, v in shares.items() if v == top]
-    if len(leaders) == 1:
-        return leaders[0]
-    return "PET" if "PET" in leaders else None
+    if shares["PET"] == shares["rPET"]:
+        return "PET"
+    return max(shares, key=shares.get)
 
 
 # Amendment 4, D2: the weight unit may sit only in the row label, "Weight (g) | 25.5".
-_LABEL_UNIT = re.compile(r"\((g|gm|gms|grams|kg|oz)\)\s*(\d+(?:\.\d+)?)(?![\da-z%.])")
+_NUM = r"\d+(?:\.\d+)?"
+_LABEL_UNIT = re.compile(r"(?=[a-z .]*(?:weight|wt|mass))[a-z .]*\((g|gm|gms|grams|kg|oz)\)\s*(" + _NUM + r")"
+                         r"(?:\s*(?:\u00b1|\+/-)\s*" + _NUM + r"(?:\s*(?:g|gm|gms|grams|kg|oz))?)?")
 
 
 def label_unit_weight(text):
     """Grams from a label unit in parentheses followed by a bare number, or None."""
-    m = _LABEL_UNIT.search(text)
+    m = _LABEL_UNIT.fullmatch(text.strip())
     return float(m.group(2)) * _FACTOR[m.group(1)] if m else None
 
 
-def quote_ok(key, value, quote, page_text=None):
+def quote_ok(key, value, quote, page_text=None, extra_words=()):
     """True if the quote supports the value. Rule: after norm_quote, the quote appears in the page text (when
     given) AND names exactly the value (canonical or one of its listed wordings, longest match, no other
     canonical value of the same key; a blend quote with a share for every material names its largest, tie PET, Amendment 4 D1).
@@ -232,11 +234,14 @@ def quote_ok(key, value, quote, page_text=None):
     if page_text is not None and q not in norm_quote(page_text):
         return False
     if key == "weight_g":
-        g = parse_weight(q)
+        g = label_unit_weight(q)  # strict full match, so it goes first ("Weight (g) 25.5 +/- 0.5 g" is 25.5, not 0.5)
         if g is None:
-            g = label_unit_weight(q)
+            g = parse_weight(q)
         return g is not None and weight_within(g, value)
     terms = _terms_in(key, q)
+    for w in extra_words:  # truth-file accepted_values that are not vocabulary wordings (Amendment 4, S805 "WhiteSolid")
+        if re.search(r"(?<![a-z0-9])" + re.escape(norm_text(w)) + r"(?![a-z0-9])", q):
+            terms.add(value)
     if key == "material" and len(terms) > 1:
         return blend_winner(q) == value
     return terms == {value}
