@@ -72,3 +72,25 @@ Yes, for capability on realistic-looking messy layouts, once items 1 and 2 are s
 - find conflicts on later pages and in footnotes.
 
 The limit is that it is still one generator with fixed sentence frames. That is why the public-PDF realism report (amendment item 7) must be in the slice 4 write-up, and the validator should weigh it.
+
+## Re-review 2 (HEAD be21b58, 2026-11-24)
+
+### Verdict: PASS
+
+Must-fix items 1 and 2 are fixed, and suggestions 6, 7 and 9 are done. Amendment 2 is on main (commit 3707052, "Amendment 2, 2026-11-24 (before any model call, including tuning)"). It is dated before any model call and leaves the pass marks unchanged. Q-11 now asks Vishal about the USD 12 spend (item 10). Items 3, 4, 5 and 8 stay open for slice 3, as expected.
+
+### Evidence
+
+- `/usr/bin/python3 -m pytest -q` in `benchmark/`: **24 passed in 4.01s**. This includes byte-equal regeneration and committed data matching a fresh run.
+- **Item 1 (closed vocabularies).** `MATERIAL_VOCAB` and `COLOUR_VOCAB` in `taxonomy.py` cover every display string the generator uses (`test_generator_displays_are_listed_variants`). Each wording maps to exactly one canonical value per key. `canonical()` is exact-match only. Truth `accepted_values` now list every wording except the canonical one (tested). The 18 slots I flagged (BOPP, jet black, soda-lime glass and so on) are now listed wordings. Containment is gone: `quote_ok("material","PET","PETG")` and `quote_ok("colour","black","CB black")` are both False, by test.
+- **Item 2 (quote rule).** `quote_ok()` applies `norm_quote` (with `|` treated as whitespace) to both the quote and the page. It accepts whole-row and whole-sentence quotes, uses longest-match term detection so "PET" inside "PETG" or "PE/PET" doesn't count, and checks weights by parsing the unit. `test_quote_ok_whole_row_quotes_text_and_scanned` runs it on whole table rows from both pypdf text and scanned `page_text` (more than 60 text rows and more than 10 scanned rows). Page text for each sheet type is now named in README rule (c).
+- **Items 6, 7 and 9.** `ram_category` is scored only when material is present (tested): 457 slots, 128 of them missing. Label coverage is stated as not modelled. A false conflict scores 0. The README, `KILL_TEST_AMENDMENT_2.md` and the text on main agree.
+
+### Minor, not blocking (note in the slice 3 extractor prompt)
+
+- `parse_weight` reads the first number and unit in a quote. A quote that copies a whole two-column line ("Weight: 20.5 g (1)   Mass: 4.3 g") is checked against the left cell's weight, so `quote_ok(..., 4.3, ...)` is False. The prompt should ask for single-cell or single-sentence quotes.
+- The material wording "kraft" also occurs inside the colour wording "kraft brown". A whole-row quote such as "corrugated board, kraft brown" would therefore name two materials and fail. This doesn't occur in the current 35 sheets (checked), so it can't affect this run.
+
+### Still open for slice 3
+
+Item 3 (keep the extractor away from the manifest and truth, with a test), item 4 (two-column sheets read with layout-mode text or page images), item 5 (pre-call budget guard, `max_output_tokens`, explicit reasoning effort, per-sheet cost check on tuning), and item 8 (tuning examples for "none stated" against "X: none"). No model call until Vishal answers Q-11.
