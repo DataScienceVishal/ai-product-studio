@@ -135,8 +135,9 @@ class ManagedIdentityToken:
 
     def __init__(self, client_id: str = "", endpoint: str | None = None, header: str | None = None,
                  client: httpx.Client | None = None, timeout: float = 5.0, refresh_margin: float = 300.0,
-                 now=time.time, monotonic=time.monotonic):
+                 now=time.time, monotonic=time.monotonic, resource: str | None = None):
         self.client_id = client_id
+        self.resource = resource or self.RESOURCE  # the audience; one instance (and cache) per audience
         self._endpoint = endpoint if endpoint is not None else os.environ.get("IDENTITY_ENDPOINT", "")
         self._header = header if header is not None else os.environ.get("IDENTITY_HEADER", "")
         self._client = client or httpx.Client(timeout=timeout)
@@ -192,7 +193,7 @@ class ManagedIdentityToken:
         if not self._endpoint or not self._header:
             log.error("managed identity endpoint is not available")
             raise AIUnavailable("The AI service isn't configured correctly. The team has been notified.")
-        params = {"resource": self.RESOURCE, "api-version": self.API_VERSION}
+        params = {"resource": self.resource, "api-version": self.API_VERSION}
         if self.client_id:
             params["client_id"] = self.client_id
         try:

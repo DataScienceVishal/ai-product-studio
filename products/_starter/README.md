@@ -146,3 +146,24 @@ tokens x price x 30 passes $6.10. Raising the budget needs Vishal's approval.
 `AZURE_OPENAI_AUTH=key` (default) sends the `api-key` header. `managed_identity` sends a bearer token from the
 Container Apps identity endpoint instead (optional `AZURE_CLIENT_ID` for a user-assigned identity). The role
 assignment is a manual step, see `ADR/0002-azure-deploy.md` decision 7.
+
+## Entra ID database sign-in
+
+`DB_AUTH=password` (default) uses the password in `DATABASE_URL`. `DB_AUTH=entra` signs in to Postgres with the app's
+managed identity instead, with no password anywhere:
+
+- `DATABASE_URL=postgresql+psycopg://<entra-role-name>@<host>:5432/<db>?sslmode=verify-full`: host, database and the
+  Entra role as user (for example the identity's name). The deploy adds `sslrootcert` (the CA bundle path) if the image
+  does not trust Azure's roots by default. A `password` or `passfile` in the query is refused too. The app refuses to start if the URL has a password or `sslmode`
+  is not `verify-full` (ADR 0002). `AZURE_CLIENT_ID` picks a user-assigned identity.
+- On every new pooled connection the app fetches a token for `https://ossrdbms-aad.database.windows.net` from the
+  Container Apps identity endpoint and passes it as the password (`app/dbauth.py`). Tokens are cached until 2 minutes
+  before expiry, so a burst of connections shares one fetch. Connections are recycled after 45 minutes; Postgres checks
+  the token only when connecting, so an open connection outlives its token.
+- The Alembic migration job and `python -m app.maintenance purge` use the same setting and the same sign-in.
+- If the token cannot be fetched the connection fails and an error is logged (class only, never the token or header).
+
+The deploy must create the Entra role in the server's default `postgres` database with
+`SELECT * FROM pgaadauth_create_principal('<identity name>', false, false);` and grant it rights on the app database.
+Infra for this is designed in ADR 0003. Tests cannot reach a real Entra server, so they assert on the connection
+parameters (`backend/tests/test_db_entra.py`).

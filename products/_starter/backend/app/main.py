@@ -174,7 +174,8 @@ def create_app(settings: Settings | None = None, *, ai: AIProvider | None = None
                   redoc_url=None, openapi_url=None if settings.env == "prod" else "/api/openapi.json")
     app.state.settings = settings
     app.state.db = Database(settings.database_url, settings.db_statement_timeout_ms,
-                            settings.db_idle_in_transaction_timeout_ms, settings.db_pool_size, settings.db_max_overflow)
+                            settings.db_idle_in_transaction_timeout_ms, settings.db_pool_size, settings.db_max_overflow,
+                            db_auth=settings.db_auth, client_id=settings.azure_client_id)
     app.state.limiter = RateLimiter(redis_client=build_redis_client(settings.rate_limit_redis_url) if settings.rate_limit_redis_url else None,
                                     redis_prefix=f"rl:{settings.app_name}:{settings.env}:",
                                     redis_threads=settings.rate_limit_redis_threads,

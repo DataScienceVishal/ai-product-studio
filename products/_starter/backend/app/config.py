@@ -8,6 +8,8 @@ from urllib.parse import urlparse
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from .dbauth import validate_entra_url
+
 MIN_WEBHOOK_SECRET = 32
 
 
@@ -17,6 +19,9 @@ class Settings(BaseSettings):
     env: Literal["dev", "test", "prod"] = "dev"
     app_name: str = "starter"
     database_url: str = "postgresql+psycopg://studio:studio@localhost:5432/starter_dev"
+    # password: the URL carries the password. entra: no password in the URL, a managed-identity token is the password
+    # (app/dbauth.py, README "Entra ID database sign-in"). AZURE_CLIENT_ID below picks a user-assigned identity.
+    db_auth: Literal["password", "entra"] = "password"
     db_statement_timeout_ms: int = 10_000
     db_idle_in_transaction_timeout_ms: int = 15_000  # backstop: no request may sit in a transaction for long
     db_pool_size: int = 5
@@ -99,6 +104,8 @@ class Settings(BaseSettings):
             raise ValueError("BILLING_WEBHOOK_SECRET must be the Stripe endpoint secret (whsec_...) with BILLING_PROVIDER=stripe")
         if not self.require_email_verification and self.email_provider != "outbox":
             raise ValueError("REQUIRE_EMAIL_VERIFICATION can only be false while no real email is sent")
+        if self.db_auth == "entra":
+            validate_entra_url(self.database_url)  # a ValueError subclass; never echoes the URL
         if "*" in self.cors_origins:
             raise ValueError("CORS_ORIGINS can't contain '*': with credentials, that would let any site call the API")
         if self.env == "prod":
