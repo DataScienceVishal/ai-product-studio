@@ -79,7 +79,7 @@ class Settings(BaseSettings):
     # FRONTEND_TIMEOUT_MARGIN_SECONDS exceeds it, because a call the browser has already abandoned is still billed.
     frontend_timeout_seconds: float = Field(default=30.0, gt=0, le=MAX_TIMEOUT_SECONDS, allow_inf_nan=False)
     # Optional reasoning effort for the Responses API: low, medium, high or xhigh (gpt-5.4-pro rejects low); empty means "not sent" (model default).
-    # Pro models may accept only high (they reject low), so it is unset by default.
+    # It is unset by default so each deployment uses its own default; medium is the cheapest value gpt-5.4-pro accepts.
     azure_openai_reasoning_effort: str = ""
     ai_retries: int = 1
     # Responses-API reasoning tokens share max_output_tokens with the answer; this many are added to each call's
