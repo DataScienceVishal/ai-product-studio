@@ -1,0 +1,245 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "blue"
+     }
+    ],
+    "status": "present",
+    "value": "blue"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "barrier: EVOH core layer"
+      }
+     ],
+     "status": "present",
+     "value": "EVOH barrier layer"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "permanent paper label"
+      }
+     ],
+     "status": "present",
+     "value": "paper label, permanent"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "r-PET"
+     }
+    ],
+    "status": "present",
+    "value": "rPET"
+   },
+   "name": "tray",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "0.0176 kg"
+     }
+    ],
+    "status": "present",
+    "value": 17.6
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "barrier layer: none"
+      }
+     ],
+     "status": "present",
+     "value": "no barrier layer"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "UV ink print"
+      }
+     ],
+     "status": "present",
+     "value": "UV-cured ink"
+    },
+    "label": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "aluminum"
+     }
+    ],
+    "status": "present",
+    "value": "aluminium"
+   },
+   "name": "can",
+   "ram_category": "aluminium",
+   "weight_g": {
+    "conflict_values": [
+     16.2,
+     19.7
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "16.2 g"
+     },
+     {
+      "page": 2,
+      "quote": "Packing note: tin can net weight 19.7 g per unit."
+     }
+    ],
+    "status": "conflict"
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "natural"
+     }
+    ],
+    "status": "present",
+    "value": "natural"
+   },
+   "features": {
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "ultraviolet-cured print"
+      }
+     ],
+     "status": "present",
+     "value": "UV-cured ink"
+    },
+    "liner": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PE-HD"
+     }
+    ],
+    "status": "present",
+    "value": "HDPE"
+   },
+   "name": "cap",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "0.0077 kg"
+     }
+    ],
+    "status": "present",
+    "value": 7.7
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "adhesive": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "self-adhesive coating"
+      }
+     ],
+     "status": "present",
+     "value": "pressure-sensitive adhesive"
+    },
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "UV ink print"
+      }
+     ],
+     "status": "present",
+     "value": "UV-cured ink"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "corr. board"
+     }
+    ],
+    "status": "present",
+    "value": "corrugated board"
+   },
+   "name": "outer carton",
+   "ram_category": "paper_board",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "92.9 g"
+     }
+    ],
+    "status": "present",
+    "value": 92.9
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 783,
+   "input": "layout_text",
+   "page": 1
+  },
+  {
+   "chars": 189,
+   "input": "layout_text",
+   "page": 2
+  }
+ ],
+ "sheet_id": "S017",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2244,
+  "model": "gpt-5-mini",
+  "output_tokens": 4081,
+  "price_model": "gpt-5-mini",
+  "usd": 0.008723
+ },
+ "warnings": []
+}

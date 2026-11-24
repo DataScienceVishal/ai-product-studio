@@ -1,0 +1,172 @@
+{
+ "components": [
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "barrier layer: none"
+      }
+     ],
+     "status": "present",
+     "value": "no barrier layer"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "ultraviolet-cured print"
+      }
+     ],
+     "status": "present",
+     "value": "UV-cured ink"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "paper label (permanent glue)"
+      }
+     ],
+     "status": "present",
+     "value": "paper label, permanent"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "rPET, n/a"
+     }
+    ],
+    "status": "present",
+    "value": "rPET"
+   },
+   "name": "tray",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "9.5 g"
+     }
+    ],
+    "status": "present",
+    "value": 9.5
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "ink_coating": {
+     "status": "missing"
+    },
+    "liner": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "unlined"
+      }
+     ],
+     "status": "present",
+     "value": "no liner"
+    }
+   },
+   "material": {
+    "status": "missing"
+   },
+   "name": "cap",
+   "ram_category": "missing",
+   "weight_g": {
+    "conflict_values": [
+     4.989512,
+     7.7
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "0.176 oz"
+     },
+     {
+      "page": 2,
+      "quote": "Packing note: closure cap net weight 7.7 g per unit."
+     }
+    ],
+    "status": "conflict"
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "aqueous varnish"
+      }
+     ],
+     "status": "present",
+     "value": "water-based varnish"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "paper label (washes off)"
+      }
+     ],
+     "status": "present",
+     "value": "paper label, wash-off"
+    }
+   },
+   "material": {
+    "status": "missing"
+   },
+   "name": "can",
+   "ram_category": "missing",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "33.6 g"
+     }
+    ],
+    "status": "present",
+    "value": 33.6
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 743,
+   "input": "layout_text",
+   "page": 1
+  },
+  {
+   "chars": 187,
+   "input": "layout_text",
+   "page": 2
+  }
+ ],
+ "sheet_id": "S020",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2268,
+  "model": "gpt-5-mini",
+  "output_tokens": 3949,
+  "price_model": "gpt-5-mini",
+  "usd": 0.008465
+ },
+ "warnings": []
+}

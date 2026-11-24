@@ -1,0 +1,196 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PET-G, wht"
+     }
+    ],
+    "status": "present",
+    "value": "white"
+   },
+   "features": {
+    "adhesive": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "plain, no print or coating"
+      }
+     ],
+     "status": "present",
+     "value": "no ink or coating"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PET-G, wht"
+     }
+    ],
+    "status": "present",
+    "value": "PETG"
+   },
+   "name": "sleeve",
+   "ram_category": "plastic",
+   "weight_g": {
+    "status": "missing"
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "barrier layer: none"
+      }
+     ],
+     "status": "present",
+     "value": "no barrier layer"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "tinplate steel, to be confirmed"
+     }
+    ],
+    "status": "present",
+    "value": "steel"
+   },
+   "name": "can",
+   "ram_category": "steel",
+   "weight_g": {
+    "conflict_values": [
+     23.189891,
+     26.9036755
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "0.818 oz (1)"
+     },
+     {
+      "page": 1,
+      "quote": "(1) tin can: unit weight on retest 0.949 oz."
+     }
+    ],
+    "status": "conflict"
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PET, CB black"
+     }
+    ],
+    "status": "present",
+    "value": "black (carbon black)"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "alu-foil barrier"
+      }
+     ],
+     "status": "present",
+     "value": "aluminium foil barrier"
+    },
+    "closure": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "paper label, caustic wash-off"
+      }
+     ],
+     "status": "present",
+     "value": "paper label, wash-off"
+    },
+    "sleeve": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "PETG heat-shrink sleeve"
+      }
+     ],
+     "status": "present",
+     "value": "PETG shrink sleeve"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PET, CB black"
+     }
+    ],
+    "status": "present",
+    "value": "PET"
+   },
+   "name": "bottle",
+   "ram_category": "plastic",
+   "weight_g": {
+    "conflict_values": [
+     54.3,
+     57.9
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "54.3 g (2)"
+     },
+     {
+      "page": 1,
+      "quote": "(2) bottle body: unit weight on retest 57.9 g."
+     }
+    ],
+    "status": "conflict"
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 944,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S029",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2296,
+  "model": "gpt-5-mini",
+  "output_tokens": 5373,
+  "price_model": "gpt-5-mini",
+  "usd": 0.01132
+ },
+ "warnings": [
+  "sleeve.adhesive: quote not found on the page text, dropped"
+ ]
+}

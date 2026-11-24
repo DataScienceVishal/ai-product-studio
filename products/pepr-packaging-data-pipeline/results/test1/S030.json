@@ -1,0 +1,167 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "natural"
+     }
+    ],
+    "status": "present",
+    "value": "natural"
+   },
+   "features": {
+    "ink_coating": {
+     "status": "missing"
+    },
+    "liner": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PP"
+     }
+    ],
+    "status": "present",
+    "value": "PP"
+   },
+   "name": "cap",
+   "ram_category": "plastic",
+   "weight_g": {
+    "conflict_values": [
+     8.107957,
+     9.808927
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "0.286 oz (1)"
+     },
+     {
+      "page": 1,
+      "quote": "(1) cap: unit weight on retest 0.346 oz."
+     }
+    ],
+    "status": "conflict"
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "undecorated, uncoated"
+      }
+     ],
+     "status": "present",
+     "value": "no ink or coating"
+    },
+    "label": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "status": "missing"
+   },
+   "name": "pouch",
+   "ram_category": "missing",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "11200 mg"
+     }
+    ],
+    "status": "present",
+    "value": 11.2
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "nat."
+     }
+    ],
+    "status": "present",
+    "value": "natural"
+   },
+   "features": {
+    "adhesive": {
+     "status": "missing"
+    },
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "monolayer, no barrier"
+      }
+     ],
+     "status": "present",
+     "value": "no barrier layer"
+    },
+    "ink_coating": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "corr. board"
+     }
+    ],
+    "status": "present",
+    "value": "corrugated board"
+   },
+   "name": "outer carton",
+   "ram_category": "paper_board",
+   "weight_g": {
+    "conflict_values": [
+     159.9,
+     166.69506
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "159.9 g (2)"
+     },
+     {
+      "page": 1,
+      "quote": "(2) outer carton: unit weight on retest 5.880 oz."
+     }
+    ],
+    "status": "conflict"
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 725,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S030",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2175,
+  "model": "gpt-5-mini",
+  "output_tokens": 4283,
+  "price_model": "gpt-5-mini",
+  "usd": 0.00911
+ },
+ "warnings": []
+}

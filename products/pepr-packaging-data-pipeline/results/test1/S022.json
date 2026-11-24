@@ -1,0 +1,165 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "blu"
+     }
+    ],
+    "status": "present",
+    "value": "blue"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "aqueous varnish"
+      }
+     ],
+     "status": "present",
+     "value": "water-based varnish"
+    },
+    "label": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PE/PET laminate"
+     }
+    ],
+    "status": "present",
+    "value": "PE/PET laminate"
+   },
+   "name": "pouch",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "0.0068 kg"
+     }
+    ],
+    "status": "present",
+    "value": 6.8
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "recycled PET"
+     }
+    ],
+    "status": "present",
+    "value": "rPET"
+   },
+   "name": "tray",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "0.716 oz"
+     }
+    ],
+    "status": "present",
+    "value": 20.298242
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "adhesive": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "PSA (pressure sensitive)"
+      }
+     ],
+     "status": "present",
+     "value": "pressure-sensitive adhesive"
+    },
+    "ink_coating": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "wet-strength paper"
+     }
+    ],
+    "status": "present",
+    "value": "paper"
+   },
+   "name": "label",
+   "ram_category": "paper_board",
+   "weight_g": {
+    "conflict_values": [
+     1.2,
+     3.2
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "1200 mg"
+     },
+     {
+      "page": 2,
+      "quote": "Packing note: wrap label net weight 0.0032 kg per unit."
+     }
+    ],
+    "status": "conflict"
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 0,
+   "input": "image",
+   "page": 1
+  },
+  {
+   "chars": 0,
+   "input": "image",
+   "page": 2
+  }
+ ],
+ "sheet_id": "S022",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 3855,
+  "model": "gpt-5-mini",
+  "output_tokens": 3998,
+  "price_model": "gpt-5-mini",
+  "usd": 0.00896
+ },
+ "warnings": []
+}

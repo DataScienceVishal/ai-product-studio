@@ -1,0 +1,167 @@
+{
+ "components": [
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "ink_coating": {
+     "status": "missing"
+    },
+    "liner": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PP copolymer, TBC"
+     }
+    ],
+    "status": "present",
+    "value": "PP"
+   },
+   "name": "cap",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "0.0021 kg"
+     }
+    ],
+    "status": "present",
+    "value": 2.1
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "plain, no print or coating"
+      }
+     ],
+     "status": "present",
+     "value": "no ink or coating"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "polypropylene film label"
+      }
+     ],
+     "status": "present",
+     "value": "PP film label"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "tinplate, natural"
+     }
+    ],
+    "status": "present",
+    "value": "steel"
+   },
+   "name": "can",
+   "ram_category": "steel",
+   "weight_g": {
+    "status": "missing"
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PE/PET lam., black, carbon black"
+     }
+    ],
+    "status": "present",
+    "value": "black (carbon black)"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "UV ink print"
+      }
+     ],
+     "status": "present",
+     "value": "UV-cured ink"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "paper label (permanent glue)"
+      }
+     ],
+     "status": "present",
+     "value": "paper label, permanent"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PE/PET lam., black, carbon black"
+     }
+    ],
+    "status": "present",
+    "value": "PE/PET laminate"
+   },
+   "name": "pouch",
+   "ram_category": "plastic",
+   "weight_g": {
+    "conflict_values": [
+     4.3,
+     6.9
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "4.3 g (1)"
+     },
+     {
+      "page": 1,
+      "quote": "(1) pouch: unit weight on retest 6.9 g."
+     }
+    ],
+    "status": "conflict"
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 0,
+   "input": "image",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S024",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2862,
+  "model": "gpt-5-mini",
+  "output_tokens": 3120,
+  "price_model": "gpt-5-mini",
+  "usd": 0.006955
+ },
+ "warnings": []
+}

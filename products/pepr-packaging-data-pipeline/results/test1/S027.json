@@ -1,0 +1,186 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Colour was matched to the approved sample: grn."
+     }
+    ],
+    "status": "present",
+    "value": "green"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "The converter confirmed no barrier layer present."
+      }
+     ],
+     "status": "present",
+     "value": "no barrier layer"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "The converter confirmed paper label, caustic wash-off."
+      }
+     ],
+     "status": "present",
+     "value": "paper label, wash-off"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Supply for this item is PET/PE laminate from the Telford plant."
+     }
+    ],
+    "status": "present",
+    "value": "PE/PET laminate"
+   },
+   "name": "pouch",
+   "ram_category": "plastic",
+   "weight_g": {
+    "conflict_values": [
+     4.3,
+     6.9
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Nominal nett mass 4300 mg."
+     },
+     {
+      "page": 2,
+      "quote": "Packing note: pouch net weight 6900 mg per unit."
+     }
+    ],
+    "status": "conflict"
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "It is finished in natural."
+     }
+    ],
+    "status": "present",
+    "value": "natural"
+   },
+   "features": {
+    "adhesive": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "As per trial, PSA (pressure sensitive) is used."
+      }
+     ],
+     "status": "present",
+     "value": "pressure-sensitive adhesive"
+    },
+    "ink_coating": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Supply for this item is polypropylene film from the Telford plant."
+     }
+    ],
+    "status": "present",
+    "value": "PP"
+   },
+   "name": "label",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Weighed samples averaged 2.6 g."
+     }
+    ],
+    "status": "present",
+    "value": 2.6
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "Please note water-based overprint varnish on this item."
+      }
+     ],
+     "status": "present",
+     "value": "water-based varnish"
+    },
+    "label": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "status": "missing"
+   },
+   "name": "tray",
+   "ram_category": "missing",
+   "weight_g": {
+    "conflict_values": [
+     12.5,
+     15.9
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Unit mass is 0.0125 kg (see also pallet data)."
+     },
+     {
+      "page": 2,
+      "quote": "Packing note: food tray net weight 0.0159 kg per unit."
+     }
+    ],
+    "status": "conflict"
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 1315,
+   "input": "layout_text",
+   "page": 1
+  },
+  {
+   "chars": 231,
+   "input": "layout_text",
+   "page": 2
+  }
+ ],
+ "sheet_id": "S027",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2369,
+  "model": "gpt-5-mini",
+  "output_tokens": 4991,
+  "price_model": "gpt-5-mini",
+  "usd": 0.010574
+ },
+ "warnings": []
+}

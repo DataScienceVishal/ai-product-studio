@@ -1,0 +1,116 @@
+{
+ "components": [
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "adhesive": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "hot melt glue"
+      }
+     ],
+     "status": "present",
+     "value": "hot-melt adhesive"
+    },
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "status": "missing"
+   },
+   "name": "outer carton",
+   "ram_category": "missing",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "3.425 oz"
+     }
+    ],
+    "status": "present",
+    "value": 97.1045375
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "carbon black pigmented"
+     }
+    ],
+    "status": "present",
+    "value": "black (carbon black)"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "UV ink print"
+      }
+     ],
+     "status": "present",
+     "value": "UV-cured ink"
+    },
+    "label": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "status": "missing"
+   },
+   "name": "pouch",
+   "ram_category": "missing",
+   "weight_g": {
+    "conflict_values": [
+     4.7,
+     6.293589
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "4.7 g"
+     },
+     {
+      "page": 2,
+      "quote": "Packing note: sachet net weight 0.222 oz per unit."
+     }
+    ],
+    "status": "conflict"
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 428,
+   "input": "layout_text",
+   "page": 1
+  },
+  {
+   "chars": 185,
+   "input": "layout_text",
+   "page": 2
+  }
+ ],
+ "sheet_id": "S019",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2126,
+  "model": "gpt-5-mini",
+  "output_tokens": 3661,
+  "price_model": "gpt-5-mini",
+  "usd": 0.007854
+ },
+ "warnings": []
+}

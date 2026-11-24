@@ -1,0 +1,237 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Tint: bright white"
+     }
+    ],
+    "status": "present",
+    "value": "white"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "Oxygen barrier: alu-foil barrier"
+      }
+     ],
+     "status": "present",
+     "value": "aluminium foil barrier"
+    },
+    "closure": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "print: UV-curable ink"
+      }
+     ],
+     "status": "present",
+     "value": "UV-cured ink"
+    },
+    "label": {
+     "status": "missing"
+    },
+    "sleeve": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Polymer: high-density polyethylene"
+     }
+    ],
+    "status": "present",
+    "value": "HDPE"
+   },
+   "name": "bottle",
+   "ram_category": "plastic",
+   "weight_g": {
+    "conflict_values": [
+     32.5,
+     36.0
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Nett wt: 0.0325 kg"
+     },
+     {
+      "page": 2,
+      "quote": "Packing note: bottle net weight 0.036 kg per unit."
+     }
+    ],
+    "status": "conflict"
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Colour: royal blue"
+     }
+    ],
+    "status": "present",
+    "value": "blue"
+   },
+   "features": {
+    "adhesive": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Polymer: PP film"
+     }
+    ],
+    "status": "present",
+    "value": "PP"
+   },
+   "name": "label",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Net mass: 1.6 g"
+     }
+    ],
+    "status": "present",
+    "value": 1.6
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "Oxygen barrier: monolayer, no barrier"
+      }
+     ],
+     "status": "present",
+     "value": "no barrier layer"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "Decoration label: polypropylene film label"
+      }
+     ],
+     "status": "present",
+     "value": "PP film label"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Resin: PET/PE laminate"
+     }
+    ],
+    "status": "present",
+    "value": "PE/PET laminate"
+   },
+   "name": "pouch",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Unit weight: 0.0071 kg"
+     }
+    ],
+    "status": "present",
+    "value": 7.1
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Shade: natural"
+     }
+    ],
+    "status": "present",
+    "value": "natural"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Resin: tinplate steel"
+     }
+    ],
+    "status": "present",
+    "value": "steel"
+   },
+   "name": "can",
+   "ram_category": "steel",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Nett wt: 20.4 g"
+     }
+    ],
+    "status": "present",
+    "value": 20.4
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 656,
+   "input": "layout_text",
+   "page": 1
+  },
+  {
+   "chars": 185,
+   "input": "layout_text",
+   "page": 2
+  }
+ ],
+ "sheet_id": "S018",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2208,
+  "model": "gpt-5-mini",
+  "output_tokens": 3995,
+  "price_model": "gpt-5-mini",
+  "usd": 0.008542
+ },
+ "warnings": []
+}

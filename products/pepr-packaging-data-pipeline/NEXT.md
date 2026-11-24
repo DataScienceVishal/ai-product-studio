@@ -111,3 +111,9 @@ Resume command (same env as the first test run, T56_SPEND_APPROVED=1 and the rec
 Tests: 197 pass.
 
 Resume settings guard: `--resume` compares deployment, price_model, reasoning_effort, max_output_tokens and set with the first run.json (exit 7 on any difference or a missing run.json, before any call or charge); it never overwrites run.json and writes run-resume.json (run-resume-2.json, ...). Use the same env as the first run (test1: reasoning_effort medium, max_output_tokens 6000). 206 tests pass.
+
+## Run bb8d test1 result (2026-11-24, single test run on gpt-5-mini, medium, 6000)
+OVERALL FAIL. Field accuracy 89.3% (408/457) FAIL (mark 90%); messy-10 88.8% PASS; untraced 0/241 PASS; missing handled 90.6% FAIL (mark 95%), fabricated 1; conflicts flagged 90.9% PASS (unflagged 2, false 0); cost USD 0.223 total, 0.007 mean per sheet PASS (mark 0.316).
+Two sheets, S016 and S021, ran out of the 6000-token output budget (reasoning) and were scored empty (0%) per the rules; those two account for most of the gap. The run crashed once at S017 on a connection reset and was resumed for S017-S030 only (decision in state/DECISIONS.md; reviewer PASS on the resume code; S017 also charged a worst-case estimated row). Ledger total USD 3.35 of the USD 12 cap.
+Per the kill test (state/ideas/pepr-packaging-data-pipeline.md, "Fail" line) this counts as the second failed G1 attempt, so pEPR is killed. No pass mark is changed after seeing results. Supplement not run (it only informs; the next run decides whether to spend about USD 0.1 on it for the lessons).
+Lessons for the write-up: accuracy and cost are within reach on a mini model (0.7 cents a sheet, 0 untraced); the failure mode was output budget on reasoning, not reading. Revive only with a new pre-registered test (higher output cap or low effort) AND a Competition answer to Repackd (Q-9 trial).

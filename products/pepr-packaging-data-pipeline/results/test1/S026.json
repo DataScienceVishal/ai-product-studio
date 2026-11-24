@@ -1,0 +1,186 @@
+{
+ "components": [
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "adhesive": {
+     "status": "missing"
+    },
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "foil barrier layer"
+      }
+     ],
+     "status": "present",
+     "value": "aluminium foil barrier"
+    },
+    "ink_coating": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "corrugated board"
+     }
+    ],
+    "status": "present",
+    "value": "corrugated board"
+   },
+   "name": "outer carton",
+   "ram_category": "paper_board",
+   "weight_g": {
+    "conflict_values": [
+     88.7,
+     92.9013115
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "0.0887 kg"
+     },
+     {
+      "page": 2,
+      "quote": "Packing note: outer case net weight 3.277 oz per unit."
+     }
+    ],
+    "status": "conflict"
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "black, carbon black"
+     }
+    ],
+    "status": "present",
+    "value": "black (carbon black)"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "foil barrier layer"
+      }
+     ],
+     "status": "present",
+     "value": "aluminium foil barrier"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PET/PE laminate"
+     }
+    ],
+    "status": "present",
+    "value": "PE/PET laminate"
+   },
+   "name": "pouch",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "103 g"
+     }
+    ],
+    "status": "present",
+    "value": 103.0
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "bright white"
+     }
+    ],
+    "status": "present",
+    "value": "white"
+   },
+   "features": {
+    "adhesive": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "adhesive: water-based"
+      }
+     ],
+     "status": "present",
+     "value": "water-based adhesive"
+    },
+    "ink_coating": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PETG"
+     }
+    ],
+    "status": "present",
+    "value": "PETG"
+   },
+   "name": "sleeve",
+   "ram_category": "plastic",
+   "weight_g": {
+    "conflict_values": [
+     1.3,
+     2.8
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "1300 mg"
+     },
+     {
+      "page": 2,
+      "quote": "Packing note: sleeve net weight 0.0028 kg per unit."
+     }
+    ],
+    "status": "conflict"
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 686,
+   "input": "layout_text",
+   "page": 1
+  },
+  {
+   "chars": 237,
+   "input": "layout_text",
+   "page": 2
+  }
+ ],
+ "sheet_id": "S026",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2215,
+  "model": "gpt-5-mini",
+  "output_tokens": 4229,
+  "price_model": "gpt-5-mini",
+  "usd": 0.009012
+ },
+ "warnings": []
+}

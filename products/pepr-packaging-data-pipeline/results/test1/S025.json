@@ -1,0 +1,180 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Shade: amber"
+     }
+    ],
+    "status": "present",
+    "value": "amber"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "ultraviolet-cured print"
+      }
+     ],
+     "status": "present",
+     "value": "UV-cured ink"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "wash-off paper label"
+      }
+     ],
+     "status": "present",
+     "value": "paper label, wash-off"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Polymer: PE/PET lam."
+     }
+    ],
+    "status": "present",
+    "value": "PE/PET laminate"
+   },
+   "name": "pouch",
+   "ram_category": "plastic",
+   "weight_g": {
+    "conflict_values": [
+     5.5,
+     7.7
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Net mass: 5500 mg (1)"
+     },
+     {
+      "page": 1,
+      "quote": "(1) sachet: unit weight on retest 0.0077 kg."
+     }
+    ],
+    "status": "conflict"
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Finish colour: transparent"
+     }
+    ],
+    "status": "present",
+    "value": "clear"
+   },
+   "features": {
+    "ink_coating": {
+     "status": "missing"
+    },
+    "liner": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "aluminium foil inner seal"
+      }
+     ],
+     "status": "present",
+     "value": "foil induction seal"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Material: PP"
+     }
+    ],
+    "status": "present",
+    "value": "PP"
+   },
+   "name": "cap",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Mass: 0.008 kg"
+     }
+    ],
+    "status": "present",
+    "value": 8.0
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "closure": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "HDPE cap fitted with PE liner"
+      }
+     ],
+     "status": "present",
+     "value": "HDPE cap with PE liner"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "status": "missing"
+    },
+    "sleeve": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "status": "missing"
+   },
+   "name": "bottle",
+   "ram_category": "missing",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Net mass: 1.400 oz"
+     }
+    ],
+    "status": "present",
+    "value": 39.6893
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 0,
+   "input": "image",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S025",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2862,
+  "model": "gpt-5-mini",
+  "output_tokens": 3150,
+  "price_model": "gpt-5-mini",
+  "usd": 0.007016
+ },
+ "warnings": []
+}

@@ -1,0 +1,169 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Finish colour: amb"
+     }
+    ],
+    "status": "present",
+    "value": "amber"
+   },
+   "features": {
+    "adhesive": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "status": "missing"
+   },
+   "name": "label",
+   "ram_category": "missing",
+   "weight_g": {
+    "conflict_values": [
+     0.7938,
+     2.8
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Weight: 0.028 oz"
+     },
+     {
+      "page": 2,
+      "quote": "Packing note: wrap label net weight 2.8 g per unit."
+     }
+    ],
+    "status": "conflict"
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "EVOH barrier in wall"
+      }
+     ],
+     "status": "present",
+     "value": "EVOH barrier layer"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "solvent ink print"
+      }
+     ],
+     "status": "present",
+     "value": "solvent-based ink"
+    },
+    "label": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Polymer: aluminium"
+     }
+    ],
+    "status": "present",
+    "value": "aluminium"
+   },
+   "name": "can",
+   "ram_category": "aluminium",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Mass: 33.6 g"
+     }
+    ],
+    "status": "present",
+    "value": 33.6
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Shade: black"
+     }
+    ],
+    "status": "present",
+    "value": "black"
+   },
+   "features": {
+    "adhesive": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Material: polyvinyl chloride"
+     }
+    ],
+    "status": "present",
+    "value": "PVC"
+   },
+   "name": "sleeve",
+   "ram_category": "plastic",
+   "weight_g": {
+    "conflict_values": [
+     3.5,
+     5.6
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Nett wt: 0.0035 kg"
+     },
+     {
+      "page": 2,
+      "quote": "Packing note: sleeve net weight 0.0056 kg per unit."
+     }
+    ],
+    "status": "conflict"
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 556,
+   "input": "layout_text",
+   "page": 1
+  },
+  {
+   "chars": 234,
+   "input": "layout_text",
+   "page": 2
+  }
+ ],
+ "sheet_id": "S028",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2196,
+  "model": "gpt-5-mini",
+  "output_tokens": 3881,
+  "price_model": "gpt-5-mini",
+  "usd": 0.008311
+ },
+ "warnings": []
+}
