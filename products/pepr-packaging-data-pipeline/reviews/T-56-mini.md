@@ -90,3 +90,7 @@ Tests: `/usr/bin/python3 -m pytest -q extractor/tests benchmark/tests` gives **1
 **Suggestion**
 - **`Budget.record` has a duplicate check.** Its new `if model not in PRICES` repeats what `price_for` already does. It is harmless; drop it or keep it.
 - **Earlier suggestions 1 to 3 and 5 still stand.** Suggestion 4 is resolved, apart from the NEXT.md wording above.
+
+## Final verdict (HEAD 4fbfac0): PASS
+
+`1feb857` and `4fbfac0` change only NEXT.md. It no longer credits the reviewer with checking the effort settings: it says the Studio Lead checked minimal and low with two tiny calls, untested on full sheets, and the re-tune command now uses medium. The full suite passes again: 181 tests, no Azure calls. Not blocking: those two "say ok" calls are not in `results/ledger.jsonl`. Their cost is negligible (well under USD 0.001), but any future call made outside the extractor should be recorded in the ledger so that the USD 12 cap covers all spend.
