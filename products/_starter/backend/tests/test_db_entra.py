@@ -79,6 +79,8 @@ def test_unknown_db_auth_refused():
 
 @pytest.mark.parametrize("url, fragment", [
     ("postgresql+psycopg://my-identity:hunter2@h/app?sslmode=verify-full", "must not contain a password"),
+    ("postgresql+psycopg://my-identity@h/app?sslmode=verify-full&password=hunter2", "must not contain a password"),
+    ("postgresql+psycopg://my-identity@h/app?sslmode=verify-full&passfile=/tmp/hunter2", "must not contain a password"),
     ("postgresql+psycopg://my-identity@h/app", "sslmode=verify-full"),
     ("postgresql+psycopg://my-identity@h/app?sslmode=require", "sslmode=verify-full"),
     ("postgresql+psycopg://h/app?sslmode=verify-full", "Entra role"),
@@ -182,3 +184,17 @@ def test_alembic_env_password_mode_has_no_hook(connects):
         command.upgrade(alembic_config("postgresql+psycopg://u:pw@localhost/x", db_auth="password",
                                        token_provider=FakeProvider(["never"])), "head")
     assert connects[0]["password"] == "pw"
+
+
+def test_healthz_is_503_down_when_the_token_fetch_fails(app, connects):
+    from fastapi.testclient import TestClient
+
+    class Broken:
+        def get(self, timeout=None):
+            raise RuntimeError(SECRET)
+
+    app.state.db = Database(URL, db_auth="entra", token_provider=Broken())
+    response = TestClient(app, base_url="https://testserver").get("/healthz")
+    assert response.status_code == 503
+    assert response.json()["db"] == "down"
+    assert SECRET not in response.text

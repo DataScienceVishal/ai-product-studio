@@ -153,7 +153,8 @@ assignment is a manual step, see `ADR/0002-azure-deploy.md` decision 7.
 managed identity instead, with no password anywhere:
 
 - `DATABASE_URL=postgresql+psycopg://<entra-role-name>@<host>:5432/<db>?sslmode=verify-full`: host, database and the
-  Entra role as user (for example the identity's name). The app refuses to start if the URL has a password or `sslmode`
+  Entra role as user (for example the identity's name). The deploy adds `sslrootcert` (the CA bundle path) if the image
+  does not trust Azure's roots by default. A `password` or `passfile` in the query is refused too. The app refuses to start if the URL has a password or `sslmode`
   is not `verify-full` (ADR 0002). `AZURE_CLIENT_ID` picks a user-assigned identity.
 - On every new pooled connection the app fetches a token for `https://ossrdbms-aad.database.windows.net` from the
   Container Apps identity endpoint and passes it as the password (`app/dbauth.py`). Tokens are cached until 2 minutes

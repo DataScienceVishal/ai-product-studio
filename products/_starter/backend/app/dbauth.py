@@ -16,6 +16,7 @@ from __future__ import annotations
 import logging
 
 from sqlalchemy import event
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.engine import Engine, make_url
 
 
@@ -30,7 +31,7 @@ class DbAuthConfigError(ValueError):
     """DB_AUTH=entra with an unsafe DATABASE_URL. The message never contains the URL."""
 
 
-class DbTokenError(RuntimeError):
+class DbTokenError(SQLAlchemyError):
     """A database access token could not be fetched. The connection attempt fails; nothing sensitive in the message."""
 
 
@@ -41,7 +42,8 @@ def validate_entra_url(url: str) -> None:
         raise DbAuthConfigError("DATABASE_URL is not a valid database URL") from None
     if not parsed.drivername.startswith("postgresql"):
         raise DbAuthConfigError("DB_AUTH=entra needs a PostgreSQL DATABASE_URL")
-    if parsed.password:
+    # Also refuse a password or passfile in the query string: SQLAlchemy would print it in repr(engine) and logs.
+    if parsed.password or any(key in parsed.query for key in ("password", "passfile")):
         raise DbAuthConfigError("DATABASE_URL must not contain a password with DB_AUTH=entra (the token is the password)")
     if not parsed.username:
         raise DbAuthConfigError("DATABASE_URL must name the Entra role as the user with DB_AUTH=entra")
