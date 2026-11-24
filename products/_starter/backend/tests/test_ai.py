@@ -916,6 +916,15 @@ def test_timeouts_from_the_environment_reject_nan(monkeypatch):
         Settings()
 
 
-def test_config_endpoint_serves_the_frontend_timeout(new_client):
-    r = new_client(csrf=False).get("/api/config")
-    assert r.status_code == 200 and r.json() == {"api_timeout_seconds": 30.0}
+def test_config_endpoint_serves_the_configured_frontend_timeout(settings, ai, outbox):
+    from fastapi.testclient import TestClient
+    from app.billing import MockBilling
+    from app.main import create_app
+    custom = settings.model_copy(update={"frontend_timeout_seconds": 60.0, "ai_deadline_seconds": 55.0})
+    application = create_app(custom, ai=ai, email=outbox,
+                             billing_provider=MockBilling(custom.billing_webhook_secret, custom.app_base_url))
+    try:
+        with TestClient(application, base_url="https://testserver") as client:
+            assert client.get("/api/config").json() == {"api_timeout_seconds": 60.0}
+    finally:
+        application.state.db.dispose()

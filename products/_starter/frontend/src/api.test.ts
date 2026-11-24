@@ -92,6 +92,25 @@ describe("api: errors", () => {
     expect(outcome).toMatchObject({ code: "timeout" });
   });
 
+  it("gives up on a hung /api/config after 5 seconds and keeps the 30 second default", async () => {
+    vi.useFakeTimers();
+    fetchMock.mockImplementation((_p: string, init: RequestInit) => new Promise((_res, rej) => {
+      init.signal!.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError")));
+    }));
+    let settled = false;
+    const loading = loadClientConfig().then(() => { settled = true; });
+    await vi.advanceTimersByTimeAsync(4_900);
+    expect(settled).toBe(false);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(settled).toBe(true);
+    await loading;
+    let outcome: unknown = "pending";
+    const pending = api("/api/slow").catch((e) => (outcome = e));
+    await vi.advanceTimersByTimeAsync(30_000);
+    await pending;
+    expect(outcome).toMatchObject({ code: "timeout" });
+  });
+
   it("aborts after 30 seconds (the default) and reports a timeout", async () => {
     vi.useFakeTimers();
     fetchMock.mockImplementation((_path: string, init: RequestInit) => new Promise((_resolve, reject) => {
