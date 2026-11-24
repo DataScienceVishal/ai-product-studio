@@ -46,10 +46,17 @@ CONFLICTS. If the sheet gives two different net weights for the same component (
 disagree by more than rounding), do not choose: status "conflict", both values in grams in conflict_values, one ref per value. The same weight written
 in two units is not a conflict.
 
-QUOTES. Copy the shortest span of the page text that supports the value, character for character as it appears on that page, from ONE cell or ONE sentence.
+QUOTES. Copy the span of the page text that supports the value, character for character as it appears on that page, from ONE cell or ONE sentence.
+For a feature (label, ink_coating, barrier_layer, liner, adhesive, sleeve, closure), quote the WHOLE printed value after the "item - field:" prefix,
+not a fragment of it: if the line is "tin can - oxygen barrier: monolayer, no barrier" quote "monolayer, no barrier" (not "no barrier");
+if it is "tin can - ink / coating: print: UV-curable ink" quote "print: UV-curable ink" (not "UV-curable ink").
 Never join two table cells or both columns of a two-column row into one quote; never include a second material or a second feature in the quote
 (quote the material cell alone, not the colour cell next to it). Quote the paraphrase as printed, not the canonical value. "page" is the PAGE number
 the quote is on. For image pages, read the quote from the image exactly as printed.
+
+OWN ROW ONLY. A component's material, colour and weight come from that component's own row or cell. Never take a component's material from
+another component's decoration, label or ink line (a can's "polypropylene film label" does not give a separate "label" component the material PP);
+if the component's own row gives only a shade or colour and no material, material is missing.
 
 EXCEPTIONS to the one-cell quote rule, each for one row only:
   - Blend. A material cell that names several materials with shares (for example "rPET 30% + PET 70%"): the value is the one canonical material

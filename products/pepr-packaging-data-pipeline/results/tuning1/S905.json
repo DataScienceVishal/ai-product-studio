@@ -1,0 +1,167 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "white"
+     }
+    ],
+    "status": "present",
+    "value": "white"
+   },
+   "features": {
+    "ink_coating": {
+     "status": "missing"
+    },
+    "liner": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "polypropylene"
+     }
+    ],
+    "status": "present",
+    "value": "PP"
+   },
+   "name": "cap",
+   "ram_category": "plastic",
+   "weight_g": {
+    "conflict_values": [
+     6.5,
+     9.695529
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "0.0065 kg (1)"
+     },
+     {
+      "page": 1,
+      "quote": "0.342 oz."
+     }
+    ],
+    "status": "conflict"
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "bright white"
+     }
+    ],
+    "status": "present",
+    "value": "white"
+   },
+   "features": {
+    "adhesive": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "thermoplastic hot-melt"
+      }
+     ],
+     "status": "present",
+     "value": "hot-melt adhesive"
+    },
+    "ink_coating": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "wet-strength paper"
+     }
+    ],
+    "status": "present",
+    "value": "paper"
+   },
+   "name": "label",
+   "ram_category": "paper_board",
+   "weight_g": {
+    "conflict_values": [
+     1.8994165,
+     3.5
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "0.067 oz"
+     },
+     {
+      "page": 2,
+      "quote": "wrap label net weight 0.0035 kg per unit."
+     }
+    ],
+    "status": "conflict"
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "paper label, caustic wash-off"
+      }
+     ],
+     "status": "present",
+     "value": "paper label, wash-off"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PE/PET lam."
+     }
+    ],
+    "status": "present",
+    "value": "PE/PET laminate"
+   },
+   "name": "pouch",
+   "ram_category": "plastic",
+   "weight_g": {
+    "status": "missing"
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 662,
+   "input": "layout_text",
+   "page": 1
+  },
+  {
+   "chars": 192,
+   "input": "layout_text",
+   "page": 2
+  }
+ ],
+ "sheet_id": "S905",
+ "usage": {
+  "input_tokens": 2011,
+  "model": "gpt-5.4-pro",
+  "output_tokens": 4820,
+  "usd": 0.608565
+ },
+ "warnings": []
+}

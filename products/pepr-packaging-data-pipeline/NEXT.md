@@ -66,3 +66,11 @@ Run the supplement only AFTER the test-set run (same ledger; `--set supplement` 
 
 ### Review fixes for S7 (reviews/T-56-s7.md)
 C1 prompt packing-notes line narrowed (listed components such as "outer case, Material n/a" stay components; test). C2 blend rule: PET/rPET only, one reading direction, shares sum to 100 +-1. C3 S805 truth colour white, "WhiteSolid" via truth `accepted_values` (scorer honours it, only for the truth value; vocabulary untouched). S1 label-unit number must end the quote (optional tolerance); label must say weight/wt/mass. S3 supplement run order enforced by the CLI. S806 weights now scale with volume. 139 tests pass; test and tuning data untouched.
+
+
+## Run e08c tuning (2026-11-24, first real model run, gpt-5.4-pro)
+Numbers (results/tuning1, results/tuning1.log): field accuracy 97.9% (92/94) PASS; untraced 2 of 54 FAIL; fabricated 1 (missing handling 96.4%) ; conflicts flagged 100%; cost USD 2.009 total, 0.402 mean/sheet FAIL (mark 0.316).
+Per sheet USD (ledger): S901 0.083, S902 0.325, S903 0.287, S904 0.705, S905 0.609. Low reasoning effort is rejected by the model (HTTP 400); the default is now medium.
+Diagnosis. S902 untraced x2: the model quoted fragments ("no barrier" from "monolayer, no barrier"; "UV-curable ink" from "print: UV-curable ink"); both on the page, page numbers right, no layout or two-cell issue, but quote_ok needs a listed wording of the value. Scorer is correct to its rule: see benchmark/KILL_TEST_AMENDMENT_5.md (proposal only, not applied). S904 fabrication: component "label" (front label, row has only "flint green") got material PP, taken from the can's "polypropylene film label" line. Truth missing is right; model error.
+Fixes (no model call, scorer/truth/sheets untouched): prompt asks for the whole printed feature value (no "shortest span") and adds an OWN ROW ONLY rule; extractor `drop_unverified` turns a text-page field into missing when the quote is off-page, page out of range, or (features, weight) fails quote_ok; material/colour need only be on the page; image pages untouched. Tests added (6). 145 pass.
+Still open: cost per sheet (S904/S905 scanned sheets 0.6-0.7 USD: image tokens and reasoning output), then a second tuning run needs a spend decision.

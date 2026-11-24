@@ -74,6 +74,58 @@ def clean_output(raw):
     return comps, warns
 
 
+def _value_key(key, v):
+    if key == "weight_g":
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return float("nan")
+    c = vocab.tx.canonical(key, v) if isinstance(v, str) else None
+    return c if c is not None else "\x00unlisted"
+
+
+def _verified(key, field, texts):
+    refs = field.get("refs") or []
+    values = field.get("conflict_values") if field["status"] == "conflict" else [field.get("value")]
+    if not refs or not values:
+        return False
+    for r in refs:
+        if not 1 <= r["page"] <= len(texts):
+            return False
+    if key in ("material", "colour"):  # sheets may use wordings outside the vocabulary (truth aliases): only require the quote on the page
+        return all(vocab.tx.norm_quote(r["quote"]) and vocab.tx.norm_quote(r["quote"]) in vocab.tx.norm_quote(texts[r["page"] - 1])
+                   for r in refs)
+    ok = lambda v, r: vocab.tx.quote_ok(key, _value_key(key, v), r["quote"], texts[r["page"] - 1])
+    return (all(any(ok(v, r) for r in refs) for v in values)
+            and all(any(ok(v, r) for v in values) for r in refs))
+
+
+def drop_unverified(comps, pages, warns):
+    """Safety net: on TEXT pages, drop (set to missing) a non-missing field whose quote cannot be verified against the page text
+    (features and weights: the scorer's quote test; material and colour: the quote must be on the page). Never invents a value. A field citing an image page is left alone: there is no text layer."""
+    texts = [p["text"] if p["mode"] == "layout_text" else None for p in pages]
+    for c in comps:
+        fields = [(k, c, k) for k in ("material", "colour", "weight_g") if k in c]
+        fields += [(k, c["features"], k) for k in list(c["features"])]
+        for key, holder, name in fields:
+            f = holder[name]
+            if f["status"] == "missing":
+                continue
+            cited = [r["page"] for r in f.get("refs", [])]
+            if cited and any(1 <= n <= len(texts) and texts[n - 1] is None for n in cited):
+                continue
+            if key not in ("material", "colour", "weight_g") and key not in vocab.tx.VOCAB:
+                verified = False
+            else:
+                verified = _verified(key, f, texts)
+            if not verified:
+                warns.append(f"{c['name']}.{key}: quote not found on the page text, dropped")
+                holder[name] = {"status": "missing"}
+        if c.get("material", {}).get("status") != "present":
+            c["ram_category"] = "missing"
+    return comps
+
+
 def extract_pdf(pdf_path, provider, budget, sheet_id=None, max_output_tokens=MAX_OUTPUT_TOKENS):
     """Run one sheet. Returns the prediction dict (truth shape + `pages`, `usage`, `warnings`)."""
     sheet_id = sheet_id or Path(pdf_path).stem
@@ -98,6 +150,7 @@ def extract_pdf(pdf_path, provider, budget, sheet_id=None, max_output_tokens=MAX
     modes = [{"page": p["page"], "input": p["mode"], "chars": p["chars"]} for p in pages]
     try:
         comps, warns = clean_output(parse_json(res.text))
+        drop_unverified(comps, pages, warns)
     except (ValueError, AttributeError, TypeError):
         comps, warns = [], ["model answer was not valid JSON"]
     return {"sheet_id": sheet_id, "components": comps, "pages": modes, "warnings": warns,

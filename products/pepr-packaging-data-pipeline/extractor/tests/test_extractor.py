@@ -519,3 +519,72 @@ def test_prompt_does_not_exclude_listed_outer_case_components():
     assert "outer case" in text and "n/a" in text
     comp = json.loads((DATA / "truth" / "S019.json").read_text())["components"]
     assert any(c["name"] == "outer carton" and c["material"]["status"] == "missing" for c in comp)
+
+
+# ---- run e08c tuning follow-up ----------------------------------------------------------------------
+S902_TEXT = ("Component summary\n tin can - oxygen barrier: monolayer, no barrier\n"
+             "tin can - ink / coating: print: UV-curable ink\n sachet - barrier: no barrier layer present\n")
+
+
+def _comp(**feats):
+    return {"name": "can", "features": feats, "ram_category": "missing"}
+
+
+def _f(value, quote, page=1):
+    return {"status": "present", "value": value, "refs": [{"page": page, "quote": quote}]}
+
+
+def test_s902_fragment_quotes_are_dropped_and_full_wording_kept():
+    pages = [{"page": 1, "mode": "layout_text", "text": S902_TEXT, "chars": len(S902_TEXT)}]
+    comps = [_comp(barrier_layer=_f("no barrier layer", "no barrier"),
+                   ink_coating=_f("UV-cured ink", "UV-curable ink"))]
+    warns = []
+    extract.drop_unverified(comps, pages, warns)
+    assert comps[0]["features"]["barrier_layer"] == {"status": "missing"}
+    assert comps[0]["features"]["ink_coating"] == {"status": "missing"} and len(warns) == 2
+    good = [_comp(barrier_layer=_f("no barrier layer", "monolayer, no barrier"),
+                  ink_coating=_f("UV-cured ink", "print: UV-curable ink"))]
+    extract.drop_unverified(good, pages, [])
+    assert good[0]["features"]["barrier_layer"]["status"] == "present"
+    assert good[0]["features"]["ink_coating"]["status"] == "present"
+
+
+def test_drop_unverified_page_text_misses_wrong_page_and_image_pages():
+    pages = [{"page": 1, "mode": "layout_text", "text": "cap HDPE 3.5 g", "chars": 14},
+             {"page": 2, "mode": "image", "text": None, "chars": 0}]
+    c = {"name": "cap", "material": _f("HDPE", "HDPE"), "colour": _f("blue", "blue"),
+         "weight_g": _f(3.5, "3.5 g", page=3), "features": {"liner": _f("no liner", "x", page=2)}, "ram_category": "plastic"}
+    extract.drop_unverified([c], pages, [])
+    assert c["material"]["status"] == "present"
+    assert c["colour"] == {"status": "missing"}      # quote not on page 1
+    assert c["weight_g"] == {"status": "missing"}    # page out of range
+    assert c["features"]["liner"]["status"] == "present"  # image page: no text layer, left alone
+
+
+def test_drop_unverified_missing_material_resets_ram():
+    pages = [{"page": 1, "mode": "layout_text", "text": "cap", "chars": 3}]
+    c = {"name": "cap", "material": _f("HDPE", "HDPE"), "features": {}, "ram_category": "plastic"}
+    extract.drop_unverified([c], pages, [])
+    assert c["material"] == {"status": "missing"} and c["ram_category"] == "missing"
+
+
+def test_prompt_quotes_whole_feature_value_and_own_row_only():
+    sp = prompt.system_prompt()
+    assert '"monolayer, no barrier" (not "no barrier")' in sp and '"print: UV-curable ink"' in sp
+    assert "OWN ROW ONLY" in sp and "does not give a separate \"label\" component the material PP" in sp
+    assert "shortest span" not in sp
+
+
+def test_tuning1_s902_misses_would_now_be_dropped_not_scored_untraced():
+    pred = json.loads((PRODUCT / "results" / "tuning1" / "S902.json").read_text()) \
+        if (PRODUCT / "results" / "tuning1" / "S902.json").exists() else None
+    if pred is None:
+        pytest.skip("results/ not present")
+    man = {e["sheet_id"]: e for e in json.loads((DATA / "manifest.json").read_text())["tuning"]}["S902"]
+    texts = score.page_texts_for("S902", TUNING / "S902.pdf", man)
+    pages = [{"page": 1, "mode": "layout_text", "text": texts[0], "chars": len(texts[0])}]
+    truth = json.loads((DATA / "tuning_truth" / "S902.json").read_text())
+    before = score.score_sheet(truth, pred, texts)
+    assert before["untraced"] == 2
+    extract.drop_unverified(pred["components"], pages, [])
+    assert score.score_sheet(truth, pred, texts)["untraced"] == 0
