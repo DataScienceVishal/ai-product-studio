@@ -31,7 +31,8 @@
         "multi_component",
         "missing_fields",
         "contradictory",
-        "public"
+        "public",
+        "supplement"
       ]
     },
     "source": {
@@ -120,8 +121,15 @@
         "bom",
         "prose",
         "prose_buried",
-        "two_column"
+        "two_column",
+        "catalogue",
+        "two_block",
+        "unit_header"
       ]
+    },
+    "target_item": {
+      "type": "string",
+      "description": "Optional (supplement catalogue sheets): the item code named in the title; only that item's row is the truth"
     }
   },
   "$defs": {

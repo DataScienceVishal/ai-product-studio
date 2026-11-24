@@ -1,0 +1,103 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "Black"
+          }
+        ],
+        "status": "present",
+        "value": "black"
+      },
+      "features": {
+        "ink_coating": {
+          "status": "missing"
+        },
+        "liner": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "HDPE"
+          }
+        ],
+        "status": "present",
+        "value": "HDPE"
+      },
+      "name": "cap",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "6.1 g"
+          }
+        ],
+        "status": "present",
+        "value": 6.1
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "Green"
+          }
+        ],
+        "status": "present",
+        "value": "green"
+      },
+      "features": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "closure": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "label": {
+          "status": "missing"
+        },
+        "sleeve": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "glass"
+          }
+        ],
+        "status": "present",
+        "value": "glass"
+      },
+      "name": "bottle",
+      "ram_category": "glass",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "57.0 g"
+          }
+        ],
+        "status": "present",
+        "value": 57.0
+      }
+    }
+  ],
+  "layout": "supplement",
+  "seed": 20261126,
+  "sheet_id": "S812",
+  "source": "synthetic",
+  "template": "table",
+  "tier": "moderate"
+}

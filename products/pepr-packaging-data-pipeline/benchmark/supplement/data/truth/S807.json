@@ -1,0 +1,61 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "Amber"
+          }
+        ],
+        "status": "present",
+        "value": "amber"
+      },
+      "features": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "closure": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "label": {
+          "status": "missing"
+        },
+        "sleeve": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PET"
+          }
+        ],
+        "status": "present",
+        "value": "PET"
+      },
+      "name": "bottle",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "41.3 g"
+          }
+        ],
+        "status": "present",
+        "value": 41.3
+      }
+    }
+  ],
+  "layout": "supplement",
+  "seed": 20261126,
+  "sheet_id": "S807",
+  "source": "synthetic",
+  "template": "table",
+  "tier": "moderate"
+}

@@ -1,0 +1,160 @@
+{
+  "note": "Realism supplement, reported separately; see KILL_TEST_AMENDMENT_4.md",
+  "seed": 20261126,
+  "stats": {
+    "carbon_black_components": 0,
+    "components": 22,
+    "conflict_slots": 0,
+    "missing_slots": 76,
+    "present_slots": 86,
+    "scored_slots": 162,
+    "sheets": 12
+  },
+  "supplement": [
+    {
+      "encrypted": false,
+      "layout": "supplement",
+      "pages": 1,
+      "realism_items": [
+        1
+      ],
+      "scanned": false,
+      "sheet_id": "S801",
+      "template": "table",
+      "tier": "moderate"
+    },
+    {
+      "encrypted": false,
+      "layout": "supplement",
+      "pages": 1,
+      "realism_items": [
+        1
+      ],
+      "scanned": false,
+      "sheet_id": "S802",
+      "template": "two_column",
+      "tier": "moderate"
+    },
+    {
+      "encrypted": false,
+      "layout": "supplement",
+      "pages": 1,
+      "realism_items": [
+        4
+      ],
+      "scanned": false,
+      "sheet_id": "S803",
+      "template": "table",
+      "tier": "moderate"
+    },
+    {
+      "encrypted": false,
+      "layout": "supplement",
+      "pages": 1,
+      "realism_items": [
+        4
+      ],
+      "scanned": false,
+      "sheet_id": "S804",
+      "template": "table",
+      "tier": "moderate"
+    },
+    {
+      "encrypted": false,
+      "layout": "supplement",
+      "pages": 1,
+      "realism_items": [
+        4
+      ],
+      "scanned": false,
+      "sheet_id": "S805",
+      "template": "table",
+      "tier": "moderate"
+    },
+    {
+      "encrypted": false,
+      "layout": "supplement",
+      "pages": 1,
+      "realism_items": [
+        3
+      ],
+      "scanned": false,
+      "sheet_id": "S806",
+      "target_item": "PB-250-24",
+      "template": "catalogue",
+      "tier": "moderate"
+    },
+    {
+      "encrypted": false,
+      "layout": "supplement",
+      "pages": 1,
+      "realism_items": [
+        3
+      ],
+      "scanned": false,
+      "sheet_id": "S807",
+      "template": "table",
+      "tier": "moderate"
+    },
+    {
+      "encrypted": false,
+      "layout": "supplement",
+      "pages": 1,
+      "realism_items": [
+        2
+      ],
+      "scanned": false,
+      "sheet_id": "S808",
+      "template": "table",
+      "tier": "moderate"
+    },
+    {
+      "encrypted": false,
+      "layout": "supplement",
+      "pages": 1,
+      "realism_items": [
+        5
+      ],
+      "scanned": false,
+      "sheet_id": "S809",
+      "template": "two_block",
+      "tier": "moderate"
+    },
+    {
+      "encrypted": false,
+      "layout": "supplement",
+      "pages": 1,
+      "realism_items": [
+        5
+      ],
+      "scanned": false,
+      "sheet_id": "S810",
+      "template": "unit_header",
+      "tier": "moderate"
+    },
+    {
+      "encrypted": false,
+      "layout": "supplement",
+      "pages": 2,
+      "realism_items": [
+        5
+      ],
+      "scanned": false,
+      "sheet_id": "S811",
+      "template": "table",
+      "tier": "moderate"
+    },
+    {
+      "encrypted": true,
+      "layout": "supplement",
+      "pages": 1,
+      "realism_items": [
+        5
+      ],
+      "scanned": false,
+      "sheet_id": "S812",
+      "template": "table",
+      "tier": "moderate"
+    }
+  ]
+}

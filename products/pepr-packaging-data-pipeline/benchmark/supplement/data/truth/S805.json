@@ -1,0 +1,45 @@
+{
+  "components": [
+    {
+      "colour": {
+        "status": "missing"
+      },
+      "features": {
+        "ink_coating": {
+          "status": "missing"
+        },
+        "liner": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PP"
+          }
+        ],
+        "status": "present",
+        "value": "PP"
+      },
+      "name": "cap",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "5.8 g"
+          }
+        ],
+        "status": "present",
+        "value": 5.8
+      }
+    }
+  ],
+  "layout": "supplement",
+  "seed": 20261126,
+  "sheet_id": "S805",
+  "source": "synthetic",
+  "template": "table",
+  "tier": "moderate"
+}

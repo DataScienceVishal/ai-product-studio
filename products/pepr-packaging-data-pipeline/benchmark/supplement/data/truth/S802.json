@@ -1,0 +1,103 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "Natural"
+          }
+        ],
+        "status": "present",
+        "value": "natural"
+      },
+      "features": {
+        "ink_coating": {
+          "status": "missing"
+        },
+        "liner": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "HDPE"
+          }
+        ],
+        "status": "present",
+        "value": "HDPE"
+      },
+      "name": "cap",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "Weight (g) | 4.9"
+          }
+        ],
+        "status": "present",
+        "value": 4.9
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "Amber"
+          }
+        ],
+        "status": "present",
+        "value": "amber"
+      },
+      "features": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "closure": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "label": {
+          "status": "missing"
+        },
+        "sleeve": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PET"
+          }
+        ],
+        "status": "present",
+        "value": "PET"
+      },
+      "name": "bottle",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "Unit weight (gms) | 52.0"
+          }
+        ],
+        "status": "present",
+        "value": 52.0
+      }
+    }
+  ],
+  "layout": "supplement",
+  "seed": 20261126,
+  "sheet_id": "S802",
+  "source": "synthetic",
+  "template": "two_column",
+  "tier": "moderate"
+}

@@ -1,0 +1,106 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "Clear"
+          }
+        ],
+        "status": "present",
+        "value": "clear"
+      },
+      "features": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "closure": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "label": {
+          "status": "missing"
+        },
+        "sleeve": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "rPET 30% + PET 70%"
+          }
+        ],
+        "status": "present",
+        "value": "PET"
+      },
+      "name": "bottle",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "39.5 g"
+          }
+        ],
+        "status": "present",
+        "value": 39.5
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "Black"
+          }
+        ],
+        "status": "present",
+        "value": "black"
+      },
+      "features": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "label": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "50% rPET / 50% PET"
+          }
+        ],
+        "status": "present",
+        "value": "PET"
+      },
+      "name": "tray",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "21.6 g"
+          }
+        ],
+        "status": "present",
+        "value": 21.6
+      }
+    }
+  ],
+  "layout": "supplement",
+  "seed": 20261126,
+  "sheet_id": "S803",
+  "source": "synthetic",
+  "template": "table",
+  "tier": "moderate"
+}

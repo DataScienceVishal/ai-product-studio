@@ -1,0 +1,62 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "Clear"
+          }
+        ],
+        "status": "present",
+        "value": "clear"
+      },
+      "features": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "closure": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "label": {
+          "status": "missing"
+        },
+        "sleeve": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PET"
+          }
+        ],
+        "status": "present",
+        "value": "PET"
+      },
+      "name": "bottle",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "49.4 g"
+          }
+        ],
+        "status": "present",
+        "value": 49.4
+      }
+    }
+  ],
+  "layout": "supplement",
+  "seed": 20261126,
+  "sheet_id": "S806",
+  "source": "synthetic",
+  "target_item": "PB-250-24",
+  "template": "catalogue",
+  "tier": "moderate"
+}

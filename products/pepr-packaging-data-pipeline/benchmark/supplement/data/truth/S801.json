@@ -1,0 +1,113 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "Clear"
+          }
+        ],
+        "status": "present",
+        "value": "clear"
+      },
+      "features": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "closure": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "permanent paper label"
+            }
+          ],
+          "status": "present",
+          "value": "paper label, permanent"
+        },
+        "sleeve": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PET"
+          }
+        ],
+        "status": "present",
+        "value": "PET"
+      },
+      "name": "bottle",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "41.56gm \u00b1 2.00gm"
+          }
+        ],
+        "status": "present",
+        "value": 41.56
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "White"
+          }
+        ],
+        "status": "present",
+        "value": "white"
+      },
+      "features": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "label": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PS"
+          }
+        ],
+        "status": "present",
+        "value": "PS"
+      },
+      "name": "tray",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "1.36 oz (+/- 0.04 oz)"
+          }
+        ],
+        "status": "present",
+        "value": 38.56
+      }
+    }
+  ],
+  "layout": "supplement",
+  "seed": 20261126,
+  "sheet_id": "S801",
+  "source": "synthetic",
+  "template": "table",
+  "tier": "moderate"
+}

@@ -168,22 +168,63 @@ def canonical(key, s):
     return None
 
 
-def _terms_in(key, text):
-    """Canonical values whose wording occurs in text, longest match wins (PET inside PETG does not count)."""
+def _hits(key, text):
+    """(start, end, canonical) for every listed wording in text; the longest overlapping match wins (PET inside PETG does not count)."""
     hits = []
     for canon, words in key_vocab(key).items():
         for w in words:
             for m in re.finditer(r"(?<![a-z0-9])" + re.escape(norm_text(w)) + r"(?![a-z0-9])", text):
                 hits.append((m.start(), m.end(), canon))
-    keep = [h for h in hits if not any(o is not h and o[0] <= h[0] and h[1] <= o[1] and (o[1] - o[0]) > (h[1] - h[0])
+    return [h for h in hits if not any(o is not h and o[0] <= h[0] and h[1] <= o[1] and (o[1] - o[0]) > (h[1] - h[0])
                                       for o in hits)]
-    return {h[2] for h in keep}
+
+
+def _terms_in(key, text):
+    """Canonical values whose wording occurs in text."""
+    return {h[2] for h in _hits(key, text)}
+
+
+# Amendment 4, D1 (2026-11-24, before any model run): a material cell may name a blend with shares.
+_PCT_AFTER = re.compile(r"^\s*[(:=-]?\s*(\d+(?:\.\d+)?)\s*%")
+_PCT_BEFORE = re.compile(r"(\d+(?:\.\d+)?)\s*%\s*(?:of\s+)?$")
+
+
+def blend_winner(text):
+    """Canonical material with the largest stated share in a blend quote (already norm_quote'd), tie -> "PET".
+    None unless the quote names several materials and every one carries a percentage, or if the tie excludes PET."""
+    hits = sorted(_hits("material", text))
+    if len(hits) < 2:
+        return None
+    shares = {}
+    for s, e, canon in hits:
+        m = _PCT_AFTER.match(text[e:]) or _PCT_BEFORE.search(text[:s])
+        if not m:
+            return None
+        shares[canon] = shares.get(canon, 0.0) + float(m.group(1))
+    if len(shares) < 2:
+        return None
+    top = max(shares.values())
+    leaders = [c for c, v in shares.items() if v == top]
+    if len(leaders) == 1:
+        return leaders[0]
+    return "PET" if "PET" in leaders else None
+
+
+# Amendment 4, D2: the weight unit may sit only in the row label, "Weight (g) | 25.5".
+_LABEL_UNIT = re.compile(r"\((g|gm|gms|grams|kg|oz)\)\s*(\d+(?:\.\d+)?)(?![\da-z%.])")
+
+
+def label_unit_weight(text):
+    """Grams from a label unit in parentheses followed by a bare number, or None."""
+    m = _LABEL_UNIT.search(text)
+    return float(m.group(2)) * _FACTOR[m.group(1)] if m else None
 
 
 def quote_ok(key, value, quote, page_text=None):
     """True if the quote supports the value. Rule: after norm_quote, the quote appears in the page text (when
     given) AND names exactly the value (canonical or one of its listed wordings, longest match, no other
-    canonical value of the same key). Weights: the quote holds a number+unit that parses to grams within
+    canonical value of the same key; a blend quote with a share for every material names its largest, tie PET, Amendment 4 D1).
+    Weights: the quote holds a number+unit that parses to grams within
     tolerance of the value."""
     q = norm_quote(quote)
     if not q:
@@ -192,5 +233,10 @@ def quote_ok(key, value, quote, page_text=None):
         return False
     if key == "weight_g":
         g = parse_weight(q)
+        if g is None:
+            g = label_unit_weight(q)
         return g is not None and weight_within(g, value)
-    return _terms_in(key, q) == {value}
+    terms = _terms_in(key, q)
+    if key == "material" and len(terms) > 1:
+        return blend_winner(q) == value
+    return terms == {value}

@@ -1,0 +1,121 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "Clear"
+          }
+        ],
+        "status": "present",
+        "value": "clear"
+      },
+      "features": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "label": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PE/PET laminate"
+          }
+        ],
+        "status": "present",
+        "value": "PE/PET laminate"
+      },
+      "name": "pouch",
+      "ram_category": "plastic",
+      "weight_g": {
+        "status": "missing"
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "White"
+          }
+        ],
+        "status": "present",
+        "value": "white"
+      },
+      "features": {
+        "adhesive": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "paper"
+          }
+        ],
+        "status": "present",
+        "value": "paper"
+      },
+      "name": "label",
+      "ram_category": "paper_board",
+      "weight_g": {
+        "status": "missing"
+      }
+    },
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "Brown"
+          }
+        ],
+        "status": "present",
+        "value": "brown"
+      },
+      "features": {
+        "adhesive": {
+          "status": "missing"
+        },
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "corrugated board"
+          }
+        ],
+        "status": "present",
+        "value": "corrugated board"
+      },
+      "name": "outer carton",
+      "ram_category": "paper_board",
+      "weight_g": {
+        "status": "missing"
+      }
+    }
+  ],
+  "layout": "supplement",
+  "seed": 20261126,
+  "sheet_id": "S808",
+  "source": "synthetic",
+  "template": "table",
+  "tier": "moderate"
+}

@@ -1,0 +1,66 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "Blue"
+          }
+        ],
+        "status": "present",
+        "value": "blue"
+      },
+      "features": {
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "no print, no coating"
+            }
+          ],
+          "status": "present",
+          "value": "no ink or coating"
+        },
+        "liner": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "polyethylene liner"
+            }
+          ],
+          "status": "present",
+          "value": "PE liner"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "polypropylene"
+          }
+        ],
+        "status": "present",
+        "value": "PP"
+      },
+      "name": "cap",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "6.3 g"
+          }
+        ],
+        "status": "present",
+        "value": 6.3
+      }
+    }
+  ],
+  "layout": "supplement",
+  "seed": 20261126,
+  "sheet_id": "S809",
+  "source": "synthetic",
+  "template": "two_block",
+  "tier": "moderate"
+}

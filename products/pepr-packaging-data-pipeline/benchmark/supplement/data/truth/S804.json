@@ -1,0 +1,93 @@
+{
+  "components": [
+    {
+      "colour": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "Clear"
+          }
+        ],
+        "status": "present",
+        "value": "clear"
+      },
+      "features": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "label": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "rPET (PCR 100%)"
+          }
+        ],
+        "status": "present",
+        "value": "rPET"
+      },
+      "name": "tray",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "14.1 g"
+          }
+        ],
+        "status": "present",
+        "value": 14.1
+      }
+    },
+    {
+      "colour": {
+        "status": "missing"
+      },
+      "features": {
+        "adhesive": {
+          "status": "missing"
+        },
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "minimum of 25% PCR kraft paper"
+          }
+        ],
+        "status": "present",
+        "value": "kraft paper"
+      },
+      "name": "outer carton",
+      "ram_category": "paper_board",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "62.3 g"
+          }
+        ],
+        "status": "present",
+        "value": 62.3
+      }
+    }
+  ],
+  "layout": "supplement",
+  "seed": 20261126,
+  "sheet_id": "S804",
+  "source": "synthetic",
+  "template": "table",
+  "tier": "moderate"
+}
