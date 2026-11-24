@@ -282,18 +282,41 @@ def listed_names(outside: str) -> set[str]:
     return names
 
 
-def projected_monthly(outside: str) -> float:
-    """Sum of the 'Estimated $ per month' column of the hand-kept table."""
-    column, totalled = None, 0.0
-    for cells in table_rows(outside):
-        lowered = [c.lower() for c in cells]
-        if any("estimated" in c for c in lowered):
-            column = next(i for i, c in enumerate(lowered) if "estimated" in c)
+def tables(text: str) -> list[list[list[str]]]:
+    """Each markdown table (a run of consecutive '|' lines) as its rows of cells, separator rows dropped."""
+    out, current = [], None
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            current = None
             continue
-        if column is not None and column < len(cells):
-            match = re.search(r"-?\d+(?:\.\d+)?", cells[column].replace(",", ""))
-            if match:
-                totalled += float(match.group())
+        if current is None:
+            current = []
+            out.append(current)
+        if not re.match(r"^\|\s*:?-{3,}", stripped):
+            current.append([cell.strip() for cell in stripped.strip("|").split("|")])
+    return out
+
+
+def projected_monthly(outside: str) -> float:
+    """Sum of the 'Estimated $ per month' column of the hand-kept resource table.
+
+    Only rows of a table whose own header names that column count, so other tables in the
+    file (such as the token log) are never summed under a column index from another table.
+    """
+    totalled = 0.0
+    for rows in tables(outside):
+        if not rows:
+            continue
+        lowered = [c.lower() for c in rows[0]]
+        column = next((i for i, c in enumerate(lowered) if "estimated" in c and "per month" in c), None)
+        if column is None:
+            continue
+        for cells in rows[1:]:
+            if column < len(cells):
+                match = re.search(r"-?\d+(?:\.\d+)?", cells[column].replace(",", ""))
+                if match:
+                    totalled += float(match.group())
     return round(totalled, 2)
 
 
