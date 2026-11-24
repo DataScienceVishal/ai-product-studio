@@ -52,19 +52,21 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Answer: A (Telegram reply "2A" to the 23:05 digest, 23:00:09Z). Create the shared resources when a product reaches G3. Still needed from Vishal at that point: the one-time steps in products/_starter/infra/README.md (check Free services, AZURE_CREDENTIALS, STUDIO_DB_SEED, and the STUDIO_AZURE_APPROVED=yes variable, which agents can't set).
 
 
-## Q-6 (status: open)
+## Q-6 (status: answered 2026-11-24T10:04:29Z)
 - Decision: 39 ideas scored across six scouting rounds and none reached the 70-point bar; how should the studio get to a first product?
 - Context: Every round fails the same way: by late 2026 the vertical system vendors (or an AI-native rival) already sell "AI over your documents" for each niche, so Competition scores 1-5. Desk research alone can't prove the gaps that remain. Best parked ideas: restaurant margin copilot 66, MTD quarterly prep 65, holiday-pay look-back audit 63. Update 2026-11-24 (run e5f5): round 6 tried option A early (only ideas the studio can evidence from public data) and all four were killed at 51-57 on the same Competition/Pay grounds, so A is no longer a credible default.
 - Options: A) Keep scouting, but only ideas where the studio can collect evidence itself (public datasets, open APIs, published case law/complaints), and accept slower progress B) Build the best parked idea anyway as a "better, cheaper, UK-small-business" entrant (restaurant margin copilot vs Jelly at £129/site), using the shared starter, and let a demo to your friend be the evidence C) Tell us your friend's business sector and customers, so round 6 starts from a channel incumbents can't copy (re-asks Q-4 A)
 - Recommended: C, because Reach and Competition are what sink every idea and a real channel fixes both; B is the fallback if you'd rather not share it
 - If no answer: B after 12 hours (reversible; default changed from A on 2026-11-24T05:41Z, see DECISIONS; B is treated as an explicit exception to the G1 gate for this one idea, and still needs Q-7 A to be affordable)
+- Answer: A (Telegram reply "1A" to the 08:00 digest, 10:04:29Z). Keep scouting, only ideas where the studio can collect the evidence itself. T-40 (restaurant margin build) is shelved; scout round 7 (T-42) follows A with round 6's lessons.
 
-## Q-7 (status: open)
+## Q-7 (status: answered 2026-11-24T10:04:31Z)
 - Decision: Can you add a cheap model deployment (e.g. gpt-5-mini or gpt-4.1-mini) next to gpt-5.4-pro on the Azure OpenAI resource, and give its name in AZURE_OPENAI_DEPLOYMENT_MINI?
 - Context: The only model the studio can reach is a premium reasoning model. The 5-document T-12 pilot used ~28k output tokens (~$3.40 at an assumed pro price); the full MTD benchmark would cost about the whole $80 credit, and product features would be slow (70-150 s per document). A mini model is typically 50-100x cheaper per token. The OpenAI resource isn't in rg-ai-studio and the studio has no Azure login, so agents can't add it.
 - Options: A) Add a mini deployment and the env var (about 5 minutes in Azure AI Foundry; recommended) B) Keep pro only: the studio runs the full benchmark at most 20 documents (~$15) and stops C) No more model spend for now: T-12 stays at the pilot
 - Recommended: A, because it makes the benchmark and every product affordable and keeps pro for rare hard cases
 - If no answer: waits (spending money is on the ask-first list); until then the studio behaves as C
+- Answer: B (Telegram reply "2B" to the 08:00 digest, 10:04:31Z). No mini deployment; the studio may run the MTD benchmark on the pro model, at most 20 documents (about $15), then stops. Model spend cap for T-12: $15.
 
 ## Q-8 (status: open)
 - Decision: How should GitHub deploy jobs sign in to Azure once Postgres uses Entra ID (T-18)?

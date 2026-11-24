@@ -31,4 +31,4 @@ Price per token for gpt-5.4-pro is not confirmed. As an assumption, the gpt-5-pr
 | 2026-11-23 | 7a98 | T-1 test call | ~20 | 41 | 21 | <0.01 |
 | 2026-11-24 | f468 | T-12 pilot, 5 calls | 5,709 | 27,619 | 22,509 | ~3.40 |
 
-A full T-12 benchmark at ~650k output tokens would be about $78 at that price, i.e. the whole credit. It must not run on the pro deployment (see HURDLES: a mini deployment is needed first).
+A full T-12 benchmark at ~650k output tokens would be about $78 at that price. Vishal chose Q-7 B (2026-11-24): pro only, at most 20 documents in total, hard cap $15 of model spend for T-12.
