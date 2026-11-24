@@ -78,3 +78,14 @@ cd products/_starter/backend && TEST_DATABASE_URL=postgresql+psycopg://studio:st
 cd products/_starter && E2E_API_PORT=8300 E2E_WEB_PORT=4373 E2E_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/<your_e2e_db> ./scripts/e2e.sh
 ```
 Verify: `cd backend && TEST_DATABASE_URL=... .venv/bin/python -m pytest`.
+
+## T-34 (slice S5, R3, R4, R6 from reviews/T-33-review.md)
+
+Done:
+- S5: `infra/main.bicep` has `azureOpenAiApi` (default `auto`, allowed auto/chat/responses) passed to the app as `AZURE_OPENAI_API`.
+- R3: `infra/cost-guard.sh` fails when tokens or price is 0 or negative, fails (no longer skips) when either AI parameter exists without a default, and prints money with 2 decimals. No harness exists for this script, so it was run on hand-made JSON templates:
+  ok (100000 tokens, 2.00) rc 0; over (500000, 2.00) rc 1, "$30.00 a month"; price "0" rc 1; tokens -5 rc 1; both params without defaults rc 1; only one param (with default) rc 1; price "abc" rc 1; no AI params at all rc 0.
+- R4: `ai_global_daily_tokens` default is now 100,000 (no test depended on 500k; tests set their own caps). `test_settings_accept_only_known_auth_modes` uses `monkeypatch.delenv("AZURE_OPENAI_AUTH")`.
+- R6: `.env.example` lists `AI_GLOBAL_DAILY_TOKENS` and `AI_PRICE_PER_MILLION_TOKENS` with comments.
+
+Tests: backend suite 238 passed, 1 skipped (frontend not built), both normally and with `AZURE_OPENAI_AUTH=managed_identity` exported. Bicep was not compiled here (`az` not installed), so CI should confirm.

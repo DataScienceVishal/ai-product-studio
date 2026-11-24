@@ -40,6 +40,14 @@ param aiProvider string = 'fake'
 param azureOpenAiEndpoint string = ''
 param azureOpenAiDeployment string = 'gpt-5-mini'
 
+@description('auto (responses if the endpoint ends in /openai/v1/responses, else chat), chat or responses. Same default as the app.')
+@allowed([
+  'auto'
+  'chat'
+  'responses'
+])
+param azureOpenAiApi string = 'auto'
+
 @description('Blended price in USD per million tokens of the deployment in azureOpenAiDeployment. 2.00 is the gpt-5-mini assumption; a pro model costs far more, so lower aiGlobalDailyTokens with it. cost-guard.sh checks tokens a day x price x 30 against the $6.10 monthly AI budget.')
 param aiPricePerMillionTokens string = '2.00'
 
@@ -212,6 +220,10 @@ var webSettings = [
   {
     name: 'AZURE_OPENAI_DEPLOYMENT'
     value: azureOpenAiDeployment
+  }
+  {
+    name: 'AZURE_OPENAI_API'
+    value: azureOpenAiApi
   }
   {
     name: 'AI_GLOBAL_DAILY_TOKENS'

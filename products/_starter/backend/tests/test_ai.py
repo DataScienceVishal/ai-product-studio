@@ -344,8 +344,9 @@ def test_build_provider_picks_the_auth_mode(monkeypatch):
     assert built.token_provider.client_id == "cid"
 
 
-def test_settings_accept_only_known_auth_modes():
+def test_settings_accept_only_known_auth_modes(monkeypatch):
     from app.config import Settings
+    monkeypatch.delenv("AZURE_OPENAI_AUTH", raising=False)  # cloud sessions may set it
     assert Settings().azure_openai_auth == "key"
     with pytest.raises(ValueError):
         Settings(azure_openai_auth="password")
