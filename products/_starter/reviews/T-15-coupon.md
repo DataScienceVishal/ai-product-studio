@@ -84,3 +84,15 @@ None.
 - No secrets in the diff. The coupon id contains no tenant data.
 - Cost: one extra Stripe call per offer per process (two if the coupon already exists). It is cached afterwards. The route
   is a sync `def`, so it runs in the threadpool and the extra call does not block the event loop.
+
+## Re-review a2c8e71
+
+**Verdict: PASS**
+
+- `app/billing.py:249` `ensure_coupon` now creates the Idempotency-Key as `coupon-<id>-<uuid4 hex>`, once per call. `_call` sets the header before its retry loop (`billing.py:206-208`), so internal retries reuse the key while separate calls don't. Concurrent first checkouts no longer 409, and stale results no longer replay. Correctness doesn't depend on the key, because the `resource_already_exists` + GET path still handles races.
+- `billing.py:248` limits the coupon name to 40 characters, Stripe's maximum.
+- `tests/test_billing.py:207-208` checks the prefix plus 32 hex characters. **Revert check:** with `billing.py` from a2c8e71^, `test_checkout_with_offer_applies_the_coupon_server_side` FAILS (`'coupon-studio-early50-50pc-3m-v1'.startswith('coupon-studio-early50-50pc-3m-v1-')` is False, exit 1). With the fix restored it passes.
+- Backend suite: 484 passed, 1 skipped (`test_spa.py:103` frontend not built), 0 failed, exit 0. The `ERROR app.ai` lines in the `-rA` output are captured logs, not failures.
+- Frontend vitest: 5 files, 114 tests passed.
+
+Nit (non-blocking): no test uses a code long enough to exercise the 40-character limit. Add one when a longer offer code appears.
