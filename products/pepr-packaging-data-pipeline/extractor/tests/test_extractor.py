@@ -175,7 +175,7 @@ ENV = {"T56_SPEND_APPROVED": "1", "AZURE_OPENAI_ENDPOINT": "https://example.open
 
 @pytest.fixture
 def nb(tmp_path):
-    """A fresh budget whose ledger lives in pytest's tmp_path (cleaned up by pytest)."""
+    """Budget factory; every call in one test shares tmp_path/l.jsonl (cleaned up by pytest)."""
     return lambda: B.Budget(tmp_path / "l.jsonl")
 
 
