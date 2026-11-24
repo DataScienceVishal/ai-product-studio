@@ -1,7 +1,7 @@
 # MTD quarterly prep for small practices
 
 - slug: mtd-quarterly-prep
-- stage: G0
+- stage: KILLED (second gate failure, 2026-11-24, after T-12)
 - market and segment: UK small accountancy and bookkeeping practices (sole practitioners to about 10 staff) with many sole-trader clients brought into Making Tax Digital for Income Tax (from April 2026 above £50k qualifying income; £30k from April 2027; £20k from April 2028), especially clients who are "non-digital" and send paper, PDFs or spreadsheets
 - one-line pitch: Clients send bank statements, receipt photos and spreadsheets however they like. The tool extracts and categorises every transaction into HMRC self-employment categories, raises queries back to the client in plain English, and gives the accountant a reviewed, export-ready quarterly update to file through the practice's existing MTD software.
 
@@ -53,6 +53,8 @@ MTD for Income Tax turns one annual self-assessment job per sole trader into fou
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
 | 15 | 13 | 10 | 8 | 11 | 3 | 5 | 65 |
+
+Second attempt (2026-11-24): 16 / 13 / 9 / 8 / 10 / 3 / 5 = **64, KILL**. See "Validator re-score (second gate attempt, after T-12)" below.
 
 ## Validator notes (2026-11-23)
 
@@ -179,6 +181,7 @@ The evidence weakens the original pitch more than it strengthens it. Dext Solo a
 ## Gate log
 - 2026-11-23: G0 spotted by scout.
 - 2026-11-23 | validator | G0→G1 | REVISE 65 | This batch's strongest pain (HMRC and professional-body data, recurring every quarter and widening in April 2027), but Dext Solo already extracts PDF statements, prompts clients and files to HMRC from £2.50 per client, and holding clients' bank-statement data pulls the risk score down.
+- 2026-11-24 | validator | G0→G1 (second attempt, after T-12) | KILL 64 | Second failure: the T-12 benchmark failed the idea's own test (model-only review time 59-72% of manual, never half); the saving needs a merchant-memory rules layer that Dext and IRIS already ship, the scan and photo wedge was barely measured, and Dext's £2.50 per client still caps Pay. Full re-score in "Validator re-score (second gate attempt)" below.
 
 ## T-12 pilot (run f468, 2026-11-24T03:34:02Z; branch p/mtd-quarterly-prep/T-12, qa check PASS at a776c78)
 - 5 synthetic docs, 32 lines each, fictional bank. One call each to gpt-5.4-pro (default reasoning effort; "low" was rejected).
@@ -186,3 +189,44 @@ The evidence weakens the original pitch more than it strengthens it. Dext Solo a
 - Review time vs manual (assumed seconds per line): 51-56% on the three working docs. With 120 s charged per wrong auto-accepted line (4 such lines, 3 the same tyres merchant), it is 70-81%: the "halves review time" test fails on this pilot.
 - Tokens: 5.7k in, 27.6k out (81% reasoning), 70-150 s per doc. A full benchmark on the pro model would cost about the whole $80 credit (BUDGET.md), so it waits for a mini deployment (Q-7).
 - Read: mechanics work on digital inputs, but digital inputs are what Dext already handles; the wedge (scans, photos) is untested. No second G1 attempt until images are measured.
+
+## Validator re-score (second gate attempt, after T-12), 2026-11-24
+
+Evidence used: this file (first attempt, T-10, T-12 pilot) and the T-12 full benchmark facts from the QA write-up at commit 1ea63fe (`labs/mtd-extraction-bench/RESULTS.md`, `QA-FULL.md`, `NEXT.md` on branch p/mtd-quarterly-prep/T-12). The validator had no shell in this run, so the benchmark figures below come from the Studio Lead's brief, which quotes QA-FULL.md; they agree with the pilot section above. Web check on 2026-11-24 (about 5 minutes, details below).
+
+| Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
+|---|---|---|---|---|---|---|---|
+| 16 | 13 | 9 | 8 | 10 | 3 | 5 | 64 |
+
+How the four "change my mind" items stand:
+1. **Incumbent gap: partly met, and narrower than pitched.** T-10 showed Dext Solo already extracts and categorises PDF statements for non-ledger clients into return boxes and prompts clients by phone, and Sage's MTD IT Agent chases missing records and creates quarterly jobs. What survives is scans, photos and owner spreadsheets with vendor-neutral CSV output.
+2. **Non-digital tail and outsourcing price: not met.** The WK 59% figure is still unverified on its own page; HMRC's 19% digital-skills figure points the other way. No outsourced MTD prep price list was found; the only price evidence is one firm's £35/month client fee and Sage's illustrative tiers.
+3. **Benchmark halving review time: failed on the scout's own test.** Model-only assisted review is 59-72% of manual time and never halves, even when a silently wrong auto-accepted line costs 0 s. Halving appears only with a merchant-memory layer that needs about 60%+ of spend at known merchants, and that figure is a synthetic ceiling (20 of 37 merchants overlap the pilot set). Category accuracy is 98.9% on clear lines but 87.5% on ambiguous ones, and the ambiguous lines are the ones the accountant actually reviews. The wedge's own input type was barely tested: 1 scan, and the 2 image runs in the pilot failed (reasoning tokens exhausted).
+4. **Security design: not done.** Risk stays at 5.
+
+Score changes from 65:
+- Pain +1 (16): HMRC's in-scope numbers were revised up (1,077,000 more from April 2027, about 63% with agents), and the August and November 2026 quarterly deadlines have now actually run (HMRC agent updates, below). Penalty points still don't start until 6 April 2027.
+- Pay 0 (13): no new price evidence; Dext's £2.50 per client anchor stands.
+- AI -1 (9): the benchmark shows the time saving comes from merchant memory (remembered category per merchant), which is a rules layer. Dext (bank and supplier rules, rule import/export since July 2026) and IRIS (remembers category choices) already have it. The model alone doesn't deliver the claimed saving.
+- Reach 0 (8).
+- Build -1 (10): the image path that defines the wedge is unproven, and the pro model would use about the whole $80 credit for a full run; a mini deployment (Q-7) is still pending.
+- Competition 0 (3): the only differentiator left (scans and photos) is the one the studio couldn't demonstrate, and AutoEntry already OCRs scanned statements from 600+ banks.
+- Risk 0 (5).
+
+Web check, 2026-11-24 (nothing that reverses T-10):
+- Dext UK release log: Solo "Export and Import Bank Rules" (July 2026) and per-account or global bank rules (June 2026). That strengthens the incumbent's rules layer, the same thing the benchmark says drives the saving (https://dext.com/en/release-logs, search result).
+- Sage's MTD IT Agent expanded in May 2026 with client matching by National Insurance number and quarterly job creation from about June 2026 (https://www.sage.com/investors/investor-downloads/press-releases/2026/05/sage-gives-accountants-a-head-start-on-quarterly-tax-reporting/ ; https://www.accountingweb.co.uk/tech/accounting-software/sage-expands-mtd-it-agent-with-client-matching-tools, search results).
+- HMRC agent updates confirm the first and second quarterly deadlines as 7 August and 7 November 2026 (https://www.gov.uk/government/publications/agent-update-issue-148/issue-148-of-agent-update, search result).
+
+**Verdict: KILL (second gate failure, 64).** The idea's own falsification test was "extraction and categorisation can't cut review time by about half", and the benchmark failed it: the model alone gets review down to 59-72% of manual, and the halving only appears with a merchant-memory rules layer that incumbents (Dext bank and supplier rules, IRIS remembered categories) already ship. The model is weakest on exactly the ambiguous lines accountants review (87.5%). The narrowed wedge (scans, photos, spreadsheets) rests on input types the studio barely measured and that AutoEntry already OCRs, the size of the non-digital tail is still unverified, and Dext's £2.50 per client anchor caps Pay. No credible path to 70 remains: Competition can't move without a proven image advantage, and Pay can't move without an outsourcing price the studio couldn't find.
+
+**Lessons**
+- Write the idea's own kill test as a number first, then run the cheapest benchmark that could fail it before spending a second gate attempt. Here the T-12 pilot already showed 70-81% with error costs; the full run confirmed it.
+- In bookkeeping, "AI categorisation" savings mostly come from per-merchant memory, which is a deterministic rules layer every ledger and capture tool already has. Model accuracy on clear lines (98.9%) is not the metric; accuracy on the ambiguous lines a human reviews is.
+- If the wedge is defined by an input type (scans, photos), benchmark that input type first. Benchmarking the easy digital formats proves only what incumbents already sell.
+- Reasoning-model token budgets can make vision extraction both fail and cost too much on an $80 credit. Check model cost per document before designing a benchmark.
+- Strong public pain (HMRC, ICAEW, AAT data) in a deadline-driven regulation draws every incumbent; the pain score never compensates for Competition at 3.
+
+**What would revive it**
+- A benchmark on at least 30 real-looking scanned and photographed UK statements (cheaper vision model) showing model-only review time at or below 50% of manual, with ambiguous-line accuracy at 95% or better; and
+- either a verified published price that practices pay for outsourced MTD quarterly prep (above about £10 per client per month), or public evidence that Dext Solo and AutoEntry fail on scans and owner spreadsheets (help docs, reviews, forum threads).
