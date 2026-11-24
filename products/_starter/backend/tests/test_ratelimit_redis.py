@@ -1,8 +1,13 @@
 """Redis-backed rate limits (T-15): shared across replicas, same window semantics, safe when Redis fails."""
 from __future__ import annotations
 
+import asyncio
 import logging
+import threading
 import time
+from concurrent.futures import CancelledError
+from types import SimpleNamespace
+from unittest import mock
 
 import fakeredis
 import pytest
@@ -205,11 +210,6 @@ def test_slow_limiter_does_not_block_the_event_loop(app):
 
 # ---- own bounded pool for Redis checks (T-15 pool) ----
 
-import asyncio
-import threading
-from types import SimpleNamespace
-
-
 def _req(limiter):
     return SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(limiter=limiter)))
 
@@ -223,6 +223,8 @@ def test_redis_checks_run_on_the_limiters_own_pool(server):
 
 
 def test_pool_is_bounded(server):
+    # Counts thread names: it would also pass on one shared pool with a single name, which the `..._own_pool`
+    # test above rules out.
     limiter = RateLimiter(redis_client=fakeredis.FakeRedis(server=server), redis_threads=3)
     names = set()
     lock = threading.Lock()
@@ -259,20 +261,189 @@ def test_threads_setting_validated(server):
 def test_shutdown_stops_pool_and_is_idempotent(server):
     limiter = RateLimiter(redis_client=fakeredis.FakeRedis(server=server))
     assert limiter.redis_threads == 8
+    asyncio.run(limiter.run_blocking(lambda: None))
+    pool = limiter._executor
+    assert pool is not None
     limiter.shutdown()
     limiter.shutdown()
+    assert limiter._executor is None
     with pytest.raises(RuntimeError):
-        limiter._executor.submit(lambda: None)
+        pool.submit(lambda: None)
 
 
 def test_app_shutdown_stops_pool(app, monkeypatch):
-    _settings = app.state.settings
     from fastapi.testclient import TestClient
     from app.main import create_app
     import app.main as main
     monkeypatch.setattr(main, "build_redis_client", lambda url: fakeredis.FakeRedis())
-    app = create_app(_settings.model_copy(update={"rate_limit_redis_url": "redis://x", "rate_limit_redis_threads": 4}))
-    with TestClient(app) as c:
+    new_app = create_app(app.state.settings.model_copy(
+        update={"rate_limit_redis_url": "redis://x", "rate_limit_redis_threads": 4}))
+    with TestClient(new_app) as c:
         assert c.app.state.limiter.redis_threads == 4
+        c.post("/api/auth/login", json={"email": "a@b.test", "password": "x" * 12}, headers=HDRS)
+        pool = c.app.state.limiter._executor
+        assert pool is not None
     with pytest.raises(RuntimeError):
-        c.app.state.limiter._executor.submit(lambda: None)
+        pool.submit(lambda: None)
+
+
+HDRS = {"X-Requested-With": "test"}
+
+
+def test_second_lifespan_on_the_same_app_works(app, monkeypatch):
+    """S3: two sequential `with TestClient(app)` blocks; the Redis-gated login must answer 401, not 500."""
+    from fastapi.testclient import TestClient
+    from app.main import create_app
+    import app.main as main
+    monkeypatch.setattr(main, "build_redis_client", lambda url: fakeredis.FakeRedis())
+    new_app = create_app(app.state.settings.model_copy(update={"rate_limit_redis_url": "redis://x"}))
+    for _ in range(2):
+        with TestClient(new_app) as c:
+            r = c.post("/api/auth/login", json={"email": "nobody@b.test", "password": "x" * 12}, headers=HDRS)
+            assert r.status_code == 401, r.text
+            assert threading.active_count() >= 1
+
+
+def test_request_id_is_visible_inside_the_pool_thread(server):
+    """S1: the context is copied into the pool thread (fails without ctx.run)."""
+    from app.logs import request_id_var
+    limiter = RateLimiter(redis_client=fakeredis.FakeRedis(server=server), redis_threads=1)
+    seen = []
+
+    async def go():
+        request_id_var.set("rid-123")
+        await ratelimit.off_loop(_req(limiter), lambda: seen.append(request_id_var.get()))
+
+    asyncio.run(go())
+    assert seen == ["rid-123"]
+    limiter.shutdown()
+
+
+def test_shutdown_cancels_queued_checks_and_lets_running_finish(server):
+    """S5: 1 thread: the running check finishes, the queued one is cancelled (fails with cancel_futures=False)."""
+    limiter = RateLimiter(redis_client=fakeredis.FakeRedis(server=server), redis_threads=1)
+    release, started = threading.Event(), threading.Event()
+
+    def running():
+        started.set()
+        release.wait(5)
+        return "ok"
+
+    pool = limiter._pool()
+    f1 = pool.submit(running)
+    assert started.wait(5)
+    f2 = pool.submit(lambda: "queued")
+    limiter.shutdown()
+    release.set()
+    assert f1.result(5) == "ok"
+    with pytest.raises(CancelledError):
+        f2.result(5)
+
+
+def test_shutdown_closes_the_redis_client():
+    client = mock.Mock()
+    limiter = RateLimiter(redis_client=client)
+    limiter.shutdown()
+    client.close.assert_called_once_with()
+    client.close.side_effect = RuntimeError("boom")
+    limiter.shutdown()  # swallowed
+
+
+def test_queue_timeout_setting_validated(server):
+    from app.config import Settings
+    assert Settings(_env_file=None).rate_limit_redis_queue_timeout == 1.0
+    for bad in (0, -1, 31):
+        with pytest.raises(Exception):
+            Settings(rate_limit_redis_queue_timeout=bad, _env_file=None)
+    for bad in (0, -0.5):
+        with pytest.raises(ValueError):
+            RateLimiter(redis_client=fakeredis.FakeRedis(server=server), redis_queue_timeout=bad)
+
+
+def _slow_gate_limiter(server, calls, delay=0.5, timeout=0.2):
+    limiter = RateLimiter(redis_client=fakeredis.FakeRedis(server=server), redis_threads=1,
+                          redis_queue_timeout=timeout)
+    orig = limiter._redis_hit
+
+    def slow_redis_hit(key, limit, window):
+        calls.append(key)
+        time.sleep(delay)
+        return orig(key, limit, window)
+
+    limiter._redis_hit = slow_redis_hit
+    return limiter
+
+
+def test_queue_wait_is_bounded_and_late_waiters_use_the_memory_check(server, caplog):
+    """S2: 1 thread, a slow gate, N waiters: the late ones are answered within the bound, the breaker trips, and
+    no withdrawn job runs against Redis afterwards."""
+    calls: list[str] = []
+    limiter = _slow_gate_limiter(server, calls, delay=0.5, timeout=0.2)
+    n = 6
+    finished: dict[int, float] = {}
+
+    async def go():
+        t0 = time.monotonic()
+
+        async def one(i):
+            await ratelimit.off_loop(_req(limiter), lambda: limiter.check(f"k{i}", 5))
+            finished[i] = time.monotonic() - t0
+
+        await asyncio.gather(*[one(i) for i in range(n)])
+
+    with caplog.at_level(logging.WARNING, logger="app.ratelimit"):
+        asyncio.run(go())
+    late = [finished[i] for i in range(1, n)]
+    assert max(late) < 0.2 + 0.25, finished  # bound plus scheduling slack, far below 6 * 0.5 s
+    assert limiter._redis_down_until > time.monotonic()  # breaker tripped on "slow"
+    assert any("queue timeout" in r.getMessage() for r in caplog.records)
+    time.sleep(0.7)  # let the running job end; withdrawn ones must not run later
+    assert calls == ["k0"] or len(calls) == 1, calls  # only the job that was already running touched Redis
+    limiter.shutdown()
+
+
+def test_withdrawn_job_does_not_double_count(server):
+    """The timed-out gate is counted once (in memory); the queued Redis job is a no-op."""
+    calls: list[str] = []
+    limiter = _slow_gate_limiter(server, calls, delay=0.4, timeout=0.1)
+    observer = fakeredis.FakeRedis(server=server)
+
+    async def go():
+        await asyncio.gather(ratelimit.off_loop(_req(limiter), lambda: limiter.check("a", 5)),
+                             ratelimit.off_loop(_req(limiter), lambda: limiter.check("b", 5)))
+
+    asyncio.run(go())
+    time.sleep(0.6)
+    assert observer.zcard("rl:b") == 0  # never reached Redis
+    assert len(limiter._hits["b"]) == 1  # answered once, in memory
+    # the running job finished after the breaker tripped, so it was answered in memory: counted exactly once
+    assert observer.zcard("rl:a") + len(limiter._hits.get("a", ())) == 1
+    limiter.shutdown()
+
+
+def test_cancelled_waiter_is_withdrawn(server):
+    calls: list[str] = []
+    limiter = _slow_gate_limiter(server, calls, delay=0.4, timeout=5)
+
+    async def go():
+        first = asyncio.ensure_future(ratelimit.off_loop(_req(limiter), lambda: limiter.check("a", 5)))
+        await asyncio.sleep(0.05)
+        second = asyncio.ensure_future(ratelimit.off_loop(_req(limiter), lambda: limiter.check("b", 5)))
+        await asyncio.sleep(0.05)
+        second.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await second
+        await first
+
+    asyncio.run(go())
+    time.sleep(0.2)
+    assert calls == ["a"]
+    limiter.shutdown()
+
+
+def test_open_breaker_skips_the_pool(server):
+    limiter = RateLimiter(redis_client=fakeredis.FakeRedis(server=server))
+    limiter._redis_down_until = time.monotonic() + 60
+    seen = []
+    asyncio.run(limiter.run_blocking(lambda: seen.append(threading.current_thread())))
+    assert seen == [threading.main_thread()] and limiter._executor is None

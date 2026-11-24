@@ -49,6 +49,8 @@ class Settings(BaseSettings):
     rate_limit_redis_url: str = ""
     # Size of the limiter's own thread pool for Redis checks (kept apart from the shared worker threads).
     rate_limit_redis_threads: int = Field(default=8, ge=1)
+    # Longest a gate waits for a free pool thread (seconds) before the in-memory check answers it and the breaker trips.
+    rate_limit_redis_queue_timeout: float = Field(default=1.0, gt=0, le=30)
     new_trials_per_day: int = 200  # studio-wide, so farmed trials can't exhaust shared budgets
 
     # AI
