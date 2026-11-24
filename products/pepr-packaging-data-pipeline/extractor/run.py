@@ -22,13 +22,15 @@ def _ledger_has_test_entries(ledger):
     if not Path(ledger).exists():
         return False
     entries = [json.loads(ln) for ln in Path(ledger).read_text().splitlines() if ln.strip()]  # parse every line: no short-circuit
+    for e in entries:  # every line must be a usable ledger entry, as Budget requires
+        float(e["usd"]), int(e["input_tokens"]), int(e["output_tokens"])
     return any(e.get("sheet_id") in ids for e in entries)
 
 def _supplement_gate(ledger):
     """Return an error message if the supplement must not run, else None. An unreadable ledger never allows it."""
     try:
         has_test = _ledger_has_test_entries(ledger)
-    except (ValueError, AttributeError, TypeError, OSError, UnicodeDecodeError) as e:
+    except (ValueError, AttributeError, TypeError, KeyError, OSError, UnicodeDecodeError) as e:
         return f"refused: the ledger {ledger} is unreadable ({type(e).__name__}: {e}); the supplement will not run on an unreadable ledger"
     if not has_test:  # Amendment 4: never before the test set
         return ("refused: the supplement runs only after the test set (no test-set entries in the ledger); "
