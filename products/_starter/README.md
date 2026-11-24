@@ -33,7 +33,7 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 
 | What | Command | Where it runs |
 |---|---|---|
-| Backend unit and API tests (458 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
+| Backend unit and API tests (466 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
 | Migrations match the models | `alembic upgrade head && alembic check` | every push |
 | Frontend type check and build | `cd frontend && npm run build` | every push (CI `frontend`) |
 | Browser end-to-end core flow | `./scripts/e2e.sh` | pushes to main and manual runs (CI `e2e`) |
@@ -166,7 +166,7 @@ tokens actually used. The reservation is `system prompt (287 bytes) + note bytes
 `/openai/v1/responses`). So the cap is not a daily call count: a call is refused once less than its reservation is
 left, and `cap / reservation` is a floor (calls that all run at once, or each use their full budget). Short answers
 leave room for more.
-Worked example (Responses API, 1 KB note): reservation about 287 + 1,000 + 17 + 2,700 = 4,000, so 100,000 admits at
+Worked example (Responses API, 1 KB note): reservation about 287 + 1,000 + 17 + 2,700 = 4,004, so 100,000 admits at
 least 24 such calls (100,000 / 4,004). A 20,000-character note reserves 23k to 83k (multibyte text), which can exceed the 30k trial cap on
 its own. Until `unlock selling`, `LIMITED_PROVIDERS` (mock, Stripe test) makes every tenant draw on the trial half
 (`AI_TRIAL_SHARE` 0.5, 50,000 of 100,000). Size the cap from the reservation of your typical note, then check the cost
