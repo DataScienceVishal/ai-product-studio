@@ -42,10 +42,9 @@ Illustrative example (real sheet S018, component "can"; page numbers and quotes 
 
 ```json
 {"name": "can",
- "material": {"status": "present", "value": "steel", "accepted_values": ["tinplate steel", "tinplate"],
+ "material": {"status": "present", "value": "steel", "accepted_values": ["tinplate"],
               "refs": [{"page": 1, "quote": "tinplate steel"}]},
- "features": {"label": {"status": "present", "value": "PP film label", "refs": [{"page": 1, "quote": "polypropylene film label"}]},
-              "ink_coating": {"status": "missing"}, "barrier_layer": {"status": "missing"}}}
+ "features": {"label": {"status": "missing"}, "ink_coating": {"status": "missing"}, "barrier_layer": {"status": "missing"}}}
 ```
 Always read `data/truth/*.json` for the exact content.
 
