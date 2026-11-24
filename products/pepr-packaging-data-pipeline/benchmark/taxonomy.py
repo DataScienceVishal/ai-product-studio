@@ -125,8 +125,9 @@ def norm_name(s):
     return _INV.get(n, n)
 
 
-_W = re.compile(r"(\d+(?:\.\d+)?)\s*(kg|mg|g|oz)\b", re.I)
-_FACTOR = {"g": 1.0, "kg": 1000.0, "mg": 0.001, "oz": G_PER_OZ}
+# Amendment 3 (2026-11-24, before any model run): real sheets write grams as "gm", "gms" or "grams" (benchmark/REALISM.md).
+_W = re.compile(r"(\d+(?:\.\d+)?)\s*(kg|mg|grams|gram|gms|gm|g|oz)\b", re.I)
+_FACTOR = {"g": 1.0, "gm": 1.0, "gms": 1.0, "gram": 1.0, "grams": 1.0, "kg": 1000.0, "mg": 0.001, "oz": G_PER_OZ}
 
 
 def parse_weight(text):

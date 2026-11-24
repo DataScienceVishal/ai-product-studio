@@ -358,3 +358,9 @@ def test_weight_and_name_normalisation():
 def test_total_size_under_limit(out):
     d, _ = out
     assert sum(p.stat().st_size for p in d.rglob("*") if p.is_file()) < 5 * 1024 * 1024
+
+
+def test_amendment3_gram_spellings_parse():
+    for q in ("37.00gm", "37.00 gm \u00b1 2.00gm", "37 gms", "37 grams", "37 gram", "37g"):
+        assert tx.parse_weight(q) == 37.0, q
+    assert tx.parse_weight("0.037 kg") == 37.0 and tx.parse_weight("37 gsm") is None  # areal weight is not unit weight

@@ -50,3 +50,10 @@ Run (after approval): `T56_SPEND_APPROVED=1 python3 -m extractor.run --set tunin
 C1: default max_output_tokens 6000; `--set test` refuses to start (exit 4) unless remaining budget covers 30 x USD 0.316 + one worst-case reservation (and a token analogue). C2: pass mark 4b = share of conflicts flagged (Studio Lead decision); both-values rate is information only; README updated. S1 (unknown feature keys count as untraced), S3 (HTTP 400/401/403 stops the run, exit 5), S4, S5 done. Not done: S2 (5xx retries share one reservation), S6 (record image tokens after first scanned tuning sheet). After tuning set max_output_tokens to ~3x the largest output seen, minimum 4000.
 
 S2 fixed: `AzureResponsesProvider.complete(..., budget, label)` (passed by `extract_pdf`) records every 5xx at its worst case (estimated entry) and re-runs `budget.check` before each retry; a refused retry raises BudgetExceeded and makes no further call. Timeouts were already never retried and are charged by `extract_pdf`; connect errors and 429 stay free. S6 still not done.
+
+## Run bea4 (2026-11-24 ~18:50Z)
+- S2 nits done (05509da, 03cdff8), reviewer PASS (reviews/T-56-s2.md "Nits review").
+- `benchmark/REALISM.md`: 13 real public spec sheets vs our synthetic set. Verdict MIXED: easier on layout/wording (always a per-unit weight, one product per sheet, closed wording), harder on conflicts/scans. A 90% pass likely overstates real-sheet accuracy on weight, colour, material.
+- Amendment 3 (scorer, before any run): `parse_weight` accepts gm/gms/gram/grams (test added; 81 pass). Test sheets and truth unchanged.
+- **Next (slice S7, before or alongside slice 4, model-free):** a separate ~10-sheet "realism supplement" set (new seed) per REALISM.md changes 1-5, reported separately; pass marks unchanged. Decide in writing first: truth for blends ("rPET 30% + PET 70%"), bare number under "Weight (g)" label (quote_ok must accept unit in label), weight given only as gsm/µm/case weight -> `missing`. Plus one UK-source search round (British Glass members, Berry, Bericap, DS Smith).
+- Still waiting: Q-11 ($12). No Azure call made.
