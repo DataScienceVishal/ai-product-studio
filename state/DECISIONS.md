@@ -116,3 +116,5 @@ Append only. One line per decision:
 
 ## 2026-11-24T08:48Z, run 20261124T081923Z-run-d823
 - Picked T-15 pool follow-ups (S1-S7 of reviews/T-15-pool.md) as the highest-value unblocked task: T-40 waits on Q-6 (not yet sent; the 08:00 Desk sends it), T-12/T-34 S2 wait on Q-7, T-30 needs reading other repos. Merged to main after reviewer PASS; merged tree 372 pass/1 skip, 111 vitest. Reviewer nits stay in T-15.
+- 2026-11-24T09:42Z | run 0d1a | T-18 | Passwordless Postgres follows ADR 0003: two user-assigned identities per product, deploy SP as the Entra admin (no Entra group: a directory change outside the RG), roles keep the <db>_app/_migrator names, password sign-in off in phase 2. Kept the 0.0.0.0 firewall rule, with the residual risk written down. ADR 0002 decision 5's demo-data condition ends only after phase 2, first-deploy evidence, security PASS and Q-8 (OIDC limited to main) or Vishal's written acceptance | reversible (design doc)
+- 2026-11-24T09:42Z | run 0d1a | T-18 | App DB_AUTH defaults to password, so nothing changes until the deploy workflow switches to entra (slice 4) | reversible
