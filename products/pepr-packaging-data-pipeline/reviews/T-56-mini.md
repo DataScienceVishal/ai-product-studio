@@ -94,3 +94,42 @@ Tests: `/usr/bin/python3 -m pytest -q extractor/tests benchmark/tests` gives **1
 ## Final verdict (HEAD 4fbfac0): PASS
 
 `1feb857` and `4fbfac0` change only NEXT.md. It no longer credits the reviewer with checking the effort settings: it says the Studio Lead checked minimal and low with two tiny calls, untested on full sheets, and the re-tune command now uses medium. The full suite passes again: 181 tests, no Azure calls. Not blocking: those two "say ok" calls are not in `results/ledger.jsonl`. Their cost is negligible (well under USD 0.001), but any future call made outside the extractor should be recorded in the ledger so that the USD 12 cap covers all spend.
+
+## T-56 resume review: commit 28fae5e (2026-11-24)
+
+**Verdict: CHANGES** (one blocking item, small fix)
+
+Tests: `/usr/bin/python3 -m pytest -q extractor/tests benchmark/tests` gives **197 passed**. No Azure calls were made. I did not run score.py on test1 and did not open any test truth.
+
+**What is right**
+- **Resets after send are charged and retried.** These are `ConnectionResetError`, `ConnectionAbortedError`, `BrokenPipeError`, TLS errors and `http.client` errors, whether raw or wrapped in `URLError`. Each one goes through `_charge_and_retry` (`extractor/providers.py`), which works like the 5xx path:
+  - it writes a worst-case `estimated` row first;
+  - it runs `budget.check` again before the next attempt, and a `BudgetExceeded` from that check propagates, so no further call is made;
+  - then it backs off.
+- **Why the old crash happened.** In CPython's `urllib`, `getresponse()` is outside the `URLError` wrapper. So a raw `OSError` really does mean the request was sent, which is how S017 crashed. Errors before send (connection refused, DNS) stay free. Timeouts are still charged and never resent.
+- **Retries are bounded and stay under the cap.**
+  - The loop is `range(retries + 1)`, which is 4 attempts.
+  - Every attempt is preceded by a guard check: `extract_pdf` checks the first, `_charge_and_retry` checks each retry.
+  - So recorded spend can reach the USD 12 cap but never pass it, given that a real call costs no more than its worst case.
+  - When retries run out, the result is a non-fatal `ProviderError` with no tokens. `extract_pdf` adds no row for it, so there is no double charge, and the sheet is written empty with a warning.
+- **`--resume` was checked offline against the real `results/test1` and a copy of the ledger.**
+  - It skips S001 to S016, including S016, which has an empty incomplete output and a final, non-estimated mini row. It never re-calls S016.
+  - It plans S017 to S030 (14 sheets).
+  - It stops with exit 7 if an output has no row for this price model, or if a final row has no output.
+  - A sheet with only estimated rows and no output is re-run, which is what S017 needs after the charge.
+- **`--charge-worst-case` cannot double-charge.** It refuses a sheet that already has an output or any ledger row, for any model. I ran it a second time on the copy and it was refused. It also requires `--resume`.
+  - The S017 charge is USD 0.017: 20,000 input tokens plus 6,000 output at the mini price. It is an upper bound, because S017's real input estimate is lower.
+  - It adds to S017's mark 5 cost. That is conservative and honest.
+- **The pre-flight with `--resume` is sound.** It reserves 14 times one worst-case call, plus one more: USD 0.255. Spend after the charge is USD 3.222, so USD 8.78 is left.
+  - The earlier argument still holds: each remaining sheet's input estimate is at most 19,237 tokens.
+  - Each reset retry uses one extra reservation of USD 0.017. With about USD 8.5 of headroom, a cut-short run is not realistic.
+
+**Blocking**
+1. **`extractor/run.py:133` (with lines 137-147): `--resume` overwrites `results/test1/run.json` and never checks that the resumed settings match the original run.**
+   - **Why it matters.** Amendment 6 item 4 and the Studio Lead's decision require the same settings for the single test run. Today `run.json` is rewritten before the resume plan is built. A resume that silently uses a different `T56_MAX_OUTPUT_TOKENS`, effort or deployment would mix two configurations in one "single" test. For example, a value left in the shell from tuning would do it. The overwrite would also replace the on-disk record of what S001 to S016 ran with. Git still has it, in c334ce4, but the tool should not depend on that.
+   - **Fix.** With `--resume`, read the existing `<out>/run.json` before writing anything. Refuse with exit 7 if any of `set`, `deployment`, `price_model`, `max_output_tokens` or `reasoning_effort` differs. Write the resume's own record to `<out>/run-resume.json` instead of overwriting `run.json`. Add a test for each case: matching settings resume, and a different `max_output_tokens` exits 7 before any charge or call.
+
+**Suggestions**
+- **Do the S017 charge after the consistency checks.** `_resume_plan` writes the `--charge-worst-case` row before it checks the other sheets. If that check then exits 7, the charge is already in the ledger, and re-running the same command is refused because S017 now has a row. That is loud and safe, but confusing. Checking everything first and charging last would avoid it.
+- **`ssl.SSLError` wrapped in `URLError` is charged at worst case.** This includes certificate failures during the handshake, which happen before send. It is conservative, at most 4 times USD 0.017 a sheet. Acceptable, but a comment would help.
+- **Refresh the NEXT.md resume command.** It should show the recorded values (`T56_REASONING_EFFORT=medium T56_MAX_OUTPUT_TOKENS=6000`) instead of `<recorded>`.
