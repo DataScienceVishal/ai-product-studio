@@ -1,0 +1,265 @@
+{
+ "file": "scan_stall.jpg",
+ "opening_balance": 2450.0,
+ "persona": "market_stall",
+ "layout": "northbank",
+ "kind": "scan",
+ "lines": [
+  {
+   "date": "2026-04-06",
+   "description": "DD TELLOWAY MOBILE",
+   "amount": -22,
+   "balance": 2428.0,
+   "category": "phone_office",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-04-07",
+   "description": "DD STREAMBOX SUBSCRIPTION",
+   "amount": -10,
+   "balance": 2418.0,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-14",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -474.07,
+   "balance": 1943.93,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-17",
+   "description": "CARD PAYMENT TO TOPMART HARDWARE",
+   "amount": -47.97,
+   "balance": 1895.96,
+   "category": "other_expenses",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-04-18",
+   "description": "DD PENNYWORTH ACCOUNTANTS",
+   "amount": -45,
+   "balance": 1850.96,
+   "category": "professional_fees",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-24",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -3.75,
+   "balance": 1847.21,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-27",
+   "description": "DD HARLOW FUEL STATION 6448",
+   "amount": -67.16,
+   "balance": 1780.05,
+   "category": "car_van_travel",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-03",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 193.91,
+   "balance": 1973.96,
+   "category": "transfer",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-04",
+   "description": "CARD PAYMENT TO JARBARN PACKAGING",
+   "amount": -79.39,
+   "balance": 1894.57,
+   "category": "cost_of_goods",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-06",
+   "description": "CARD PAYMENT TO CRAFTFAYRE ONLINE",
+   "amount": -25.08,
+   "balance": 1869.49,
+   "category": "advertising",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-07",
+   "description": "CASH WITHDRAWAL ATM 6284",
+   "amount": -60.47,
+   "balance": 1809.02,
+   "category": "drawings_personal",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-08",
+   "description": "CASH DEPOSIT MARKET TAKINGS",
+   "amount": 229.84,
+   "balance": 2038.86,
+   "category": "turnover",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-09",
+   "description": "CASH WITHDRAWAL FLOAT 1854",
+   "amount": -65.95,
+   "balance": 1972.91,
+   "category": "transfer",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-09",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -15.4,
+   "balance": 1957.51,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-13",
+   "description": "DD STALLSURE INSURANCE",
+   "amount": -19,
+   "balance": 1938.51,
+   "category": "other_expenses",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-15",
+   "description": "MONTHLY ACCOUNT FEE",
+   "amount": -7,
+   "balance": 1931.51,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-26",
+   "description": "CARD PAYMENT TO WAXWORKS WHOLESALE",
+   "amount": -185.0,
+   "balance": 1746.51,
+   "category": "cost_of_goods",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-31",
+   "description": "CARD PAYMENT TO STARLIGHT CINEMAS",
+   "amount": -18.59,
+   "balance": 1727.92,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-31",
+   "description": "CARD SETTLEMENT SPARKPAY 8202",
+   "amount": 295.93,
+   "balance": 2023.85,
+   "category": "turnover",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-06",
+   "description": "CARD PAYMENT TO CAFE LUNA",
+   "amount": -13.29,
+   "balance": 2010.56,
+   "category": "drawings_personal",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-06-11",
+   "description": "CARD PAYMENT TO MARKETHALL PITCH FEE",
+   "amount": -25,
+   "balance": 1985.56,
+   "category": "premises",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-12",
+   "description": "TRANSFER TO SAVINGS 8841",
+   "amount": -288.66,
+   "balance": 1696.9,
+   "category": "transfer",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-15",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -41.69,
+   "balance": 1655.21,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-16",
+   "description": "DD STALLSURE INSURANCE",
+   "amount": -19,
+   "balance": 1636.21,
+   "category": "other_expenses",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-18",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -3.58,
+   "balance": 1632.63,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-19",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -372.53,
+   "balance": 1260.1,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-24",
+   "description": "MONTHLY ACCOUNT FEE",
+   "amount": -7,
+   "balance": 1253.1,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-24",
+   "description": "CARD PAYMENT TO CRAFTFAYRE ONLINE",
+   "amount": -23.13,
+   "balance": 1229.97,
+   "category": "advertising",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-27",
+   "description": "CASH DEPOSIT MARKET TAKINGS",
+   "amount": 124.99,
+   "balance": 1354.96,
+   "category": "turnover",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-28",
+   "description": "CARD PAYMENT TO WAXWORKS WHOLESALE",
+   "amount": -184.34,
+   "balance": 1170.62,
+   "category": "cost_of_goods",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-29",
+   "description": "CARD PAYMENT TO WAXWORKS WHOLESALE",
+   "amount": -51.61,
+   "balance": 1119.01,
+   "category": "cost_of_goods",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-29",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 138.66,
+   "balance": 1257.67,
+   "category": "transfer",
+   "ambiguous": false
+  }
+ ]
+}

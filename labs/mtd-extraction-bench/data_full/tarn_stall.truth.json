@@ -1,0 +1,265 @@
+{
+ "file": "tarn_stall.pdf",
+ "opening_balance": 2450.0,
+ "persona": "market_stall",
+ "layout": "tarn",
+ "kind": "pdf",
+ "lines": [
+  {
+   "date": "2026-04-11",
+   "description": "DD PENNYWORTH ACCOUNTANTS",
+   "amount": -45,
+   "balance": 2405.0,
+   "category": "professional_fees",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-17",
+   "description": "CASH WITHDRAWAL FLOAT 8820",
+   "amount": -75.82,
+   "balance": 2329.18,
+   "category": "transfer",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-04-18",
+   "description": "CARD PAYMENT TO WAXWORKS WHOLESALE",
+   "amount": -97.6,
+   "balance": 2231.58,
+   "category": "cost_of_goods",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-18",
+   "description": "CARD PAYMENT TO JARBARN PACKAGING",
+   "amount": -72.74,
+   "balance": 2158.84,
+   "category": "cost_of_goods",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-22",
+   "description": "MONTHLY ACCOUNT FEE",
+   "amount": -7,
+   "balance": 2151.84,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-24",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 224.5,
+   "balance": 2376.34,
+   "category": "transfer",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-30",
+   "description": "CARD PAYMENT TO CAFE LUNA",
+   "amount": -13.26,
+   "balance": 2363.08,
+   "category": "drawings_personal",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-01",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -8.0,
+   "balance": 2355.08,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-03",
+   "description": "DD TELLOWAY MOBILE",
+   "amount": -22,
+   "balance": 2333.08,
+   "category": "phone_office",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-03",
+   "description": "CARD SETTLEMENT SPARKPAY 4800",
+   "amount": 195.57,
+   "balance": 2528.65,
+   "category": "turnover",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-08",
+   "description": "CASH WITHDRAWAL ATM 7498",
+   "amount": -111.96,
+   "balance": 2416.69,
+   "category": "drawings_personal",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-08",
+   "description": "CARD PAYMENT TO STARLIGHT CINEMAS",
+   "amount": -20.12,
+   "balance": 2396.57,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-12",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -403.67,
+   "balance": 1992.9,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-13",
+   "description": "DD STREAMBOX SUBSCRIPTION",
+   "amount": -10,
+   "balance": 1982.9,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-15",
+   "description": "CASH DEPOSIT MARKET TAKINGS",
+   "amount": 266.47,
+   "balance": 2249.37,
+   "category": "turnover",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-20",
+   "description": "DD STALLSURE INSURANCE",
+   "amount": -19,
+   "balance": 2230.37,
+   "category": "other_expenses",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-23",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -34.15,
+   "balance": 2196.22,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-29",
+   "description": "TRANSFER TO SAVINGS 8841",
+   "amount": -198.45,
+   "balance": 1997.77,
+   "category": "transfer",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-03",
+   "description": "DD HARLOW FUEL STATION 3230",
+   "amount": -45.63,
+   "balance": 1952.14,
+   "category": "car_van_travel",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-06-05",
+   "description": "CARD PAYMENT TO TOPMART HARDWARE",
+   "amount": -31.82,
+   "balance": 1920.32,
+   "category": "other_expenses",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-06-06",
+   "description": "CARD PAYMENT TO CRAFTFAYRE ONLINE",
+   "amount": -18.46,
+   "balance": 1901.86,
+   "category": "advertising",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-06",
+   "description": "CARD PAYMENT TO MARKETHALL PITCH FEE",
+   "amount": -25,
+   "balance": 1876.86,
+   "category": "premises",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-07",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -4.24,
+   "balance": 1872.62,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-10",
+   "description": "DD STREAMBOX SUBSCRIPTION",
+   "amount": -10,
+   "balance": 1862.62,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-10",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 250.22,
+   "balance": 2112.84,
+   "category": "transfer",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-12",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -5.79,
+   "balance": 2107.05,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-12",
+   "description": "CASH WITHDRAWAL ATM 7224",
+   "amount": -77.95,
+   "balance": 2029.1,
+   "category": "drawings_personal",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-06-12",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 182.25,
+   "balance": 2211.35,
+   "category": "transfer",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-19",
+   "description": "DD STREAMBOX SUBSCRIPTION",
+   "amount": -10,
+   "balance": 2201.35,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-24",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -386.24,
+   "balance": 1815.11,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-29",
+   "description": "CASH WITHDRAWAL ATM 2390",
+   "amount": -113.08,
+   "balance": 1702.03,
+   "category": "drawings_personal",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-07-03",
+   "description": "CARD PAYMENT TO WAXWORKS WHOLESALE",
+   "amount": -185.11,
+   "balance": 1516.92,
+   "category": "cost_of_goods",
+   "ambiguous": false
+  }
+ ]
+}

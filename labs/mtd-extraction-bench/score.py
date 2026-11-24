@@ -13,6 +13,9 @@ ASSUMP = {
 }
 
 
+SILENT_ERROR_COST = 120.0  # s charged per undetected wrong auto-accepted line (find later + fix / amend)
+
+
 def norm(s):
     return re.sub(r"[^a-z0-9 ]", "", str(s or "").lower()).strip()
 
@@ -80,7 +83,11 @@ def score_doc(truth, pred, threshold=THRESHOLD, assump=ASSUMP):
     ai = (assump["fixed_per_doc"] + assump["glance_per_line"] * auto +
           assump["flagged_per_line"] * flagged + assump["missed_per_line"] * missed)
     r = lambda a, b: round(a / b, 4) if b else None
+    silent = auto - auto_all_ok          # wrong lines that were auto-accepted: nobody looks at them
+    ai_silent = ai + assump.get("silent_error_cost", SILENT_ERROR_COST) * silent
     return {
+        "silent_errors": silent, "assisted_seconds_silent": round(ai_silent, 1),
+        "review_time_ratio_silent": r(ai_silent, manual),
         "lines_truth": n, "lines_matched": matched, "lines_missed": missed,
         "extra_pred_lines": max(0, len(pred) - matched),
         "date_acc": r(d_ok, n), "amount_acc": r(a_ok, n), "desc_acc": r(s_ok, n),

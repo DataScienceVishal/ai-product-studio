@@ -1,0 +1,265 @@
+{
+ "file": "fenwick_consult.pdf",
+ "opening_balance": 2450.0,
+ "persona": "consultant",
+ "layout": "fenwick",
+ "kind": "pdf",
+ "lines": [
+  {
+   "date": "2026-04-07",
+   "description": "DD STREAMBOX SUBSCRIPTION",
+   "amount": -10,
+   "balance": 2440.0,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-20",
+   "description": "CARD PAYMENT TO BRIGHTADS ONLINE",
+   "amount": -73.38,
+   "balance": 2366.62,
+   "category": "advertising",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-21",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 114.96,
+   "balance": 2481.58,
+   "category": "transfer",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-22",
+   "description": "DD WESTFIELD POWER",
+   "amount": -81.42,
+   "balance": 2400.16,
+   "category": "premises",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-04-29",
+   "description": "BACS FROM LINDEN CAFE LTD INV7782",
+   "amount": 1386.76,
+   "balance": 3786.92,
+   "category": "turnover",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-30",
+   "description": "DD PROFESSIONAL INSTITUTE FEE",
+   "amount": -15,
+   "balance": 3771.92,
+   "category": "professional_fees",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-09",
+   "description": "CASH WITHDRAWAL ATM 6569",
+   "amount": -31.32,
+   "balance": 3740.6,
+   "category": "drawings_personal",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-12",
+   "description": "CARD PAYMENT TO CLOUDHAVEN SOFTWARE",
+   "amount": -21.0,
+   "balance": 3719.6,
+   "category": "phone_office",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-13",
+   "description": "DD HOMEFIELD BROADBAND",
+   "amount": -34,
+   "balance": 3685.6,
+   "category": "phone_office",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-21",
+   "description": "CARD PAYMENT TO RAILLINK TICKETS",
+   "amount": -36.77,
+   "balance": 3648.83,
+   "category": "car_van_travel",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-21",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -8.88,
+   "balance": 3639.95,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-24",
+   "description": "TRANSFER TO SAVINGS 8841",
+   "amount": -388.97,
+   "balance": 3250.98,
+   "category": "transfer",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-26",
+   "description": "FASTER PAYMENT P OKONKWO REF1805",
+   "amount": 653.82,
+   "balance": 3904.8,
+   "category": "turnover",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-26",
+   "description": "CARD PAYMENT TO CAFE LUNA",
+   "amount": -19.91,
+   "balance": 3884.89,
+   "category": "other_expenses",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-29",
+   "description": "MONTHLY ACCOUNT FEE",
+   "amount": -7,
+   "balance": 3877.89,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-06",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -65.4,
+   "balance": 3812.49,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-07",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -373.35,
+   "balance": 3439.14,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-09",
+   "description": "DD PENNYWORTH ACCOUNTANTS",
+   "amount": -45,
+   "balance": 3394.14,
+   "category": "professional_fees",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-10",
+   "description": "CARD PAYMENT TO PAPERBOX STATIONERY",
+   "amount": -27.94,
+   "balance": 3366.2,
+   "category": "phone_office",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-11",
+   "description": "CARD PAYMENT TO NORTHSTAR ELECTRONICS",
+   "amount": -371.11,
+   "balance": 2995.09,
+   "category": "other_expenses",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-06-13",
+   "description": "DD TELLOWAY MOBILE",
+   "amount": -22,
+   "balance": 2973.09,
+   "category": "phone_office",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-06-15",
+   "description": "CARD PAYMENT TO STARLIGHT CINEMAS",
+   "amount": -9.05,
+   "balance": 2964.04,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-15",
+   "description": "CARD PAYMENT TO RAILLINK TICKETS",
+   "amount": -73.7,
+   "balance": 2890.34,
+   "category": "car_van_travel",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-17",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -510.82,
+   "balance": 2379.52,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-17",
+   "description": "DD PROFESSIONAL INSTITUTE FEE",
+   "amount": -15,
+   "balance": 2364.52,
+   "category": "professional_fees",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-17",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -19.63,
+   "balance": 2344.89,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-19",
+   "description": "CARD PAYMENT TO NORTHSTAR ELECTRONICS",
+   "amount": -59.97,
+   "balance": 2284.92,
+   "category": "other_expenses",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-06-20",
+   "description": "FASTER PAYMENT J HARGREAVE REF6777",
+   "amount": 630.24,
+   "balance": 2915.16,
+   "category": "turnover",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-24",
+   "description": "CASH WITHDRAWAL ATM 9714",
+   "amount": -93.26,
+   "balance": 2821.9,
+   "category": "drawings_personal",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-06-25",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -330.49,
+   "balance": 2491.41,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-25",
+   "description": "DD WESTFIELD POWER",
+   "amount": -98.24,
+   "balance": 2393.17,
+   "category": "premises",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-07-01",
+   "description": "CARD PAYMENT TO BRIGHTADS ONLINE",
+   "amount": -56.66,
+   "balance": 2336.51,
+   "category": "advertising",
+   "ambiguous": false
+  }
+ ]
+}

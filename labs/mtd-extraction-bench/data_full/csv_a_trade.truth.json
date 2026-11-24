@@ -1,0 +1,265 @@
+{
+ "file": "csv_a_trade.csv",
+ "opening_balance": 2450.0,
+ "persona": "tradesperson",
+ "layout": "csv_a",
+ "kind": "csv",
+ "lines": [
+  {
+   "date": "2026-04-10",
+   "description": "CARD PAYMENT TO STARLIGHT CINEMAS",
+   "amount": -20.55,
+   "balance": 2429.45,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-16",
+   "description": "BACS FROM KESTREL DENTAL LTD INV4495",
+   "amount": 976.15,
+   "balance": 3405.6,
+   "category": "turnover",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-17",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -525.71,
+   "balance": 2879.89,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-18",
+   "description": "DD STREAMBOX SUBSCRIPTION",
+   "amount": -10,
+   "balance": 2869.89,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-22",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 207.55,
+   "balance": 3077.44,
+   "category": "transfer",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-23",
+   "description": "TRANSFER TO SAVINGS 8841",
+   "amount": -313.75,
+   "balance": 2763.69,
+   "category": "transfer",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-24",
+   "description": "DD PENNYWORTH ACCOUNTANTS",
+   "amount": -45,
+   "balance": 2718.69,
+   "category": "professional_fees",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-25",
+   "description": "CARD PAYMENT TO MERIDIAN PARKING",
+   "amount": -16.31,
+   "balance": 2702.38,
+   "category": "car_van_travel",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-25",
+   "description": "CARD PAYMENT TO BRICKWELL TIMBER SUPPLY",
+   "amount": -166.57,
+   "balance": 2535.81,
+   "category": "cost_of_goods",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-29",
+   "description": "DD HARLOW FUEL STATION 3073",
+   "amount": -65.11,
+   "balance": 2470.7,
+   "category": "car_van_travel",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-04-30",
+   "description": "CARD PAYMENT TO QUICKFIX TYRES",
+   "amount": -175.2,
+   "balance": 2295.5,
+   "category": "repairs",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-02",
+   "description": "DD ELMSTEAD UNITS RENT",
+   "amount": -350,
+   "balance": 1945.5,
+   "category": "premises",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-03",
+   "description": "DD WESTFIELD POWER",
+   "amount": -84.17,
+   "balance": 1861.33,
+   "category": "premises",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-06",
+   "description": "MONTHLY ACCOUNT FEE",
+   "amount": -7,
+   "balance": 1854.33,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-07",
+   "description": "CASH WITHDRAWAL ATM 5694",
+   "amount": -140.35,
+   "balance": 1713.98,
+   "category": "drawings_personal",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-08",
+   "description": "CARD PAYMENT TO TOPMART HARDWARE",
+   "amount": -77.88,
+   "balance": 1636.1,
+   "category": "cost_of_goods",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-15",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -4.34,
+   "balance": 1631.76,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-16",
+   "description": "DD TELLOWAY MOBILE",
+   "amount": -22,
+   "balance": 1609.76,
+   "category": "phone_office",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-17",
+   "description": "CARD PAYMENT TO TRADEBODY SUBSCRIPTION",
+   "amount": -51.23,
+   "balance": 1558.53,
+   "category": "other_expenses",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-17",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -46.44,
+   "balance": 1512.09,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-23",
+   "description": "CARD PAYMENT TO STARLIGHT CINEMAS",
+   "amount": -29.23,
+   "balance": 1482.86,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-30",
+   "description": "CARD PAYMENT TO MERIDIAN PARKING",
+   "amount": -11.04,
+   "balance": 1471.82,
+   "category": "car_van_travel",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-31",
+   "description": "DD ELMSTEAD UNITS RENT",
+   "amount": -350,
+   "balance": 1121.82,
+   "category": "premises",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-01",
+   "description": "CASH WITHDRAWAL ATM 1933",
+   "amount": -183.82,
+   "balance": 938.0,
+   "category": "drawings_personal",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-06-02",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -12.81,
+   "balance": 925.19,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-07",
+   "description": "CARD PAYMENT TO STARLIGHT CINEMAS",
+   "amount": -26.69,
+   "balance": 898.5,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-08",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -6.71,
+   "balance": 891.79,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-15",
+   "description": "CARD PAYMENT TO TOPMART HARDWARE",
+   "amount": -29.23,
+   "balance": 862.56,
+   "category": "cost_of_goods",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-06-15",
+   "description": "CARD PAYMENT TO TRADEBODY SUBSCRIPTION",
+   "amount": -42.26,
+   "balance": 820.3,
+   "category": "other_expenses",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-06-17",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -12.74,
+   "balance": 807.56,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-22",
+   "description": "MONTHLY ACCOUNT FEE",
+   "amount": -7,
+   "balance": 800.56,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-07-03",
+   "description": "DD ELMSTEAD UNITS RENT",
+   "amount": -350,
+   "balance": 450.56,
+   "category": "premises",
+   "ambiguous": false
+  }
+ ]
+}

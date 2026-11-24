@@ -1,0 +1,329 @@
+{
+ "file": "sheet_stall.xlsx",
+ "opening_balance": null,
+ "persona": "market_stall",
+ "layout": "sheet",
+ "kind": "xlsx",
+ "lines": [
+  {
+   "date": "2026-04-08",
+   "description": "customer payment",
+   "amount": 230.73,
+   "balance": null,
+   "category": "turnover",
+   "ambiguous": false,
+   "sheet_description": "customer payment",
+   "bank_description": "CASH DEPOSIT MARKET TAKINGS"
+  },
+  {
+   "date": "2026-04-09",
+   "description": "moved to savings",
+   "amount": -115.27,
+   "balance": null,
+   "category": "transfer",
+   "ambiguous": false,
+   "sheet_description": "moved to savings",
+   "bank_description": "TRANSFER TO SAVINGS 8841"
+  },
+  {
+   "date": "2026-04-10",
+   "description": "facebook ads",
+   "amount": -42.31,
+   "balance": null,
+   "category": "advertising",
+   "ambiguous": false,
+   "sheet_description": "facebook ads",
+   "bank_description": "CARD PAYMENT TO CRAFTFAYRE ONLINE"
+  },
+  {
+   "date": "2026-04-10",
+   "description": "moved to savings",
+   "amount": 121.32,
+   "balance": null,
+   "category": "transfer",
+   "ambiguous": false,
+   "sheet_description": "moved to savings",
+   "bank_description": "TRANSFER FROM SAVINGS 8841"
+  },
+  {
+   "date": "2026-04-16",
+   "description": "pens paper",
+   "amount": -22,
+   "balance": null,
+   "category": "phone_office",
+   "ambiguous": true,
+   "sheet_description": "pens paper",
+   "bank_description": "DD TELLOWAY MOBILE"
+  },
+  {
+   "date": "2026-04-18",
+   "description": "trade body sub",
+   "amount": -19,
+   "balance": null,
+   "category": "other_expenses",
+   "ambiguous": false,
+   "sheet_description": "trade body sub",
+   "bank_description": "DD STALLSURE INSURANCE"
+  },
+  {
+   "date": "2026-04-22",
+   "description": "food shop",
+   "amount": -69.08,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": true,
+   "sheet_description": "food shop",
+   "bank_description": "CASH WITHDRAWAL ATM 4927"
+  },
+  {
+   "date": "2026-04-25",
+   "description": "moved to savings",
+   "amount": -57.02,
+   "balance": null,
+   "category": "transfer",
+   "ambiguous": true,
+   "sheet_description": "moved to savings",
+   "bank_description": "CASH WITHDRAWAL FLOAT 6091"
+  },
+  {
+   "date": "2026-04-27",
+   "description": "cinema",
+   "amount": -10,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": false,
+   "sheet_description": "cinema",
+   "bank_description": "DD STREAMBOX SUBSCRIPTION"
+  },
+  {
+   "date": "2026-04-27",
+   "description": "Morrow & Son job money in",
+   "amount": 158.1,
+   "balance": null,
+   "category": "turnover",
+   "ambiguous": false,
+   "sheet_description": "Morrow & Son job money in",
+   "bank_description": "CARD SETTLEMENT SPARKPAY 7873"
+  },
+  {
+   "date": "2026-04-28",
+   "description": "unit rent",
+   "amount": -25,
+   "balance": null,
+   "category": "premises",
+   "ambiguous": false,
+   "sheet_description": "unit rent",
+   "bank_description": "CARD PAYMENT TO MARKETHALL PITCH FEE"
+  },
+  {
+   "date": "2026-04-30",
+   "description": "timber",
+   "amount": -139.48,
+   "balance": null,
+   "category": "cost_of_goods",
+   "ambiguous": false,
+   "sheet_description": "timber",
+   "bank_description": "CARD PAYMENT TO WAXWORKS WHOLESALE"
+  },
+  {
+   "date": "2026-04-30",
+   "description": "trade body sub",
+   "amount": -29.18,
+   "balance": null,
+   "category": "other_expenses",
+   "ambiguous": true,
+   "sheet_description": "trade body sub",
+   "bank_description": "CARD PAYMENT TO TOPMART HARDWARE"
+  },
+  {
+   "date": "2026-05-11",
+   "description": "cinema",
+   "amount": -25.37,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": false,
+   "sheet_description": "cinema",
+   "bank_description": "CARD PAYMENT TO GREENLEAF SUPERMARKET"
+  },
+  {
+   "date": "2026-05-11",
+   "description": "food shop",
+   "amount": -26.59,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": false,
+   "sheet_description": "food shop",
+   "bank_description": "CARD PAYMENT TO STARLIGHT CINEMAS"
+  },
+  {
+   "date": "2026-05-14",
+   "description": "netflix etc",
+   "amount": -11.82,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": true,
+   "sheet_description": "netflix etc",
+   "bank_description": "CARD PAYMENT TO CAFE LUNA"
+  },
+  {
+   "date": "2026-05-28",
+   "description": "accountant",
+   "amount": -45,
+   "balance": null,
+   "category": "professional_fees",
+   "ambiguous": false,
+   "sheet_description": "accountant",
+   "bank_description": "DD PENNYWORTH ACCOUNTANTS"
+  },
+  {
+   "date": "2026-06-02",
+   "description": "timber",
+   "amount": -39.78,
+   "balance": null,
+   "category": "cost_of_goods",
+   "ambiguous": false,
+   "sheet_description": "timber",
+   "bank_description": "CARD PAYMENT TO JARBARN PACKAGING"
+  },
+  {
+   "date": "2026-06-04",
+   "description": "parking",
+   "amount": -67.93,
+   "balance": null,
+   "category": "car_van_travel",
+   "ambiguous": true,
+   "sheet_description": "parking",
+   "bank_description": "DD HARLOW FUEL STATION 4671"
+  },
+  {
+   "date": "2026-06-05",
+   "description": "bank fee",
+   "amount": -7,
+   "balance": null,
+   "category": "interest_bank_charges",
+   "ambiguous": false,
+   "sheet_description": "bank fee",
+   "bank_description": "MONTHLY ACCOUNT FEE"
+  },
+  {
+   "date": "2026-06-08",
+   "description": "bank fee",
+   "amount": -5.93,
+   "balance": null,
+   "category": "interest_bank_charges",
+   "ambiguous": false,
+   "sheet_description": "bank fee",
+   "bank_description": "OVERDRAFT INTEREST"
+  },
+  {
+   "date": "2026-06-11",
+   "description": "me",
+   "amount": -310.56,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": false,
+   "sheet_description": "me",
+   "bank_description": "STANDING ORDER TO OWNER PERSONAL A/C"
+  },
+  {
+   "date": "2026-06-11",
+   "description": "bank fee",
+   "amount": -7,
+   "balance": null,
+   "category": "interest_bank_charges",
+   "ambiguous": false,
+   "sheet_description": "bank fee",
+   "bank_description": "MONTHLY ACCOUNT FEE"
+  },
+  {
+   "date": "2026-06-12",
+   "description": "trade body sub",
+   "amount": -24.46,
+   "balance": null,
+   "category": "other_expenses",
+   "ambiguous": true,
+   "sheet_description": "trade body sub",
+   "bank_description": "CARD PAYMENT TO TOPMART HARDWARE"
+  },
+  {
+   "date": "2026-06-17",
+   "description": "customer payment",
+   "amount": 325.2,
+   "balance": null,
+   "category": "turnover",
+   "ambiguous": false,
+   "sheet_description": "customer payment",
+   "bank_description": "CARD SETTLEMENT SPARKPAY 3545"
+  },
+  {
+   "date": "2026-06-23",
+   "description": "me",
+   "amount": -32.48,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": false,
+   "sheet_description": "me",
+   "bank_description": "CARD PAYMENT TO GREENLEAF SUPERMARKET"
+  },
+  {
+   "date": "2026-06-27",
+   "description": "trade body sub",
+   "amount": -19,
+   "balance": null,
+   "category": "other_expenses",
+   "ambiguous": false,
+   "sheet_description": "trade body sub",
+   "bank_description": "DD STALLSURE INSURANCE"
+  },
+  {
+   "date": "2026-06-29",
+   "description": "parking",
+   "amount": -63.36,
+   "balance": null,
+   "category": "car_van_travel",
+   "ambiguous": true,
+   "sheet_description": "parking",
+   "bank_description": "DD HARLOW FUEL STATION 7842"
+  },
+  {
+   "date": "2026-06-30",
+   "description": "netflix etc",
+   "amount": -541.83,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": false,
+   "sheet_description": "netflix etc",
+   "bank_description": "STANDING ORDER TO OWNER PERSONAL A/C"
+  },
+  {
+   "date": "2026-07-02",
+   "description": "me",
+   "amount": -34.08,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": true,
+   "sheet_description": "me",
+   "bank_description": "CASH WITHDRAWAL ATM 7740"
+  },
+  {
+   "date": "2026-07-02",
+   "description": "cinema",
+   "amount": -400.75,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": false,
+   "sheet_description": "cinema",
+   "bank_description": "STANDING ORDER TO OWNER PERSONAL A/C"
+  },
+  {
+   "date": "2026-07-03",
+   "description": "leaflets",
+   "amount": -11.82,
+   "balance": null,
+   "category": "advertising",
+   "ambiguous": false,
+   "sheet_description": "leaflets",
+   "bank_description": "CARD PAYMENT TO CRAFTFAYRE ONLINE"
+  }
+ ]
+}

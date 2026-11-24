@@ -1,0 +1,265 @@
+{
+ "file": "photo_consult.jpg",
+ "opening_balance": 2450.0,
+ "persona": "consultant",
+ "layout": "northbank",
+ "kind": "photo",
+ "lines": [
+  {
+   "date": "2026-04-07",
+   "description": "CARD PAYMENT TO CAFE LUNA",
+   "amount": -20.62,
+   "balance": 2429.38,
+   "category": "other_expenses",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-04-08",
+   "description": "CASH WITHDRAWAL ATM 3555",
+   "amount": -95.51,
+   "balance": 2333.87,
+   "category": "drawings_personal",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-04-08",
+   "description": "DD TELLOWAY MOBILE",
+   "amount": -22,
+   "balance": 2311.87,
+   "category": "phone_office",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-04-18",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 251.93,
+   "balance": 2563.8,
+   "category": "transfer",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-19",
+   "description": "MONTHLY ACCOUNT FEE",
+   "amount": -7,
+   "balance": 2556.8,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-19",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -12.56,
+   "balance": 2544.24,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-25",
+   "description": "CARD PAYMENT TO RAILLINK TICKETS",
+   "amount": -43.77,
+   "balance": 2500.47,
+   "category": "car_van_travel",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-27",
+   "description": "TRANSFER TO SAVINGS 8841",
+   "amount": -394.43,
+   "balance": 2106.04,
+   "category": "transfer",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-03",
+   "description": "DD WESTFIELD POWER",
+   "amount": -111.5,
+   "balance": 1994.54,
+   "category": "premises",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-06",
+   "description": "CARD PAYMENT TO BRIGHTADS ONLINE",
+   "amount": -47.1,
+   "balance": 1947.44,
+   "category": "advertising",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-13",
+   "description": "DD STREAMBOX SUBSCRIPTION",
+   "amount": -10,
+   "balance": 1937.44,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-14",
+   "description": "CARD PAYMENT TO NORTHSTAR ELECTRONICS",
+   "amount": -48.15,
+   "balance": 1889.29,
+   "category": "other_expenses",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-19",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -74.21,
+   "balance": 1815.08,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-19",
+   "description": "DD HOMEFIELD BROADBAND",
+   "amount": -34,
+   "balance": 1781.08,
+   "category": "phone_office",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-29",
+   "description": "CARD PAYMENT TO PAPERBOX STATIONERY",
+   "amount": -19.67,
+   "balance": 1761.41,
+   "category": "phone_office",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-03",
+   "description": "DD PROFESSIONAL INSTITUTE FEE",
+   "amount": -15,
+   "balance": 1746.41,
+   "category": "professional_fees",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-03",
+   "description": "CARD PAYMENT TO STARLIGHT CINEMAS",
+   "amount": -14.64,
+   "balance": 1731.77,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-06",
+   "description": "DD PENNYWORTH ACCOUNTANTS",
+   "amount": -45,
+   "balance": 1686.77,
+   "category": "professional_fees",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-07",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -328.64,
+   "balance": 1358.13,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-07",
+   "description": "BACS FROM HALEWOOD PTA LTD INV5998",
+   "amount": 899.37,
+   "balance": 2257.5,
+   "category": "turnover",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-08",
+   "description": "FASTER PAYMENT P OKONKWO REF9594",
+   "amount": 538.81,
+   "balance": 2796.31,
+   "category": "turnover",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-09",
+   "description": "CARD PAYMENT TO CLOUDHAVEN SOFTWARE",
+   "amount": -37.1,
+   "balance": 2759.21,
+   "category": "phone_office",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-09",
+   "description": "FASTER PAYMENT P OKONKWO REF2532",
+   "amount": 725.32,
+   "balance": 3484.53,
+   "category": "turnover",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-10",
+   "description": "CASH WITHDRAWAL ATM 6012",
+   "amount": -43.03,
+   "balance": 3441.5,
+   "category": "drawings_personal",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-06-13",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 107.38,
+   "balance": 3548.88,
+   "category": "transfer",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-14",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 152.2,
+   "balance": 3701.08,
+   "category": "transfer",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-24",
+   "description": "CARD PAYMENT TO PAPERBOX STATIONERY",
+   "amount": -44.37,
+   "balance": 3656.71,
+   "category": "phone_office",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-25",
+   "description": "DD STREAMBOX SUBSCRIPTION",
+   "amount": -10,
+   "balance": 3646.71,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-28",
+   "description": "DD PENNYWORTH ACCOUNTANTS",
+   "amount": -45,
+   "balance": 3601.71,
+   "category": "professional_fees",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-30",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -11.22,
+   "balance": 3590.49,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-07-02",
+   "description": "DD HOMEFIELD BROADBAND",
+   "amount": -34,
+   "balance": 3556.49,
+   "category": "phone_office",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-07-03",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -10.65,
+   "balance": 3545.84,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  }
+ ]
+}

@@ -1,0 +1,265 @@
+{
+ "file": "quillon_consult.pdf",
+ "opening_balance": 2450.0,
+ "persona": "consultant",
+ "layout": "quillon",
+ "kind": "pdf",
+ "lines": [
+  {
+   "date": "2026-04-14",
+   "description": "CARD PAYMENT TO CLOUDHAVEN SOFTWARE",
+   "amount": -41.6,
+   "balance": 2408.4,
+   "category": "phone_office",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-15",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -505.02,
+   "balance": 1903.38,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-17",
+   "description": "CARD PAYMENT TO BRIGHTADS ONLINE",
+   "amount": -60.02,
+   "balance": 1843.36,
+   "category": "advertising",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-22",
+   "description": "CARD PAYMENT TO RAILLINK TICKETS",
+   "amount": -82.64,
+   "balance": 1760.72,
+   "category": "car_van_travel",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-23",
+   "description": "CARD PAYMENT TO STARLIGHT CINEMAS",
+   "amount": -11.5,
+   "balance": 1749.22,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-27",
+   "description": "DD STREAMBOX SUBSCRIPTION",
+   "amount": -10,
+   "balance": 1739.22,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-04-30",
+   "description": "MONTHLY ACCOUNT FEE",
+   "amount": -7,
+   "balance": 1732.22,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-02",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 162.96,
+   "balance": 1895.18,
+   "category": "transfer",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-06",
+   "description": "DD PROFESSIONAL INSTITUTE FEE",
+   "amount": -15,
+   "balance": 1880.18,
+   "category": "professional_fees",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-07",
+   "description": "CARD PAYMENT TO CAFE LUNA",
+   "amount": -7.43,
+   "balance": 1872.75,
+   "category": "other_expenses",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-13",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -3.89,
+   "balance": 1868.86,
+   "category": "interest_bank_charges",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-18",
+   "description": "TRANSFER TO SAVINGS 8841",
+   "amount": -134.73,
+   "balance": 1734.13,
+   "category": "transfer",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-22",
+   "description": "BACS FROM LINDEN CAFE LTD INV7843",
+   "amount": 1311.12,
+   "balance": 3045.25,
+   "category": "turnover",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-24",
+   "description": "CARD PAYMENT TO NORTHSTAR ELECTRONICS",
+   "amount": -362.95,
+   "balance": 2682.3,
+   "category": "other_expenses",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-26",
+   "description": "DD HOMEFIELD BROADBAND",
+   "amount": -34,
+   "balance": 2648.3,
+   "category": "phone_office",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-28",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -27.56,
+   "balance": 2620.74,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-05-30",
+   "description": "DD WESTFIELD POWER",
+   "amount": -80.72,
+   "balance": 2540.02,
+   "category": "premises",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-31",
+   "description": "DD TELLOWAY MOBILE",
+   "amount": -22,
+   "balance": 2518.02,
+   "category": "phone_office",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-05-31",
+   "description": "FASTER PAYMENT J HARGREAVE REF5173",
+   "amount": 393.44,
+   "balance": 2911.46,
+   "category": "turnover",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-06",
+   "description": "CARD PAYMENT TO PAPERBOX STATIONERY",
+   "amount": -33.37,
+   "balance": 2878.09,
+   "category": "phone_office",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-07",
+   "description": "CASH WITHDRAWAL ATM 2197",
+   "amount": -102.95,
+   "balance": 2775.14,
+   "category": "drawings_personal",
+   "ambiguous": true
+  },
+  {
+   "date": "2026-06-10",
+   "description": "DD PENNYWORTH ACCOUNTANTS",
+   "amount": -45,
+   "balance": 2730.14,
+   "category": "professional_fees",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-16",
+   "description": "FASTER PAYMENT P OKONKWO REF4066",
+   "amount": 806.81,
+   "balance": 3536.95,
+   "category": "turnover",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-20",
+   "description": "CARD PAYMENT TO RAILLINK TICKETS",
+   "amount": -25.15,
+   "balance": 3511.8,
+   "category": "car_van_travel",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-22",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -522.23,
+   "balance": 2989.57,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-23",
+   "description": "DD STREAMBOX SUBSCRIPTION",
+   "amount": -10,
+   "balance": 2979.57,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-23",
+   "description": "DD PENNYWORTH ACCOUNTANTS",
+   "amount": -45,
+   "balance": 2934.57,
+   "category": "professional_fees",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-24",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -33.65,
+   "balance": 2900.92,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-25",
+   "description": "CARD PAYMENT TO PAPERBOX STATIONERY",
+   "amount": -44.45,
+   "balance": 2856.47,
+   "category": "phone_office",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-25",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -74.92,
+   "balance": 2781.55,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-06-30",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -33.35,
+   "balance": 2748.2,
+   "category": "drawings_personal",
+   "ambiguous": false
+  },
+  {
+   "date": "2026-07-03",
+   "description": "CARD PAYMENT TO CLOUDHAVEN SOFTWARE",
+   "amount": -21.95,
+   "balance": 2726.25,
+   "category": "phone_office",
+   "ambiguous": false
+  }
+ ]
+}

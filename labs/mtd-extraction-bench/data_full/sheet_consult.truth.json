@@ -1,0 +1,329 @@
+{
+ "file": "sheet_consult.xlsx",
+ "opening_balance": null,
+ "persona": "consultant",
+ "layout": "sheet",
+ "kind": "xlsx",
+ "lines": [
+  {
+   "date": "2026-04-09",
+   "description": "trade body sub",
+   "amount": -448.86,
+   "balance": null,
+   "category": "other_expenses",
+   "ambiguous": true,
+   "sheet_description": "trade body sub",
+   "bank_description": "CARD PAYMENT TO NORTHSTAR ELECTRONICS"
+  },
+  {
+   "date": "2026-04-11",
+   "description": "phone",
+   "amount": -24.68,
+   "balance": null,
+   "category": "phone_office",
+   "ambiguous": false,
+   "sheet_description": "phone",
+   "bank_description": "CARD PAYMENT TO PAPERBOX STATIONERY"
+  },
+  {
+   "date": "2026-04-12",
+   "description": "accountant",
+   "amount": -45,
+   "balance": null,
+   "category": "professional_fees",
+   "ambiguous": false,
+   "sheet_description": "accountant",
+   "bank_description": "DD PENNYWORTH ACCOUNTANTS"
+  },
+  {
+   "date": "2026-04-20",
+   "description": "cinema",
+   "amount": -305.3,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": false,
+   "sheet_description": "cinema",
+   "bank_description": "STANDING ORDER TO OWNER PERSONAL A/C"
+  },
+  {
+   "date": "2026-04-21",
+   "description": "me",
+   "amount": -21.15,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": false,
+   "sheet_description": "me",
+   "bank_description": "CARD PAYMENT TO STARLIGHT CINEMAS"
+  },
+  {
+   "date": "2026-04-23",
+   "description": "customer payment",
+   "amount": 277.3,
+   "balance": null,
+   "category": "turnover",
+   "ambiguous": false,
+   "sheet_description": "customer payment",
+   "bank_description": "FASTER PAYMENT J HARGREAVE REF6544"
+  },
+  {
+   "date": "2026-04-24",
+   "description": "electric",
+   "amount": -80.99,
+   "balance": null,
+   "category": "premises",
+   "ambiguous": true,
+   "sheet_description": "electric",
+   "bank_description": "DD WESTFIELD POWER"
+  },
+  {
+   "date": "2026-04-25",
+   "description": "phone",
+   "amount": -22,
+   "balance": null,
+   "category": "phone_office",
+   "ambiguous": true,
+   "sheet_description": "phone",
+   "bank_description": "DD TELLOWAY MOBILE"
+  },
+  {
+   "date": "2026-04-29",
+   "description": "moved to savings",
+   "amount": 152.8,
+   "balance": null,
+   "category": "transfer",
+   "ambiguous": false,
+   "sheet_description": "moved to savings",
+   "bank_description": "TRANSFER FROM SAVINGS 8841"
+  },
+  {
+   "date": "2026-04-29",
+   "description": "moved to savings",
+   "amount": -233.99,
+   "balance": null,
+   "category": "transfer",
+   "ambiguous": false,
+   "sheet_description": "moved to savings",
+   "bank_description": "TRANSFER TO SAVINGS 8841"
+  },
+  {
+   "date": "2026-05-01",
+   "description": "pens paper",
+   "amount": -49.69,
+   "balance": null,
+   "category": "phone_office",
+   "ambiguous": false,
+   "sheet_description": "pens paper",
+   "bank_description": "CARD PAYMENT TO CLOUDHAVEN SOFTWARE"
+  },
+  {
+   "date": "2026-05-03",
+   "description": "accountant",
+   "amount": -15,
+   "balance": null,
+   "category": "professional_fees",
+   "ambiguous": false,
+   "sheet_description": "accountant",
+   "bank_description": "DD PROFESSIONAL INSTITUTE FEE"
+  },
+  {
+   "date": "2026-05-10",
+   "description": "bank fee",
+   "amount": -11.18,
+   "balance": null,
+   "category": "interest_bank_charges",
+   "ambiguous": false,
+   "sheet_description": "bank fee",
+   "bank_description": "OVERDRAFT INTEREST"
+  },
+  {
+   "date": "2026-05-10",
+   "description": "cinema",
+   "amount": -20.06,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": false,
+   "sheet_description": "cinema",
+   "bank_description": "CARD PAYMENT TO GREENLEAF SUPERMARKET"
+  },
+  {
+   "date": "2026-05-22",
+   "description": "food shop",
+   "amount": -10,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": false,
+   "sheet_description": "food shop",
+   "bank_description": "DD STREAMBOX SUBSCRIPTION"
+  },
+  {
+   "date": "2026-05-25",
+   "description": "bank fee",
+   "amount": -7,
+   "balance": null,
+   "category": "interest_bank_charges",
+   "ambiguous": false,
+   "sheet_description": "bank fee",
+   "bank_description": "MONTHLY ACCOUNT FEE"
+  },
+  {
+   "date": "2026-05-26",
+   "description": "leaflets",
+   "amount": -24.12,
+   "balance": null,
+   "category": "advertising",
+   "ambiguous": false,
+   "sheet_description": "leaflets",
+   "bank_description": "CARD PAYMENT TO BRIGHTADS ONLINE"
+  },
+  {
+   "date": "2026-05-27",
+   "description": "pens paper",
+   "amount": -34,
+   "balance": null,
+   "category": "phone_office",
+   "ambiguous": true,
+   "sheet_description": "pens paper",
+   "bank_description": "DD HOMEFIELD BROADBAND"
+  },
+  {
+   "date": "2026-05-30",
+   "description": "trade body sub",
+   "amount": -7.32,
+   "balance": null,
+   "category": "other_expenses",
+   "ambiguous": true,
+   "sheet_description": "trade body sub",
+   "bank_description": "CARD PAYMENT TO CAFE LUNA"
+  },
+  {
+   "date": "2026-06-02",
+   "description": "diesel",
+   "amount": -25.68,
+   "balance": null,
+   "category": "car_van_travel",
+   "ambiguous": false,
+   "sheet_description": "diesel",
+   "bank_description": "CARD PAYMENT TO RAILLINK TICKETS"
+  },
+  {
+   "date": "2026-06-03",
+   "description": "Morrow & Son job money in",
+   "amount": 660.44,
+   "balance": null,
+   "category": "turnover",
+   "ambiguous": false,
+   "sheet_description": "Morrow & Son job money in",
+   "bank_description": "BACS FROM KESTREL DENTAL LTD INV9822"
+  },
+  {
+   "date": "2026-06-06",
+   "description": "me",
+   "amount": -54.8,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": true,
+   "sheet_description": "me",
+   "bank_description": "CASH WITHDRAWAL ATM 4673"
+  },
+  {
+   "date": "2026-06-12",
+   "description": "cinema",
+   "amount": -23.64,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": false,
+   "sheet_description": "cinema",
+   "bank_description": "CARD PAYMENT TO STARLIGHT CINEMAS"
+  },
+  {
+   "date": "2026-06-18",
+   "description": "me",
+   "amount": -64.05,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": false,
+   "sheet_description": "me",
+   "bank_description": "CARD PAYMENT TO GREENLEAF SUPERMARKET"
+  },
+  {
+   "date": "2026-06-21",
+   "description": "cinema",
+   "amount": -104.49,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": true,
+   "sheet_description": "cinema",
+   "bank_description": "CASH WITHDRAWAL ATM 6938"
+  },
+  {
+   "date": "2026-06-26",
+   "description": "phone",
+   "amount": -34,
+   "balance": null,
+   "category": "phone_office",
+   "ambiguous": true,
+   "sheet_description": "phone",
+   "bank_description": "DD HOMEFIELD BROADBAND"
+  },
+  {
+   "date": "2026-06-28",
+   "description": "cinema",
+   "amount": -90.5,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": false,
+   "sheet_description": "cinema",
+   "bank_description": "CARD PAYMENT TO GREENLEAF SUPERMARKET"
+  },
+  {
+   "date": "2026-06-29",
+   "description": "parking",
+   "amount": -41.69,
+   "balance": null,
+   "category": "car_van_travel",
+   "ambiguous": false,
+   "sheet_description": "parking",
+   "bank_description": "CARD PAYMENT TO RAILLINK TICKETS"
+  },
+  {
+   "date": "2026-06-30",
+   "description": "moved to savings",
+   "amount": -339.21,
+   "balance": null,
+   "category": "transfer",
+   "ambiguous": false,
+   "sheet_description": "moved to savings",
+   "bank_description": "TRANSFER TO SAVINGS 8841"
+  },
+  {
+   "date": "2026-06-30",
+   "description": "customer payment",
+   "amount": 2267.26,
+   "balance": null,
+   "category": "turnover",
+   "ambiguous": false,
+   "sheet_description": "customer payment",
+   "bank_description": "BACS FROM ASHBY JOINERY LTD INV9197"
+  },
+  {
+   "date": "2026-07-03",
+   "description": "cinema",
+   "amount": -116.61,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": true,
+   "sheet_description": "cinema",
+   "bank_description": "CASH WITHDRAWAL ATM 6742"
+  },
+  {
+   "date": "2026-07-03",
+   "description": "food shop",
+   "amount": -389.16,
+   "balance": null,
+   "category": "drawings_personal",
+   "ambiguous": false,
+   "sheet_description": "food shop",
+   "bank_description": "STANDING ORDER TO OWNER PERSONAL A/C"
+  }
+ ]
+}
