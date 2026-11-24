@@ -263,7 +263,7 @@ sign-in is a server setting, not a meter. `state/BUDGET.md` gains two $0 rows pe
 | `passwordAuth` found `Enabled` after phase 2 | Every release fails at the `authConfig` check | Find out who changed it (Activity Log), run `deploy_shared` |
 | Identity endpoint down | New connections fail, `/healthz` not ready, old pooled ones work | The release stops before traffic moves; retry |
 | Role mapped to a stale oid | Sign-in fails; `db-setup.sql`'s check raises on the next release | It re-labels on every release |
-| Phase 2 locks out a forgotten client | Password clients refused | Intended; re-enable for one run via the param if truly needed |
+| Phase 2 locks out a forgotten client | Password clients refused | Intended. Break-glass only: a logged manual run that re-enables password auth, logged in state/DECISIONS.md and never allowed with real data; the every-release check then fails until it is set back to Disabled (security R1) |
 
 ## Follow-ups (not blocking)
 
