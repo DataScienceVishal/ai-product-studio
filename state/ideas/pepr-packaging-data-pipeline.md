@@ -273,6 +273,13 @@ Made before any extractor exists and before any run. Pass marks are unchanged. A
 5. **Features are one canonical value each.** Label type, material and coverage, and closure material and liner, are collapsed into one value per feature key. Label coverage is not modelled, so a pass says nothing about coverage.
 6. **False conflict.** Flagging a conflict on a weight whose truth is present scores 0.
 
+### Amendment 3, 2026-11-24 (before any model call, including tuning)
+
+Made before any run. Pass marks, the 30 test sheets, the 5 tuning sheets and their truth are unchanged (regenerated data is byte-identical; reviews/T-56-realism.md).
+
+1. **Gram spellings.** The weight unit rule in Amendment 1 (2b) and Amendment 2 (2) reads "(g, kg, mg, oz, and the gram spellings gm, gms, gram, grams)". Reason: real supplier sheets write "37.00gm" (benchmark/REALISM.md). No current sheet uses these spellings, so no score on the existing sets can change.
+2. **Realism supplement.** benchmark/REALISM.md (13 public sheets, verdict MIXED) found the synthetic set easier than real sheets on layout and wording. A separate realism supplement set (about 10 sheets, new seed) may be added and is reported separately. It never changes the pass marks or the result on the 30 test sheets.
+
 ## Gate log
 - 2026-11-23 scout round 2: G0 file written. Competitor own-page check done for Valpak (via BRC release) only; PackTotal own page not reachable (403 on aggregator). Open items listed above.
 - 2026-11-23 | validator | G0→G1 | REVISE 68 | Scored as the merged pEPR and PPT data layer: the studio's strongest official pain so far (automatic red for missing evidence, red factor rising to 2.0 by 2028-29), but Clarity already sells bulk RAM ratings, missing-data flags and fee modelling from £4,995 a year and gov.uk gives the RPD file generator away, so only an unverified upstream extraction gap is left.
