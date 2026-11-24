@@ -18,3 +18,13 @@ unit quotes / image-only traceability / component matching without material, har
 names, more than 3 templates, varied missing markers), conflicts in the tuning set, nonsensical feature-component pairs.
 Fix the kill test wording "hand-written truth" to "generator-written truth, spot-checked by hand" on main (allowed: no run
 has happened yet; log it in DECISIONS.md). Then re-review, then slice 3.
+
+## Status after run T-56 fix (2026-11-24)
+Addressed reviewer items 1-12 in `benchmark/` (tests: 19 pass). Truth now labels every plausible feature key present or `missing`
+(`taxonomy.py` PLAUSIBLE, shared with the future scorer); scoring rules (a)-(d) and "Run budget" (incl. USD 12 hard spend cap) are in
+`benchmark/README.md`; `benchmark/KILL_TEST_AMENDMENT.md` is the text for the Studio Lead to paste into the kill test on main.
+Harder sheets: label/name synonyms, distractor numbers, absent rows and varied missing markers, paraphrased features with a closed
+vocabulary, headers/footers, 6 templates, footnote and notes-page conflicts, buried prose, carbon-black cases. 68 components, 466 scored
+slots (307 present / 137 missing / 22 conflict) in the test set; tuning set covers clean, multi+missing, mixed units, scanned+conflict,
+contradictory. Image-only sheets have recorded page text in manifest.json. PDFs are byte-reproducible (test). Runs used: 2 of 3.
+Next: reviewer re-check, then slice 3 (extractor must return all plausible keys, closed feature vocabulary, stop at USD 12 or 3M tokens).
