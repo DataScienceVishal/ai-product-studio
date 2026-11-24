@@ -11,3 +11,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 
 - T-56 pEPR proof test (run 4500): reviewer's 12 fixes done (harder sheets, 22 conflicts, fixed scoring rules, deterministic data; 19 tests pass); kill-test amendment on main before any run. Re-review found two scoring-rule gaps (material/colour variants, quote matching), being fixed. Q-11 asks for the $12 model spend; until then no Azure call.
 - T-56 update (run 4500): benchmark and scorer/extractor both passed review (73 tests). The run itself waits for Q-11 ($12 model spend).
+- pEPR proof test (T-56, run 5140): closed the last spend-guard gap in the extractor: a server error after the model has run is now charged before any retry, so the $12 cap can't be overshot. Reviewed PASS, 80 tests green. Still waiting on your yes to Q-11 ($12 Azure spend) to run the benchmark.
