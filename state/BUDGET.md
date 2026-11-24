@@ -20,3 +20,14 @@ Month-to-date spend: not reported yet (board task T-2)
 Planned for T-7: `products/_starter/ADR/0002-azure-deploy.md` has the sources and options. Projected: $23.20 a
 month if the student free allowance doesn't cover Postgres (the $80 then lasts about 3.4 months), $5.07 if it does.
 Nothing exists yet: the deploy workflow refuses to create anything until Vishal sets `STUDIO_AZURE_APPROVED=yes`.
+
+## Azure OpenAI token log (existing deployment gpt-5.4-pro, outside our resources; draws on the same credit)
+
+Price per token for gpt-5.4-pro is not confirmed. As an assumption, the gpt-5-pro list price is about $15 per million input tokens and $120 per million output tokens (reasoning tokens count as output). Check this before any bigger run.
+
+| UTC | Run | Use | Input | Output (incl. reasoning) | Reasoning | Est. $ (assumed price) |
+|---|---|---|---|---|---|---|
+| 2026-11-23 | 7a98 | T-1 test call | ~20 | 41 | 21 | <0.01 |
+| 2026-11-24 | f468 | T-12 pilot, 5 calls | 5,709 | 27,619 | 22,509 | ~3.40 |
+
+A full T-12 benchmark at ~650k output tokens would be about $78 at that price, i.e. the whole credit. It must not run on the pro deployment (see HURDLES: a mini deployment is needed first).
