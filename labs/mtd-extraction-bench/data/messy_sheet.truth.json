@@ -1,0 +1,230 @@
+{
+ "file": "messy_sheet.xlsx",
+ "opening_balance": null,
+ "lines": [
+  {
+   "date": "2026-04-07",
+   "description": "CARD PAYMENT TO BRICKWELL TIMBER SUPPLY",
+   "amount": -239.19,
+   "balance": null,
+   "category": "cost_of_goods"
+  },
+  {
+   "date": "2026-04-17",
+   "description": "DD NORTHGATE VAN INSURANCE",
+   "amount": -48.0,
+   "balance": null,
+   "category": "car_van_travel"
+  },
+  {
+   "date": "2026-04-19",
+   "description": "DD HARLOW FUEL STATION 5270",
+   "amount": -46.4,
+   "balance": null,
+   "category": "car_van_travel"
+  },
+  {
+   "date": "2026-04-26",
+   "description": "CARD PAYMENT TO QUICKFIX TYRES",
+   "amount": -123.96,
+   "balance": null,
+   "category": "repairs"
+  },
+  {
+   "date": "2026-04-27",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -320.57,
+   "balance": null,
+   "category": "drawings_personal"
+  },
+  {
+   "date": "2026-04-27",
+   "description": "CARD PAYMENT TO MERIDIAN PARKING",
+   "amount": -7.22,
+   "balance": null,
+   "category": "car_van_travel"
+  },
+  {
+   "date": "2026-04-28",
+   "description": "DD STREAMBOX SUBSCRIPTION",
+   "amount": -10.0,
+   "balance": null,
+   "category": "drawings_personal"
+  },
+  {
+   "date": "2026-04-30",
+   "description": "CARD PAYMENT TO STARLIGHT CINEMAS",
+   "amount": -10.2,
+   "balance": null,
+   "category": "drawings_personal"
+  },
+  {
+   "date": "2026-05-01",
+   "description": "CARD PAYMENT TO PAPERBOX STATIONERY",
+   "amount": -18.6,
+   "balance": null,
+   "category": "phone_office"
+  },
+  {
+   "date": "2026-05-02",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -6.91,
+   "balance": null,
+   "category": "interest_bank_charges"
+  },
+  {
+   "date": "2026-05-02",
+   "description": "DD PENNYWORTH ACCOUNTANTS",
+   "amount": -45.0,
+   "balance": null,
+   "category": "professional_fees"
+  },
+  {
+   "date": "2026-05-04",
+   "description": "DD TELLOWAY MOBILE",
+   "amount": -22.0,
+   "balance": null,
+   "category": "phone_office"
+  },
+  {
+   "date": "2026-05-05",
+   "description": "DD ELMSTEAD UNITS RENT",
+   "amount": -350.0,
+   "balance": null,
+   "category": "premises"
+  },
+  {
+   "date": "2026-05-05",
+   "description": "DD WESTFIELD POWER",
+   "amount": -103.27,
+   "balance": null,
+   "category": "premises"
+  },
+  {
+   "date": "2026-05-06",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 102.05,
+   "balance": null,
+   "category": "transfer"
+  },
+  {
+   "date": "2026-05-14",
+   "description": "FASTER PAYMENT TO J HARGREAVE WAGES",
+   "amount": -170.88,
+   "balance": null,
+   "category": "wages"
+  },
+  {
+   "date": "2026-05-15",
+   "description": "CARD PAYMENT TO BRIGHTADS ONLINE",
+   "amount": -86.3,
+   "balance": null,
+   "category": "advertising"
+  },
+  {
+   "date": "2026-05-15",
+   "description": "CARD PAYMENT TO TRADEBODY SUBSCRIPTION",
+   "amount": -53.94,
+   "balance": null,
+   "category": "other_expenses"
+  },
+  {
+   "date": "2026-05-15",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -51.0,
+   "balance": null,
+   "category": "drawings_personal"
+  },
+  {
+   "date": "2026-05-17",
+   "description": "CARD PAYMENT TO OAKHAM TRADE PARTS",
+   "amount": -176.79,
+   "balance": null,
+   "category": "cost_of_goods"
+  },
+  {
+   "date": "2026-05-18",
+   "description": "BACS FROM ASHBY JOINERY LTD INV8183",
+   "amount": 513.17,
+   "balance": null,
+   "category": "turnover"
+  },
+  {
+   "date": "2026-05-22",
+   "description": "MONTHLY ACCOUNT FEE NORTHBANK",
+   "amount": -7.0,
+   "balance": null,
+   "category": "interest_bank_charges"
+  },
+  {
+   "date": "2026-05-24",
+   "description": "FASTER PAYMENT T ABERNETHY REF6331",
+   "amount": 101.21,
+   "balance": null,
+   "category": "turnover"
+  },
+  {
+   "date": "2026-05-28",
+   "description": "TRANSFER TO SAVINGS 8841",
+   "amount": -107.52,
+   "balance": null,
+   "category": "transfer"
+  },
+  {
+   "date": "2026-05-28",
+   "description": "DD ELMSTEAD UNITS RENT",
+   "amount": -350.0,
+   "balance": null,
+   "category": "premises"
+  },
+  {
+   "date": "2026-05-30",
+   "description": "CARD PAYMENT TO TRADEBODY SUBSCRIPTION",
+   "amount": -32.25,
+   "balance": null,
+   "category": "other_expenses"
+  },
+  {
+   "date": "2026-06-01",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 189.22,
+   "balance": null,
+   "category": "transfer"
+  },
+  {
+   "date": "2026-06-04",
+   "description": "BACS FROM ASHBY JOINERY LTD INV8023",
+   "amount": 1010.19,
+   "balance": null,
+   "category": "turnover"
+  },
+  {
+   "date": "2026-06-09",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -88.06,
+   "balance": null,
+   "category": "drawings_personal"
+  },
+  {
+   "date": "2026-06-15",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -4.49,
+   "balance": null,
+   "category": "interest_bank_charges"
+  },
+  {
+   "date": "2026-06-24",
+   "description": "DD ELMSTEAD UNITS RENT",
+   "amount": -350.0,
+   "balance": null,
+   "category": "premises"
+  },
+  {
+   "date": "2026-06-27",
+   "description": "FASTER PAYMENT S WINTERBOURNE REF9886",
+   "amount": 433.15,
+   "balance": null,
+   "category": "turnover"
+  }
+ ]
+}

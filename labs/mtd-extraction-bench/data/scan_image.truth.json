@@ -1,0 +1,230 @@
+{
+ "file": "scan_image.jpg",
+ "opening_balance": 2450.0,
+ "lines": [
+  {
+   "date": "2026-04-10",
+   "description": "DD HARLOW FUEL STATION 1412",
+   "amount": -46.35,
+   "balance": 2403.65,
+   "category": "car_van_travel"
+  },
+  {
+   "date": "2026-04-12",
+   "description": "DD ELMSTEAD UNITS RENT",
+   "amount": -350.0,
+   "balance": 2053.65,
+   "category": "premises"
+  },
+  {
+   "date": "2026-04-13",
+   "description": "BACS FROM KESTREL DENTAL LTD INV2483",
+   "amount": 1395.71,
+   "balance": 3449.36,
+   "category": "turnover"
+  },
+  {
+   "date": "2026-04-24",
+   "description": "CARD PAYMENT TO STARLIGHT CINEMAS",
+   "amount": -25.41,
+   "balance": 3423.95,
+   "category": "drawings_personal"
+  },
+  {
+   "date": "2026-04-29",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -5.63,
+   "balance": 3418.32,
+   "category": "interest_bank_charges"
+  },
+  {
+   "date": "2026-04-29",
+   "description": "CARD PAYMENT TO MERIDIAN PARKING",
+   "amount": -16.43,
+   "balance": 3401.89,
+   "category": "car_van_travel"
+  },
+  {
+   "date": "2026-04-29",
+   "description": "CARD PAYMENT TO OAKHAM TRADE PARTS",
+   "amount": -95.25,
+   "balance": 3306.64,
+   "category": "cost_of_goods"
+  },
+  {
+   "date": "2026-05-08",
+   "description": "CARD PAYMENT TO PAPERBOX STATIONERY",
+   "amount": -30.55,
+   "balance": 3276.09,
+   "category": "phone_office"
+  },
+  {
+   "date": "2026-05-09",
+   "description": "CARD PAYMENT TO BRICKWELL TIMBER SUPPLY",
+   "amount": -222.05,
+   "balance": 3054.04,
+   "category": "cost_of_goods"
+  },
+  {
+   "date": "2026-05-10",
+   "description": "FASTER PAYMENT TO J HARGREAVE WAGES",
+   "amount": -159.01,
+   "balance": 2895.03,
+   "category": "wages"
+  },
+  {
+   "date": "2026-05-11",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -312.97,
+   "balance": 2582.06,
+   "category": "drawings_personal"
+  },
+  {
+   "date": "2026-05-12",
+   "description": "TRANSFER TO SAVINGS 8841",
+   "amount": -140.67,
+   "balance": 2441.39,
+   "category": "transfer"
+  },
+  {
+   "date": "2026-05-15",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -72.36,
+   "balance": 2369.03,
+   "category": "drawings_personal"
+  },
+  {
+   "date": "2026-05-15",
+   "description": "CARD PAYMENT TO QUICKFIX TYRES",
+   "amount": -180.55,
+   "balance": 2188.48,
+   "category": "repairs"
+  },
+  {
+   "date": "2026-05-17",
+   "description": "DD PENNYWORTH ACCOUNTANTS",
+   "amount": -45.0,
+   "balance": 2143.48,
+   "category": "professional_fees"
+  },
+  {
+   "date": "2026-05-18",
+   "description": "DD WESTFIELD POWER",
+   "amount": -67.78,
+   "balance": 2075.7,
+   "category": "premises"
+  },
+  {
+   "date": "2026-05-19",
+   "description": "DD NORTHGATE VAN INSURANCE",
+   "amount": -48.0,
+   "balance": 2027.7,
+   "category": "car_van_travel"
+  },
+  {
+   "date": "2026-05-26",
+   "description": "CARD PAYMENT TO TRADEBODY SUBSCRIPTION",
+   "amount": -58.42,
+   "balance": 1969.28,
+   "category": "other_expenses"
+  },
+  {
+   "date": "2026-05-26",
+   "description": "CARD PAYMENT TO BRIGHTADS ONLINE",
+   "amount": -55.08,
+   "balance": 1914.2,
+   "category": "advertising"
+  },
+  {
+   "date": "2026-05-28",
+   "description": "MONTHLY ACCOUNT FEE NORTHBANK",
+   "amount": -7.0,
+   "balance": 1907.2,
+   "category": "interest_bank_charges"
+  },
+  {
+   "date": "2026-05-29",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 216.18,
+   "balance": 2123.38,
+   "category": "transfer"
+  },
+  {
+   "date": "2026-05-31",
+   "description": "DD TELLOWAY MOBILE",
+   "amount": -22.0,
+   "balance": 2101.38,
+   "category": "phone_office"
+  },
+  {
+   "date": "2026-06-09",
+   "description": "FASTER PAYMENT J HARGREAVE REF9597",
+   "amount": 510.44,
+   "balance": 2611.82,
+   "category": "turnover"
+  },
+  {
+   "date": "2026-06-10",
+   "description": "DD STREAMBOX SUBSCRIPTION",
+   "amount": -10.0,
+   "balance": 2601.82,
+   "category": "drawings_personal"
+  },
+  {
+   "date": "2026-06-11",
+   "description": "MONTHLY ACCOUNT FEE NORTHBANK",
+   "amount": -7.0,
+   "balance": 2594.82,
+   "category": "interest_bank_charges"
+  },
+  {
+   "date": "2026-06-13",
+   "description": "DD NORTHGATE VAN INSURANCE",
+   "amount": -48.0,
+   "balance": 2546.82,
+   "category": "car_van_travel"
+  },
+  {
+   "date": "2026-06-17",
+   "description": "CARD PAYMENT TO MERIDIAN PARKING",
+   "amount": -6.81,
+   "balance": 2540.01,
+   "category": "car_van_travel"
+  },
+  {
+   "date": "2026-06-23",
+   "description": "CARD PAYMENT TO OAKHAM TRADE PARTS",
+   "amount": -204.5,
+   "balance": 2335.51,
+   "category": "cost_of_goods"
+  },
+  {
+   "date": "2026-06-28",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -85.82,
+   "balance": 2249.69,
+   "category": "drawings_personal"
+  },
+  {
+   "date": "2026-06-29",
+   "description": "CARD PAYMENT TO TRADEBODY SUBSCRIPTION",
+   "amount": -35.94,
+   "balance": 2213.75,
+   "category": "other_expenses"
+  },
+  {
+   "date": "2026-06-30",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -554.13,
+   "balance": 1659.62,
+   "category": "drawings_personal"
+  },
+  {
+   "date": "2026-07-03",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -29.87,
+   "balance": 1629.75,
+   "category": "drawings_personal"
+  }
+ ]
+}
