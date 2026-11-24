@@ -17,8 +17,9 @@ review before launch.
 | `billing_events` | provider event ids only | applying each webhook once | 400 days | purge job |
 | `ai_usage` | tenant id, token counts | per-customer caps, the studio-wide daily AI budget, cost | 400 days; on account deletion the tenant link is cleared but the counts stay, so the global budget still counts them | purge job |
 
-**AI provider:** the Azure OpenAI Responses API is called with `store=false`, so Azure keeps no copy of the prompt
-or the answer for the response object (Azure's separate abuse-monitoring retention is covered in ADR 0002).
+**AI provider:** the Azure OpenAI Responses API is called with `store=false`, so Azure does not store the response object
+for later retrieval. Azure's abuse monitoring is separate and may keep flagged content for human review (Microsoft
+Learn, "Data, privacy, and security for Azure OpenAI"); check its terms before real customer data.
 
 **Logs** hold request ids, tenant ids and user ids, never emails, names, note text, tokens or SQL parameters
 (see `app/logs.py`). Database error messages are reduced to their SQLSTATE code. When deployed (ADR 0002):

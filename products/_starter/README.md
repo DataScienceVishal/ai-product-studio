@@ -126,7 +126,7 @@ The cap counts tokens, not money, so it is only as safe as the price you assume:
 The deployed budget is $6.10 a month (`state/BUDGET.md`). With a gpt-5-mini style blend of $2.00 per million,
 100,000 tokens a day costs $6.00 a month. **A pro deployment needs a much smaller cap.** Assuming (check the current
 Azure price list) about $120 per million output tokens, and counting every capped token as output, the same
-$6.10 allows only 6.10 / (30 x 120) x 1,000,000, about 1,700 tokens a day: one or two summaries. At 100,000 tokens a
+$6.10 allows only 6.10 / (30 x 120) x 1,000,000, about 1,690 tokens a day: one or two summaries. At 100,000 tokens a
 day that deployment could cost up to $360 a month, far over the $80 credit. Change the deployment, set
 `aiPricePerMillionTokens` and `aiGlobalDailyTokens` together; `infra/cost-guard.sh` fails the build when
 tokens x price x 30 passes $6.10. Raising the budget needs Vishal's approval.
