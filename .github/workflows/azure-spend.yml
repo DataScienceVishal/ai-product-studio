@@ -145,8 +145,9 @@ jobs:
           exit 1
 
       - name: Tell Vishal the run failed
-        # Once per new problem: not every day while Cost Management stays unavailable.
-        if: failure() && env.HAS_TELEGRAM == 'true' && (steps.report.outcome != 'success' || steps.report.outputs.changed == 'yes')
+        # Once per new problem: not every day while Cost Management stays unavailable. Never for a manual run
+        # off main: that fails with its own clear message and isn't a failed daily report.
+        if: failure() && env.HAS_TELEGRAM == 'true' && env.ON_MAIN == 'true' && (steps.report.outcome != 'success' || steps.report.outputs.changed == 'yes')
         continue-on-error: true
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

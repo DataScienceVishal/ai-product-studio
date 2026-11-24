@@ -26,8 +26,8 @@ param allowAzureServices bool = true
 #disable-next-line secure-secrets-in-params
 param passwordAuth string = 'Disabled'
 
-@description('Postgres role name of the Entra admin (the deploy service principal, SETUP.md step 3). The workflow reads the real value back.')
-param entraAdminName string = 'sp-ai-studio-deployer'
+@description('Postgres role name of the Entra admin (the deploy managed identity id-github-deploy, SETUP.md step 3). The workflow reads the real value back.')
+param entraAdminName string = 'id-github-deploy'
 
 @description('Type of the deploying principal (deployer()): ServicePrincipal for the workflow, User or Group for an Owner account.')
 @allowed([

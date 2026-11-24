@@ -252,6 +252,9 @@ needs Vishal's approval.
   (issuer `https://token.actions.githubusercontent.com`, audience `api://AzureADTokenExchange`). So the sign-in
   works from `main` only, and the sign-in jobs start with a step that fails with a clear message elsewhere.
   **A job with `environment: <name>` gets the subject `...:environment:<name>` instead, and its login fails.**
+  The GitHub ID token lasts about 5 minutes and the CLI replays it for each token of a new resource
+  (azure/login issue 372, AADSTS700024), so the deploy job signs in again before the registry push and before
+  the database step, which come long after the first sign-in.
   No job uses `environment:` today. If one is added (see the follow-up below), add a second federated
   credential for `repo:DataScienceVishal/ai-product-studio:environment:<name>` first (command in SETUP.md step 3).
 - Contributor can't create role assignments (that needs Owner or Role Based Access Control Administrator)
@@ -264,7 +267,10 @@ needs Vishal's approval.
   readable by workflows on any branch, and a branch can edit the workflow. The real boundary is a GitHub
   environment holding the deploy secrets with a main-only deployment-branch rule. With OIDC the federated
   subject adds a second, Azure-side boundary: only runs on `main` can get a token at all, even if a branch reads
-  the (non-secret) IDs.
+  the (non-secret) IDs. The limit: anyone who can push a workflow change to `main` can still get a Contributor
+  token, and `main` has no review rule yet (studio state files go straight to it). Follow-up: a ruleset or
+  CODEOWNERS rule requiring review for `.github/workflows/**` and `products/*/infra/**`. The repository is
+  public, so GitHub Free does allow environments; the plan question above is settled.
   GitHub Free can't use environments in private repositories ("Users with GitHub Free plans can only
   configure environments for public repositories"); GitHub Pro can, and the GitHub Student Developer Pack
   includes Pro. Which plan this account has is not checked yet: a question for Vishal, then a follow-up.

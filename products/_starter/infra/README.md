@@ -69,7 +69,7 @@ Nothing here costs money until step 4. Do the steps only after approving the cos
      --role AcrPull --scope /subscriptions/<sub>/resourceGroups/rg-ai-studio/providers/Microsoft.ContainerRegistry/registries/acrstudioznp96r
    ```
    First-deploy check: the Entra admin's `principalName` (`postgresEntraAdminName`, default
-   `sp-ai-studio-deployer`) is a guess. Read it back (`az postgres flexible-server microsoft-entra-admin list`
+   `id-github-deploy`) is a guess. Read it back (`az postgres flexible-server microsoft-entra-admin list`
    or the portal) and confirm ARM accepted it and which Postgres role name it created. Use that name when granting
    the app and migrate roles (the deploy workflow signs in to Postgres as that role).
 6. **Run the workflow again** with nothing ticked. This is the first real release. It deploys, then creates
@@ -208,7 +208,7 @@ Rules the templates keep. Breaking one changes the bill:
 | "no revision ... has 100% of the traffic" | traffic was split by hand | `rollback_to` the revision that should serve, then release |
 | "main.bicep's identity object ids are missing" | the deploy step's outputs lack the two principal ids | check `main.bicep` outputs `appIdentityPrincipalId`, `migrateIdentityPrincipalId` |
 | "has Entra admins besides the deploy principal" | someone added an admin (Bicep never removes one) | remove the extra `administrators` entry through ARM, release again |
-| "has characters this workflow doesn't allow" (the Entra admin name) | `postgresEntraAdminName` holds something outside letters, digits and `_ . @ - ` or is over 63 characters | set it to a name like `sp-ai-studio-deployer` (an Owner's UPN when the type is `User`) and run with `deploy_shared` ticked |
+| "has characters this workflow doesn't allow" (the Entra admin name) | `postgresEntraAdminName` holds something outside letters, digits and `_ . @ - ` or is over 63 characters | set it to `id-github-deploy` (an Owner's UPN when the type is `User`) and run with `deploy_shared` ticked |
 | "is not an Entra admin of psql-studio-..." or "refused the deploy principal's token" | `deploy_shared` never ran since T-18, or the principal was recreated | run with `deploy_shared` ticked |
 | Trivy fails | a fixable HIGH or CRITICAL vulnerability in the image | rebuild later (new base image), or add the CVE id to `<product>/.trivyignore` with a comment saying why |
 | Migration job `Failed` | a migration error; the old revision still serves and the schema is unchanged | read `ContainerAppConsoleLogs` in `log-studio`, fix, release again |
