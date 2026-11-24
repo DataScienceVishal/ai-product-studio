@@ -192,7 +192,7 @@ _ROUTE_REVERSED = re.compile(r"""(["'`])(/[^"'`$]*)\1\s*===\s*path\b""")
 # path === ROUTES.x (a non-literal), PAGES[path] (a lookup table)...
 _OTHER = re.compile(
     r"""\bpath\s*(?:!==?|==(?!=))|\bpath\s*\.\s*\w+\s*\(|\bswitch\s*\(\s*path\s*\)|\.\s*(?:test|includes)\s*\(\s*path\s*\)"""
-    r"""|\bpath\s*===\s*[A-Za-z_$]|[A-Za-z_$][\w$.]*\s*\[\s*path\s*\]|\b(?:!==?|==)\s*path\b|[A-Za-z_$][\w$.]*\s*===\s*path\b""")
+    r"""|\bpath\s*===\s*[A-Za-z_$]|[A-Za-z_$][\w$.]*\s*\[\s*path\s*\]|(?:!==?|(?<![=!])==(?!=))\s*path\b|[A-Za-z_$][\w$.]*\s*===\s*path\b""")
 
 
 def scan_routes(src: str) -> tuple[set[str], list[str]]:
@@ -212,7 +212,8 @@ def test_route_scanner_reads_or_flags_the_other_ways_to_write_a_route():
     assert scan_routes("""if ("/x" === path) a(); if ('/y' === path || path === "/z") b();""") == ({"/x", "/y", "/z"}, [])
     assert scan_routes("if (path === '/a') a();") == ({"/a"}, [])
     for unreadable in ("if (path === ROUTES.billing) a();", "if (ROUTES.billing === path) a();", "return PAGES[path];",
-                       "const P = pages.main[path];", "if (x === path) a();"):
+                       "const P = pages.main[path];", "if (x === path) a();", "if (x !== path) a();",
+                       "if (\"/x\" !== path) a();", "if (\"/x\" == path) a();", "if (x != path) a();"):
         found, other = scan_routes(unreadable)
         assert other and not found, unreadable
 

@@ -91,6 +91,7 @@ def _drop_stale(conn, base: str, now: float | None = None) -> list[str]:
 
 
 def _create_run_db(conn, name: str) -> None:
+    assert len(name.encode()) <= _MAX_DB_NAME, f"test database name {name!r} exceeds Postgres's 63-byte limit"
     try:
         conn.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
     except psycopg.errors.InsufficientPrivilege:
@@ -99,11 +100,12 @@ def _create_run_db(conn, name: str) -> None:
     try:
         conn.execute(sql.SQL("COMMENT ON DATABASE {} IS {}").format(sql.Identifier(name), sql.Literal(_MARKER)))
     except Exception as exc:  # an unmarked DB would never be reclaimed by the stale cleanup: drop it now
+        outcome = "it was dropped"
         try:
             conn.execute(sql.SQL("DROP DATABASE IF EXISTS {} WITH (FORCE)").format(sql.Identifier(name)))
         except psycopg.Error as drop_exc:
-            warnings.warn(f"could not drop test database {name} after a failed COMMENT: {drop_exc}")
-        pytest.exit(f"could not mark test database {name} ({exc}); it was dropped.", 2)
+            outcome = f"dropping it failed too ({drop_exc}); drop it by hand"
+        pytest.exit(f"could not mark test database {name} ({exc}); {outcome}.", 2)
 
 
 @pytest.fixture(scope="session")
