@@ -11,3 +11,5 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - **Q-12 rewritten before sending:** recommend a cheap mini deployment (option A). On the pro model, the pEPR test would cost ~$18.50 and fail the cost mark.
 - **Spend report bug:** the "$17,015 projected monthly" figure was a parser bug, not a real projection (real: $23.20). Fix in review.
 - Spend parser fix and follow-ups merged (T-58, T-59). The starter README's pro-model cap example now uses $180/1M output (about 1,130 tokens a day for $6.10).
+
+- run 45ef (T-15 starter): the early-customer offer (EARLY50) is now applied automatically by Stripe at checkout, not re-typed by the customer. Reviewed PASS, merged, 484 backend + 114 frontend tests green. Test mode only; nothing run against real Stripe.
