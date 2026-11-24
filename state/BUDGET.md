@@ -7,6 +7,7 @@ Month-to-date spend: see the spend report below (spend unknown (no_data), update
 
 | Resource | Product | Created (UTC) | Estimated $ per month | Status |
 |---|---|---|---|---|
+| `id-github-deploy` (user-assigned managed identity, francecentral; GitHub OIDC for main only, Contributor on rg-ai-studio) | shared | 2026-11-24T23:24Z (by Vishal) | 0 | live |
 | `psql-studio-znp96r` (Postgres Flexible Server, Burstable B1ms, 32 GB, 7-day backups) | shared | - | 18.13 without the student free allowance ($13.87 compute + $4.26 storage); 0 while the 12-month allowance (750 h B1MS, 32 GB) applies | planned (approved by Vishal, Q-5 A; create at first G3) |
 | `acrstudioznp96r` (Container Registry Basic, 10 GiB included) | shared | - | 5.07 ($0.1666 a day) | planned (approved by Vishal, Q-5 A; create at first G3) |
 | `cae-studio` (Container Apps environment, Consumption profile only, no own network) | shared | - | 0 (no environment fee without Dedicated profiles, private endpoints or maintenance windows) | planned (approved by Vishal, Q-5 A; create at first G3) |
