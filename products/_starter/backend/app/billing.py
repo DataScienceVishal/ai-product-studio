@@ -245,8 +245,9 @@ class StripeBilling:
         if coupon_id in self._coupons:
             return coupon_id
         form = {"id": coupon_id, "percent_off": str(offer.percent_off), "duration": "repeating",
-                "duration_in_months": str(offer.months), "name": f"{offer.code} {offer.percent_off}% off for {offer.months} months"}
-        body = self._call("POST", "/coupons", form, idempotency_key=f"coupon-{coupon_id}",
+                "duration_in_months": str(offer.months), "name": f"{offer.code} {offer.percent_off}% off for {offer.months} months"[:40]}  # Stripe max 40
+        body = self._call("POST", "/coupons", form, idempotency_key=f"coupon-{coupon_id}-{uuid.uuid4().hex}",  # fresh per call: a fixed key
+                          # would 409 on concurrent first checkouts and replay stale results for 24 h
                           accept_error_codes=frozenset({"resource_already_exists"}))
         if (body.get("error") or {}).get("code") == "resource_already_exists":
             existing = self._call("GET", f"/coupons/{coupon_id}")

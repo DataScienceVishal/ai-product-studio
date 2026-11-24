@@ -204,7 +204,8 @@ def test_checkout_with_offer_applies_the_coupon_server_side():
     assert calls[0][:2] == ("POST", "/v1/coupons")  # the coupon exists before the session refers to it
     assert calls[0][2] == {"id": OFFERS["EARLY50"].coupon_id, "percent_off": "50", "duration": "repeating",
                            "duration_in_months": "3", "name": "EARLY50 50% off for 3 months"}
-    assert calls[0][3] == f"coupon-{OFFERS['EARLY50'].coupon_id}"  # Idempotency-Key
+    assert calls[0][3].startswith(f"coupon-{OFFERS['EARLY50'].coupon_id}-")  # Idempotency-Key, fresh per call
+    assert len(calls[0][3]) == len(f"coupon-{OFFERS['EARLY50'].coupon_id}-") + 32
 
 
 def test_checkout_without_offer_has_no_discount_and_no_promotion_codes():
