@@ -154,7 +154,7 @@ class ManagedIdentityToken:
             if left <= 0:
                 raise AIUnavailable()
             try:
-                self._token, self._expires_on = self._fetch(left, short=left < self._timeout)
+                self._token, self._expires_on = self._fetch(left, short=left < self._timeout - 0.05)
             except _CallerTimeout:
                 raise  # the caller's own deadline, not an endpoint failure: do not cache
             except AIUnavailable as error:
@@ -182,7 +182,8 @@ class ManagedIdentityToken:
             response = self._client.get(self._endpoint, params=params, headers={"X-IDENTITY-HEADER": self._header},
                                         timeout=timeout)
         except httpx.TimeoutException as error:
-            log.error("managed identity token request failed", extra={"kind": type(error).__name__})
+            log.log(logging.WARNING if short else logging.ERROR, "managed identity token request failed",
+                    extra={"kind": type(error).__name__})
             if short:  # timed out on a budget shorter than our own timeout: the caller's deadline, not the endpoint
                 raise _CallerTimeout() from None
             raise AIUnavailable() from None

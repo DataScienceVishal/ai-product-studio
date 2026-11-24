@@ -353,6 +353,21 @@ def test_a_timeout_at_the_full_budget_is_an_endpoint_failure_and_is_cached():
     assert len(calls) == 1
 
 
+def test_a_real_endpoint_timeout_is_cached_on_the_real_clock():
+    calls = []
+
+    def handler(request):
+        calls.append(1)
+        raise httpx.ReadTimeout("slow", request=request)
+
+    provider = ManagedIdentityToken(endpoint=IDENTITY_URL, header=SECRET_HEADER, timeout=5.0,
+                                    client=httpx.Client(transport=httpx.MockTransport(handler)))  # real time.monotonic
+    for _ in range(3):
+        with pytest.raises(AIUnavailable):
+            provider.get(25.0)
+    assert len(calls) == 1
+
+
 def test_fetch_gets_only_what_is_left_after_waiting_for_the_lock():
     import threading
     clock = FakeClock()
@@ -370,7 +385,16 @@ def test_fetch_gets_only_what_is_left_after_waiting_for_the_lock():
     import time as _time
     provider = ManagedIdentityToken(endpoint=IDENTITY_URL, header=SECRET_HEADER, timeout=5.0,
                                     client=httpx.Client(transport=httpx.MockTransport(handler)))
-    first = threading.Thread(target=lambda: pytest.raises(AIUnavailable, provider.get, 1.0))
+    outcome = []
+
+    def run_first():
+        try:
+            provider.get(1.0)
+            outcome.append("returned")
+        except AIUnavailable:
+            outcome.append("unavailable")
+
+    first = threading.Thread(target=run_first)
     first.start()
     assert entered.wait(5)
     threading.Timer(0.4, gate.set).start()
@@ -378,6 +402,7 @@ def test_fetch_gets_only_what_is_left_after_waiting_for_the_lock():
     assert provider.get(1.0) == "t"
     assert _time.monotonic() - started < 1.3
     first.join()
+    assert outcome == ["unavailable"]
     assert seen[1] < 0.75  # 1.0 s total minus about 0.4 s spent waiting, not a fresh 1.0 s
 
 

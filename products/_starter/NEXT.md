@@ -81,7 +81,8 @@ Verify: `cd backend && TEST_DATABASE_URL=... .venv/bin/python -m pytest`.
 
 ## T-32 status (run 010e hand-off, rebased on main with T-33/T-34, awaiting re-review)
 All reviewer items from reviews/T-32.md are addressed (see its Response section). Merged origin/main (Responses API in ai.py kept).
-Tests: backend 246 tests, 0 failures, 1 skipped (frontend not built); frontend vitest 111 passed.
+Re-review fix: `short` is now `left < self._timeout - 0.05` (was always true on the real clock); real-clock test added; mutation (revert to `left < self._timeout`) fails test_a_real_endpoint_timeout_is_cached_on_the_real_clock.
+Tests: backend 247 tests, 0 failures, 1 skipped (frontend not built); frontend vitest 111 passed.
 Mutation check: with the lock removed (`if False` instead of `acquire`, `pass` instead of `release`), three tests fail:
 test_concurrent_callers_share_one_fetch, test_lock_waiter_gives_up_at_its_own_deadline,
 test_fetch_gets_only_what_is_left_after_waiting_for_the_lock. Restored, all pass.
