@@ -186,4 +186,5 @@ jobs:
         working-directory: products/_starter/infra
         run: |
           for f in *.sh; do bash -n "$f"; done
-          python3 -I -m py_compile scram_verifier.py
+      - name: Deploy workflow checks (ADR 0003 slice 4)
+        run: bash products/_starter/infra/test-deploy-workflow.sh

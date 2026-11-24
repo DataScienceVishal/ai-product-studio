@@ -8,7 +8,7 @@ param registrySku = 'Basic'
 param postgresServerName = 'psql-studio-znp96r'
 param postgresAllowAzureServices = true
 
-// Never written here: the deploy workflow derives it from the STUDIO_DB_SEED secret and exports it.
+// Never written here: deploy_shared makes a random one inside its own step (phase 1 only, ADR 0003) and exports it there.
 param postgresAdminPassword = readEnvironmentVariable('PG_ADMIN_PASSWORD', '')
 
 // The deployer can't create role assignments: Vishal grants AcrPull once (infra/README.md, setup step 5).

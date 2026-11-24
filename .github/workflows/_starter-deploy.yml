@@ -38,10 +38,6 @@ on:
         description: "Show the demo 'Pay (test)' button (mock billing only; it grants a paid plan for free)."
         type: boolean
         default: false
-      setup_database:
-        description: "Create or refresh this product's database and roles: first release, or after STUDIO_DB_SEED changes (README: rotating the seed)."
-        type: boolean
-        default: false
       deploy_shared:
         description: "Also create or update the shared studio resources (registry, environment, logs, Postgres). Starter only."
         type: boolean
@@ -100,7 +96,6 @@ jobs:
           az bicep build-params --file shared.bicepparam --outfile "$RUNNER_TEMP/shared.parameters.json"
           az bicep build-params --file main.bicepparam --outfile "$RUNNER_TEMP/main.parameters.json"
           for script in *.sh; do bash -n "$script"; done
-          python3 -I -c 'import ast, sys; ast.parse(open(sys.argv[1]).read())' scram_verifier.py
 
       - name: No features with a fixed charge
         run: |
@@ -144,7 +139,6 @@ jobs:
       # The only provider today. A real one needs approval, and then require_email_verification must be on:
       # the app refuses to start otherwise.
       EMAIL_PROVIDER: outbox
-      SETUP_DATABASE: ${{ inputs.setup_database && 'true' || 'false' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -175,35 +169,17 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Derive the database passwords
-        env:
-          STUDIO_DB_SEED: ${{ secrets.STUDIO_DB_SEED }}
-        run: |
-          if [ "${#STUDIO_DB_SEED}" -lt 32 ]; then
-            echo "::error::The STUDIO_DB_SEED secret is missing or shorter than 32 characters ($PRODUCT_DIR/infra/README.md, setup step 3)."
-            exit 1
-          fi
-          # HMAC-SHA256 of a label, keyed by the seed: stable across deploys, different for every product and
-          # role, and nothing to store. The seed is read from the environment, never a command line.
-          derive() {
-            python3 -I -c 'import hashlib, hmac, os, sys; print("Pg-" + hmac.new(os.environ["STUDIO_DB_SEED"].encode(), sys.argv[1].encode(), hashlib.sha256).hexdigest()[:40])' "$1"
-          }
-          admin=$(derive "server-admin")
-          migrator=$(derive "$DB_NAME:migrator")
-          app=$(derive "$DB_NAME:app")
-          for value in "$admin" "$migrator" "$app"; do echo "::add-mask::$value"; done
-          {
-            echo "PG_ADMIN_PASSWORD=$admin"
-            echo "PG_MIGRATOR_PASSWORD=$migrator"
-            echo "PG_APP_PASSWORD=$app"
-          } >> "$GITHUB_ENV"
-
       - name: Shared studio resources (only when asked)
         if: inputs.deploy_shared
         working-directory: ${{ env.PRODUCT_DIR }}/infra
         run: |
           az bicep install --only-show-errors
-          # Also the only step that sets the server admin password, from STUDIO_DB_SEED.
+          # The server admin password (phase 1 only, ADR 0003) is random per run, made and used only in this
+          # step: masked before first use, never written to GITHUB_ENV, GITHUB_OUTPUT, a file or an argument.
+          # shared.bicepparam reads it from this step's environment. Nobody needs it: sign-in is Entra.
+          PG_ADMIN_PASSWORD="$(openssl rand -base64 32 | tr -d '\n')Aa1!"
+          echo "::add-mask::$PG_ADMIN_PASSWORD"
+          export PG_ADMIN_PASSWORD
           az deployment group create --resource-group "$RESOURCE_GROUP" --name studio-shared \
             --parameters shared.bicepparam --only-show-errors --output none
           echo "Shared resources are in place."
@@ -230,12 +206,6 @@ jobs:
       - name: Read the live release (stops on any Azure read error)
         run: bash "$PRODUCT_DIR/infra/live-release.sh" >> "$GITHUB_ENV"
 
-      - name: A first release needs the database set up
-        if: env.FIRST_RELEASE == 'true' && !inputs.setup_database
-        run: |
-          echo "::error::ca-$PRODUCT has no working release yet: run this first release with setup_database ticked."
-          exit 1
-
       - name: Push the image
         run: |
           az acr login --name "$REGISTRY" --only-show-errors
@@ -245,66 +215,6 @@ jobs:
           image=$(docker inspect --format '{{index .RepoDigests 0}}' "$remote")
           echo "IMAGE=$image" >> "$GITHUB_ENV"
           echo "Pushed $image"
-
-      - name: Product database and roles (only when asked)
-        if: inputs.setup_database
-        run: |
-          command -v psql > /dev/null || { sudo apt-get update -q && sudo apt-get install -y -q postgresql-client; }
-          major=$(psql --version | grep -oE '[0-9]+' | head -1)
-          if [ "${major:-0}" -lt 15 ]; then
-            echo "::error::psql ${major:-unknown} is too old: db-setup.sql needs psql 15 or later (\\getenv)."
-            exit 1
-          fi
-          # SCRAM verifiers, made here: the passwords themselves never reach the server (db-setup.sql).
-          migrator_verifier=$(python3 -I "$PRODUCT_DIR/infra/scram_verifier.py" PG_MIGRATOR_PASSWORD)
-          app_verifier=$(python3 -I "$PRODUCT_DIR/infra/scram_verifier.py" PG_APP_PASSWORD)
-          echo "::add-mask::$migrator_verifier"
-          echo "::add-mask::$app_verifier"
-          export PG_MIGRATOR_VERIFIER="$migrator_verifier" PG_APP_VERIFIER="$app_verifier"
-          ip=$(curl -fsS --max-time 10 https://api.ipify.org || true)
-          if ! [[ "$ip" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
-            echo "::error::Couldn't read this runner's public IPv4 address."
-            exit 1
-          fi
-          # A firewall rule for this runner only, removed again by the always-run step below.
-          az postgres flexible-server firewall-rule create --resource-group "$RESOURCE_GROUP" --server-name "$PG_SERVER" \
-            --name "gh-run-$GITHUB_RUN_ID" --start-ip-address "$ip" --end-ip-address "$ip" --only-show-errors --output none
-          export PGHOST="$PG_SERVER.postgres.database.azure.com" PGSSLMODE=verify-full \
-            PGSSLROOTCERT=/etc/ssl/certs/ca-certificates.crt PGCONNECT_TIMEOUT=10
-          for attempt in $(seq 1 36); do # firewall changes can take up to five minutes
-            if PGPASSWORD="$PG_ADMIN_PASSWORD" psql -X -w -U studioadmin -d postgres -tAc 'select 1' > /dev/null 2> "$RUNNER_TEMP/psql.err"; then
-              break
-            fi
-            if grep -q "password authentication failed" "$RUNNER_TEMP/psql.err"; then
-              echo "::error::The server admin password doesn't match STUDIO_DB_SEED. Only deploy_shared sets it, so after changing the seed run with deploy_shared and setup_database both ticked (infra/README.md, rotating the seed)."
-              exit 1
-            fi
-            if grep -qiE "certificate|ssl error" "$RUNNER_TEMP/psql.err"; then
-              echo "::error::The TLS check failed for $PGHOST: $(head -c 300 "$RUNNER_TEMP/psql.err")"
-              exit 1
-            fi
-            if [ "$attempt" -eq 36 ]; then
-              echo "::error::Couldn't reach $PGHOST after 6 minutes: $(head -c 300 "$RUNNER_TEMP/psql.err")"
-              exit 1
-            fi
-            sleep 10
-          done
-          PGPASSWORD="$PG_ADMIN_PASSWORD" psql -X -w -U studioadmin -d postgres -v ON_ERROR_STOP=1 \
-            -v db="$DB_NAME" -v migrator="${DB_NAME}_migrator" -v app="${DB_NAME}_app" \
-            -f "$PRODUCT_DIR/infra/db-setup.sql"
-          PGPASSWORD="$PG_MIGRATOR_PASSWORD" psql -X -w -U "${DB_NAME}_migrator" -d "$DB_NAME" -v ON_ERROR_STOP=1 \
-            -v app="${DB_NAME}_app" -f "$PRODUCT_DIR/infra/db-grants.sql"
-          echo "Database $DB_NAME with roles ${DB_NAME}_migrator and ${DB_NAME}_app is ready."
-
-      - name: Remove the runner's database firewall rule
-        if: always() && inputs.setup_database
-        run: |
-          if ! az postgres flexible-server firewall-rule delete --resource-group "$RESOURCE_GROUP" --server-name "$PG_SERVER" \
-            --name "gh-run-$GITHUB_RUN_ID" --yes --only-show-errors --output none 2> "$RUNNER_TEMP/firewall.err"; then
-            if ! grep -qi "not found" "$RUNNER_TEMP/firewall.err"; then
-              echo "::warning::Couldn't remove the firewall rule gh-run-$GITHUB_RUN_ID from $PG_SERVER ($(head -c 200 "$RUNNER_TEMP/firewall.err")). Remove it by hand: az postgres flexible-server firewall-rule delete --resource-group $RESOURCE_GROUP --server-name $PG_SERVER --name gh-run-$GITHUB_RUN_ID --yes"
-            fi
-          fi
 
       - name: Deploy the app and jobs (the new revision gets no traffic; the purge job stays on the live one)
         working-directory: ${{ env.PRODUCT_DIR }}/infra
@@ -332,8 +242,11 @@ jobs:
           host="$PG_SERVER.postgres.database.azure.com"
           tls="sslmode=verify-full&sslrootcert=/etc/ssl/certs/ca-certificates.crt"
           export REVISION_SUFFIX="r${GITHUB_RUN_NUMBER}a${GITHUB_RUN_ATTEMPT}-${GITHUB_SHA::7}"
-          export DATABASE_URL_APP="postgresql+psycopg://${DB_NAME}_app:${PG_APP_PASSWORD}@${host}:5432/${DB_NAME}?${tls}"
-          export DATABASE_URL_MIGRATE="postgresql+psycopg://${DB_NAME}_migrator:${PG_MIGRATOR_PASSWORD}@${host}:5432/${DB_NAME}?${tls}"
+          # No password in either URL: the user is the role, and DB_AUTH=entra makes each container sign in with a
+          # token from its own identity (ADR 0003). The host comes only from PG_SERVER (security B2).
+          export DB_AUTH=entra
+          export DATABASE_URL_APP="postgresql+psycopg://${DB_NAME}_app@${host}:5432/${DB_NAME}?${tls}"
+          export DATABASE_URL_MIGRATE="postgresql+psycopg://${DB_NAME}_migrator@${host}:5432/${DB_NAME}?${tls}"
           az bicep install --only-show-errors
           # LIVE_REVISION and PURGE_* come from live-release.sh; on a first release they are empty, so the
           # only revision takes the traffic and the purge job gets this release's image.
@@ -343,7 +256,104 @@ jobs:
           {
             echo "CANDIDATE=$(jq -r .candidateRevision.value "$RUNNER_TEMP/outputs.json")"
             echo "APP_FQDN=$(jq -r .appFqdn.value "$RUNNER_TEMP/outputs.json")"
+            echo "APP_OID=$(jq -r .appIdentityPrincipalId.value "$RUNNER_TEMP/outputs.json")"
+            echo "MIGRATOR_OID=$(jq -r .migrateIdentityPrincipalId.value "$RUNNER_TEMP/outputs.json")"
           } >> "$GITHUB_ENV"
+
+      - name: Product database and roles (every release; idempotent, no secret)
+        # Runs as the server's Entra admin (the deploy service principal) with a token as the password
+        # (ADR 0003, decision 4). Needs the object ids that the deploy step above just read from main.bicep.
+        run: |
+          command -v psql > /dev/null || { sudo apt-get update -q && sudo apt-get install -y -q postgresql-client; }
+          major=$(psql --version | grep -oE '[0-9]+' | head -1)
+          if [ "${major:-0}" -lt 16 ]; then
+            echo "::error::psql ${major:-unknown} is too old: db-setup.sql needs psql 16 or later."
+            exit 1
+          fi
+          uuid='^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+          app_oid=${APP_OID,,}
+          migrator_oid=${MIGRATOR_OID,,}
+          if ! [[ "$app_oid" =~ $uuid ]] || ! [[ "$migrator_oid" =~ $uuid ]]; then
+            echo "::error::main.bicep's identity object ids are missing or not UUIDs. Is the deploy step's output complete?"
+            exit 1
+          fi
+          # Who are we? The token's oid is the deploy principal; the server must list exactly that one admin.
+          token=$(az account get-access-token --resource-type oss-rdbms --query accessToken --output tsv)
+          if [ -z "$token" ]; then
+            echo "::error::az returned no database token."
+            exit 1
+          fi
+          echo "::add-mask::$token" # after the empty check: an empty mask does nothing
+          me=$(printf '%s' "$token" | bash "$PRODUCT_DIR/infra/jwt-oid.sh")
+          unset token
+          if ! [[ "$me" =~ $uuid ]]; then
+            echo "::error::Couldn't read the deploy principal's object id from its token."
+            exit 1
+          fi
+          server_id=$(az postgres flexible-server show --resource-group "$RESOURCE_GROUP" --name "$PG_SERVER" --query id --output tsv)
+          admins=$(az rest --method get --url "https://management.azure.com${server_id}/administrators?api-version=2024-08-01" --output json)
+          other=$(jq -r --arg me "$me" '[.value[] | select((.name | ascii_downcase) != $me) | .name] | join(",")' <<< "$admins")
+          if [ -n "$other" ]; then
+            echo "::error::$PG_SERVER has Entra admins besides the deploy principal ($other). Incremental Bicep never removes one: remove it through ARM (infra/README.md), then release again."
+            exit 1
+          fi
+          admin=$(jq -r --arg me "$me" '[.value[] | select((.name | ascii_downcase) == $me) | .properties.principalName][0] // empty' <<< "$admins")
+          if ! [[ "$admin" =~ ^[A-Za-z0-9_.@-]{1,63}$ ]]; then
+            echo "::error::The deploy principal is not an Entra admin of $PG_SERVER (or its name is odd). Run this workflow once with deploy_shared ticked."
+            exit 1
+          fi
+          ip=$(curl -fsS --max-time 10 https://api.ipify.org || true)
+          if ! [[ "$ip" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+            echo "::error::Couldn't read this runner's public IPv4 address."
+            exit 1
+          fi
+          # A firewall rule for this runner only, removed again by the always-run step below.
+          az postgres flexible-server firewall-rule create --resource-group "$RESOURCE_GROUP" --server-name "$PG_SERVER" \
+            --name "gh-run-$GITHUB_RUN_ID" --start-ip-address "$ip" --end-ip-address "$ip" --only-show-errors --output none
+          # The host comes only from PG_SERVER, so a token can't be sent to another server (security B2).
+          export PGHOST="$PG_SERVER.postgres.database.azure.com" PGSSLMODE=verify-full \
+            PGSSLROOTCERT=/etc/ssl/certs/ca-certificates.crt PGCONNECT_TIMEOUT=10
+          run_psql() { # a fresh token each time (5 to 60 minutes of life); it goes only through PGPASSWORD
+            local t
+            t=$(az account get-access-token --resource-type oss-rdbms --query accessToken --output tsv)
+            if [ -z "$t" ]; then echo "az returned no database token" >&2; return 1; fi
+            echo "::add-mask::$t"
+            PGPASSWORD="$t" psql -X -w -U "$admin" -d postgres "$@"
+          }
+          for attempt in $(seq 1 36); do # firewall changes can take up to five minutes
+            if run_psql -tAc 'select 1' > /dev/null 2> "$RUNNER_TEMP/psql.err"; then
+              break
+            fi
+            if grep -qiE "certificate|ssl error" "$RUNNER_TEMP/psql.err"; then
+              echo "::error::The TLS check failed for $PGHOST: $(head -c 300 "$RUNNER_TEMP/psql.err")"
+              exit 1
+            fi
+            if grep -qiE "authentication failed|role .* does not exist" "$RUNNER_TEMP/psql.err"; then
+              echo "::error::$PGHOST refused the deploy principal's token as $admin: $(head -c 300 "$RUNNER_TEMP/psql.err"). Run this workflow with deploy_shared ticked."
+              exit 1
+            fi
+            if [ "$attempt" -eq 36 ]; then
+              echo "::error::Couldn't reach $PGHOST after 6 minutes: $(head -c 300 "$RUNNER_TEMP/psql.err")"
+              exit 1
+            fi
+            sleep 10
+          done
+          # db-grants.sql sits beside db-setup.sql: setup runs it as the migrator (\ir after SET ROLE).
+          run_psql -v ON_ERROR_STOP=1 \
+            -v db="$DB_NAME" -v migrator="${DB_NAME}_migrator" -v app="${DB_NAME}_app" \
+            -v app_oid="$app_oid" -v migrator_oid="$migrator_oid" \
+            -f "$PRODUCT_DIR/infra/db-setup.sql"
+          echo "Database $DB_NAME with roles ${DB_NAME}_migrator and ${DB_NAME}_app is ready."
+
+      - name: Remove the runner's database firewall rule
+        if: always()
+        run: |
+          if ! az postgres flexible-server firewall-rule delete --resource-group "$RESOURCE_GROUP" --server-name "$PG_SERVER" \
+            --name "gh-run-$GITHUB_RUN_ID" --yes --only-show-errors --output none 2> "$RUNNER_TEMP/firewall.err"; then
+            if ! grep -qiE "not found|ResourceNotFound" "$RUNNER_TEMP/firewall.err"; then
+              echo "::warning::Couldn't remove the firewall rule gh-run-$GITHUB_RUN_ID from $PG_SERVER ($(head -c 200 "$RUNNER_TEMP/firewall.err")). Remove it by hand: az postgres flexible-server firewall-rule delete --resource-group $RESOURCE_GROUP --server-name $PG_SERVER --name gh-run-$GITHUB_RUN_ID --yes"
+            fi
+          fi
 
       - name: Migrate the database (a separate job, before any traffic moves)
         run: |
@@ -399,9 +409,6 @@ jobs:
           az containerapp revision deactivate --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
             --revision "$CANDIDATE" --only-show-errors --output none || true
           echo "::error::$CANDIDATE failed after traffic moved, so all traffic, and the purge job, are back on $LIVE_REVISION. The database keeps this release's migrations (ADR 0002, decision 9)."
-          if [ "$SETUP_DATABASE" = "true" ]; then
-            echo "::warning::This run set up the database. If STUDIO_DB_SEED changed, $LIVE_REVISION holds the old password and can't open new database connections: fix forward with another release."
-          fi
 
       - name: Retire a new revision that never got traffic
         if: (failure() || cancelled()) && steps.shift.outcome == 'skipped' && env.LIVE_REVISION != '' && env.CANDIDATE != ''
