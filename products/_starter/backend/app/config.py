@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     cookie_secure: bool = True
     session_days: int = 7
     reset_token_minutes: int = 30
-    reset_requests_per_hour: int = 3  # per email address, so reset links can't bomb an inbox
+    reset_requests_per_hour: int = Field(default=3, ge=1)  # per email address, so reset links can't bomb an inbox
     invite_days: int = 7
     invites_per_day: int = 50  # per tenant
     max_pending_invites: int = 50  # per tenant
@@ -42,8 +42,8 @@ class Settings(BaseSettings):
     # Only the in-memory outbox exists today; a real provider (paid) needs approval. With real email,
     # skipping verification would turn invitations into a spam relay, so the validator refuses that.
     email_provider: Literal["outbox"] = "outbox"
-    auth_rate_limit_per_minute: int = 10
-    signups_per_ip_per_day: int = 20
+    auth_rate_limit_per_minute: int = Field(default=10, ge=1)
+    signups_per_ip_per_day: int = Field(default=20, ge=1)
     # Empty = in-memory limits (one replica). redis:// or rediss:// (TLS) shares them across replicas. Contains a
     # password, so it is a secret and is never logged. If Redis is down the app falls back to in-memory limits.
     rate_limit_redis_url: str = ""
@@ -63,7 +63,7 @@ class Settings(BaseSettings):
     # Responses-API reasoning tokens share max_output_tokens with the answer; this many are added to each call's
     # budget (and reserved) so thinking can't use up the answer's room. Chat completions ignore it.
     ai_reasoning_headroom: int = 1500
-    ai_rate_limit_per_minute: int = 20
+    ai_rate_limit_per_minute: int = Field(default=20, ge=1)
     # All tenants together, per UTC day. Protects the studio's $80 of Azure credit from farmed free trials.
     ai_global_daily_tokens: int = 100_000
     # Blended price in USD per million tokens (input and output together) of the configured deployment. The default

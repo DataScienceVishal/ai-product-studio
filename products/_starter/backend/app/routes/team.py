@@ -18,7 +18,7 @@ from ..deps import Current, current, owner, verified_owner
 from ..errors import AppError
 from ..logs import bind
 from ..models import Invitation, Tenant, User
-from ..ratelimit import client_ip
+from ..ratelimit import client_ip, off_loop
 from ..security import hash_capacity_after, hash_password, new_token, password_problem, token_hash
 from .auth import Email, _start_session, me_payload
 
@@ -118,6 +118,10 @@ def remove_member(user_id: uuid.UUID, me: Current = Depends(owner), db: Session 
 
 
 async def _accept_gate(data: AcceptIn, request: Request) -> None:
+    await off_loop(request, lambda: _accept_checks(data, request))
+
+
+def _accept_checks(data: AcceptIn, request: Request) -> None:
     """Cheap checks, run before a hash slot is taken."""
     request.app.state.limiter.check(f"accept:{client_ip(request)}", request.app.state.settings.auth_rate_limit_per_minute)
     problem = password_problem(data.password)

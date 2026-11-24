@@ -174,8 +174,8 @@ def create_app(settings: Settings | None = None, *, ai: AIProvider | None = None
     app.state.settings = settings
     app.state.db = Database(settings.database_url, settings.db_statement_timeout_ms,
                             settings.db_idle_in_transaction_timeout_ms, settings.db_pool_size, settings.db_max_overflow)
-    app.state.limiter = RateLimiter(redis_client=build_redis_client(settings.rate_limit_redis_url)
-                                    if settings.rate_limit_redis_url else None)
+    app.state.limiter = RateLimiter(redis_client=build_redis_client(settings.rate_limit_redis_url) if settings.rate_limit_redis_url else None,
+                                    redis_prefix=f"rl:{settings.app_name}:{settings.env}:")
     app.state.ai = ai or build_provider(settings)
     app.state.ai_slots = AISlots(settings.ai_concurrent_calls)
     app.state.billing = billing_provider or build_billing(settings)

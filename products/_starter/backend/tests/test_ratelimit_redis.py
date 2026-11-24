@@ -52,9 +52,12 @@ def test_window_expires_and_keys_get_a_ttl(server):
 
 def test_retry_after_counts_down_from_the_oldest_hit(server):
     a = _replica(server)
-    a.hit("k", 1, 10)
-    wait = a.hit("k", 1, 10)
-    assert 8 < wait <= 10
+    a.hit("k", 1, 2)
+    first = a.hit("k", 1, 2)
+    assert 1.5 < first <= 2
+    time.sleep(0.4)
+    later = a.hit("k", 1, 2)
+    assert 0 < later < first - 0.3  # it counts down; a constant window would fail
 
 
 def test_check_raises_429_with_retry_after(server):
@@ -130,3 +133,71 @@ def test_app_uses_redis_only_when_configured(app):
     assert app.state.limiter._redis is None  # default settings: in-memory
     settings = app.state.settings.model_copy(update={"rate_limit_redis_url": "redis://127.0.0.1:1/0"})
     assert create_app(settings).state.limiter._redis is not None
+
+
+def test_redis_key_prefix_separates_products_and_environments(app, server):
+    from app.main import create_app
+    other = app.state.settings.model_copy(update={"app_name": "other-product"})
+    a, b = create_app(app.state.settings), create_app(other)
+    assert a.state.limiter._redis_prefix != b.state.limiter._redis_prefix
+    assert a.state.limiter._redis_prefix == f"rl:{app.state.settings.app_name}:{app.state.settings.env}:"
+    ra, rb = (RateLimiter(redis_client=fakeredis.FakeRedis(server=server), redis_prefix=x.state.limiter._redis_prefix)
+              for x in (a, b))
+    assert ra.hit("login-email:x", 1) is None
+    assert rb.hit("login-email:x", 1) is None  # product B is not locked out by product A
+
+
+@pytest.mark.parametrize("limit", [0, -1])
+def test_limit_below_one_is_rejected_without_touching_redis(limit, server):
+    limiter = _replica(server)
+    with pytest.raises(ValueError):
+        limiter.hit("k", limit)
+    assert limiter._redis_down_until == 0.0
+    with pytest.raises(ValueError):
+        RateLimiter().hit("k", limit)
+
+
+def test_settings_reject_non_positive_limits():
+    from pydantic import ValidationError
+    from app.config import Settings
+    with pytest.raises(ValidationError):
+        Settings(auth_rate_limit_per_minute=0)
+
+
+def test_email_key_is_a_hash_of_the_normalised_address():
+    key = ratelimit.email_key("  Bob@Acme.TEST ")
+    assert key == ratelimit.email_key("bob@acme.test") and "bob" not in key and "@" not in key
+
+
+def test_slow_limiter_does_not_block_the_event_loop(app):
+    """A slow rate-limit store (blocking call) must not freeze other requests: the gates run in the threadpool."""
+    import asyncio
+    import httpx
+
+    class Slow(RateLimiter):
+        blocking = True  # as a Redis-backed limiter is
+
+        def hit(self, key, limit, window_seconds=60.0):
+            time.sleep(0.4)
+            return None
+
+    app.state.limiter = Slow()
+
+    async def run():
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="https://testserver",
+                                     headers={"X-Requested-With": "test"}) as client:
+            async def login():
+                await client.post("/api/auth/login", json={"email": "a@b.test", "password": "x" * 12})
+                return time.monotonic()
+
+            async def health():
+                await asyncio.sleep(0.05)
+                await client.get("/livez")
+                return time.monotonic()
+
+            login_done, health_done = await asyncio.gather(login(), health())
+            return login_done, health_done
+
+    login_done, health_done = asyncio.run(run())
+    assert health_done < login_done - 0.2  # /livez answered while the login's limiter calls were still sleeping

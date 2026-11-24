@@ -10,9 +10,15 @@ provisioned, no Bicep change).
 Tests: `backend/tests/test_ratelimit_redis.py` (12): two replicas share limits, window expiry and TTL, Retry-After,
 fallback on connection/timeout/response errors, warning rate limit, recovery, real unreachable client is fast, TLS and
 timeouts, app wiring.
-Left: provisioning Azure Cache for Redis and wiring the secret into Bicep (ask-first, costs money); the limiter call is
-synchronous, so a slow Redis can block the event loop up to 200 ms per request until the 5 s backoff starts.
-Verify: `cd backend && python -m pytest -q` (348 passed, 1 skipped); `cd frontend && npx vitest run` (111 passed).
+Review fixes (reviews/T-15-redis.md): login/signup/reset/accept gates stay async (so the hash-slot ordering and slot-leak
+tests are unchanged) but run the limiter in a worker thread via `off_loop` only when the limiter does network I/O
+(`blocking`, true with Redis); in-memory stays inline, no extra threads. Key prefix is `rl:<app_name>:<env>:`. `limit < 1`
+raises ValueError (not an outage, no backoff) and the four limit settings require >= 1. Login/reset email keys are hashed
+(`email_key`). Retry-After test strengthened; new tests for loop-not-blocked, prefix, limit<1, email hash (354 passed, 1 skipped;
+vitest 111 passed).
+Left: provisioning Azure Cache for Redis and wiring the secret into Bicep (ask-first, costs money). Non-auth routes call the limiter
+inline (rare, in sync `def` routes that already run in the threadpool).
+Verify: `cd backend && python -m pytest -q` (354 passed, 1 skipped); `cd frontend && npx vitest run` (111 passed).
 
 # T-37 status
 

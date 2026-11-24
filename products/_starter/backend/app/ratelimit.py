@@ -13,12 +13,14 @@ Auth routes therefore never 500 and never stall because of Redis; during an outa
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 import threading
 import time
 import uuid
 from collections import deque
 
+import anyio.to_thread
 from fastapi import Request
 
 from .errors import AppError
@@ -62,7 +64,8 @@ class RateLimiter:
         self._redis = redis_client
         self._redis_script = redis_client.register_script(_SLIDING_WINDOW_LUA) if redis_client is not None else None
         self._redis_prefix = redis_prefix
-        self._redis_down_until = 0.0
+        self._redis_down_until = 0.0  # these two are written without the lock: a race only costs an extra
+        # warning or an extra Redis attempt, so it is benign
         self._last_warn = 0.0
         self._hits: dict[str, deque[float]] = {}
         self._windows: dict[str, float] = {}  # each key's own window, so eviction can't reset an hourly cap
@@ -71,11 +74,18 @@ class RateLimiter:
 
     def hit(self, key: str, limit: int, window_seconds: float = 60.0) -> float | None:
         """Record a hit. Returns None if allowed, else seconds until the next hit is allowed."""
+        if limit < 1:  # a programming/config error, not an outage: never reaches Redis or trips its backoff
+            raise ValueError("rate limit must be at least 1")
         if self._redis is not None:
             wait = self._redis_hit(key, limit, window_seconds)
             if wait is not _FALLBACK:
                 return wait
         return self._local_hit(key, limit, window_seconds)
+
+    @property
+    def blocking(self) -> bool:
+        """True when a hit does network I/O, so async callers must not run it on the event loop."""
+        return self._redis is not None
 
     def _redis_hit(self, key: str, limit: int, window_seconds: float):
         now = time.monotonic()
@@ -125,6 +135,19 @@ class RateLimiter:
         if wait is not None:
             raise AppError(429, "rate_limited", "Too many attempts. Please wait a moment and try again.",
                            headers={"Retry-After": str(int(wait) + 1)})
+
+
+async def off_loop(request: Request, fn) -> None:
+    """Run a sync rate-limit gate: in a worker thread if the limiter does network I/O, else inline (it is cheap)."""
+    if request.app.state.limiter.blocking:
+        await anyio.to_thread.run_sync(fn)
+    else:
+        fn()
+
+
+def email_key(email: str) -> str:
+    """Rate-limit key part for an email: a hash, so addresses never sit in Redis."""
+    return hashlib.sha256(email.strip().lower().encode()).hexdigest()[:32]
 
 
 def client_ip(request: Request) -> str:
