@@ -22,7 +22,7 @@ Record each gate decision in the idea or product file's Gate log and in `state/D
 | AI advantage | 15 | AI is essential and hard to copy in a week (workflow depth, domain data, evaluation quality, local language) |
 | Reachability | 10 | buyers can be found and reached by a small business (directories, associations, marketplaces, local networks) |
 | Build feasibility | 15 | the studio can reach G4 in about four weeks of runs, on the default stack, within the Azure budget |
-| Competition | 10 | clear gaps in existing products: price, language, market, workflow fit |
+| Competition | 10 | scored on the studio's wedge, not on whether a rival exists: a nameable, evidenced advantage over the incumbent the buyer would otherwise pay (cheaper for a segment it prices out, better fit for a segment it ignores, UK rules it doesn't handle, a measured quality gap). No evidenced wedge: 0-3. Rival exists but a wedge is evidenced: 5-10 by strength of evidence (changed 2026-11-24, Q-10 A) |
 | Risk | 10 | 10 means low regulatory and ethical risk; subtract for personal data at scale, hiring or assessment decisions, children's data, health-adjacent data, voice or biometric data |
 
 **Red flags (automatic KILL):** an off-limits area; depends on paid services that can't be approved; depends on scraping sites that forbid it; the core value can't be shown without real customer data the studio can't get.

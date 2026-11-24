@@ -16,3 +16,5 @@
 271771340 | "2A" = Q-5 answered A (Azure demo resources approved for first G3); QUESTIONS, BUDGET, DECISIONS updated | 20261123T230224Z-run-010e
 271771342 | "1A" = Q-6 answered A (keep scouting, own-evidence ideas only; 08:00 digest numbering); T-40 shelved, T-42 scout round 7 added; QUESTIONS, DECISIONS, BOARD updated | 20261124T101920Z-run-cf1a
 271771343 | "2B" = Q-7 answered B (pro model only, MTD benchmark max 20 docs ~$15); T-12 unblocked with $15 cap; QUESTIONS, DECISIONS, BOARD, BUDGET updated | 20261124T101920Z-run-cf1a
+271771346 | "1A" = Q-10 answered A (wedge-scored Competition); pipeline.md, QUESTIONS, DECISIONS updated; T-57 re-score queued | 20261124T201957Z-run-e08c
+271771347 | "2A" = Q-11 answered A ($12 for T-56); QUESTIONS, DECISIONS updated; T-56 slice 4 unblocked and claimed | 20261124T201957Z-run-e08c
