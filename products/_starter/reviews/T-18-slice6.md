@@ -108,3 +108,32 @@ break-glass" pointer to the ADR's failure-modes table for anything else.
 ## Top issue
 C1/C2: the code makes the first deploy password-off, but ADR 0003 decision 2 and the infra README still describe
 a phase-1 password window and a recovery path that doesn't work. Fix the text; the code can stay.
+
+## Re-review at 9d815d9
+
+### Verdict: PASS
+
+I checked commit 9d815d9 (`_starter: T-18 slice 6 review fixes`) against cca8ba8.
+
+| Item | Status | Evidence |
+|---|---|---|
+| C1 | Fixed | ADR 0003 decision 2 no longer has a phase 1 with both methods on. It now says passwords are off from the first deploy, with recovery through ARM. The first-deploy list now includes "server was created with `passwordAuth: Disabled`". The context line at line 12 was updated to match. The DECISIONS.md entry is the lead's job at merge. |
+| C2 | Fixed | infra/README.md step 7: the "no way in" claim and the "deploy once Enabled" advice are gone. Recovery is now "fix the cause and re-run `deploy_shared`", checked with `az postgres flexible-server microsoft-entra-admin list` (it must list only the deploy service principal). |
+| S1 | Fixed | `main.bicep` defaults `dbAuth` to `'entra'`. `test-bicep-identities.sh` asserts that default. CI builds the template and runs this test. |
+
+Re-run results:
+- `test-deploy-workflow.sh`: 77/77.
+- `test-db-setup.sh` on PG16: 33/33.
+- `bash -n`: clean on all three scripts.
+- shellcheck: `check-auth-config.sh` clean. `test-bicep-identities.sh` has the same 8 warnings as before, all from existing indirect variables.
+
+### Nits left (non-blocking, can go to a follow-up task)
+
+- `main.bicep:38`: the `dbAuth` description still says "the deploy workflow flips this in ADR 0003 slice 4".
+  Lines 209-210 still describe password mode as the normal case.
+- ADR 0003 failure-modes row (line 259): "`deploy_shared` fails in phase 1; password auth still on". Password
+  sign-in is no longer on at that point. The recovery in that row is still valid.
+- Comments that still say "phase 1 only" about the random admin password: `shared.bicepparam:13`,
+  `_starter-deploy.yml:177` and `modules/postgres.bicep:15`. Better: "required by ARM, unusable while password
+  sign-in is off".
+- S2 to S4 from the first review are still open (all optional).
