@@ -1,3 +1,18 @@
+# T-15 pool follow-ups status
+
+Done (reviews/T-15-pool.md S1-S7): S2 the wait for a free Redis pool thread is bounded by `RATE_LIMIT_REDIS_QUEUE_TIMEOUT`
+(default 1.0 s, `0 < x <= 30`). On timeout the queued job is withdrawn (a flag checked under a lock, plus future cancel, so it
+never also runs against Redis), the in-memory check answers inline via a `_skip_redis` contextvar, and the breaker trips (slow
+counts as down). While the breaker is open the pool is skipped. A cancelled waiter is withdrawn too. S3 the pool is created on
+first use and `shutdown()` clears it, so a second lifespan on the same app works. S4 `run_blocking` always uses its own pool
+(documented). S1/S5/S6 tests and tidy-ups (imports at top, no `app` rebinding, comment on the thread-name test). S7 README and
+`.env.example` say both settings only matter with `RATE_LIMIT_REDIS_URL`.
+Tests: 9 new in `backend/tests/test_ratelimit_redis.py` (33 there). Backend 372 passed, 1 skipped; vitest 5 files, 111 passed.
+Mutations (each fails a test): drop ctx.run, cancel_futures=False, drop client.close(), remove the queue bound (2 fail).
+Left: Azure Cache for Redis not provisioned (ask-first). The bound only limits queue wait; a started Redis call can still take
+up to 2 x 0.2 s.
+Verify: `cd backend && .venv/bin/python -m pytest -q` (372 passed, 1 skipped; needs Postgres); `cd frontend && npx vitest run` (111 passed).
+
 # T-15 pool status
 
 Done: Redis rate-limit checks run on the limiter's own `ThreadPoolExecutor` (`ratelimit-redis` threads, setting
