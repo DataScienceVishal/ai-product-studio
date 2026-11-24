@@ -1,13 +1,24 @@
 """AI provider interface, a fake for dev/tests, Azure OpenAI, and per-tenant usage caps.
 
-Azure OpenAI uses the v1 API: POST {endpoint}/openai/v1/chat/completions with an `api-key`
+Azure OpenAI uses the v1 API (chat completions or responses): POST {endpoint}/openai/v1/chat/completions with an `api-key`
 header and the deployment name as `model` (Microsoft Learn, checked 2026-11-23). In cloud runs
 the key is injected by the environment's network secret, so AZURE_OPENAI_API_KEY holds only a
 placeholder. gpt-5-mini is a reasoning model: max_completion_tokens covers reasoning too.
+
+The studio's real deployment (a reasoning model) refuses chat/completions with HTTP 400 and supports only the
+v1 Responses API: POST {endpoint}/openai/v1/responses with `input` (role/content items), `instructions` and
+`max_output_tokens`. AZURE_OPENAI_API picks `chat` or `responses`; `auto` (default) uses responses when the
+configured endpoint ends in /openai/v1/responses, else chat. The endpoint may be the resource root or end in
+/openai/v1, /openai/v1/responses or /openai/v1/chat/completions (see normalise_endpoint).
+
+With AZURE_OPENAI_AUTH=managed_identity there is no key: a bearer token for the app's managed identity
+is fetched from the Container Apps identity endpoint (see ManagedIdentityToken) and sent as
+`Authorization: Bearer`.
 """
 from __future__ import annotations
 
 import logging
+import os
 import threading
 import time
 import uuid
@@ -24,6 +35,21 @@ from .errors import AppError
 from .models import AIUsage
 
 log = logging.getLogger("app.ai")
+
+
+def _count(value) -> int:
+    """A usage count: never negative. Raises ValueError/TypeError/OverflowError on junk (callers bill the budget)."""
+    return max(int(value or 0), 0)
+
+
+def _reason(value) -> str | None:
+    """A 'why' for the user message: a string or None, whatever junk the provider sent."""
+    return value if isinstance(value, str) else (None if value is None else "unknown")
+
+
+def _dicts(value) -> list[dict]:
+    """The dict items of a provider list; anything malformed counts as no items."""
+    return [v for v in value if isinstance(v, dict)] if isinstance(value, list) else []
 
 
 @dataclass(frozen=True)
@@ -46,6 +72,7 @@ class AIUnavailable(AppError):
 
 class AIProvider(Protocol):
     name: str
+    output_headroom: int  # extra output tokens the provider may add to a call's budget (reasoning); reserve them too
 
     def complete(self, system: str, user: str, max_output_tokens: int = 1200) -> AIResult: ...
 
@@ -53,6 +80,7 @@ class AIProvider(Protocol):
 class FakeAI:
     """Deterministic stand-in: no network, no cost. Used in dev and tests."""
     name = "fake"
+    output_headroom = 0
 
     def complete(self, system: str, user: str, max_output_tokens: int = 1200) -> AIResult:
         words = [w for w in user.split() if not (w.startswith("<") and w.endswith(">"))]  # drop delimiters
@@ -64,6 +92,11 @@ def estimate_tokens(system: str, user: str, max_output_tokens: int) -> int:
     """An upper bound: every token is at least one byte of UTF-8, so input bytes bound input tokens
     (characters don't: some scripts take several tokens per character). Plus the whole output budget."""
     return len(system.encode("utf-8")) + len(user.encode("utf-8")) + max_output_tokens
+
+
+def reservation_estimate(provider, system: str, user: str, max_output_tokens: int) -> int:
+    """estimate_tokens plus the provider's reasoning headroom, so a reservation covers what may be billed."""
+    return estimate_tokens(system, user, max_output_tokens + int(provider.output_headroom))  # no default: fail loudly
 
 
 class AISlots:
@@ -82,23 +115,171 @@ class AISlots:
         self._slots.release()
 
 
+class _CallerTimeout(AIUnavailable):
+    """The token fetch ran out of the caller's own (short) budget. Never cached as an endpoint failure."""
+
+
+class ManagedIdentityToken:
+    """Bearer tokens for Azure OpenAI from the Container Apps managed identity endpoint.
+
+    Contract (Microsoft Learn, "Managed identities in Azure Container Apps", REST endpoint reference,
+    https://learn.microsoft.com/azure/container-apps/managed-identity#rest-endpoint-reference, checked 2026-11-23):
+    GET $IDENTITY_ENDPOINT?resource=<audience>&api-version=2019-08-01 with header `X-IDENTITY-HEADER:
+    $IDENTITY_HEADER`; optional `client_id` picks a user-assigned identity (without it the system-assigned
+    identity is used). The answer is JSON with `access_token` and `expires_on` (epoch seconds, as a string).
+    Tokens are cached until `refresh_margin` seconds before expiry; one lock makes concurrent callers share
+    a single fetch. The token and the identity header are never logged or put in an error message."""
+
+    RESOURCE = "https://cognitiveservices.azure.com"  # scope https://cognitiveservices.azure.com/.default
+    API_VERSION = "2019-08-01"
+
+    def __init__(self, client_id: str = "", endpoint: str | None = None, header: str | None = None,
+                 client: httpx.Client | None = None, timeout: float = 5.0, refresh_margin: float = 300.0,
+                 now=time.time, monotonic=time.monotonic):
+        self.client_id = client_id
+        self._endpoint = endpoint if endpoint is not None else os.environ.get("IDENTITY_ENDPOINT", "")
+        self._header = header if header is not None else os.environ.get("IDENTITY_HEADER", "")
+        self._client = client or httpx.Client(timeout=timeout)
+        self._timeout, self._margin, self._now, self._mono = timeout, refresh_margin, now, monotonic
+        self._lock = threading.Lock()
+        self._token = ""
+        self._expires_on = 0.0
+        self._failed_until = 0.0  # a failed fetch is remembered until then, so queued callers fail fast
+        self._failure: AIUnavailable | None = None
+
+    FAILURE_TTL = 10.0
+
+    def get(self, timeout: float | None = None) -> str:
+        """`timeout` is the caller's remaining deadline. It bounds the lock wait and the fetch together: the
+        fetch gets only what is left after the wait, so `get(t)` never takes much longer than t.
+
+        Only a failure of the endpoint itself is remembered (for FAILURE_TTL). A timeout caused by the caller's
+        own short budget says nothing about the endpoint, so it is raised but not cached."""
+        budget = self._timeout if timeout is None else min(self._timeout, timeout)
+        if budget <= 0:
+            raise AIUnavailable()
+        started = self._mono()
+        if not self._lock.acquire(timeout=budget):
+            log.warning("managed identity token wait timed out")
+            raise AIUnavailable()
+        try:
+            if self._token and self._now() < self._expires_on - self._margin:
+                return self._token
+            if self._failure is not None and self._mono() < self._failed_until:
+                raise AIUnavailable(self._failure.message)
+            left = budget - (self._mono() - started)
+            if left <= 0:
+                raise AIUnavailable()
+            try:
+                self._token, self._expires_on = self._fetch(left, short=left < self._timeout - 0.05)
+            except _CallerTimeout:
+                raise  # the caller's own deadline, not an endpoint failure: do not cache
+            except AIUnavailable as error:
+                self._failure, self._failed_until = error, self._mono() + self.FAILURE_TTL
+                raise
+            self._failure = None
+            return self._token
+        finally:
+            self._lock.release()
+
+    def invalidate(self) -> None:
+        """Forget the cached token (the service rejected it), so the next call fetches a fresh one.
+        It leaves a remembered fetch failure alone: that expires by itself after FAILURE_TTL."""
+        with self._lock:
+            self._token, self._expires_on = "", 0.0
+
+    def _fetch(self, timeout: float, short: bool = False) -> tuple[str, float]:
+        if not self._endpoint or not self._header:
+            log.error("managed identity endpoint is not available")
+            raise AIUnavailable("The AI service isn't configured correctly. The team has been notified.")
+        params = {"resource": self.RESOURCE, "api-version": self.API_VERSION}
+        if self.client_id:
+            params["client_id"] = self.client_id
+        try:
+            response = self._client.get(self._endpoint, params=params, headers={"X-IDENTITY-HEADER": self._header},
+                                        timeout=timeout)
+        except httpx.TimeoutException as error:
+            log.log(logging.WARNING if short else logging.ERROR, "managed identity token request failed",
+                    extra={"kind": type(error).__name__})
+            if short:  # timed out on a budget shorter than our own timeout: the caller's deadline, not the endpoint
+                raise _CallerTimeout() from None
+            raise AIUnavailable() from None
+        except httpx.HTTPError as error:  # only the class name: messages can echo the URL
+            log.error("managed identity token request failed", extra={"kind": type(error).__name__})
+            raise AIUnavailable() from None
+        if response.status_code != 200:
+            log.error("managed identity token request rejected", extra={"status": response.status_code})
+            raise AIUnavailable("The AI service isn't configured correctly. The team has been notified.") from None
+        try:
+            data = response.json()
+            token, expires_on = str(data["access_token"]), float(data["expires_on"])
+            if not token:
+                raise ValueError
+        except (ValueError, KeyError, TypeError):
+            log.error("managed identity token response was malformed")
+            raise AIUnavailable() from None
+        return token, expires_on
+
+
+_ENDPOINT_SUFFIXES = ("/openai/v1/chat/completions", "/openai/v1/responses", "/openai/v1", "/openai")
+
+
+def normalise_endpoint(endpoint: str) -> str:
+    """The resource root (no trailing slash, no API path), from a root or any known /openai/... form."""
+    root = endpoint.strip().rstrip("/")
+    if "?" in root or "#" in root:
+        raise ValueError("AZURE_OPENAI_ENDPOINT must not contain a query string or fragment; the API version is fixed (v1)")
+    for suffix in _ENDPOINT_SUFFIXES:
+        if root.lower().endswith(suffix):
+            return root[: -len(suffix)].rstrip("/")
+    return root
+
+
+_NO_ANSWER = {
+    "max_output_tokens": "The AI ran out of room before finishing its answer. Try a shorter input.",
+    "length": "The AI ran out of room before finishing its answer. Try a shorter input.",
+    "reasoning": "The AI spent its whole allowance thinking and didn't answer. Try a shorter or simpler input.",
+    "content_filter": "The AI's safety filter blocked this answer. Try rewording the note.",
+    "refusal": "The AI declined to answer this note. Try rewording it.",
+    "failed": "The AI couldn't finish this request. Please try again.",
+    None: "The AI returned no answer. Please try again.",
+}
+
+
 class AzureOpenAI:
     name = "azure"
 
     def __init__(self, endpoint: str, deployment: str, api_key: str, timeout: float = 20.0, deadline: float = 25.0,
-                 retries: int = 1, client: httpx.Client | None = None, sleep=time.sleep, clock=time.monotonic):
+                 retries: int = 1, client: httpx.Client | None = None, sleep=time.sleep, clock=time.monotonic,
+                 token_provider: ManagedIdentityToken | None = None, api: str = "auto",
+                 reasoning_headroom: int = 0):
         if not endpoint:
             raise ValueError("AZURE_OPENAI_ENDPOINT is not set")
-        self.url = endpoint.rstrip("/") + "/openai/v1/chat/completions"
+        if api not in ("auto", "chat", "responses"):
+            raise ValueError("AZURE_OPENAI_API must be auto, chat or responses")
+        if api == "auto":
+            api = "responses" if endpoint.strip().rstrip("/").lower().endswith("/openai/v1/responses") else "chat"
+        self.api = api
+        # Responses reasoning tokens count inside max_output_tokens: add headroom so reasoning can't eat the answer.
+        self.output_headroom = max(int(reasoning_headroom), 0) if api == "responses" else 0
+        path = "/openai/v1/responses" if api == "responses" else "/openai/v1/chat/completions"
+        self.url = normalise_endpoint(endpoint) + path
         self.deployment = deployment
+        self.token_provider = token_provider  # set: bearer token from the managed identity, no api-key
         self.headers = {"api-key": api_key or "proxy-injected", "Content-Type": "application/json"}
         self.client = client or httpx.Client(timeout=timeout)
         self.timeout, self.deadline, self.retries = timeout, deadline, retries
         self.sleep, self.clock = sleep, clock
 
     def complete(self, system: str, user: str, max_output_tokens: int = 1200) -> AIResult:
-        payload = {"model": self.deployment, "max_completion_tokens": max_output_tokens,
-                   "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
+        if self.api == "responses":  # reasoning tokens count inside max_output_tokens
+            max_output_tokens += self.output_headroom  # the wanted answer length is then still available
+            payload = {"model": self.deployment, "instructions": system, "max_output_tokens": max_output_tokens,
+                       "store": False,  # Azure keeps no copy of the prompt or answer (DATA.md)
+                       "input": [{"role": "user", "content": user}]}
+        else:
+            payload = {"model": self.deployment, "max_completion_tokens": max_output_tokens,
+                       "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
         started = self.clock()
         billed_in = billed_out = 0  # from attempts that failed but may have cost money
 
@@ -112,7 +293,12 @@ class AzureOpenAI:
             if remaining() < 1.0:
                 break
             try:
-                response = self.client.post(self.url, json=payload, headers=self.headers,
+                headers = self.headers
+                if self.token_provider is not None:  # may raise AIUnavailable; nothing was sent, so nothing billed
+                    headers = {"Authorization": f"Bearer {self.token_provider.get(remaining())}", "Content-Type": "application/json"}
+                if remaining() < 1.0:  # the token wait used the budget: never hand httpx a tiny or negative timeout
+                    break
+                response = self.client.post(self.url, json=payload, headers=headers,
                                             timeout=min(self.timeout, remaining()))
             except (httpx.ConnectError, httpx.ConnectTimeout) as error:  # never reached the model: no cost
                 log.warning("ai call failed", extra={"attempt": attempt, "kind": type(error).__name__})
@@ -129,25 +315,68 @@ class AzureOpenAI:
                 continue
             if response.status_code in (401, 403):
                 log.error("ai credentials rejected", extra={"status": response.status_code})
+                if self.token_provider is not None:
+                    self.token_provider.invalidate()
                 raise fail("The AI service isn't configured correctly. The team has been notified.")
             if response.status_code >= 400:
                 log.error("ai request rejected", extra={"status": response.status_code})
                 raise AppError(502, "ai_rejected", "The AI service couldn't handle that request.")
             try:
                 data = response.json()
-            except ValueError:
+                if not isinstance(data, dict):
+                    raise ValueError
+            except ValueError:  # a 200 we can't read: it may have run, so bill the whole budget (as a timeout)
+                billed_in += estimate_tokens(system, user, 0)
+                billed_out += max_output_tokens
                 raise fail() from None
-            usage = data.get("usage") or {}
-            used_in, used_out = int(usage.get("prompt_tokens", 0)), int(usage.get("completion_tokens", 0))
-            choice = (data.get("choices") or [{}])[0]
-            text = ((choice.get("message") or {}).get("content") or "").strip()
-            if not text:
-                log.warning("ai returned no text", extra={"finish_reason": choice.get("finish_reason")})
-                billed_in, billed_out = billed_in + used_in, billed_out + used_out
-                raise fail("The AI ran out of room before answering. Try a shorter input.")
-            return AIResult(text=text, input_tokens=used_in + billed_in, output_tokens=used_out + billed_out,
+            try:
+                used_in, used_out, text, why = self._parse(data)
+            except (TypeError, ValueError, AttributeError, OverflowError):  # malformed body: it ran, so bill what we can't read
+                log.warning("ai response could not be parsed")
+                billed_in += estimate_tokens(system, user, 0)
+                billed_out += max_output_tokens
+                raise fail() from None
+            billed_in, billed_out = billed_in + used_in, billed_out + used_out
+            if why is not None or not text:
+                log.warning("ai returned no usable answer", extra={"finish_reason": why})
+                raise fail(_NO_ANSWER.get(why, _NO_ANSWER[None]))
+            return AIResult(text=text, input_tokens=billed_in, output_tokens=billed_out,
                             model=data.get("model", self.deployment))
         raise fail()
+
+    def _parse(self, data: dict) -> tuple[int, int, str, str | None]:
+        """(input tokens, output tokens, text, why there is no text) for either API."""
+        usage = data.get("usage") if isinstance(data.get("usage"), dict) else {}
+        if self.api == "chat":
+            choices = data.get("choices")
+            choice = choices[0] if isinstance(choices, list) and choices and isinstance(choices[0], dict) else {}
+            message = choice.get("message") if isinstance(choice.get("message"), dict) else {}
+            content = message.get("content")
+            text = content.strip() if isinstance(content, str) else ""
+            # chat keeps its old rule: any text is an answer, even when finish_reason is "length"
+            return (_count(usage.get("prompt_tokens")), _count(usage.get("completion_tokens")), text,
+                    None if text else _reason(choice.get("finish_reason")))
+        output = _dicts(data.get("output"))
+        parts = [part.get("text") or "" for item in output if item.get("type") == "message"
+                 for part in _dicts(item.get("content")) if part.get("type") == "output_text"
+                 if isinstance(part.get("text"), str)]
+        refused = any(part.get("type") == "refusal" for item in output if item.get("type") == "message"
+                      for part in _dicts(item.get("content")))
+        used_out = _count(usage.get("output_tokens"))
+        details = usage.get("output_tokens_details")
+        reasoning = _count(details.get("reasoning_tokens")) if isinstance(details, dict) else 0
+        text = "".join(parts).strip()
+        why = None
+        if data.get("status") not in (None, "completed"):  # incomplete or failed: never saved as a success
+            why = data.get("status")
+            incomplete = data.get("incomplete_details")
+            if why == "incomplete":
+                why = (incomplete.get("reason") if isinstance(incomplete, dict) else None) or "max_output_tokens"
+            if why == "max_output_tokens" and not text and used_out and reasoning >= used_out:
+                why = "reasoning"  # all of the budget went on thinking
+        elif not text and refused:
+            why = "refusal"
+        return _count(usage.get("input_tokens")), used_out, text, _reason(why)
 
     def _pause(self, attempt: int, retry_after: str | None, remaining) -> None:
         if attempt >= self.retries:
@@ -163,9 +392,12 @@ class AzureOpenAI:
 
 def build_provider(settings) -> AIProvider:
     if settings.ai_provider == "azure":
+        token = ManagedIdentityToken(settings.azure_client_id) if settings.azure_openai_auth == "managed_identity" else None
         return AzureOpenAI(settings.azure_openai_endpoint, settings.azure_openai_deployment,
                            settings.azure_openai_api_key, timeout=settings.ai_timeout_seconds,
-                           deadline=settings.ai_deadline_seconds, retries=settings.ai_retries)
+                           deadline=settings.ai_deadline_seconds, retries=settings.ai_retries,
+                           token_provider=token, api=settings.azure_openai_api,
+                           reasoning_headroom=settings.ai_reasoning_headroom)
     return FakeAI()
 
 

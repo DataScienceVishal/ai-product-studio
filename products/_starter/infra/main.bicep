@@ -40,7 +40,18 @@ param aiProvider string = 'fake'
 param azureOpenAiEndpoint string = ''
 param azureOpenAiDeployment string = 'gpt-5-mini'
 
-@description('Tokens recorded for all tenants together per UTC day. Every call is checked against it with its upper-bound estimate, so the total stays under it: 100,000 costs at most $0.20 a day even if every token were output ($2.00 per million). Trials share half.')
+@description('auto (responses if the endpoint ends in /openai/v1/responses, else chat), chat or responses. Same default as the app.')
+@allowed([
+  'auto'
+  'chat'
+  'responses'
+])
+param azureOpenAiApi string = 'auto'
+
+@description('Blended price in USD per million tokens of the deployment in azureOpenAiDeployment. 2.00 is the gpt-5-mini assumption; a pro model costs far more, so lower aiGlobalDailyTokens with it. cost-guard.sh checks tokens a day x price x 30 against the $6.10 monthly AI budget.')
+param aiPricePerMillionTokens string = '2.00'
+
+@description('Tokens recorded for all tenants together per UTC day. Every call is checked against it with its upper-bound estimate, so the total stays under it. At the default price 100,000 tokens cost at most $0.20 a day (about $6.00 a month), the budget in state/BUDGET.md. Valid only for the price above: size it as 6.10 / (30 x price) x 1,000,000. Trials share half.')
 param aiGlobalDailyTokens int = 100000
 
 @description('mock or stripe (test mode only). The workflow only offers these two values.')
@@ -211,8 +222,16 @@ var webSettings = [
     value: azureOpenAiDeployment
   }
   {
+    name: 'AZURE_OPENAI_API'
+    value: azureOpenAiApi
+  }
+  {
     name: 'AI_GLOBAL_DAILY_TOKENS'
     value: string(aiGlobalDailyTokens)
+  }
+  {
+    name: 'AI_PRICE_PER_MILLION_TOKENS'
+    value: aiPricePerMillionTokens
   }
   {
     name: 'BILLING_PROVIDER'

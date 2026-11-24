@@ -51,12 +51,21 @@ class Settings(BaseSettings):
     azure_openai_endpoint: str = ""
     azure_openai_deployment: str = "gpt-5-mini"
     azure_openai_api_key: str = ""  # placeholder; the network secret injects the real key
+    azure_openai_api: Literal["auto", "chat", "responses"] = "auto"  # auto: responses if the endpoint ends /openai/v1/responses
+    azure_openai_auth: Literal["key", "managed_identity"] = "key"
+    azure_client_id: str = ""  # user-assigned identity; empty means the system-assigned one
     ai_timeout_seconds: float = 20.0  # per attempt
     ai_deadline_seconds: float = 25.0  # whole call, retries included; below the frontend's 30 s abort
     ai_retries: int = 1
+    # Responses-API reasoning tokens share max_output_tokens with the answer; this many are added to each call's
+    # budget (and reserved) so thinking can't use up the answer's room. Chat completions ignore it.
+    ai_reasoning_headroom: int = 1500
     ai_rate_limit_per_minute: int = 20
     # All tenants together, per UTC day. Protects the studio's $80 of Azure credit from farmed free trials.
-    ai_global_daily_tokens: int = 500_000
+    ai_global_daily_tokens: int = 100_000
+    # Blended price in USD per million tokens (input and output together) of the configured deployment. The default
+    # is the gpt-5-mini assumption. A bigger model needs a much smaller ai_global_daily_tokens (README).
+    ai_price_per_million_tokens: float = 2.00
     ai_trial_share: float = 0.5  # all free trials together may use at most this share of the global budget
     ai_concurrent_calls: int = 8  # in-process cap, so slow AI calls can't take every request thread
     ai_calls_per_tenant_at_once: int = 2

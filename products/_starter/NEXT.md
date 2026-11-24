@@ -1,8 +1,41 @@
-# NEXT: product starter (T-6)
+# T-34b status
 
-Last updated 2026-11-23 by run 20261123T111240Z-run-b15e.
+Done (reviews/T-33-review.md, T-34-review.md): S1 an incomplete/failed Responses answer is never saved as a summary;
+it is a billed `AIUnavailable` with its own message (out of room, thinking used it all, safety filter, declined,
+failed, no answer). Chat keeps its old "any text is an answer" rule. S3 `AI_REASONING_HEADROOM` (default 1500) is added to
+`max_output_tokens` in Responses mode and to the reservation (`reservation_estimate`), and a call whose reasoning used
+the whole budget is named. R5 `_parse` errors (bad usage numbers, chat `choices` shapes) raise a billed clean error
+instead of settling 0/0. S7 import moved, docstring, query string or fragment in the endpoint is a clear ValueError.
+Extras: cost-guard harness `backend/tests/test_cost_guard.py` (needs jq), cost-guard names a bad AI_MONTHLY_BUDGET_USD.
+Review fixes (reviews/T-34b.md): C1 `_parse` returns `why` only as str or None (junk list/dict/number becomes
+"unknown" and the generic message), so no TypeError/500; usage counts are clamped to >= 0 and Infinity/overflow is a
+billed parse error; a non-JSON or non-dict 200 bills the whole budget; `reservation_estimate` requires
+`provider.output_headroom` (no silent default); README row for AI_REASONING_HEADROOM.
+Left: S2 (Q-7), headroom price effect on pro caps (check sizing).
+Verify: backend `pytest` 290 passed 1 skipped; frontend `vitest run`.
 
-## Status
+# T-33 status
+
+Done: Azure provider supports the v1 Responses API (`AZURE_OPENAI_API=auto|responses|chat`, endpoint
+normalisation, usage and failure billing as chat), tests in `backend/tests/test_ai.py`, README, .env.example.
+Review fixes (reviews/T-33-review.md): B1 `store=false` sent and documented in DATA.md; B2 new setting
+`AI_PRICE_PER_MILLION_TOKENS` (default 2.00), README "Sizing the daily AI cap" with the pro-model warning,
+Bicep `aiPricePerMillionTokens` param and corrected cap description, and `infra/cost-guard.sh` now fails when
+tokens a day x price x 30 passes $6.10; S6 prod-settings test clears AZURE_OPENAI_*/AI_PROVIDER env; S4 malformed
+`output` is treated as no text and billed usage is still recorded.
+Left: set `AZURE_OPENAI_API=responses` (or the /openai/v1/responses endpoint) in the cloud app. If the pro
+deployment is used, set `aiPricePerMillionTokens` and a much smaller `aiGlobalDailyTokens` together (needs a
+Bicep default change and Vishal's approval for any budget above $6.10). Price figures are assumptions to check.
+Open question: 25 s deadline vs ~8 s+ reasoning latency.
+
+# T-17 status
+
+Done: `ManagedIdentityToken` and auth mode in `backend/app/ai.py`, settings `AZURE_OPENAI_AUTH` and
+`AZURE_CLIENT_ID`, tests in `backend/tests/test_ai.py`, ADR 0002 decision 7, README.
+
+Left (needs Vishal, ask-first): attach an identity to the app, grant "Cognitive Services OpenAI User" on the
+OpenAI resource, set the two settings. No Bicep changed: the infra has only the shared pull identity
+(`lifecycle: None`), so there is nothing to scope a role to yet.
 
 - T-15 async-login slice (branch p/_starter/T-15-async-login), done: hashing capacity is now taken on the event
   loop (`security.hash_capacity`, an async dependency on login, signup, reset-confirm, accept-invite and both
@@ -66,3 +99,24 @@ Last updated 2026-11-23 by run 20261123T111240Z-run-b15e.
 cd products/_starter/backend && TEST_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/<your_db> .venv/bin/python -m pytest -q
 cd products/_starter && E2E_API_PORT=8300 E2E_WEB_PORT=4373 E2E_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/<your_e2e_db> ./scripts/e2e.sh
 ```
+Verify: `cd backend && TEST_DATABASE_URL=... .venv/bin/python -m pytest`.
+
+## T-32 status (run 010e hand-off, rebased on main with T-33/T-34, awaiting re-review)
+All reviewer items from reviews/T-32.md are addressed (see its Response section). Merged origin/main (Responses API in ai.py kept).
+Re-review fix: `short` is now `left < self._timeout - 0.05` (was always true on the real clock); real-clock test added; mutation (revert to `left < self._timeout`) fails test_a_real_endpoint_timeout_is_cached_on_the_real_clock.
+Tests: backend 247 tests, 0 failures, 1 skipped (frontend not built); frontend vitest 111 passed.
+Mutation check: with the lock removed (`if False` instead of `acquire`, `pass` instead of `release`), three tests fail:
+test_concurrent_callers_share_one_fetch, test_lock_waiter_gives_up_at_its_own_deadline,
+test_fetch_gets_only_what_is_left_after_waiting_for_the_lock. Restored, all pass.
+Left: reviewer re-review and security re-test.
+
+## T-34 (slice S5, R3, R4, R6 from reviews/T-33-review.md)
+
+Done:
+- S5: `infra/main.bicep` has `azureOpenAiApi` (default `auto`, allowed auto/chat/responses) passed to the app as `AZURE_OPENAI_API`.
+- R3: `infra/cost-guard.sh` fails when tokens or price is 0 or negative, fails (no longer skips) when either AI parameter exists without a default, and prints money with 2 decimals. No harness exists for this script, so it was run on hand-made JSON templates:
+  ok (100000 tokens, 2.00) rc 0; over (500000, 2.00) rc 1, "$30.00 a month"; price "0" rc 1; tokens -5 rc 1; both params without defaults rc 1; only one param (with default) rc 1; price "abc" rc 1; no AI params at all rc 0.
+- R4: `ai_global_daily_tokens` default is now 100,000 (no test depended on 500k; tests set their own caps). `test_settings_accept_only_known_auth_modes` uses `monkeypatch.delenv("AZURE_OPENAI_AUTH")`.
+- R6: `.env.example` lists `AI_GLOBAL_DAILY_TOKENS` and `AI_PRICE_PER_MILLION_TOKENS` with comments.
+
+Tests: backend suite 238 passed, 1 skipped (frontend not built), both normally and with `AZURE_OPENAI_AUTH=managed_identity` exported. Bicep was not compiled here (`az` not installed), so CI should confirm.

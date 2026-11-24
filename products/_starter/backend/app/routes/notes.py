@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from ..ai import AIUnavailable, estimate_tokens, reserve, settle
+from ..ai import AIUnavailable, reservation_estimate, reserve, settle
 from ..billing import PLANS, has_access
 from ..db import get_db
 from ..deps import Current, current, subscription_of
@@ -111,7 +111,8 @@ def summarize(note_id: uuid.UUID, request: Request, me: Current = Depends(curren
     version = (note.title, note.body)
     prompt = f"<note>\n{_as_data(note.title)}\n\n{_as_data(note.body)}\n</note>"
     reservation = reserve(db, me.tenant.id, plan.ai_monthly_tokens,
-                          estimate_tokens(SUMMARY_SYSTEM, prompt, MAX_SUMMARY_TOKENS), "note_summary",
+                          reservation_estimate(request.app.state.ai, SUMMARY_SYSTEM, prompt, MAX_SUMMARY_TOKENS),
+                          "note_summary",
                           global_daily_cap=settings.ai_global_daily_tokens,
                           daily_cap=plan.ai_daily_tokens if limited else None,
                           max_in_flight=settings.ai_calls_per_tenant_at_once, trial=limited,

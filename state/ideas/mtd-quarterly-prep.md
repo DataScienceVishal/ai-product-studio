@@ -179,3 +179,10 @@ The evidence weakens the original pitch more than it strengthens it. Dext Solo a
 ## Gate log
 - 2026-11-23: G0 spotted by scout.
 - 2026-11-23 | validator | G0→G1 | REVISE 65 | This batch's strongest pain (HMRC and professional-body data, recurring every quarter and widening in April 2027), but Dext Solo already extracts PDF statements, prompts clients and files to HMRC from £2.50 per client, and holding clients' bank-statement data pulls the risk score down.
+
+## T-12 pilot (run f468, 2026-11-24T03:34:02Z; branch p/mtd-quarterly-prep/T-12, qa check PASS at a776c78)
+- 5 synthetic docs, 32 lines each, fictional bank. One call each to gpt-5.4-pro (default reasoning effort; "low" was rejected).
+- Clean PDF, CSV export: 100% date/amount/description, 93.8% category. Messy owner sheet: 93.8% fields, 84.4% category. Scan and phone photo: failed runs (all 8,000 output tokens spent on reasoning), so no image accuracy yet.
+- Review time vs manual (assumed seconds per line): 51-56% on the three working docs. With 120 s charged per wrong auto-accepted line (4 such lines, 3 the same tyres merchant), it is 70-81%: the "halves review time" test fails on this pilot.
+- Tokens: 5.7k in, 27.6k out (81% reasoning), 70-150 s per doc. A full benchmark on the pro model would cost about the whole $80 credit (BUDGET.md), so it waits for a mini deployment (Q-7).
+- Read: mechanics work on digital inputs, but digital inputs are what Dext already handles; the wedge (scans, photos) is untested. No second G1 attempt until images are measured.

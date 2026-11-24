@@ -58,3 +58,10 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Options: A) Keep scouting, but only ideas where the studio can collect evidence itself (public datasets, open APIs, published case law/complaints), and accept slower progress B) Build the best parked idea anyway as a "better, cheaper, UK-small-business" entrant (restaurant margin copilot vs Jelly at £129/site), using the shared starter, and let a demo to your friend be the evidence C) Tell us your friend's business sector and customers, so round 6 starts from a channel incumbents can't copy (re-asks Q-4 A)
 - Recommended: C, because Reach and Competition are what sink every idea and a real channel fixes both; B is the fallback if you'd rather not share it
 - If no answer: A after 12 hours (reversible)
+
+## Q-7 (status: open)
+- Decision: Can you add a cheap model deployment (e.g. gpt-5-mini or gpt-4.1-mini) next to gpt-5.4-pro on the Azure OpenAI resource, and give its name in AZURE_OPENAI_DEPLOYMENT_MINI?
+- Context: The only model the studio can reach is a premium reasoning model. The 5-document T-12 pilot used ~28k output tokens (~$3.40 at an assumed pro price); the full MTD benchmark would cost about the whole $80 credit, and product features would be slow (70-150 s per document). A mini model is typically 50-100x cheaper per token. The OpenAI resource isn't in rg-ai-studio and the studio has no Azure login, so agents can't add it.
+- Options: A) Add a mini deployment and the env var (about 5 minutes in Azure AI Foundry; recommended) B) Keep pro only: the studio runs the full benchmark at most 20 documents (~$15) and stops C) No more model spend for now: T-12 stays at the pilot
+- Recommended: A, because it makes the benchmark and every product affordable and keeps pro for rare hard cases
+- If no answer: waits (spending money is on the ask-first list); until then the studio behaves as C
