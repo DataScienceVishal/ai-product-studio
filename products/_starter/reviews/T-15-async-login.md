@@ -107,3 +107,50 @@ matters most for this code.
 - S4. A hard-coded `asyncio.get_running_loop()` ties the limiter to asyncio. That is fine for uvicorn, but
   `anyio.lowlevel.current_token()` (or a per-app limiter created in lifespan on `app.state`) avoids both the
   backend assumption and the module-global weakref map.
+
+## Re-review at b3de3e7: PASS
+
+Reviewer: reviewer agent, 2026-11-24. Diff: `git diff f051b0b..b3de3e7` (7 files, +232/-41).
+
+**C1 fixed.** `security.hash_capacity_after(gate)` makes the slot dependency depend on a per-route gate, so
+FastAPI resolves the gate first. All six routes use it.
+- Gates: `_signup_gate`, `_login_gate` and `_reset_gate` in `routes/auth.py`, `_accept_gate` in `routes/team.py`,
+  and `_delete_account_gate`/`_delete_me_gate` in `routes/account.py`.
+- The gates hold the rate limits, `current`/`owner`, the weak-password check and the confirmation check. The
+  in-endpoint copies are gone, so nothing runs twice.
+- On the account deletes, the endpoint depends on the same gate, and FastAPI's per-request dependency cache runs
+  it once. Probe: 7 deletes with a wrong confirmation gave `422 x5, 429 x2`, so the 5/min limit is not
+  double-counted.
+- The route-ordering test now checks that the gate is the slot dependency's only sub-dependency.
+
+**C2 fixed.** `tests/test_hash_capacity_slots.py` runs on one event loop. It asserts `borrowed_tokens == 0` after
+the 201, 409, 422, 401, 503, 429 and 500 paths, and checks `tasks_waiting == 0` after a timeout.
+
+### Evidence
+
+- Backend, private DB `starter_test_t15rev2`: **311 tests: 310 passed, 1 skipped** (frontend not built), rc 0.
+- Frontend `npx vitest run`: **5 files, 111 tests passed**.
+- Mutation B (no `limiter.release()`): 2 tests fail (`test_every_exit_path_returns_its_slot_on_one_loop` and
+  `test_a_flood_of_unauthenticated_deletes...`).
+- Mutation C (slot taken without its gate): 3 tests fail (`exit_path`, `cheap_rejects`, `every_route...`).
+- Original probe: cookieless `DELETE /api/account` flood, then 4 real logins with `SlowHasher` at 0.2 s.
+
+  | flood size | junk results | real logins |
+  |---|---|---|
+  | 1500 | all 401, **0 x 503** | 4 x 401 in 1.4 s |
+  | 6000 | all 401, **0 x 503** | 2 x 401, **2 x 503** in 4.2 s |
+
+  For comparison, main at 6000 gave 4 x 401 in 4.5 s.
+
+### Non-blocking note (N1)
+
+The 6000 case is no longer junk taking slots. It is worker-thread saturation:
+- The account-delete gates and `get_db` are sync, so each junk request still uses a worker thread, as on main.
+- A real login that holds a slot then waits for a worker thread behind the flood. The time it waits counts
+  against the next login's `HASH_WAIT_SECONDS`, so that login gets 503 with `Retry-After` instead of a slow 401.
+- Any sync route degrades under a flood of that size, so this does not block.
+- Options, if it matters later: an admission limit a little above `HASH_SLOTS` (suggestion S2 above), or async
+  gates for the session lookup.
+
+Earlier suggestions: S1 is done (the annotation and the import order). S3 still stands: README/NEXT give stale
+test counts, and the tree now collects 311.
