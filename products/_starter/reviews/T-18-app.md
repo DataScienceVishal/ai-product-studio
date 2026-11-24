@@ -102,3 +102,26 @@ provider makes `/healthz` return 503 with `db: down`, and neither the token nor 
 - Thread safety: OK (see suggestion 2).
 - `AIUnavailable` vs `DbTokenError`: the wrapping is correct, the classification isn't (B2).
 - Audience: correct.
+
+## Re-check (6fa17ae): PASS
+
+Reviewer: reviewer agent, 2026-11-24. Diff checked: `git diff aaf985c 6fa17ae` (dbauth.py, test_db_entra.py, README).
+
+- **B1, fixed.** `dbauth.py:46` now refuses `password` and `passfile` in the query string, with the same message
+  that never echoes the URL. Both cases are in the parametrised test, which also asserts that `hunter2` is absent.
+  A mixed-case key such as `PASSWORD=` is still accepted, but libpq rejects unknown keywords, so that URL can
+  never connect. This is not a bypass.
+- **B2, fixed.** `DbTokenError` now subclasses `SQLAlchemyError`, so `/healthz` takes its database-down path.
+  The new `test_healthz_is_503_down_when_the_token_fetch_fails` asserts 503, `db: down` and no secret in the
+  body. The message is still fixed text raised `from None`, so the `log.exception` in healthz carries no token.
+  Nothing else in the app catches `SQLAlchemyError`, so no other behaviour changes.
+- **README:** it now mentions `sslrootcert` and the query-string refusal. Non-blocking: libpq never uses the
+  system trust store unless it is told to, so "if the image does not trust Azure's roots by default" is slightly
+  off. It would be clearer to say that verify-full needs `sslrootcert` (the deploy sets the CA bundle path).
+  The edited line is also longer than the file's usual wrap.
+- **New, non-blocking:** the healthz test replaces `app.state.db` without disposing the fixture's original
+  `Database`, and the fixture teardown then disposes only the replacement. One engine leaks per run, which is
+  harmless at this suite size.
+- **Suite:** private DB `starter_t18r`, **391 passed, 1 skipped** (frontend not built), exit 0, 55.4 s.
+
+Verdict: **PASS.** The earlier suggestions 2 to 7 stay open as non-blocking follow-ups.
