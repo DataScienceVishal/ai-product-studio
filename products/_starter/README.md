@@ -33,7 +33,7 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 
 | What | Command | Where it runs |
 |---|---|---|
-| Backend unit and API tests (391 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
+| Backend unit and API tests (422 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
 | Migrations match the models | `alembic upgrade head && alembic check` | every push |
 | Frontend type check and build | `cd frontend && npm run build` | every push (CI `frontend`) |
 | Browser end-to-end core flow | `./scripts/e2e.sh` | pushes to main and manual runs (CI `e2e`) |
@@ -159,6 +159,13 @@ $6.10 allows only 6.10 / (30 x 120) x 1,000,000, about 1,690 tokens a day: one o
 day that deployment could cost up to $360 a month, far over the $80 credit. Change the deployment, set
 `aiPricePerMillionTokens` and `aiGlobalDailyTokens` together; `infra/cost-guard.sh` fails the build when
 tokens x price x 30 passes $6.10. Raising the budget needs Vishal's approval.
+
+**Calls per day.** Each call reserves its upper bound before it runs: input bytes + the answer budget (1,200 output
+tokens by default) + `AI_REASONING_HEADROOM` (1,500, Responses API only), so about 2.7k tokens plus the input. The
+cap is checked against reservations, so it admits `cap / reservation` calls however short the real answers are.
+Worked example: 100,000 / (2,700 + about 300 input) = about 33 calls a day for all customers together, and free trials
+get half of that (`AI_TRIAL_SHARE` 0.5), about 16. Size the cap to the calls you want to allow, then check the cost
+with the formula above.
 
 ## Azure OpenAI sign-in
 

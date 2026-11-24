@@ -188,17 +188,72 @@ def test_assets_do_not_follow_symlinks(web, dist, tmp_path):
 _ROUTE = re.compile(r"""\bpath\s*===\s*(["'`])(/[^"'`$]*)\1""")
 # "/x" === path (literal first)
 _ROUTE_REVERSED = re.compile(r"""(["'`])(/[^"'`$]*)\1\s*===\s*path\b""")
+# path === ROUTES.x / ROUTES["x"], either order: a member of a constant object literal in the same source
+_MEMBER = r"""([A-Za-z_$][\w$]*)\s*(?:\.\s*([A-Za-z_$][\w$]*)|\[\s*(["'`])([^"'`$]+)\3\s*\])"""
+_ROUTE_MEMBER = re.compile(rf"""\bpath\s*===\s*{_MEMBER}|{_MEMBER}\s*===\s*path\b""")
+# PAGES[path]: object-lookup routing; the keys of the object literal are the routes
+_LOOKUP = re.compile(r"""(?<![\w$.])([A-Za-z_$][\w$]*)\s*\[\s*path\s*\]""")
+_OBJECT_START = re.compile(r"""\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::(?:[^=;]|=>)+)?=\s*\{""")
+# `key: "string"` entries (bare or quoted key) and quoted keys of any value
+_STR_ENTRY = re.compile(r"""(?:^|[{,])\s*(?:([A-Za-z_$][\w$]*)|(["'`])([^"'`$]+)\2)\s*:\s*(["'`])([^"'`$]*)\4\s*(?=[,}])""")
+_KEY_ENTRY = re.compile(r"""(?:^|[{,])\s*(["'`])([^"'`$]+)\1\s*:""")
 # Other ways to compare the path would hide a route from the sync test: path.startsWith(..), path !== .., /re/.test(path),
-# path === ROUTES.x (a non-literal), PAGES[path] (a lookup table)...
+# or a non-literal the scanner could not resolve to a string above...
 _OTHER = re.compile(
     r"""\bpath\s*(?:!==?|==(?!=))|\bpath\s*\.\s*\w+\s*\(|\bswitch\s*\(\s*path\s*\)|\.\s*(?:test|includes)\s*\(\s*path\s*\)"""
     r"""|\bpath\s*===\s*[A-Za-z_$]|[A-Za-z_$][\w$.]*\s*\[\s*path\s*\]|(?:!==?|(?<![=!])==(?!=))\s*path\b|[A-Za-z_$][\w$.]*\s*===\s*path\b""")
 
 
+def _object_literals(src: str) -> dict[str, str]:
+    """name -> the text of each `const NAME = { ... }` object literal (braces balanced, string contents skipped)."""
+    out: dict[str, str] = {}
+    for m in _OBJECT_START.finditer(src):
+        depth, i, quote = 1, m.end(), ""
+        while i < len(src) and depth:
+            c = src[i]
+            if quote:
+                if c == "\\":
+                    i += 1
+                elif c == quote:
+                    quote = ""
+            elif c in "\"'`":
+                quote = c
+            elif c == "{":
+                depth += 1
+            elif c == "}":
+                depth -= 1
+            i += 1
+        if not depth:
+            out[m.group(1)] = "{" + src[m.end():i]
+    return out
+
+
 def scan_routes(src: str) -> tuple[set[str], list[str]]:
-    """Literal routes the source compares `path` with, and the comparisons the scanner cannot read."""
+    """Literal routes the source compares `path` with, and the comparisons the scanner cannot read.
+
+    Reads `path === "/x"`, `"/x" === path`, `path === ROUTES.x` (or `ROUTES["x"]`, either order) and `PAGES[path]`, resolving
+    ROUTES and PAGES from `const NAME = { ... }` literals in the same source. Whatever it cannot resolve is returned as unreadable."""
+    objects = _object_literals(src)
     found = {m.group(2) for m in _ROUTE.finditer(src)} | {m.group(2) for m in _ROUTE_REVERSED.finditer(src)}
-    return found, [m.group(0) for m in _OTHER.finditer(src)]
+
+    def member(m: re.Match) -> str:
+        left = m.group(1) is not None  # `path === NAME.key` fills groups 1-4, `NAME.key === path` groups 5-8
+        name, key = (m.group(1), m.group(2) or m.group(4)) if left else (m.group(5), m.group(6) or m.group(8))
+        values = {(bare or quoted): val for bare, _q, quoted, _q2, val in _STR_ENTRY.findall(objects.get(name, ""))}
+        if values.get(key, "").startswith("/"):
+            found.add(values[key])
+            return " "  # resolved: hide it from the unreadable check
+        return m.group(0)
+
+    def lookup(m: re.Match) -> str:
+        keys = [k for _q, k in _KEY_ENTRY.findall(objects.get(m.group(1), ""))]
+        if keys and all(k.startswith("/") for k in keys):
+            found.update(keys)
+            return " "
+        return m.group(0)
+
+    rest = _LOOKUP.sub(lookup, _ROUTE_MEMBER.sub(member, src))
+    return found, [m.group(0) for m in _OTHER.finditer(rest)]
 
 
 def test_route_scanner_accepts_any_quote_style_and_flags_other_comparisons():
@@ -215,7 +270,60 @@ def test_route_scanner_reads_or_flags_the_other_ways_to_write_a_route():
                        "const P = pages.main[path];", "if (x === path) a();", "if (x !== path) a();",
                        "if (\"/x\" !== path) a();", "if (\"/x\" == path) a();", "if (x != path) a();"):
         found, other = scan_routes(unreadable)
-        assert other and not found, unreadable
+        assert other and not found, unreadable  # no ROUTES/PAGES literal in the source: flagged, never silently ignored
+
+
+def test_route_scanner_resolves_a_literal_on_the_left():
+    assert scan_routes("""if ("/x" === path) return <X />;""") == ({"/x"}, [])
+    assert scan_routes("""if (`/y` === path || '/z' === path) return null;""") == ({"/y", "/z"}, [])
+    assert scan_routes("""if ("/x" !== path) return null;""")[1]  # a different operator is still unreadable
+
+
+def test_route_scanner_resolves_constant_object_members():
+    src = """
+    const ROUTES = { billing: "/billing", "team-page": '/team', settings: `/settings`, label: "not a route" } as const;
+    if (path === ROUTES.billing) a();
+    if (ROUTES.settings === path) b();
+    if (path === ROUTES["team-page"]) c();
+    """
+    assert scan_routes(src) == ({"/billing", "/settings", "/team"}, [])
+    # a member the object lacks, an unknown object and a non-route value stay unreadable
+    for bad in ("if (path === ROUTES.nope) a();", "if (path === OTHER.billing) a();", "if (path === ROUTES.label) a();"):
+        found, other = scan_routes(src + bad)
+        assert other and found == {"/billing", "/settings", "/team"}, bad
+    found, other = scan_routes("const ROUTES = { a: base + '/a' };\nif (path === ROUTES.a) x();")  # computed: not a literal
+    assert other and not found
+
+
+def test_route_scanner_resolves_object_lookup_routing():
+    src = """
+    const PAGES: Record<string, () => JSX.Element> = {
+      "/billing": () => <Billing me={me} />,
+      '/team': () => <Team />,
+      "/a/b": Nested,
+    };
+    return PAGES[path]?.() ?? <NotFound />;
+    """
+    assert scan_routes(src) == ({"/billing", "/team", "/a/b"}, [])
+    found, other = scan_routes("const PAGES = { home: A };\nreturn PAGES[path];")  # keys are not routes
+    assert other and not found
+    found, other = scan_routes("return PAGES[path];")  # no literal to resolve
+    assert other and not found
+
+
+def test_route_scanner_regression_guard_on_a_synthetic_app():
+    """If the scanner stops seeing any one form, this fails: each route below comes from exactly one form."""
+    src = """
+    const ROUTES = { one: "/one" };
+    const PAGES = { "/two": Two };
+    if (path === "/zero") return <Zero />;
+    if ("/left" === path) return <Left />;
+    if (path === ROUTES.one) return <One />;
+    return PAGES[path];
+    """
+    found, other = scan_routes(src)
+    assert other == []
+    assert found == {"/zero", "/left", "/one", "/two"}
 
 
 def test_client_routes_match_the_frontend_router():
