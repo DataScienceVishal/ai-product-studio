@@ -15,6 +15,7 @@ Month-to-date spend: not reported yet (board task T-2)
 | `ca-starter` (container app, 0.5 vCPU, 1 GiB, scales 0 to 1) | _starter | - | 0 inside the free grant (about 100 active hours a month); 0.076 per active hour after that | planned (approved by Vishal, Q-5 A; create at first G3) |
 | `caj-starter-migrate` (job, one run per release) | _starter | - | 0 (inside the free grant) | planned (approved by Vishal, Q-5 A; create at first G3) |
 | `caj-starter-purge` (scheduled job, daily) | _starter | - | 0 (inside the free grant) | planned (approved by Vishal, Q-5 A; create at first G3) |
+| `id-starter-app`, `id-starter-migrate` (user-assigned managed identities for Entra database sign-in, ADR 0003) | _starter | - | 0 | planned (T-18; created with the starter release) |
 | (Azure OpenAI tokens for ca-starter, existing deployment) | _starter | - | 0 with ai_provider=fake (the default); at most 6.10 with azure and the 100,000-token daily cap | planned (approved by Vishal, Q-5 A; create at first G3) |
 
 Planned for T-7: `products/_starter/ADR/0002-azure-deploy.md` has the sources and options. Projected: $23.20 a
