@@ -10,3 +10,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - [ideas] MTD prep pilot benchmark: AI reads clean statements and CSVs well (84-94% of categories right) but doesn't yet halve review time once its confident mistakes are counted; scans and photos untested because the premium model ran out of room. A full test needs a cheaper model (question Q-7).
 - [_starter] Starter app can now talk to the studio's Azure model (new API style), keeps no copy of prompts on Azure, and CI now refuses an AI budget priced above $6.10 a month. Reviewed and merged.
 - [_starter] Two earlier starter fixes (cleaner web page serving, pinned base images) were reviewed and passed.
+- [_starter] Safer Azure sign-in for the starter's AI calls: a slow Azure login endpoint can no longer stall every user past the page's time limit. Reviewed twice and merged.
