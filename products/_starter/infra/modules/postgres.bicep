@@ -12,7 +12,7 @@ param location string
 param adminLogin string = 'studioadmin'
 
 @secure()
-@description('Server admin password. The deploy workflow makes a random one per deploy_shared run, inside that step only (phase 1, ADR 0003); nobody signs in with it.')
+@description('Server admin password. The deploy workflow makes a random one per deploy_shared run, inside that step only (ADR 0003). Azure requires one at server creation; password sign-in is disabled, so nobody can use it.')
 param adminPassword string
 
 @description('Open the firewall to Azure IP addresses (the 0.0.0.0 rule). ADR 0002, decision 5 explains why.')

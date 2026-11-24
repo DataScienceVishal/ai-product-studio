@@ -256,7 +256,7 @@ sign-in is a server setting, not a meter. `state/BUDGET.md` gains two $0 rows pe
 
 | What goes wrong | What happens | What to do |
 |---|---|---|
-| Admin creation refused for the SP | `deploy_shared` fails in phase 1; password auth still on | Vishal adds the SP as Entra admin in the portal (Authentication pane), then re-run |
+| Admin creation refused for the SP | `deploy_shared` fails in phase 1; password sign-in is already disabled on the server | Vishal adds the SP as Entra admin in the portal (Authentication pane), then re-run |
 | `SECURITY LABEL` refused on Azure | `db-setup.sql` stops before any grant | Switch to `pgaadauth_create_principal_with_oid` on the empty roles (first deploy only) |
 | The deploy SP is recreated (new object id) (N2) | The next `deploy_shared` adds the new SP as admin; the old admin entry and role stay and still own every product database | Runbook: `ALTER DATABASE … OWNER TO` the new admin role, delete the old `administrators` entry through ARM, then `DROP ROLE` the old one |
 | Connection flood on the 35 slots (N7) | The admin has no reserved slot, so the release's db step waits | The 6-minute retry covers it; if not, release again later |

@@ -35,7 +35,7 @@ param environmentName string = 'cae-studio'
 param registryName string = 'acrstudioznp96r'
 param pullIdentityName string = 'id-studio-acrpull'
 
-@description('How the app and jobs sign in to Postgres (ADR 0003). password: the URLs carry a password and no identity env is set, exactly as before T-18. entra: DB_AUTH=entra and AZURE_CLIENT_ID are set, so each container takes a token from its own identity. The two identities below exist and are attached in both modes ($0); the deploy workflow flips this in ADR 0003 slice 4.')
+@description('How the app and jobs sign in to Postgres (ADR 0003). entra (the default): DB_AUTH=entra and AZURE_CLIENT_ID are set, so each container takes a token from its own identity. password: legacy fallback only, the URLs carry a password and no identity env is set; it works only if password sign-in is re-enabled on the server, which is Disabled by default. The two identities below exist and are attached in both modes ($0).')
 @allowed([
   'password'
   'entra'
@@ -206,7 +206,8 @@ var migrateIdentitySettings = [
 ]
 
 // DB_AUTH=entra makes the app fetch a token for its own identity (AZURE_CLIENT_ID picks the user-assigned one).
-// In password mode neither variable is set, so the app uses its default (DB_AUTH=password).
+// In the legacy password mode neither variable is set, so the app falls back to its default (DB_AUTH=password);
+// that only works if password sign-in is re-enabled on the server (it is Disabled by default).
 var useEntra = dbAuth == 'entra'
 var appDbAuthEnv = useEntra ? [
   {

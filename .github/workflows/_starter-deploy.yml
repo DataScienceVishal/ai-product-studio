@@ -174,7 +174,7 @@ jobs:
         working-directory: ${{ env.PRODUCT_DIR }}/infra
         run: |
           az bicep install --only-show-errors
-          # The server admin password (phase 1 only, ADR 0003) is random per run, made and used only in this
+          # The server admin password (ADR 0003) is random per run and exists only because Azure requires one at server creation; password sign-in is disabled. Made and used only in this
           # step: masked before first use, never written to GITHUB_ENV, GITHUB_OUTPUT, a file or an argument.
           # shared.bicepparam reads it from this step's environment. Nobody needs it: sign-in is Entra.
           PG_ADMIN_PASSWORD="$(openssl rand -base64 32 | tr -d '\n')Aa1!"
