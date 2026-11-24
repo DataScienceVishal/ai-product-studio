@@ -19,7 +19,7 @@ from ..errors import AppError
 from ..logs import bind
 from ..models import Invitation, Tenant, User
 from ..ratelimit import client_ip
-from ..security import hash_password, new_token, password_problem, token_hash
+from ..security import hash_capacity_after, hash_password, new_token, password_problem, token_hash
 from .auth import Email, _start_session, me_payload
 
 log = logging.getLogger("app.team")
@@ -117,12 +117,16 @@ def remove_member(user_id: uuid.UUID, me: Current = Depends(owner), db: Session 
     return Response(status_code=204)
 
 
-@public.post("/accept", status_code=201)
-def accept(data: AcceptIn, request: Request, response: Response, db: Session = Depends(get_db)):
+async def _accept_gate(data: AcceptIn, request: Request) -> None:
+    """Cheap checks, run before a hash slot is taken."""
     request.app.state.limiter.check(f"accept:{client_ip(request)}", request.app.state.settings.auth_rate_limit_per_minute)
     problem = password_problem(data.password)
     if problem:
         raise AppError(422, "weak_password", problem)
+
+
+@public.post("/accept", status_code=201, dependencies=[Depends(hash_capacity_after(_accept_gate))])
+def accept(data: AcceptIn, request: Request, response: Response, db: Session = Depends(get_db)):
     password_hash = hash_password(data.password)  # before any transaction opens
     now = datetime.now(timezone.utc)
     invitation = db.scalar(select(Invitation).where(Invitation.token_hash == token_hash(data.token), *_pending(now)))

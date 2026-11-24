@@ -10,7 +10,7 @@ from app.billing import MockBilling, StripeBilling
 from app.config import Settings
 from app.main import create_app
 
-from .conftest import PASSWORD, link_token, sign_up, verify_email
+from .conftest import PASSWORD, link_token, verify_email
 
 MEMBER_PASSWORD = "member passphrase 1"
 
@@ -72,7 +72,7 @@ def test_logout_clear_matches_how_the_cookie_was_set(cookie_world):
 
 
 def test_account_deletion_clear_matches_how_the_cookie_was_set(cookie_world):
-    secure, name, make, outbox = cookie_world
+    secure, name, make, _ = cookie_world
     client, signup = _signup(make)
     (set_header,) = _session_cookies(signup)
     response = client.request("DELETE", "/api/account", json={"password": PASSWORD, "confirm": "DELETE"})
@@ -83,7 +83,7 @@ def test_account_deletion_clear_matches_how_the_cookie_was_set(cookie_world):
 
 
 def test_member_leaving_clear_matches_how_the_cookie_was_set(cookie_world):
-    secure, name, make, outbox = cookie_world
+    _, name, make, outbox = cookie_world
     owner, _ = _signup(make)
     verify_email(owner, outbox)
     assert owner.post("/api/team/invitations", json={"email": "member@acme.test"}).status_code == 201

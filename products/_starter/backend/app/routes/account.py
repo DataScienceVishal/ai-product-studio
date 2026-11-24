@@ -13,7 +13,7 @@ from ..db import get_db
 from ..deps import Current, current, owner, session_cookie, subscription_of
 from ..errors import AppError
 from ..models import Invitation, Note, Tenant, User
-from ..security import verify_password
+from ..security import hash_capacity_after, verify_password
 
 log = logging.getLogger("app.account")
 router = APIRouter(prefix="/api/account", tags=["account"])
@@ -45,13 +45,18 @@ def usage(me: Current = Depends(current), db: Session = Depends(get_db)):
     return {"ai_tokens_this_month": tokens_this_month(db, me.tenant.id)}
 
 
-@router.delete("", status_code=204)
-def delete_account(data: DeleteIn, request: Request, me: Current = Depends(owner),
-                   db: Session = Depends(get_db)) -> Response:
-    """Deletes the tenant and, by cascade, every user, session, note and usage row it owns."""
+def _delete_account_gate(data: DeleteIn, request: Request, me: Current = Depends(owner)) -> Current:
+    """Session, role, rate limit and confirmation, all before a hash slot is taken."""
     request.app.state.limiter.check(f"delete-account:{me.user.id}", 5)
     if data.confirm != "DELETE":
         raise AppError(422, "confirm_required", 'Type DELETE to confirm.')
+    return me
+
+
+@router.delete("", status_code=204, dependencies=[Depends(hash_capacity_after(_delete_account_gate))])
+def delete_account(data: DeleteIn, request: Request, me: Current = Depends(_delete_account_gate),
+                   db: Session = Depends(get_db)) -> Response:
+    """Deletes the tenant and, by cascade, every user, session, note and usage row it owns."""
     if not verify_password(me.user.password_hash, data.password):
         raise AppError(401, "invalid_credentials", "That password isn't right.")
     tenant_id = str(me.tenant.id)
@@ -85,14 +90,20 @@ def export_me(me: Current = Depends(current), db: Session = Depends(get_db)):
                               for n in notes]}
 
 
-@router.delete("/me", status_code=204)
-def delete_me(data: DeleteIn, request: Request, me: Current = Depends(current), db: Session = Depends(get_db)) -> Response:
-    """A member removes themselves and their sign-in. Notes they wrote stay with the company (author cleared)."""
+def _delete_me_gate(data: DeleteIn, request: Request, me: Current = Depends(current)) -> Current:
+    """Session, rate limit, role and confirmation, all before a hash slot is taken."""
     request.app.state.limiter.check(f"delete-me:{me.user.id}", 5)
     if me.user.role == "owner":
         raise AppError(422, "owner_cannot_leave", "As the owner, delete the whole account in Settings instead.")
     if data.confirm != "DELETE":
         raise AppError(422, "confirm_required", "Type DELETE to confirm.")
+    return me
+
+
+@router.delete("/me", status_code=204, dependencies=[Depends(hash_capacity_after(_delete_me_gate))])
+def delete_me(data: DeleteIn, request: Request, me: Current = Depends(_delete_me_gate),
+              db: Session = Depends(get_db)) -> Response:
+    """A member removes themselves and their sign-in. Notes they wrote stay with the company (author cleared)."""
     if not verify_password(me.user.password_hash, data.password):
         raise AppError(401, "invalid_credentials", "That password isn't right.")
     db.execute(delete(Invitation).where(Invitation.tenant_id == me.tenant.id, Invitation.email == me.user.email))

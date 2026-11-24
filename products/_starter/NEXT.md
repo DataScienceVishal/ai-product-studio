@@ -47,6 +47,12 @@ Left (needs Vishal, ask-first): attach an identity to the app, grant "Cognitive 
 OpenAI resource, set the two settings. No Bicep changed: the infra has only the shared pull identity
 (`lifecycle: None`), so there is nothing to scope a role to yet.
 
+- T-15 async-login slice (branch p/_starter/T-15-async-login), done: hashing capacity is now taken on the event
+  loop (`security.hash_capacity`, an async dependency on login, signup, reset-confirm, accept-invite and both
+  account deletes) before a worker thread is assigned; waiters cost no thread and get the same 503 busy with
+  Retry-After: 5 after HASH_WAIT_SECONDS. The thread semaphore stays as a backstop. New
+  tests/test_async_hash_capacity.py (mutation-checked); two unused test variables removed. 209 backend tests
+  (208 pass, 1 skip: frontend not built). Left: nothing from this slice.
 - T-15 cookies slice (branch p/_starter/T-15-cookies), done: tests that the cookie clears on logout, owner
   account deletion and member leave carry the same Secure, HttpOnly, SameSite and Path=/ as the set (secure and
   plain-http modes, mutation-checked); a test tying LIMITED_PROVIDERS to the live-key refusal; the CLIENT_ROUTES
@@ -124,3 +130,12 @@ Done:
 - R6: `.env.example` lists `AI_GLOBAL_DAILY_TOKENS` and `AI_PRICE_PER_MILLION_TOKENS` with comments.
 
 Tests: backend suite 238 passed, 1 skipped (frontend not built), both normally and with `AZURE_OPENAI_AUTH=managed_identity` exported. Bicep was not compiled here (`az` not installed), so CI should confirm.
+
+# T-15 async-login status
+
+Review C1 and C2 fixed. Every hashing route now uses `hash_capacity_after(gate)` (security.py): the gate holds the
+cheap checks (rate limits, session/role, weak password, confirmation) and runs first, so rejected requests never
+take or wait for a hash slot. C2: tests/test_hash_capacity_slots.py runs on one event loop and asserts the limiter
+holds 0 slots after 200, 401, 409, 422, 429, 503 and 500 (mutation: removing `limiter.release()` fails 2 of them).
+Verify: `TEST_DATABASE_URL=...starter_test_t15 .venv/bin/python -m pytest` (310 passed, 1 skipped) and
+`npx vitest run` (111 passed). Not merged to main. Review suggestions S2-S4 left open.
