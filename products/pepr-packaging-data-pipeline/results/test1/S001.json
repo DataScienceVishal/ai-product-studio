@@ -1,0 +1,80 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "white"
+     }
+    ],
+    "status": "present",
+    "value": "white"
+   },
+   "features": {
+    "adhesive": {
+     "status": "missing"
+    },
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "no barrier layer"
+      }
+     ],
+     "status": "present",
+     "value": "no barrier layer"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "water-based varnish"
+      }
+     ],
+     "status": "present",
+     "value": "water-based varnish"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "kraft paper"
+     }
+    ],
+    "status": "present",
+    "value": "kraft paper"
+   },
+   "name": "outer carton",
+   "ram_category": "paper_board",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "179.7 g"
+     }
+    ],
+    "status": "present",
+    "value": 179.7
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 296,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S001",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 1987,
+  "model": "gpt-5-mini",
+  "output_tokens": 1031,
+  "price_model": "gpt-5-mini",
+  "usd": 0.002559
+ },
+ "warnings": []
+}

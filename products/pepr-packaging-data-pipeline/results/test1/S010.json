@@ -1,0 +1,70 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "clear"
+     }
+    ],
+    "status": "present",
+    "value": "clear"
+   },
+   "features": {
+    "adhesive": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "water-based adhesive"
+      }
+     ],
+     "status": "present",
+     "value": "water-based adhesive"
+    },
+    "ink_coating": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PVC"
+     }
+    ],
+    "status": "present",
+    "value": "PVC"
+   },
+   "name": "sleeve",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "3.2 g"
+     }
+    ],
+    "status": "present",
+    "value": 3.2
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 263,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S010",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 1975,
+  "model": "gpt-5-mini",
+  "output_tokens": 1406,
+  "price_model": "gpt-5-mini",
+  "usd": 0.003306
+ },
+ "warnings": []
+}

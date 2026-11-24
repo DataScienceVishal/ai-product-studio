@@ -1,0 +1,80 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PE/PET laminate, green"
+     }
+    ],
+    "status": "present",
+    "value": "green"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "EVOH barrier layer"
+      }
+     ],
+     "status": "present",
+     "value": "EVOH barrier layer"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "paper label, wash-off"
+      }
+     ],
+     "status": "present",
+     "value": "paper label, wash-off"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PE/PET laminate, green"
+     }
+    ],
+    "status": "present",
+    "value": "PE/PET laminate"
+   },
+   "name": "pouch",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "9.9 g"
+     }
+    ],
+    "status": "present",
+    "value": 9.9
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 359,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S006",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2024,
+  "model": "gpt-5-mini",
+  "output_tokens": 2204,
+  "price_model": "gpt-5-mini",
+  "usd": 0.004914
+ },
+ "warnings": []
+}

@@ -1,0 +1,117 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Finished colour is amb."
+     }
+    ],
+    "status": "present",
+    "value": "amber"
+   },
+   "features": {
+    "adhesive": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "The front label is moulded or formed from BOPP."
+     }
+    ],
+    "status": "present",
+    "value": "PP"
+   },
+   "name": "label",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "A typical unit weighs 0.0023 kg including any tolerance."
+     }
+    ],
+    "status": "present",
+    "value": 2.3
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "adhesive": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "Note that we use no print, no coating on this item."
+      }
+     ],
+     "status": "present",
+     "value": "no ink or coating"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Material of construction: rigid PVC film."
+     }
+    ],
+    "status": "present",
+    "value": "PVC"
+   },
+   "name": "sleeve",
+   "ram_category": "plastic",
+   "weight_g": {
+    "conflict_values": [
+     2.0,
+     4.6
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Each unit is 2 g nett."
+     },
+     {
+      "page": 2,
+      "quote": "Packing note: shrink sleeve net weight 0.0046 kg per unit."
+     }
+    ],
+    "status": "conflict"
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 430,
+   "input": "layout_text",
+   "page": 1
+  },
+  {
+   "chars": 201,
+   "input": "layout_text",
+   "page": 2
+  }
+ ],
+ "sheet_id": "S012",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2099,
+  "model": "gpt-5-mini",
+  "output_tokens": 1951,
+  "price_model": "gpt-5-mini",
+  "usd": 0.004427
+ },
+ "warnings": []
+}

@@ -1,0 +1,171 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "nat."
+     }
+    ],
+    "status": "present",
+    "value": "natural"
+   },
+   "features": {
+    "adhesive": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "hot melt glue"
+      }
+     ],
+     "status": "present",
+     "value": "hot-melt adhesive"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "no print, no coating"
+      }
+     ],
+     "status": "present",
+     "value": "no ink or coating"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PP film"
+     }
+    ],
+    "status": "present",
+    "value": "PP"
+   },
+   "name": "label",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "0.102 oz"
+     }
+    ],
+    "status": "present",
+    "value": 2.891649
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "royal blue"
+     }
+    ],
+    "status": "present",
+    "value": "blue"
+   },
+   "features": {
+    "adhesive": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PVC"
+     }
+    ],
+    "status": "present",
+    "value": "PVC"
+   },
+   "name": "sleeve",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "1.7 g"
+     }
+    ],
+    "status": "present",
+    "value": 1.7
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "black, carbon black"
+     }
+    ],
+    "status": "present",
+    "value": "black (carbon black)"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "aqueous varnish"
+      }
+     ],
+     "status": "present",
+     "value": "water-based varnish"
+    },
+    "label": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "recycled PET"
+     }
+    ],
+    "status": "present",
+    "value": "rPET"
+   },
+   "name": "tray",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "0.019 kg"
+     }
+    ],
+    "status": "present",
+    "value": 19.0
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 601,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S014",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2099,
+  "model": "gpt-5-mini",
+  "output_tokens": 2709,
+  "price_model": "gpt-5-mini",
+  "usd": 0.005943
+ },
+ "warnings": []
+}

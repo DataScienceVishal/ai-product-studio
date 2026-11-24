@@ -1,0 +1,14 @@
+{
+ "components": [],
+ "pages": [],
+ "sheet_id": "S016",
+ "usage": {
+  "input_tokens": 2126,
+  "model": "gpt-5-mini",
+  "output_tokens": 5952,
+  "usd": 0.0
+ },
+ "warnings": [
+  "provider failed, no answer: incomplete: output budget exhausted (status 'incomplete', max_output_tokens; max_output_tokens 6000, raise T56_MAX_OUTPUT_TOKENS)"
+ ]
+}

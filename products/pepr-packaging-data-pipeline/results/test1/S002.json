@@ -1,0 +1,93 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "blue"
+     }
+    ],
+    "status": "present",
+    "value": "blue"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "closure": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "PP cap, no liner"
+      }
+     ],
+     "status": "present",
+     "value": "PP cap, no liner"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "no ink or coating"
+      }
+     ],
+     "status": "present",
+     "value": "no ink or coating"
+    },
+    "label": {
+     "status": "missing"
+    },
+    "sleeve": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "PVC shrink sleeve"
+      }
+     ],
+     "status": "present",
+     "value": "PVC shrink sleeve"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PET"
+     }
+    ],
+    "status": "present",
+    "value": "PET"
+   },
+   "name": "bottle",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "36 g"
+     }
+    ],
+    "status": "present",
+    "value": 36.0
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 304,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S002",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 1987,
+  "model": "gpt-5-mini",
+  "output_tokens": 1468,
+  "price_model": "gpt-5-mini",
+  "usd": 0.003433
+ },
+ "warnings": []
+}

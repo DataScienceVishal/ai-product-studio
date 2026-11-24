@@ -1,0 +1,70 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Finished colour is green."
+     }
+    ],
+    "status": "present",
+    "value": "green"
+   },
+   "features": {
+    "adhesive": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "Ink / coating fitted to the sleeve: water-based varnish."
+      }
+     ],
+     "status": "present",
+     "value": "water-based varnish"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "The sleeve is moulded or formed from PETG."
+     }
+    ],
+    "status": "present",
+    "value": "PETG"
+   },
+   "name": "sleeve",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "A typical unit weighs 4 g including any tolerance."
+     }
+    ],
+    "status": "present",
+    "value": 4.0
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 323,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S007",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 1988,
+  "model": "gpt-5-mini",
+  "output_tokens": 1131,
+  "price_model": "gpt-5-mini",
+  "usd": 0.002759
+ },
+ "warnings": []
+}

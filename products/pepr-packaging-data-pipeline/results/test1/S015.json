@@ -1,0 +1,230 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "corrugated board, uncoloured"
+     }
+    ],
+    "status": "present",
+    "value": "natural"
+   },
+   "features": {
+    "adhesive": {
+     "status": "missing"
+    },
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "alu-foil barrier"
+      }
+     ],
+     "status": "present",
+     "value": "aluminium foil barrier"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "solvent-borne ink"
+      }
+     ],
+     "status": "present",
+     "value": "solvent-based ink"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "corrugated board, uncoloured"
+     }
+    ],
+    "status": "present",
+    "value": "corrugated board"
+   },
+   "name": "outer carton",
+   "ram_category": "paper_board",
+   "weight_g": {
+    "conflict_values": [
+     111.6110065,
+     117.4
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "3.937 oz"
+     },
+     {
+      "page": 2,
+      "quote": "Packing note: outer case net weight 0.1174 kg per unit."
+     }
+    ],
+    "status": "conflict"
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "polyethylene terephthalate, clear"
+     }
+    ],
+    "status": "present",
+    "value": "clear"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "EVOH barrier in wall"
+      }
+     ],
+     "status": "present",
+     "value": "EVOH barrier layer"
+    },
+    "closure": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "PP screw cap without liner"
+      }
+     ],
+     "status": "present",
+     "value": "PP cap, no liner"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "plain, no print or coating"
+      }
+     ],
+     "status": "present",
+     "value": "no ink or coating"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "BOPP wrap-around label"
+      }
+     ],
+     "status": "present",
+     "value": "PP film label"
+    },
+    "sleeve": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "polyethylene terephthalate, clear"
+     }
+    ],
+    "status": "present",
+    "value": "PET"
+   },
+   "name": "bottle",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "0.043 kg"
+     }
+    ],
+    "status": "present",
+    "value": 43.0
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PS, black (carbon black)"
+     }
+    ],
+    "status": "present",
+    "value": "black (carbon black)"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "foil barrier layer"
+      }
+     ],
+     "status": "present",
+     "value": "aluminium foil barrier"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "solvent ink print"
+      }
+     ],
+     "status": "present",
+     "value": "solvent-based ink"
+    },
+    "label": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PS, black (carbon black)"
+     }
+    ],
+    "status": "present",
+    "value": "PS"
+   },
+   "name": "tray",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "13.6 g"
+     }
+    ],
+    "status": "present",
+    "value": 13.6
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 906,
+   "input": "layout_text",
+   "page": 1
+  },
+  {
+   "chars": 189,
+   "input": "layout_text",
+   "page": 2
+  }
+ ],
+ "sheet_id": "S015",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2325,
+  "model": "gpt-5-mini",
+  "output_tokens": 4503,
+  "price_model": "gpt-5-mini",
+  "usd": 0.009587
+ },
+ "warnings": []
+}

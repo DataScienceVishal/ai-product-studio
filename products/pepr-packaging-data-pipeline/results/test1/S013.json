@@ -1,0 +1,145 @@
+{
+ "components": [
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "closure": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "Note that we use polypropylene cap, unlined on this item."
+      }
+     ],
+     "status": "present",
+     "value": "PP cap, no liner"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "Surface finish fitted to the bottle body: solvent-borne ink."
+      }
+     ],
+     "status": "present",
+     "value": "solvent-based ink"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "Note that we use paper label (permanent glue) on this item."
+      }
+     ],
+     "status": "present",
+     "value": "paper label, permanent"
+    },
+    "sleeve": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Material of construction: soda-lime glass."
+     }
+    ],
+    "status": "present",
+    "value": "glass"
+   },
+   "name": "bottle",
+   "ram_category": "glass",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "A typical unit weighs 0.0535 kg including any tolerance."
+     }
+    ],
+    "status": "present",
+    "value": 53.5
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Supplied in bright white."
+     }
+    ],
+    "status": "present",
+    "value": "white"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "Note that we use foil barrier layer on this item."
+      }
+     ],
+     "status": "present",
+     "value": "aluminium foil barrier"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "Labelling fitted to the pouch: BOPP wrap-around label."
+      }
+     ],
+     "status": "present",
+     "value": "PP film label"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Made from PE/PET laminate throughout."
+     }
+    ],
+    "status": "present",
+    "value": "PE/PET laminate"
+   },
+   "name": "pouch",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Each unit is 7.5 g nett."
+     }
+    ],
+    "status": "present",
+    "value": 7.5
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 694,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S013",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2104,
+  "model": "gpt-5-mini",
+  "output_tokens": 3419,
+  "price_model": "gpt-5-mini",
+  "usd": 0.007364
+ },
+ "warnings": []
+}

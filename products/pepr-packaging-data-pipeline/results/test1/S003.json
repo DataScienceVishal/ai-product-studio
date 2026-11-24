@@ -1,0 +1,80 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "white"
+     }
+    ],
+    "status": "present",
+    "value": "white"
+   },
+   "features": {
+    "adhesive": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "water-based adhesive"
+      }
+     ],
+     "status": "present",
+     "value": "water-based adhesive"
+    },
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "solvent-based ink"
+      }
+     ],
+     "status": "present",
+     "value": "solvent-based ink"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "corrugated board"
+     }
+    ],
+    "status": "present",
+    "value": "corrugated board"
+   },
+   "name": "outer carton",
+   "ram_category": "paper_board",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "128 g"
+     }
+    ],
+    "status": "present",
+    "value": 128.0
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 308,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S003",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 1985,
+  "model": "gpt-5-mini",
+  "output_tokens": 1331,
+  "price_model": "gpt-5-mini",
+  "usd": 0.003158
+ },
+ "warnings": []
+}
