@@ -1,3 +1,16 @@
+# T-15 pool status
+
+Done: Redis rate-limit checks run on the limiter's own `ThreadPoolExecutor` (`ratelimit-redis` threads, setting
+`RATE_LIMIT_REDIS_THREADS`, default 8, >= 1) instead of the shared threadpool, so a slow Redis cannot starve sync routes.
+`off_loop` calls `limiter.run_blocking` (keeps contextvars). In-memory limiter: no pool, gates stay inline. `RateLimiter.shutdown()`
+(pool stopped, queued checks dropped, Redis client closed, idempotent) is called from the app lifespan. Frontend
+`engines.node` is `>=22.22.2 <23` (Dockerfile `node:22-slim`, CI `node-version: "22"`); package-lock.json root entry now carries the
+same (`npm install --package-lock-only`, no other lock changes).
+Tests: 6 new in `backend/tests/test_ratelimit_redis.py` (pool used, bounded at N threads, in-memory inline and no pool, size
+validation incl. setting, shutdown idempotent, app shutdown stops pool). Backend 363 passed, 1 skipped; vitest 111 passed.
+Left: Stripe coupon (not in this slice); Azure Cache for Redis not provisioned (ask-first). No CI check for lock/engines drift.
+Verify: `cd backend && python -m pytest` (363 passed, 1 skipped; needs Postgres); `cd frontend && npx vitest run` (111 passed).
+
 # T-38 status
 
 Done: test DB base-name cap lowered to 36 chars (`{0,35}`), so `<base>_t<10-digit epoch>_<pid>_<6hex>` is at most 63 bytes
