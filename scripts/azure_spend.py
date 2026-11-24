@@ -263,27 +263,11 @@ def split_block(text: str) -> tuple[str, str | None, str]:
         "start first. Fix the file by hand. Nothing was written.")
 
 
-def table_rows(text: str) -> list[list[str]]:
-    out = []
-    for line in text.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("|") and not re.match(r"^\|\s*:?-{3,}", stripped):
-            out.append([cell.strip() for cell in stripped.strip("|").split("|")])
-    return out
+def parse_tables(text: str) -> list[tuple[bool, list[list[str]]]]:
+    """Each markdown table (a run of consecutive '|' lines) as (has_header, rows of cells).
 
-
-def listed_names(outside: str) -> set[str]:
-    """First word of each hand-kept table row's first cell, lower-cased (header rows skipped)."""
-    names = set()
-    for cells in table_rows(outside):
-        token = re.split(r"[\s(]", cells[0].strip("`").strip(), maxsplit=1)[0].strip("`").lower()
-        if token and token != "resource":
-            names.add(token)
-    return names
-
-
-def tables(text: str) -> list[list[list[str]]]:
-    """Each markdown table (a run of consecutive '|' lines) as its rows of cells, separator rows dropped."""
+    has_header is True when the table's second line is a separator row; separator rows are dropped.
+    """
     out, current = [], None
     for line in text.splitlines():
         stripped = line.strip()
@@ -291,33 +275,78 @@ def tables(text: str) -> list[list[list[str]]]:
             current = None
             continue
         if current is None:
-            current = []
+            current = [False, []]
             out.append(current)
-        if not re.match(r"^\|\s*:?-{3,}", stripped):
-            current.append([cell.strip() for cell in stripped.strip("|").split("|")])
+        if re.match(r"^\|\s*:?-{3,}", stripped):
+            if len(current[1]) == 1:
+                current[0] = True
+            continue
+        current[1].append([cell.strip() for cell in stripped.strip("|").split("|")])
+    return [(has_header, rows) for has_header, rows in out]
+
+
+def tables(text: str) -> list[list[list[str]]]:
+    """Each markdown table as its rows of cells (header row included), separator rows dropped."""
+    return [rows for _, rows in parse_tables(text)]
+
+
+def resource_rows(outside: str) -> list[list[str]]:
+    """Data rows of the hand-kept resource table: tables headed 'Resource', plus header-less tables
+    (rows someone appended below the auto block). Other headed tables, such as the token log, are skipped."""
+    out = []
+    for has_header, rows in parse_tables(outside):
+        if not has_header:
+            out.extend(rows)
+        elif rows[0] and rows[0][0].strip().lower() == "resource":
+            out.extend(rows[1:])
     return out
 
 
-def projected_monthly(outside: str) -> float:
+def listed_names(outside: str) -> set[str]:
+    """First word of each name in the resource table's first cell, lower-cased.
+
+    Parenthesised notes are ignored, and a cell may list several names separated by commas
+    ("`id-a`, `id-b`"); each counts.
+    """
+    names = set()
+    for cells in resource_rows(outside):
+        for part in re.sub(r"\([^)]*\)", " ", cells[0]).split(","):
+            token = re.split(r"[\s(]", part.strip().strip("`").strip(), maxsplit=1)[0].strip("`").lower()
+            if token and token != "resource":
+                names.add(token)
+    return names
+
+
+def estimate_column(header: list[str]) -> int | None:
+    """Index of the monthly-estimate column: 'Estimated' plus 'month' ('$ per month', '$/month', 'monthly')."""
+    for i, cell in enumerate(header):
+        c = cell.lower()
+        if "estimated" in c and "month" in c:
+            return i
+    return None
+
+
+def projected_monthly(outside: str) -> float | None:
     """Sum of the 'Estimated $ per month' column of the hand-kept resource table.
 
     Only rows of a table whose own header names that column count, so other tables in the
     file (such as the token log) are never summed under a column index from another table.
+    None when no table has such a column, so a renamed header can't pass for $0.00.
     """
-    totalled = 0.0
+    totalled, found = 0.0, False
     for rows in tables(outside):
         if not rows:
             continue
-        lowered = [c.lower() for c in rows[0]]
-        column = next((i for i, c in enumerate(lowered) if "estimated" in c and "per month" in c), None)
+        column = estimate_column(rows[0])
         if column is None:
             continue
+        found = True
         for cells in rows[1:]:
             if column < len(cells):
                 match = re.search(r"-?\d+(?:\.\d+)?", cells[column].replace(",", ""))
                 if match:
                     totalled += float(match.group())
-    return round(totalled, 2)
+    return round(totalled, 2) if found else None
 
 
 def previous(block: str | None) -> dict:
@@ -394,7 +423,10 @@ def render(text: str, cfg: dict, outcome: Outcome, stamp: str, today: date):
             lines.append("- Azure returned more pages (nextLink) that this report doesn't read; totals may be low.")
     else:
         lines.append(status_line)
-    lines.append(f"- Projected monthly cost from the table above: ${projected_monthly(outside):.2f}")
+    projected = projected_monthly(outside)
+    lines.append("- Projected monthly cost from the table above: "
+                 + (f"${projected:.2f}" if projected is not None
+                    else "unknown (no 'Estimated $ per month' column found)"))
     lines.append(f"- Last alert level: {kept}% (since {cfg['since']})")
 
     # resources: inventory plus anything that cost money, keyed by full id
