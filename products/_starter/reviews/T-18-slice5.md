@@ -86,3 +86,51 @@ Lines 193 (decision 6 secrets table) and 458 (failure modes table).
   the runbook.
 - The check fails for the right reason and lists the files; the mutation test above proves it.
 - No product code changed; slice scope respected.
+
+## Re-review (0db7ea5)
+
+### Verdict: CHANGES
+
+C1, C2 and all the grep-check suggestions are fixed. The fix for C1 went too far, though: four bullets that
+are mostly still live are now marked superseded as a whole. One of them is a security follow-up that ADR 0003
+doesn't touch.
+
+### Evidence
+
+- `bash products/_starter/infra/test-deploy-workflow.sh`: `passed: 66  failed: 0`, exit 0.
+- Mutation: I appended `STUDIO_DB_SEED` to `playbooks/engineering.md` and `SETUP.md`. Result: `FAIL STUDIO_DB_SEED still in:
+  .../playbooks/engineering.md` (SETUP.md on the next line), `passed: 65  failed: 1`, exit 1. Reverted with
+  `git checkout playbooks SETUP.md`.
+- Anchored exclusions (S1): `products/_starter/backend/app/reviews/x.md` containing the name is now caught.
+- Missing root (S2): with `playbooks/` moved away, the script prints `missing .../playbooks` and exits 2.
+  Restored afterwards; `git status` was clean.
+- C1: lines 136, 146, 149 and 177 are marked. C2: the markers on lines 193 and 458 are now inside a cell, so
+  they show up on GitHub. Line 199 is marked. Markers now start their bullets (S4).
+
+### Critical issue
+
+**R1. Bullets that are still live are marked superseded as a whole**
+`products/_starter/ADR/0002-azure-deploy.md`:
+
+- Line 254 (decision 8, "The main-only check guards against accidents, not against a determined branch"). The
+  risk is still real: any branch can read repository secrets, including `AZURE_CREDENTIALS`. The fix (a
+  main-only GitHub environment) also still applies. Only the words "and `STUDIO_DB_SEED`" are out of date.
+- Line 471 (follow-up 1, move secrets into a main-only environment). This is still a live security follow-up
+  for `AZURE_CREDENTIALS`. Marked superseded, it is likely to be dropped.
+- Line 299 (decision 9, caveats about the previous revision). The second rate-limit bucket and "release again
+  after a security fix" still hold. Only the last sentence (seed rotation) is out of date.
+- Line 421 (question 2, one-time Owner setup). Free services, resource providers, `STUDIO_AZURE_APPROVED` and
+  AcrPull are still current. Only "add the `STUDIO_DB_SEED` secret" is out of date.
+- Why it matters: the banner says the unmarked rest still stands, so readers will skip whatever is marked. Here
+  that hides a security boundary and a follow-up that is still open.
+- Fix: in these four places, mark only the seed part. For example, write "`AZURE_CREDENTIALS` (and, until ADR
+  0003, `STUDIO_DB_SEED`)", or put "(seed part superseded by ADR 0003)" right after the out-of-date clause, and
+  drop the marker at the start of the bullet. The lines-318-319 marker (purge URL refreshed because of seed
+  rotation) is right as it is.
+
+### Nits (not blocking)
+
+- `SETUP.md` is searched but not in the `[ -d ]`/`[ -e ]` check. If it goes missing, grep's error is swallowed
+  by `|| true` and the check passes. Add `[ -f "$root/SETUP.md" ]`.
+- `$root` goes into the exclusion regex unescaped. That's harmless for today's paths, but a path containing `+`
+  or `(` would break it.
