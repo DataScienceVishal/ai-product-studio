@@ -42,8 +42,8 @@ param postgresAllowAzureServices bool = true
 #disable-next-line secure-secrets-in-params
 param postgresPasswordAuth string = 'Disabled'
 
-@description('Postgres role name of the Entra admin (the deploy service principal).')
-param postgresEntraAdminName string = 'sp-ai-studio-deployer'
+@description('Postgres role name of the Entra admin (the deploy identity, a managed identity: id-github-deploy).')
+param postgresEntraAdminName string = 'id-github-deploy'
 
 @description('Type of the principal that deploys this template, which becomes the Postgres Entra admin: ServicePrincipal for the studio workflow, User (or Group) when an Owner account deploys at handover.')
 @allowed([

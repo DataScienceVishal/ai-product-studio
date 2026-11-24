@@ -14,7 +14,7 @@
 ## The picture
 
 ```
- GitHub Actions (deploy SP sp-ai-studio-deployer, Contributor on rg-ai-studio)
+ GitHub Actions (deploy identity id-github-deploy, a managed identity, Contributor on rg-ai-studio)
    │ az account get-access-token --resource-type oss-rdbms      (token = password, 5-60 min)
    ▼
  psql as the Entra admin ──► db-setup.sql: roles, labels, grants ──┐
@@ -77,7 +77,7 @@ credential is the one that remains (decision 5).
     dependsOn: [ serverSettings, azureServices ]   // the server takes one change at a time
   }
   ```
-  `entraAdminName` defaults to `sp-ai-studio-deployer` (SETUP.md step 3). It becomes the admin's Postgres
+  `entraAdminName` defaults to `id-github-deploy` (SETUP.md step 3; T-60 replaced the service principal `sp-ai-studio-deployer`). It becomes the admin's Postgres
   role name; the workflow reads the real value back rather than trusting the default (decision 4).
 
 | Admin option | Why not / why |
@@ -205,9 +205,11 @@ The admin role itself gets no connection limit (it is used once per release, by 
   connection floods using up the 35 slots, which can also delay the release's db step (the 6-minute retry
   covers it; logged by `log_connections`); a stolen identity token, valid up to 24 hours (needs code execution
   in our container, or the `IDENTITY_HEADER`, or a misdirected host as above).
-- **The biggest one (B1): the deploy SP's credential is now the DB admin credential.** The deployer credential (`AZURE_CREDENTIALS`, since replaced by the OIDC identity `id-github-deploy`, ADR 0002 decision 8) is a
-  repository secret, and ADR 0002 decision 8 says any branch's workflow can read it; the main-only check
-  "guards against accidents, not against a determined branch". Studio agents push every hour and may meet
+- **The biggest one (B1): the deploy SP's credential is now the DB admin credential.** Since T-60 the deployer
+  is the managed identity `id-github-deploy`, signed in by OIDC (ADR 0002 decision 8): there is no stored
+  credential, and the IDs in the repository secrets are not secret. Azure only gives a token to a run on `main`,
+  so the exposure is now anyone (or any studio agent) who can push a workflow change to `main`; `main` has no
+  review rule yet (ADR 0002 follow-up). Studio agents push every hour and may meet
   prompt injection (CLAUDE.md section 10). So one injected or mistaken workflow edit could dump every product
   database. The seed had the same weakness, but "demo data only" made it harmless, and this ADR removes that
   control. The SP can also reset `studioadmin`, flip `passwordAuth` and add firewall rules as Contributor.

@@ -12,8 +12,12 @@
 #     (ADR 0002, decision 8);
 #   - Vishal has approved the costs in state/BUDGET.md by setting the repository variable
 #     STUDIO_AZURE_APPROVED to "yes";
-#   - the run is on main, so only reviewed code reaches the public address. (Repository secrets are readable
-#     from any branch, so this guards against accidents only; ADR 0002, decision 8.)
+#   - the run is on main, so only reviewed code reaches the public address. (Azure also refuses a token to any
+#     run not on main, through the federated credential's subject; ADR 0002, decision 8.)
+#
+# OIDC note: GitHub's ID token lasts about 5 minutes and the CLI replays it for every token of a NEW resource
+# (azure/login issue 372, error AADSTS700024). So the deploy job signs in again right before the first use of
+# the registry and of Postgres, after the long steps. Keep a fresh sign-in before any new long-delayed resource.
 #
 # Release order: build, then scan (both before any Azure sign-in); read the live release, failing closed on
 # any Azure error; push by digest; deploy a new revision with no traffic (the purge job stays on the live
@@ -226,6 +230,20 @@ jobs:
       - name: Read the live release (stops on any Azure read error)
         run: bash "$PRODUCT_DIR/infra/live-release.sh" >> "$GITHUB_ENV"
 
+      - name: Only from main (the Azure sign-in trusts main only)
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::This job signs in to Azure, and the identity's federated credential trusts refs/heads/main only. This run is on $GITHUB_REF. Re-run it from main."
+            exit 1
+          fi
+
+      - name: Sign in to Azure again (fresh GitHub token for the registry; the first one is minutes old)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Push the image
         run: |
           az acr login --name "$REGISTRY" --only-show-errors
@@ -280,9 +298,23 @@ jobs:
             echo "MIGRATOR_OID=$(jq -r .migrateIdentityPrincipalId.value "$RUNNER_TEMP/outputs.json")"
           } >> "$GITHUB_ENV"
 
+      - name: Only from main (the Azure sign-in trusts main only)
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::This job signs in to Azure, and the identity's federated credential trusts refs/heads/main only. This run is on $GITHUB_REF. Re-run it from main."
+            exit 1
+          fi
+
+      - name: Sign in to Azure again (the OIDC assertion lasts about 5 minutes and the database token is a new resource)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Product database and roles (every release; idempotent, no secret)
         id: dbsetup
-        # Runs as the server's Entra admin (the deploy service principal) with a token as the password
+        # Runs as the server's Entra admin (the deploy identity id-github-deploy) with a token as the password
         # (ADR 0003, decision 4). Needs the object ids that the deploy step above just read from main.bicep.
         run: |
           command -v psql > /dev/null || { sudo apt-get update -q && sudo apt-get install -y -q postgresql-client; }
@@ -324,7 +356,7 @@ jobs:
             exit 1
           fi
           if ! [[ "$admin" =~ ^[A-Za-z0-9_.@-]{1,63}$ ]]; then
-            echo "::error::The Entra admin name of $PG_SERVER has characters this workflow doesn't allow (letters, digits and _ . @ - only, at most 63). Set postgresEntraAdminName to a name like sp-ai-studio-deployer and run with deploy_shared ticked."
+            echo "::error::The Entra admin name of $PG_SERVER has characters this workflow doesn't allow (letters, digits and _ . @ - only, at most 63). Set postgresEntraAdminName to the deploy identity's name (id-github-deploy) and run with deploy_shared ticked."
             exit 1
           fi
           ip=$(curl -fsS --max-time 10 https://api.ipify.org || true)

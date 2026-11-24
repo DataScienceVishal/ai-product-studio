@@ -164,14 +164,48 @@ present "uses client-id from the secret" 'client-id: \$\{\{ secrets\.AZURE_CLIEN
 present "uses tenant-id from the secret" 'tenant-id: \$\{\{ secrets\.AZURE_TENANT_ID \}\}'
 present "uses subscription-id from the secret" 'subscription-id: \$\{\{ secrets\.AZURE_SUBSCRIPTION_ID \}\}'
 logins=$(grep -c 'uses: azure/login@' "$wf")
+loginjobs=2 # deploy and rollback
 tokens=$(grep -cE '^      id-token: write' "$wf")
-[ "$logins" -ge 1 ] && [ "$tokens" = "$logins" ] && ok "every login job has its own id-token: write ($logins)" || bad "every login job has its own id-token: write (logins $logins, grants $tokens)"
+[ "$logins" -ge "$loginjobs" ] && [ "$tokens" = "$loginjobs" ] && ok "each of the $loginjobs login jobs has its own id-token: write ($logins sign-ins)" || bad "each login job has its own id-token: write (sign-ins $logins, grants $tokens)"
 if grep -E '^permissions:' -A3 "$wf" | grep -q 'id-token'; then bad "id-token is not granted at workflow level"; else ok "id-token is not granted at workflow level"; fi
 guards=$(grep -c 'Only from main (the Azure sign-in trusts main only)' "$wf")
 [ "$guards" = "$logins" ] && ok "every login job refuses to run off main" || bad "every login job refuses to run off main"
 # the guard step must come before the sign-in
 g1=$(grep -n 'Only from main (the Azure' "$wf" | head -1 | cut -d: -f1); l1=$(grep -n 'uses: azure/login@' "$wf" | head -1 | cut -d: -f1)
 [ -n "$g1" ] && [ "$g1" -lt "$l1" ] && ok "the main-only guard runs before the sign-in" || bad "the main-only guard runs before the sign-in"
+# a fresh sign-in directly precedes the database step and the registry push (the OIDC assertion lasts ~5 minutes)
+prev_step() { grep -nE '^      - name: ' "$wf" | grep -F -B1 -- "$1" | head -1 | sed 's/^[0-9]*:      - name: //'; }
+for s in "Product database and roles" "Push the image"; do
+  prev_step "$s" | grep -q '^Sign in to Azure' && ok "a fresh Azure sign-in directly precedes: $s" || bad "a fresh Azure sign-in directly precedes: $s"
+done
+# no oss-rdbms token before the sign-in that precedes the database step
+dbl=$(grep -n 'name: Product database and roles' "$wf" | head -1 | cut -d: -f1)
+firsttok=$(grep -n 'get-access-token --resource-type oss-rdbms' "$wf" | head -1 | cut -d: -f1)
+lastlogin=$(grep -n 'uses: azure/login@' "$wf" | awk -F: -v d="$dbl" '$1<d{l=$1} END{print l}')
+[ -n "$lastlogin" ] && [ "$lastlogin" -lt "$dbl" ] && [ "$dbl" -lt "$firsttok" ] && [ $((dbl - lastlogin)) -le 12 ] && ok "the database token is first requested right after a sign-in" || bad "the database token is first requested right after a sign-in"
+
+# ---- azure-spend.yml ----------------------------------------------------------------------------------------------
+sp="$(dirname "$wf")/azure-spend.yml"
+if [ -f "$sp" ]; then
+  grep -vE '^[[:space:]]*#' "$sp" | grep -qE 'AZURE_CREDENTIALS' && bad "azure-spend: no AZURE_CREDENTIALS" || ok "azure-spend: no AZURE_CREDENTIALS"
+  grep -q 'client-id: \${{ secrets.AZURE_CLIENT_ID }}' "$sp" && ok "azure-spend: signs in by OIDC" || bad "azure-spend: signs in by OIDC"
+  [ "$(grep -c 'creds:' "$sp")" = 1 ] && grep -q 'creds: \${{ secrets.AZURE_COST_CREDENTIALS }}' "$sp" && ok "azure-spend: the only creds: is the temporary AZURE_COST_CREDENTIALS fallback" || bad "azure-spend: the only creds: is the temporary AZURE_COST_CREDENTIALS fallback"
+  grep -q "if: env.AZURE_MODE == 'oidc'" "$sp" && grep -q "if: env.AZURE_MODE == 'sp'" "$sp" && ok "azure-spend: each sign-in is conditional on its mode" || bad "azure-spend: each sign-in is conditional on its mode"
+  awk '/^permissions:/{f=1;next} f&&/^[^ ]/{exit} f' "$sp" | grep -q 'id-token' && bad "azure-spend: id-token not at workflow level" || ok "azure-spend: id-token not at workflow level"
+  awk '/^permissions:/{f=1;next} f&&/^[^ ]/{exit} f' "$sp" | grep -q 'contents: read' && ok "azure-spend: workflow-level contents: read" || bad "azure-spend: workflow-level contents: read"
+  [ "$(grep -cE '^      id-token: write' "$sp")" = 1 ] && ok "azure-spend: id-token: write on the job" || bad "azure-spend: id-token: write on the job"
+  grep -q 'refs/heads/main' "$sp" && grep -q "ON_MAIN" "$sp" && ok "azure-spend: main guard" || bad "azure-spend: main guard"
+  grep -E "if: failure\(\)" "$sp" | grep -q "ON_MAIN == 'true'" && ok "azure-spend: no failure ping for runs off main" || bad "azure-spend: no failure ping for runs off main"
+else
+  bad "azure-spend.yml exists"
+fi
+# no workflow that can sign in to Azure may be triggered by untrusted events
+for f in "$(dirname "$wf")"/*.yml; do
+  if grep -qE 'azure/login@' "$f"; then
+    if grep -vE '^[[:space:]]*#' "$f" | grep -qE '^[[:space:]]*(issue_comment|issues|workflow_run|pull_request_target|pull_request|push):'; then bad "$(basename "$f"): signs in to Azure but has a forbidden trigger"; else ok "$(basename "$f"): no forbidden trigger (issue_comment, issues, workflow_run, pull_request[_target], push)"; fi
+  fi
+done
+
 # location is explicit (T-61)
 for f in main shared; do
   grep -qE "^param location = 'francecentral'" "$here/$f.bicepparam" && ok "$f.bicepparam sets location = francecentral" || bad "$f.bicepparam sets location = francecentral"

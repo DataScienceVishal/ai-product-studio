@@ -96,7 +96,7 @@ Put your Azure OpenAI resource in `rg-ai-studio` (or move it there), so its toke
 
 After the secrets are in place and the studio's work is on `main`, run the **azure-spend** workflow once by hand (repo → Actions → azure-spend → Run workflow). Then open `state/BUDGET.md`: it either shows figures or says why it can't get them (Microsoft's docs disagree on whether Azure for Students supports the Cost Management API). From then on, a bot (`github-actions[bot]`) commits the report to `main` every morning.
 
-If `create-for-rbac` fails with a permissions error (some university tenants block it), skip `AZURE_CREDENTIALS`. The team will log a hurdle and suggest another deploy route.
+If `az identity create`, the federated credential or the role assignment is refused by policy (for example a region outside the allowed list above), tell the team: it logs a hurdle and suggests another deploy route.
 
 If Cost Management offers **Budgets** for your subscription, add one for $80 with email alerts at 50%, 75% and 95%. Either way, Azure for Students switches off when the credit runs out, so it can't overspend.
 
