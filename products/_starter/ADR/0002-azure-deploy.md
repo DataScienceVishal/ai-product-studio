@@ -133,7 +133,7 @@ The session cookie is SameSite=Lax and the CSRF guard relies on CORS, so the bro
 - PostgreSQL 16 (CI and local development use 16), 7-day backups (deleted rows stay in them up to 7 days;
   DATA.md says so), no high availability, TLS 1.3 minimum.
 - **Two roles per product**, created by `infra/db-setup.sql` and `db-grants.sql`:
-  - (superseded by ADR 0003) `<db>_migrator` owns the tables and runs Alembic. Only the migration job has its password.
+  - `<db>_migrator` owns the tables and runs Alembic. Only the migration job has its password (superseded by ADR 0003).
   - `<db>_app` reads and writes rows only. The web app and the purge job use it. It can read
     `alembic_version` but not change it, so a compromised app can't make the next migration skip or repeat
     steps.
@@ -146,8 +146,8 @@ The session cookie is SameSite=Lax and the CSRF guard relies on CORS, so the bro
   - (superseded by ADR 0003) **Passwords never reach the server.** The workflow sends SCRAM-SHA-256 verifiers made by
     `infra/scram_verifier.py`, which Postgres stores as given. A failed `ALTER ROLE` can only log a verifier.
     An empty or malformed value is refused before any statement could fail with it.
-  - (superseded by ADR 0003) Tested on PostgreSQL 16.15 with a non-superuser admin, as on Azure: re-runnable; verifiers match
-    Postgres's own; six real migrations as the migrator under the jobs' prod settings; the purge as the app
+  - Tested on PostgreSQL 16.15 with a non-superuser admin, as on Azure: re-runnable; verifiers match
+    Postgres's own (superseded by ADR 0003); six real migrations as the migrator under the jobs' prod settings; the purge as the app
     role; DDL and `alembic_version` writes refused for the app role; other roles refused CONNECT; no password
     in the server log, even after a forced failure.
 
@@ -251,9 +251,9 @@ needs Vishal's approval.
 - **Gates in the workflow:** it deploys only with `AZURE_CREDENTIALS` set, the repository variable
   `STUDIO_AZURE_APPROVED=yes` (Vishal's approval of `state/BUDGET.md`), and a run on `main` (reviewed code
   only). Otherwise it compiles the Bicep and stops with a notice.
-- (superseded by ADR 0003) **The main-only check guards against accidents, not against a determined branch.** Repository secrets are
+- **The main-only check guards against accidents, not against a determined branch.** Repository secrets are
   readable by workflows on any branch, and a branch can edit the workflow. The real boundary is a GitHub
-  environment holding `AZURE_CREDENTIALS` and `STUDIO_DB_SEED` with a main-only deployment-branch rule.
+  environment holding `AZURE_CREDENTIALS` and `STUDIO_DB_SEED` (superseded by ADR 0003) with a main-only deployment-branch rule.
   GitHub Free can't use environments in private repositories ("Users with GitHub Free plans can only
   configure environments for public repositories"); GitHub Pro can, and the GitHub Student Developer Pack
   includes Pro. Which plan this account has is not checked yet: a question for Vishal, then a follow-up.
@@ -296,10 +296,10 @@ only in a later release (expand, then contract). Reviewers check this on every m
 - **The first release** has no previous revision: its only revision takes traffic as soon as it is ready,
   which is a minute before its migration has run. For that minute the API answers errors. That is harmless
   before anyone uses it, and later releases never do this.
-- (superseded by ADR 0003) Caveats about the previous revision, while it stays active: it is reachable at its own revision address
+- Caveats about the previous revision, while it stays active: it is reachable at its own revision address
   until the next release, and it keeps its own in-process rate-limit counters, so it is a second bucket for
   anyone who knows that address. After a security fix, release again so the vulnerable revision is retired.
-  After a seed rotation it can't reach the database (decision 6).
+  After a seed rotation it can't reach the database (decision 6) (superseded by ADR 0003).
 
 ### 10. Retention purge as a scheduled job that follows the live revision
 
@@ -315,8 +315,8 @@ enough), with one retry. It costs about 450 vCPU-seconds a month, inside the fre
   `EMAIL_PROVIDER`, so the purge treats unverified accounts the way the app does. Today the app deletes
   unverified accounts only once real email is sent, and email is outbox-only, so the purge deletes no account
   either way.
-- (superseded by ADR 0003) Its database URL is refreshed on every release, because a seed rotation in the same run has already changed
-  the password.
+- Its database URL is refreshed on every release, because a seed rotation in the same run has already changed
+  the password (superseded by ADR 0003).
 - The migration job is different: it runs only when the workflow starts it, before traffic moves, and it keeps
   the image of the latest release attempt.
 
@@ -418,8 +418,8 @@ jobs, which share the same free grant, and a database on the same server.
    > month 12) C) Not yet: keep testing locally, create nothing.
    > **If no answer:** waits (spending money is ask-first).
 
-2. (superseded by ADR 0003) **One-time setup only an Owner can do** (infra/README.md, about 10 minutes): check the "Free services"
-   page; register the resource providers; add the `STUDIO_DB_SEED` secret; set `STUDIO_AZURE_APPROVED=yes`;
+2. **One-time setup only an Owner can do** (infra/README.md, about 10 minutes): check the "Free services"
+   page; register the resource providers; add the `STUDIO_DB_SEED` secret (superseded by ADR 0003); set `STUDIO_AZURE_APPROVED=yes`;
    after the first shared deploy, grant AcrPull with the one command the workflow prints.
 3. **A smaller question (reversible):** does this GitHub account have Pro (for example through the Student
    Developer Pack)? If yes, the deploy secrets move into a main-only environment (decision 8).
@@ -468,7 +468,7 @@ Already on the board: T-16 (serve the SPA from the backend: needed before any br
 OpenAI through a managed identity), T-18 (passwordless Postgres, which ends decision 5's conditions), T-19
 (pin the base image and actions), T-20 (compile the Bicep in CI). New:
 
-1. (superseded by ADR 0003) After Vishal answers the plan question, move `AZURE_CREDENTIALS` and `STUDIO_DB_SEED` into a main-only
+1. After Vishal answers the plan question, move `AZURE_CREDENTIALS` and `STUDIO_DB_SEED` (superseded by ADR 0003) into a main-only
    GitHub environment and add `environment:` to the deploy and rollback jobs (decision 8).
 2. A registry cleanup that keeps the last few images per product (decision 3).
 3. Only if the allowance doesn't apply: a stop/start schedule for Postgres.
