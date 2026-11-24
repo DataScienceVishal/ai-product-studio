@@ -173,9 +173,10 @@ ENV = {"T56_SPEND_APPROVED": "1", "AZURE_OPENAI_ENDPOINT": "https://example.open
        "AZURE_OPENAI_API_KEY": "sekret-key-123"}
 
 
-def nb():
-    import tempfile
-    return B.Budget(Path(tempfile.mkdtemp()) / "l.jsonl")
+@pytest.fixture
+def nb(tmp_path):
+    """A fresh budget whose ledger lives in pytest's tmp_path (cleaned up by pytest)."""
+    return lambda: B.Budget(tmp_path / "l.jsonl")
 
 
 def ok_body(text="{}", i=100, o=50):
@@ -191,7 +192,7 @@ def test_azure_refuses_without_spend_approval():
         providers.AzureResponsesProvider(env={"T56_SPEND_APPROVED": "0", "AZURE_OPENAI_ENDPOINT": "https://x"})
 
 
-def test_azure_refusal_also_at_call_time():
+def test_azure_refusal_also_at_call_time(nb):
     env = dict(ENV)
     p = providers.AzureResponsesProvider(env=env, transport=lambda r, t: pytest.fail("must not send"))
     env["T56_SPEND_APPROVED"] = "0"
@@ -205,7 +206,7 @@ def test_cli_refuses_azure_without_approval(monkeypatch, tmp_path):
     assert not list((tmp_path / "o").glob("*.json"))
 
 
-def test_azure_request_shape():
+def test_azure_request_shape(nb):
     sent = []
     def tr(req, timeout):
         sent.append((req, timeout))
@@ -232,7 +233,7 @@ def test_azure_default_reasoning_effort_is_explicit_and_validated():
         providers.AzureResponsesProvider(env=ENV, reasoning_effort="max")
 
 
-def test_azure_retries_429_with_backoff_then_succeeds():
+def test_azure_retries_429_with_backoff_then_succeeds(nb):
     seq = iter([(429, {"retry-after": "3"}, b""), (503, {}, b""), (200, {}, ok_body())])
     slept = []
     p = providers.AzureResponsesProvider(env=ENV, transport=lambda r, t: next(seq), sleep=slept.append, backoff=2)
@@ -240,7 +241,7 @@ def test_azure_retries_429_with_backoff_then_succeeds():
     assert slept == [3.0, 4.0]
 
 
-def test_azure_connect_error_retried_then_clear_error():
+def test_azure_connect_error_retried_then_clear_error(nb):
     def tr(req, t):
         raise urllib.error.URLError(ConnectionRefusedError("no"))
     slept = []
@@ -250,7 +251,7 @@ def test_azure_connect_error_retried_then_clear_error():
     assert len(slept) == 2 and not e.value.may_have_run and "sekret" not in str(e.value)
 
 
-def test_azure_timeout_is_not_retried_and_may_have_run():
+def test_azure_timeout_is_not_retried_and_may_have_run(nb):
     calls = []
     def tr(req, t):
         calls.append(1)
@@ -261,7 +262,7 @@ def test_azure_timeout_is_not_retried_and_may_have_run():
     assert calls == [1] and e.value.may_have_run and e.value.output_tokens == 500
 
 
-def test_azure_auth_error_and_incomplete_answer():
+def test_azure_auth_error_and_incomplete_answer(nb):
     p = providers.AzureResponsesProvider(env=ENV, transport=lambda r, t: (401, {}, b"bad"))
     with pytest.raises(providers.ProviderError, match="credentials rejected"):
         p.complete("s", [{"type": "text", "text": "x"}], 10, budget=nb())
@@ -389,7 +390,9 @@ def test_s2_three_5xx_then_200_records_three_worst_cases_plus_real(tmp_path):
 
 
 def test_s2_429_and_connect_errors_are_free(tmp_path):
-    def tr(req, t, seq=iter([(429, {}, b""), "conn", (200, {}, ok_body())])):
+    seq = iter([(429, {}, b""), "conn", (200, {}, ok_body())])
+
+    def tr(req, t):
         v = next(seq)
         if v == "conn":
             raise urllib.error.URLError(ConnectionRefusedError("no"))
@@ -437,6 +440,7 @@ def test_s2_extract_pdf_charges_5xx_through_azure_provider(tmp_path):
     extract.extract_pdf(SHEETS / "S001.pdf", p, b, max_output_tokens=1000)
     rows = [json.loads(l) for l in (tmp_path / "ledger.jsonl").read_text().splitlines()]
     assert [r["estimated"] for r in rows] == [True, True, False]
+    assert [r["sheet_id"] for r in rows] == ["S001"] * 3  # 5xx rows must count in the per-sheet cost check
     assert rows[0]["output_tokens"] == rows[1]["output_tokens"] == 1000 and rows[0]["input_tokens"] > 1000
     assert (rows[2]["input_tokens"], rows[2]["output_tokens"]) == (100, 50)
 

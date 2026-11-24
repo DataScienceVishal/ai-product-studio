@@ -75,6 +75,7 @@ Pass mark 4b (Studio Lead decision, 2026-11-24, before any run) is the kill test
 - Token cap: 3M tokens for the whole proof test, counting input + output + reasoning + image tokens, tuning included.
 - Spend cap: hard USD 12 (about GBP 9.48) for the whole proof test (tuning + test run), computed at the assumed price. The extractor's guard stops at whichever cap is reached first. At these prices the USD cap binds before the token cap in almost every case (3M tokens of pure input alone is USD 45).
 - Per-sheet check (pass mark 5): at most GBP 0.25 = USD 0.316 per sheet, from tokens billed at the assumed price; GBP 7.50 (USD 9.49) for the 30 sheets, which leaves about USD 2.5 for tuning inside the USD 12 cap.
+- Reading costs: the ledger (`results/ledger.jsonl`) is the source of truth for spend and for pass mark 5. It holds one row per billable attempt: a server error (5xx) after the model may have run is charged at its worst case (`estimated: true`) before any retry. The per-sheet line that `run.py` prints and each prediction's `usage` show only the successful attempt, so they can be lower than the ledger.
 - Runs: 3 permitted for slices 2-4. Slice 2 used 1; this fix run is 2 of 3.
 
 ## Regenerate and test
