@@ -21,7 +21,7 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - If no answer: waits (needs you on GitHub)
 - Answer: Vishal in chat: always commit everything and push to `main`. Done: `main` fast-forwarded from 14a1f3a to af446d6. Still yours to do: let the scheduled tasks push to `main` (SETUP.md step 6, "Allow unrestricted branch pushes").
 
-## Q-2 (status: sent 2026-11-23T22:39:50Z)
+## Q-2 (status: defaulted A 2026-11-24T14:59Z; sent 2026-11-23T22:39:50Z)
 - Decision: Does the studio have any way to sell outside the UK (India, Indonesia or elsewhere)?
 - Context: The validator scored every India and Indonesia idea 2 or 3 out of 10 on reach, because selling goes through your friend's UK business. Without a channel there, those ideas can't reach the 70-point bar however good the evidence gets.
 - Options: A) No: prioritise UK and English-speaking ideas, and keep non-UK ideas parked B) Yes: I (Vishal) can sell in India myself, so score Indian ideas with that channel C) Yes, through a partner I'll name
@@ -68,14 +68,14 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - If no answer: waits (spending money is on the ask-first list); until then the studio behaves as C
 - Answer: B (Telegram reply "2B" to the 08:00 digest, 10:04:31Z). No mini deployment; the studio may run the MTD benchmark on the pro model, at most 20 documents (about $15), then stops. Model spend cap for T-12: $15.
 
-## Q-8 (status: open)
+## Q-8 (status: sent 2026-11-24T15:00Z as 1)
 - Decision: How should GitHub deploy jobs sign in to Azure once Postgres uses Entra ID (T-18)?
 - Context: In the new design the deploy service principal is also the database admin. Its secret (AZURE_CREDENTIALS) can be read by a workflow on any branch, agent branches included. Security says the "demo data only" limit can't end while that is true. The fix is a federated (OIDC) credential that trusts only main. Adding one is a directory change, which needs your yes.
 - Options: A) Add a federated credential limited to main on the deploy app registration (about 5 minutes in the portal; the studio writes the exact steps and switches the workflow to OIDC), then delete the client secret (recommended) B) Keep the secret and accept the risk in writing: demo data only stays in force until handover C) Leave it for now and decide before the first real deploy
 - Recommended: A, because it takes the only long-lived database admin credential out of reach of non-main branches
 - If no answer: waits (ask-first list). The studio builds T-18 behind the demo-data condition (behaves as C), and nothing is deployed until Q-5's approval setting is flipped anyway
 
-## Q-9 (status: open)
+## Q-9 (status: sent 2026-11-24T15:00Z as 2)
 - Decision: May the studio sign up for free trials (no card, studio email) of incumbent tools, to test whether their weak spots are real?
 - Context: After 11 rounds and 47 ideas, none has reached 70. A wedge check on the five best near-misses (round11-wedge-summary.md) found no new segment that lifts any of them; the deciding question for the best one (pEPR packaging data, 68) is whether Repackd's spec-sheet extraction is weak on messy real documents, and desk research can't answer that. Creating accounts is on the ask-first list.
 - Options: A) Yes to free, no-card trials of named incumbents (Repackd first, then Jelly for the restaurant idea), test data only, nothing in your name; the studio logs each sign-up in DECISIONS.md (recommended) B) No trials; keep scouting new niches only C) Build the best parked idea anyway (restaurant margin copilot, 66) and let a demo to your friend be the evidence
