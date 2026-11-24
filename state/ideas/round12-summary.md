@@ -1,0 +1,43 @@
+# Round 12 scout summary (T-49, 2026-11-24)
+
+Brief: down-market thesis. Find jobs where AI software exists only at enterprise level (public £1k+/month, demo-led with enterprise logos, or consultancy-delivered) and no self-serve SMB tool exists. Time box about 25 minutes. Evidence is mostly search summaries; fetched in full: EdgePetrol, AEB origin page, iCustoms origin article, goexporting workbook, ManufacturingPower article. Not fetched (403, 404, 405 or unreadable): Forecourt Trader article (405), Pricefx budget page (404), Welsh Government origin PDF (compressed, unreadable). No prompt-injection attempts seen in any page text.
+
+## Written (2 files, G0, scores left for the validator)
+| Slug | Pitch | Enterprise incumbents and price evidence | SMB substitutes checked | Biggest doubt |
+|---|---|---|---|---|
+| uk-eu-origin-evidence-desk | BOM to TCA origin test plus supplier-declaration register and evidence file for UK exporters to the EU | AEB (quote only, enterprise customer), MIC, SAP GTS, DBH, Ecovium (no prices); iCustoms module (demo-led; aggregator £1,000 a month, unverified) | Spreadsheet, goexporting workbook, free EU ROSA lookup; consultancy £1,462.50 + VAT a day (Export.org.uk), £120-£180 an hour or £1,000-£1,250 a day (Business West) | iCustoms already runs the BOM test and could go down-market; no software price paid by an SME; no forcing function |
+| sme-quote-price-guidance | Learns win probability and margin from a small distributor's quote history and suggests a quote price band | Pricefx $100,000-$3.5M a year (vendor-stated); PriceEdge EUR 1,490 a month; Vendavo, Zilliant, PROS unpriced | Power BI $14 per user a month, spreadsheets, quoting tools; Revology, Phocas, Cavallo not fetched | Thin evidence (vendor-authored pain; ERP-native modules unchecked); small firms often lack lost-quote data; no price an SME pays for the job |
+
+## Dropped at the cheap kill test (candidate, evidence, reason)
+1. Contract obligation and renewal tracking: RenewalWatch, Remindrr.ai, Contracko, PactAlert, PactSight and Zoho Contracts all sell small-business AI extraction of renewal dates, notice periods and obligations (Capterra and Slashdot listings, search 2026-11-24; vendor pricing pages not checked). Next Renewal lists $395 a month.
+2. Revenue leakage detection (SaaS billing): LeakGuard AI and LeakIQ list mid-size and SMB segments on Capterra (https://www.capterra.com/p/10038114/LeakGuard-AI/); prices not published, so a thin drop.
+3. MSP billing reconciliation (vendor invoices versus PSA agreements): Gradient MSP free standard tier and $99 a month Pro, BillingReconcile, ConnectWise reconciliation, Rewst (search 2026-11-24).
+4. Freight and parcel invoice audit: Betachon, FreightVerify, Freightview from $149 a month, Refund Retriever and Shipware on gainshare (Capterra UK listings). UK carrier coverage unchecked; SMB options exist.
+5. Customer rebate management: Salesforce about $10,000-$20,000 a month and PriceWise $6,000 a month are enterprise, but Rebates-On lists small business and incentX lists $65 per user a month (GetApp, SourceForge). Partly open for retailer-side claims; no price or SMB demand evidence found, so dropped. A possible later check: retailers claiming supplier rebates from buying groups.
+6. Trade promotion management for small brands: Promomash, Aforza, Repsly and Vividly serve small CPG (Capterra UK).
+7. Retailer deductions and chargebacks for suppliers: SPS Commerce Revenue Recovery offers a take-rate model and a new $19.99 a month tier for very small sellers (Q1 2026 earnings call, https://www.fool.com/earnings/call-transcripts/2026/04/30/sps-commerce-spsc-q1-2026-earnings-transcript/); RetailPath, TrewUp, Confido and PACMAN target small brands. UK grocer coverage (Tesco, Sainsbury's, Booker remittance formats) not confirmed, so the drop is on US evidence. Pain is real (GCA flags unilateral deductions); revisit only with UK-specific tool evidence.
+8. Call and QA analytics: EvaluAgent AutoQA $35 per user a month (competitor comparison page), MiaRec from $25 per user, CallRail from $100 a month, RingCentral conversation intelligence (search 2026-11-24).
+9. Demand forecasting and replenishment: StockTrim, Unleashed (about £100 a month, vendor claim), Cin7 Core, MRPeasy, INTUENDI (Capterra UK and vendor pages via search).
+10. Fuel pricing for independent forecourts: EdgePetrol is built for independents (one site to hundreds; demo-led, no AI claimed; an article says about 30 of the top 50 UK independents are customers, over three years old); Fuel Finder gives free station-manager price comparison from February 2026 (https://www.fuel-finder.uk/forecourt-fuel-price-submission/). Kalibrate is enterprise. SMB tool exists.
+11. Dynamic pricing for attractions: Spektrix, Convious, Ventrata, Roller and attractix serve small operators (search 2026-11-24).
+12. VAT partial exemption: iplicit and IRIS apply partial VAT rules in charity ledgers; an Odoo module sells at $89; HMRC publishes a toolkit (search 2026-11-24). No enterprise-only gap.
+13. Franchise royalty and licensing audit: LicenSee (licensee side, price on request), MyTime, Claromentis and FranchiseMS from $40 per user a month (GetApp). A licensor-side report verifier was not found, but the evidence is thin and franchisor reach is small; dropped on reasoning, label unverified.
+14. Warranty claim recovery for dealers and installers: WarrantyMind, WarrCloud and Trimble add-ons exist for dealers; enterprise systems (Oracle, Syncron) serve manufacturers (search summaries).
+15. Construction retention tracking: Retention Track on the Xero UK app store, TrakPro (free to subcontractors), Archdesk (https://apps.xero.com/uk/function/invoicing-jobs/app/retention-track).
+16. FRS 102 lease accounting (new rules from 1 January 2026): Lease102 at £20 a month with AI extraction, Rubli on the Xero UK store (added 2026), LeaseAccounting.app from EUR 149 a month (search 2026-11-24, https://www.frc.org.uk/news-and-events/news/2026/09/frc-issues-reminder-of-significant-change-now-effective-in-uk-gaap/ for the rule date).
+17. Spend and procurement analytics for SMEs (Xero and QuickBooks): search found only spend-management and card platforms (Airbase, Ramp, Fraxion, Fyle) with no supplier categorisation tool and no prices; thin and inconclusive, so no file was written because there is no priced enterprise incumbent doing the same job.
+
+Dropped on reasoning only (not searched, unverified): security and ESG supplier questionnaires (Vanta and Conveyor-type tools), revenue recognition for mid-size firms (Chargebee RevRec, Maxio), SaaS and subscription spend management.
+
+Count: 17 dropped with search evidence, 3 more dropped on reasoning only, 2 written.
+
+## Lessons for the validator
+- The down-market gap exists mainly where the job is trade-specific and comes with a regulator's rulebook (origin, here). Generic finance-ops jobs (contracts, billing, QA, forecasting, rebates, leases) already have cheap AI tools; Capterra and Xero store listings found them in one search each.
+- Enterprise price points were easy to find for pricing (Pricefx, PriceEdge) and origin (AEB, iCustoms); a priced SME buyer substitute was not. The only real SME-side prices found were consultancy day rates for origin. Pay will be the weak score again.
+- Both survivors have a nearest rival with a demo-led price (iCustoms, PriceEdge) that is not self-serve but is not enterprise-only either. Competition will turn on whether a vendor will go down-market in a month.
+- "Vendor-authored" pain evidence dominates both files. Ask for an independent source before scoring Pain.
+
+## Suggested cheap kill tests
+- Origin: fetch the iCustoms homepage and pricing or sign-up flow (an account needs Vishal's OK) and look for a self-serve tier; read the TCA annex licence on gov.uk; count UK exporters to the EU by size band from HMRC overseas trade statistics (public); search job ads for "rules of origin" or "supplier declarations" roles in small manufacturers (staff-hours price); ask whether the UK-EU Pan-Euro-Mediterranean changes force a re-assessment.
+- Quote pricing: fetch Revology, Phocas and Cavallo pages and the Epicor, Acumatica and Sage pricing modules; run the synthetic proof test (policy versus a firm's actual policy) before spending a gate attempt; find an independent source on discount leakage in UK merchants (builders merchants, electrical wholesalers).
+- Any later round on this thesis: check Capterra UK and the Xero UK app store before searching enterprise vendors. Deductions and rebates for UK grocery suppliers deserve one UK-specific search each.
