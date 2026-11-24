@@ -88,6 +88,7 @@ AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
 | `MOCK_CHECKOUT_ENABLED` | `false` (default); `true` only for demos, where "Pay (test)" grants a plan with trial-sized AI allowances |
 | `AI_GLOBAL_DAILY_TOKENS`, `AI_TRIAL_SHARE` | studio-wide AI budget per UTC day (default 100,000; the Bicep default too), and the share all free trials may use together (0.5). Size it from the price, see "Sizing the daily AI cap" |
 | `AI_PRICE_PER_MILLION_TOKENS` | blended USD price per million tokens of the deployment (default 2.00, the gpt-5-mini assumption); documents what the cap costs, and the Bicep cost guard checks it |
+| `AI_REASONING_HEADROOM` | extra output tokens (default 1500) added to each Responses-API call and to its token reservation, so reasoning cannot use up the answer's room; ignored for chat completions |
 | `AI_CONCURRENT_CALLS`, `AI_CALLS_PER_TENANT_AT_ONCE` | at most 8 AI calls at once per process, 2 per customer |
 | `SIGNUPS_PER_IP_PER_DAY`, `NEW_TRIALS_PER_DAY` | sign-up limits: 20 a day per IP, 200 new trials a day in total |
 

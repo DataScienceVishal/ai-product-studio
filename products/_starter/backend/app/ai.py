@@ -37,6 +37,16 @@ from .models import AIUsage
 log = logging.getLogger("app.ai")
 
 
+def _count(value) -> int:
+    """A usage count: never negative. Raises ValueError/TypeError/OverflowError on junk (callers bill the budget)."""
+    return max(int(value or 0), 0)
+
+
+def _reason(value) -> str | None:
+    """A 'why' for the user message: a string or None, whatever junk the provider sent."""
+    return value if isinstance(value, str) else (None if value is None else "unknown")
+
+
 def _dicts(value) -> list[dict]:
     """The dict items of a provider list; anything malformed counts as no items."""
     return [v for v in value if isinstance(v, dict)] if isinstance(value, list) else []
@@ -86,7 +96,7 @@ def estimate_tokens(system: str, user: str, max_output_tokens: int) -> int:
 
 def reservation_estimate(provider, system: str, user: str, max_output_tokens: int) -> int:
     """estimate_tokens plus the provider's reasoning headroom, so a reservation covers what may be billed."""
-    return estimate_tokens(system, user, max_output_tokens + int(getattr(provider, "output_headroom", 0) or 0))
+    return estimate_tokens(system, user, max_output_tokens + int(provider.output_headroom))  # no default: fail loudly
 
 
 class AISlots:
@@ -313,13 +323,15 @@ class AzureOpenAI:
                 raise AppError(502, "ai_rejected", "The AI service couldn't handle that request.")
             try:
                 data = response.json()
-            except ValueError:
-                raise fail() from None
-            if not isinstance(data, dict):
+                if not isinstance(data, dict):
+                    raise ValueError
+            except ValueError:  # a 200 we can't read: it may have run, so bill the whole budget (as a timeout)
+                billed_in += estimate_tokens(system, user, 0)
+                billed_out += max_output_tokens
                 raise fail() from None
             try:
                 used_in, used_out, text, why = self._parse(data)
-            except (TypeError, ValueError, AttributeError):  # malformed body: it ran, so bill what we can't read
+            except (TypeError, ValueError, AttributeError, OverflowError):  # malformed body: it ran, so bill what we can't read
                 log.warning("ai response could not be parsed")
                 billed_in += estimate_tokens(system, user, 0)
                 billed_out += max_output_tokens
@@ -342,17 +354,17 @@ class AzureOpenAI:
             content = message.get("content")
             text = content.strip() if isinstance(content, str) else ""
             # chat keeps its old rule: any text is an answer, even when finish_reason is "length"
-            return (int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0), text,
-                    None if text else choice.get("finish_reason"))
+            return (_count(usage.get("prompt_tokens")), _count(usage.get("completion_tokens")), text,
+                    None if text else _reason(choice.get("finish_reason")))
         output = _dicts(data.get("output"))
         parts = [part.get("text") or "" for item in output if item.get("type") == "message"
                  for part in _dicts(item.get("content")) if part.get("type") == "output_text"
                  if isinstance(part.get("text"), str)]
         refused = any(part.get("type") == "refusal" for item in output if item.get("type") == "message"
                       for part in _dicts(item.get("content")))
-        used_out = int(usage.get("output_tokens") or 0)
+        used_out = _count(usage.get("output_tokens"))
         details = usage.get("output_tokens_details")
-        reasoning = int(details.get("reasoning_tokens") or 0) if isinstance(details, dict) else 0
+        reasoning = _count(details.get("reasoning_tokens")) if isinstance(details, dict) else 0
         text = "".join(parts).strip()
         why = None
         if data.get("status") not in (None, "completed"):  # incomplete or failed: never saved as a success
@@ -364,7 +376,7 @@ class AzureOpenAI:
                 why = "reasoning"  # all of the budget went on thinking
         elif not text and refused:
             why = "refusal"
-        return int(usage.get("input_tokens") or 0), used_out, text, why
+        return _count(usage.get("input_tokens")), used_out, text, _reason(why)
 
     def _pause(self, attempt: int, retry_after: str | None, remaining) -> None:
         if attempt >= self.retries:

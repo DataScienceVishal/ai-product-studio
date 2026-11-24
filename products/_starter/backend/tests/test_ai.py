@@ -628,7 +628,7 @@ def test_responses_http_errors_and_retries():
     assert _resp_az(lambda _: next(seq), api="responses", retries=2).complete("s", "u").text == "ok"
     with pytest.raises(AIUnavailable) as dead:
         _resp_az(lambda _: httpx.Response(200, content=b"not json"), api="responses").complete("s", "u")
-    assert dead.value.output_tokens == 0
+    assert dead.value.output_tokens == 1200  # unreadable 200: the whole budget is billed
 
 
 def test_responses_timeout_after_sending_bills_the_whole_output_budget():
@@ -784,3 +784,48 @@ def test_chat_malformed_body_is_a_clean_error(body):
 def test_endpoint_with_a_query_or_fragment_is_refused_clearly(given):
     with pytest.raises(ValueError, match="query string"):
         normalise_endpoint(given)
+
+
+# --- T-34b review: junk in reason fields, usage overflow and negatives, unreadable 200s ---------------
+
+@pytest.mark.parametrize("junk", [["length"], {"a": 1}, 7, True])
+def test_responses_junk_status_and_reason_are_a_clean_error_not_a_500(junk):
+    for body in ({"status": junk, "output": [], "usage": {"input_tokens": 4, "output_tokens": 9}},
+                 {"status": "incomplete", "incomplete_details": {"reason": junk}, "output": [],
+                  "usage": {"input_tokens": 4, "output_tokens": 9}}):
+        error = _fail(body)
+        assert type(error) is AIUnavailable and (error.input_tokens, error.output_tokens) == (4, 9)
+
+
+@pytest.mark.parametrize("junk", [["stop"], {"a": 1}, 3])
+def test_chat_junk_finish_reason_is_a_clean_error(junk):
+    body = {"choices": [{"message": {"content": ""}, "finish_reason": junk}], "usage": {"prompt_tokens": 2, "completion_tokens": 3}}
+    with pytest.raises(AIUnavailable) as error:
+        _azure(lambda _: httpx.Response(200, content=json.dumps(body)), retries=0).complete("s", "u")
+    assert (error.value.input_tokens, error.value.output_tokens) == (2, 3)
+
+
+def test_infinite_usage_is_a_billed_parse_error():
+    raw = '{"status": "completed", "output": [], "usage": {"input_tokens": 1, "output_tokens": Infinity}}'
+    with pytest.raises(AIUnavailable) as error:
+        _resp_az(lambda _: httpx.Response(200, content=raw), api="responses", retries=0).complete("s", "u", 300)
+    assert error.value.output_tokens == 300
+
+
+def test_negative_usage_is_clamped_to_zero():
+    body = _body("completed", "fine", out=-50)
+    body["usage"]["input_tokens"] = -9
+    result = _resp_az(lambda _: httpx.Response(200, json=body), api="responses").complete("s", "u")
+    assert (result.input_tokens, result.output_tokens) == (0, 0)
+
+
+@pytest.mark.parametrize("content", [b"not json", b"[1, 2]", b'"str"'])
+def test_unreadable_200_bills_the_whole_budget(content):
+    with pytest.raises(AIUnavailable) as error:
+        _resp_az(lambda _: httpx.Response(200, content=content), api="responses", retries=0).complete("s", "u", 300)
+    assert error.value.output_tokens == 300 and error.value.input_tokens > 0
+
+
+def test_reservation_estimate_needs_the_headroom_attribute():
+    with pytest.raises(AttributeError):
+        reservation_estimate(object(), "a", "b", 10)
