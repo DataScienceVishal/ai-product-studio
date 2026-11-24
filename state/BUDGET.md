@@ -33,10 +33,11 @@ Price (corrected 2026-11-24 by run 591a, T-58): gpt-5.4-pro is **$30 per million
 | 2026-11-24 | f468 | T-12 pilot, 5 calls | 5,709 | 27,619 | 22,509 | ~3.40 | 5.14 |
 | 2026-11-24 | cf1a | T-12 full run, 15 calls (1 rejected probe, 12 done, 2 HTTP 502) | 11,263 | 36,041 | most | ~4.49 recorded (≤7.95 if the two 502s were billed at their full output cap) | 6.82 recorded (≤12.02 if the 502s were billed) |
 | 2026-11-24 | e08c | T-56 tuning, 5 sheets (1 rejected probe at effort low, HTTP 400, unbilled); effort medium | 10,356 | 15,449 | most | 2.01 (ledger) of the $12 Q-11 cap | 3.09 of the $12 Q-11 cap |
+| 2026-11-24 | bb8d | T-56 on gpt-5-mini ($0.25/$2.00 per 1M): 2 tiny probe calls (~$0.0001, not in ledger), tuning2 5 sheets $0.034, test 30 sheets $0.223 (incl. one worst-case charge for a connection reset) | ~76,000 | ~166,000 | mini | 0.26 | 3.35 of the $12 Q-11 cap (ledger) |
 
 **Total model spend so far at the real price: about $15.07 recorded (up to $20.26 if both T-12 HTTP 502s were billed in full), not the ~$9.90 logged before.** It draws on the same $80 credit. A full T-12 benchmark at ~650k output tokens would be about $117 at the real price. Vishal chose Q-7 B (2026-11-24): pro only, at most 20 documents in total, hard cap $15 of model spend for T-12.
 
-T-56 so far: $3.09 of $12 at the real price (Q-11 A; the cap is read as real dollars). Tuning cost $0.14-1.08 a sheet, mean $0.62, about twice the pre-registered cost mark of $0.316, so a 30-sheet test on gpt-5.4-pro would cost about $18.50 (range ~$14-22) and cannot fit the cap (Q-12, rewritten).
+T-56 final: $3.35 of $12 (run bb8d moved the test to gpt-5-mini; test done, FAIL). Earlier note: $3.09 of $12 at the real price (Q-11 A; the cap is read as real dollars). Tuning cost $0.14-1.08 a sheet, mean $0.62, about twice the pre-registered cost mark of $0.316, so a 30-sheet test on gpt-5.4-pro would cost about $18.50 (range ~$14-22) and cannot fit the cap (Q-12, rewritten).
 
 T-12 total so far: ~$11.97 recorded at the real price (≤$17.16 if the two 502s were billed in full, which would pass the $15 Q-7 B cap; logged as a hurdle) (old assumed figure ~$7.89); the 20-document call limit is used up, so T-12 makes no more model calls.
 
