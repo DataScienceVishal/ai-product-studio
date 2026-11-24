@@ -68,3 +68,25 @@ I ran `score_sheet` offline on such a sheet (S901 truth): 7 slots, 0 correct, `m
 3. **`run.py` now writes an empty sheet for *every* non-fatal `ProviderError`, not only incomplete ones.** That includes a timeout and "gave up after 4 attempts". It still scores as missing, which is the conservative outcome. The run summary should list the reasons as well as the count, so an outage is not misread as an output-budget problem.
 4. **The NEXT.md step 1 command (`T56_REASONING_EFFORT=low`) will be refused with exit 2.** `REASONING_EFFORTS` (`extractor/providers.py:18`) does not include `low`. No money is spent, and NEXT.md says so. Either add the value after checking the mini model page or change the command to `medium`, so the next run does not stumble on it.
 5. **Tests.** Add a scored end-to-end test: a fake incomplete sheet run without `--no-score`, asserting that 4a is not inflated. It is verified manually above but not pinned by a test.
+
+## Re-review: commit c8b6112 (2026-11-24)
+
+**Verdict: CHANGES.** The code fix is correct. One line in the handover note must be corrected before merge.
+
+Tests: `/usr/bin/python3 -m pytest -q extractor/tests benchmark/tests` gives **181 passed** (165 before, plus 16 new). No Azure calls made.
+
+**Blocker 1 (served model) is resolved.**
+- **The match rule.** `budget.served_model_matches` (`extractor/budget.py`) requires a full match: the price-table name, optionally followed by `-YYYY-MM-DD`. The tests cover these cases: `gpt-5-mini-pro`, a partial date, a trailing suffix, the pro name, `gpt-5`, an empty string and `None`.
+- **No default model.** `_parse` no longer falls back to the deployment name when the response names no model (`extractor/providers.py:202`), so a missing model counts as a mismatch.
+- **On a mismatch** (`extractor/extract.py:149-158`), the row is recorded at `most_expensive_model()` (gpt-5.4-pro), and the code raises a fatal `ProviderError`. `run.py` then returns exit 5 after one ledger row. A test covers this end to end.
+- **The fake provider** now reports `gpt-5-mini`. The fake-provider tests that previously used a pro budget now use mini, so the fake path also goes through the check.
+- **Remaining exposure** is one call. The guard reserved that call at the expected model's price before it was made. If the deployment actually serves pro, a worst-case call costs about USD 1.68 at 6000 output tokens (about USD 3.48 at 16000), which fits within the USD 8.91 left. A served model that is not in the table at all is priced at the table's maximum, which could still be too low. That is acceptable: the run stops at once.
+- **False alarms.** If Azure reports the model in an unexpected format, the check stops the run falsely. That one row is overcharged at pro prices against the cap (USD 1 or less at expected token counts). It cannot affect pass mark 5, because the re-tune runs before the test set and would show the problem there first. Acceptable.
+- `REASONING_EFFORTS` now includes `minimal` and `low`. The default stays `medium`, and an HTTP 400 is fatal with no spend.
+
+**Blocking**
+1. **`products/pepr-packaging-data-pipeline/NEXT.md` (run bb8d, step 1) says "the reviewer checked gpt-5-mini accepts both".** The reviewer did not check this: neither review made a model call or looked up accepted reasoning-effort values. The note must not credit me with a check I never did. Fix: change it to "minimal/low are allowed by the code but not verified against gpt-5-mini; if the re-tune returns HTTP 400 (fatal, no spend), rerun with medium". This is a documentation fix only; no code needs to change.
+
+**Suggestion**
+- **`Budget.record` has a duplicate check.** Its new `if model not in PRICES` repeats what `price_for` already does. It is harmless; drop it or keep it.
+- **Earlier suggestions 1 to 3 and 5 still stand.** Suggestion 4 is resolved, apart from the NEXT.md wording above.
