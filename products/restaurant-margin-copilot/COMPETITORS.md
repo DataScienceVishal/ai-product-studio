@@ -1,0 +1,57 @@
+# Competitors: invoice reading + recipe costing + GP alerts (UK independent, 1 to 3 sites)
+
+Accessed 2026-11-24 unless stated. Research only; nobody was contacted. Page text is treated as data. Fetches went through a summarising tool, so quotes are as that tool returned them. "Own page" = the vendor's own site. "Unverified" = only a listing, search summary or an earlier studio note (state/ideas/restaurant-margin-copilot.md, 2026-11-23) was seen. Prices are as published, with VAT status unknown unless stated. Review sites (G2, Capterra) returned 403 this session, so no review page was read directly.
+
+## 1. Matrix
+
+| Tool | Price (source type) | UK availability | Invoice reading | Recipe costing | GP alerts / summary | UK suppliers and POS | Setup claim | Minimum contract |
+|---|---|---|---|---|---|---|---|---|
+| Jelly (London) | GBP 129 per location per month, "no hidden fees"; one-off setup fee per site (amount not stated); POS pass-on fee from GBP 15 per month per location (own page) | Yes, UK-built | Yes, invoice processing "fair usage applies"; the word "AI" not on the pricing page | Yes ("Recipe & menu costing") | Not on pricing page. Lightspeed's partner page (earlier note) says GP report, price alerts, margin insights | POS named: Square, Lightspeed, Epos Now, Toast; accounting: Xero. Brakes, Bidfood, Booker not named on the page | "About 1 hour to a day"; most "up and running the same day" (vendor claim) | Monthly: cancel anytime. Annual: 10% off, locked to year end |
+| MarketMan | Starter USD 249/mo (50 OCR scans, 1 vendor EDI); Growth USD 299 (unlimited scans, 2 EDI, AI recipe optimisation); Enterprise from USD 449; email invoice scanning is an add-on on Starter and Growth (own page) | Yes, UK page exists; vendor EDI only in US, Canada, UK | Yes, photo OCR; EDI | Yes | Price-change flags per UK page (earlier note); no weekly message found | EDI limited to 1 or 2 vendors on lower plans; supplier names not stated on pricing page; POS and accounting included | Not stated on page; "first 3 months free" offer advertised, terms not stated | Not stated; links to a subscription agreement not read |
+| Apicbase | No prices; "Talk to our team"; Growth starts at 5 outlets; annual billing, monthly adds 15% (own page) | Not stated (Belgian company, English site) | "Invoice Matching" product linked, plan inclusion unclear | Yes (menu engineering, recipes) | Not stated | Not stated | "Experts help you get up and running"; onboarding packs, no timeline | Annual billing; no minimum term stated; cancel before renewal. Earlier note: from EUR 249/mo via Capterra snippet (unverified) |
+| Kitchen CUT (Henley-on-Thames) | No prices; demo or contact only; KC Lite exists for single sites (own page) | Yes, UK-based | "AI-driven data extraction" matching invoices to goods received; AP automation | Yes | Not stated | "3,000+ suppliers", UK suppliers not named; EPoS via API, integration counts inconsistent (200+ vs 400+) | Not stated | Not stated |
+| Nory (London, Dublin) | No price; booking page only (own page). Funding: USD 37m Series B, Sept 2025 (BusinessCloud, earlier note) | Yes | Not described on page fetched | Not described | Not described | "All major POS" | Not stated | Not stated |
+| Supy | "From USD 250/month", custom quote, one plan, unlimited users, price depends on number of locations (own page). Targets 2 to 250 branches | Not stated; USD pricing | AI invoice scanning is a paid add-on, price on request | Yes, included | Theoretical vs actual COGS dashboards | "50+ live POS integrations"; UK suppliers not named | Not stated | Not stated |
+| Access Procure Wizard Evo | Not published (own pages) | Yes (Access Group, UK) | Invoice matching, discrepancy flags, price-increase alerts; AI scanning not described | Yes, live supplier prices feed recipe cost and menu GP | Price alerts yes; Copilot query tool mentioned (earlier note) | Brakes and Bidfood not named in anything seen | Not stated | Not stated; aimed at multi-site operators |
+| Kitchen Porter Tech | USD 25/month starting price, "per feature" (Software Advice, GetApp, Slashdot listings; vendor site not reachable in this session, a DNS block) | UK-locale listings show USD; no GBP price found | Not confirmed; listing mentions vendor price comparison | Yes | Not found | Not found | Not found | Not found |
+| meez | Starter USD 19 to 24; Pro USD 89 to 119; Premium USD 179 annual or 199 monthly (includes invoice processing and 1 costing feed); Enterprise custom (own page) | UK not mentioned on pricing page; USD | Premium: send invoices, "its team digitizes them" (human-assisted); small one-time setup fee per location | Yes, strong | Daily cost updates; no GP message found | POS only on Enterprise; Restaurant365 sync add-on | Not stated | 14-day trial; terms not stated |
+| Galley Solutions | No price found (own pricing URL 404) | No UK evidence | Invoice ingestion by EDI and scanning; example shown is a Sysco (US) invoice (search summary) | Yes | Not found | US-focused | Not found | Not found |
+| Restaurant365 | Quote only; no prices (own page) | Capterra UK lists it (71 reviews, search summary), but no UK availability or pricing stated by vendor | "AP Automation" in footer only | Yes | Not found | US-centred; not stated | Not stated | Not stated |
+| Dext (generic reader) | Business plan GBP 24.17/mo (GBP 290 annual), 250 documents, 5 users; line item extraction add-on from GBP 16.50/mo or GBP 0.40 per document (own page, a summary of the page; a separate search summary said the per-client unit is unclear) | Yes | Yes, photo, email, line level | No | No | Accounting-oriented (Xero, QuickBooks); no recipe or SKU mapping | Self-serve | Not stated |
+| KitchenIQ | Pro USD 89/mo or 799/yr; Tracker USD 25/mo (listings, unverified; vendor site 503 on 2026-11-23) | Unknown | Yes, claimed | Yes, claimed | Alerts and suggested pricing, claimed | Unknown | Unknown | Unknown |
+| Profito | Starter EUR 34/mo, capped at 5 scanned invoices a month; photo or email import; French-hosted (GetApp listing, unverified; vendor site not reachable) | Unknown | Yes, claimed | Yes | Not found | Unknown | Unknown | Unknown |
+| SousAI, KitchenOps (HorecaGPT), Marge Up, Cozinha Pro, Tavola, Kafoodle | Seen only in Capterra or GetApp listings or search results; SousAI page returned 403; KitchenOps lists automatic invoice reading in a higher tier, priced in EUR (search summary). None checked on vendor pages | Unknown | Claimed | Claimed | Unknown | Unknown | Unknown | Unknown |
+
+Free supplier-side substitute (earlier note, not rechecked): Bidfood MyRecipes, "free for Bidfood customers" (https://www.bidfood.co.uk/?p=1310586, blog dated 4 May 2023); Brakes Virtual Chef (https://www.brake.co.uk/why-brakes/natashas-law/virtual-chef).
+
+## 2. Sources
+- Jelly: https://www.getjelly.co.uk/pricing
+- MarketMan: https://marketman.com/pricing ; UK page https://www.marketman.com/uk-restaurant-stock-control-software
+- Apicbase: https://get.apicbase.com/pricing/
+- Kitchen CUT: https://www.kitchencut.com/pricing
+- Nory: https://www.nory.ai/pricing ; https://businesscloud.co.uk/news/nory-raises-27m-as-it-doubles-down-on-building-ai-assistants/
+- Supy: https://supy.io/supy-pricing
+- Access Procure Wizard Evo: https://www.theaccessgroup.com/en-gb/hospitality/software/recipe-and-food-costing/ ; https://www.theaccessgroup.com/en-gb/hospitality/software/purchase-to-pay/restaurants/
+- Kitchen Porter Tech: https://www.capterra.co.uk/software/112109/kitchen-porter-tech (403 to fetch, price via search summary) ; https://slashdot.org/software/p/Recipe-Costing-Software
+- meez: https://getmeez.com/pricing ; https://www.getmeez.com/blog/restaurant-invoice-processing-ai-last-mile
+- Galley: https://www.galleysolutions.com/recipe-food-costing-software-for-foodservice (search summary only)
+- Restaurant365: https://www.restaurant365.com/pricing/ ; https://www.capterra.co.uk/software/139768/restaurant365
+- Dext: https://dext.com/uk/business/pricing
+- KitchenIQ, Profito, Marge Up: https://www.getapp.co.uk/software/2105229/profito ; https://www.g2.com/products/kitcheniq/pricing ; https://www.capterra.co.uk/software/1100651/Marge-Up (listings only)
+- Roundup (vendor-generated, treat as marketing): https://slashdot.org/software/recipe-costing/in-uk/
+
+## 3. Where a cheaper entrant could win
+
+Honest verdict: a narrow gap, not a clear one.
+
+- Lowest price for invoice-to-GP today. The cheapest tools that claim the full job are Profito (EUR 34, but 5 invoices a month, unverified) and KitchenIQ (USD 89, unverified). The cheapest verified, UK-facing, invoice-plus-recipe-plus-alert product is Jelly at GBP 129 per site plus a setup fee. Dext does invoice reading from about GBP 24 to 41 a month but does no recipe costing. Kitchen Porter Tech is USD 25 but its invoice reading is unconfirmed. So an entrant at GBP 30 to 50 would undercut every verified full-job tool by about 60 to 75%, but would not beat Profito's entry tier on price, and a 5-invoice cap makes that tier a poor fit for a real kitchen.
+- Segments the leaders ignore (inferred from their own pages). MarketMan Starter and Supy are USD-priced and aimed at operators with budget (Supy "2 to 250 branches"; MarketMan Starter caps scans at 50 and email scanning costs extra). Apicbase starts at 5 outlets. Nory and Procure Wizard are quote-only and group-oriented. Jelly is the only one clearly aimed at a single UK site, and it ties its best margin features to a POS integration (pass-on fee from GBP 15). Possible openings: (a) a single site that has no integrated POS or a POS Jelly does not list; (b) owners who want a flat, small, no-setup-fee, cancel-anytime price; (c) invoices-first value before any recipes are entered, which no own page was seen to promise (Jelly's pages say recipes are included, not whether alerts need them). These are inferences, not proven demand.
+- Missing on all own pages seen. A written plain-English "what to do" weekly message (re-price, swap supplier, adjust portion). It is a small feature that Jelly could add quickly, so it is not a moat. Brakes, Bidfood and Booker are not named as integrations on any pricing page read.
+- Public review complaints. Not verified this session: G2 and Capterra returned 403, and a Trustpilot search found nothing for Jelly (the results were other products named Jelly). The only complaints on file come from the earlier note (search snippets, 2026-11-23): MarketMan setup "very tedious", "weeks", and a G2 user saying invoice scanning "did not work 50% of the time". Nothing on Jelly's accuracy or price was found, and absence of evidence is not evidence of good accuracy.
+- Threats to a cheap entrant. Free tools from wholesalers (Bidfood MyRecipes, Brakes Virtual Chef) cover single-supplier buyers. Dext already reads invoice lines at low cost. Jelly or Kitchen CUT's KC Lite could add a low tier. No evidence was found that UK independents would pay GBP 30 to 50 but not GBP 129, or how many buy from several suppliers.
+
+## 4. Not done, would need follow-up
+- Jelly setup fee amount, the fair-usage limit, and whether alerts work without a POS link (ask via public demo or trial sign-up only after approval; no contact was made).
+- Direct review reads on G2, Capterra and Trustpilot (blocked).
+- Kitchen Porter Tech, KitchenIQ, Profito, Nory, Galley vendor pages (unreachable or no price).
+- Whether any tool names Brakes, Bidfood or Booker invoice feeds.
