@@ -60,6 +60,7 @@ Gap that survives (provisional): a whole-workforce look-back across payroll expo
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
 | 15 | 12 | 7 | 7 | 11 | 6 | 5 | 63 |
+| 15 | 12 | 7 | 7 | 11 | 7 | 5 | 64 (re-score 2026-11-24, T-57, Q-10 wedge rule; see Gate log) |
 
 ## Validator notes (2026-11-23)
 
@@ -262,3 +263,19 @@ Caveat: search finds only what is indexed. A small bureau tool or a Big Four int
 - 2026-11-23 scout round 3 (T-22): G0 drafted. Job-ad signal missing, flagged.
 - 2026-11-23 | validator | G0→G1 | REVISE 63 | Best of round 3, and the first idea with an incumbent gap confirmed on the vendors' own pages: BrightPay, Xero, Moneysoft and Sage 50 don't calculate holiday pay amounts, and no product documents a whole-workforce look-back. But FWA enforcement has no start date, the FWA is building its own free holiday pay calculator, and its look-back starts only at 18 Dec 2025. The core is a deterministic engine, and holding workers' pay and absence data cuts Risk to 5.
 - 2026-11-24 | validator (T-42 note, no re-score) | New competitor for the kill test: Fair Work Solutions Limited (https://www.fairworksolutions.co.uk/, fetched 2026-11-24) sells a UK NMW compliance platform that takes payroll uploads, handles pay codes and deductions, and calculates underpayments per worker and pay period with continuous monitoring. Holiday pay is not mentioned on the page. Add it to item 6: if it adds holiday pay look-back, Competition falls to 2. The sibling nmw-salaried-hours-audit was killed (55).
+
+### Re-score 2026-11-24 (T-57, Q-10 wedge rule)
+Validator. Only the Competition row is re-scored, under the wedge rule in `playbooks/pipeline.md`. This is not a new G1 attempt.
+- **Competition: 6 → 7.** This is the only idea in the batch with a named, evidenced wedge. Two of the rule's wedge types apply: UK rules the incumbent doesn't handle, and a segment it ignores.
+  - *Named wedge:* a holiday pay engine and look-back for payroll bureaux and accountants running BrightPay, Xero, Moneysoft or Sage 50. It covers 52-week averaging, 12.07% accrual for leave years from 1 April 2024, rolled-up pay checks, and a look-back to 18 December 2025 (the FWA window) plus two years (the tribunal window).
+  - *Evidence:* BrightPay's own docs say "The holiday pay amount ... is not automatically calculated by BrightPay and thus must be entered manually" (fetched 2026-11-23). On 27 November 2025 a Xero admin said a 52-week report "is not a feature we have planned in our roadmap" (fetched, 94 votes). Moneysoft and Sage 50 have no automatic calculation (search summaries only). T-23 found no product, out of 8 checked, that documents a whole-workforce look-back. The incumbent "price" is human work billed as an extra: DCK £73.50 an hour, a PSSG list line priced on application, and Irwin Mitchell £1,500 + VAT a review.
+  - *Why 7 and not 8 to 10:*
+    - Two of the four "doesn't calculate" findings rest on search summaries.
+    - Forward-only calculation already exists in Staffology, IRIS and Employment Hero (free plan), so a bureau can switch package instead.
+    - The FWA's planned free holiday pay calculator has no stated scope.
+    - Fair Work Solutions already runs payroll-upload underpayment checks for NMW and could add holiday pay.
+    - Absence of a look-back is "not documented", not "confirmed absent".
+  - *Fresh check:* the gov.uk consultation page still says "We are analysing your feedback", with no outcome published (fetched 2026-11-24, https://www.gov.uk/government/consultations/make-work-pay-holiday-pay-compliance-and-enforcement). A search for a launched UK FWA holiday pay calculator found none (2026-11-24).
+- **Knock-on:** none justified. Pay stays 12, because a software price is still missing. Pain stays 15 (no response and no job ads). Risk stays 5, because the pseudonymised design is not signed off by security. AI 7 and Build 11 wait for the benchmark, and the Armstrong Watson data-gap point argues against raising Build.
+- **New total: 64** (15+12+7+7+11+7+5). **Verdict: REVISE (parked).** No red flag. In the 63 to 69 band, so the proof-test route is open, but a benchmark alone moves at most AI +1 and Build +1, to 66.
+- **The one piece of evidence that would move it:** the FWA calculator's published scope (or the government response), confirming it works one worker at a time and doesn't take a whole payroll. That would take Competition to 8 to 9. If it does take a whole payroll, Competition falls to 2.

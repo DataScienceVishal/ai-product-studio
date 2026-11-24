@@ -88,3 +88,16 @@ My estimate is that even with all three, the score tops out in the mid 60s, unle
 ## Gate log
 - 2026-11-23: G0 spotted by scout.
 - 2026-11-23 | validator | G0→G1 | REVISE 59 | The pain is structural and the build is the easiest in the batch, but at least ten AI RAMS tools already sell to UK subcontractors from £7 a document or about £20 to £60 a month, and RAMSGen already drafts from the uploaded pre-construction pack with custom templates and a RAMS review, which closes the scout's claimed gap.
+
+### Re-score 2026-11-24 (T-57, Q-10 wedge rule)
+Validator. Only the Competition row is re-scored, under the wedge rule in `playbooks/pipeline.md`. This is not a new G1 attempt.
+- **Competition: 1 → 1.** No wedge is named and evidenced.
+  - *Same job:* RAMSGen already drafts site-specific RAMS from the uploaded pre-construction pack, with custom templates and a RAMS review, at £59, £99 and £199 a month (https://www.ramsgen.com/).
+  - *Cheaper alternatives:* swiftRMS £49 a month unlimited, RAMS AI £39.97, RamsBox £7 per RAMS (search summary), and ECA eRAMS free for electricians.
+  - *Segment ignored:* none found. Round 11 (T-48) found the tools trade-agnostic.
+  - *Priced out:* no. The price floor is £7 a document.
+  - *Quality gap:* not measured. No data on how often principal contractors reject AI-drafted RAMS, and it can't be measured without real submissions.
+  - The only incumbent without AI is HandsHQ (£275 a month and up), and AI challengers have already taken that gap.
+- **Knock-on:** none. Pain 12, Pay 13, AI 6, Reach 8, Build 13 and Risk 6 are unchanged.
+- **New total: 59 (unchanged). Verdict: REVISE (parked, kill candidate).** No red flag. Below the 63 proof-test floor. A second failed attempt kills it.
+- **The one piece of evidence that would move it:** a mandatory RAMS format or standard in a large principal contractor's public supply-chain handbook that RAMSGen's and swiftRMS's own pages show they don't produce. That could take Competition to 5, which is still about 63.

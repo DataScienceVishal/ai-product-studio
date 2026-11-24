@@ -79,3 +79,15 @@ Sales reps' own explanations of why deals were won or lost are unreliable, and b
 ## Gate log
 - 2026-11-23: G0 spotted by scout.
 - 2026-11-23 | validator | G0→G1 | REVISE 59 | Klue, Clozd and User Intuition already sell AI-run win-loss (Clozd even auto-invites from HubSpot), all the pain evidence comes from vendors, and a 20 to 30% response rate on lost deals leaves small firms too few interviews for a useful brief.
+
+### Re-score 2026-11-24 (T-57, Q-10 wedge rule)
+Validator. Only the Competition row is re-scored, under the wedge rule in `playbooks/pipeline.md`. This is not a new G1 attempt.
+- **Competition: 3 → 3.** No wedge is named and evidenced.
+  - *"Priced out by Clozd"* ($1,500 to $2,000 per traditional interview; annual contracts of about $25k to $120k per Vendr, which is unverified). This segment is already served cheaply. User Intuition charges $30 per voice interview on a $0-a-month Starter plan, and Clozd Flex itself is aimed at "mid-market and SMB".
+  - *"Zero-setup CRM automation."* Clozd's HubSpot app already imports closed deals daily and invites buyers by rule. Diffly also has a HubSpot app.
+  - *Text-first and UK/EU GDPR-first design.* No evidence that buyers reject the incumbents on data residency. Klue's AI Interviewer already runs text interviews.
+  - *Narrower wedges* (churn interviews, lost-tender debriefs) were never evidenced in this file.
+  - Score 3 sits at the top of the no-wedge band only because no rival was confirmed to sell a CRM-triggered closed-lost flow at User Intuition's price.
+- **Knock-on:** none. Pain 10, Pay 12, AI 8, Reach 6, Build 12 and Risk 8 are unchanged.
+- **New total: 59 (unchanged). Verdict: REVISE (parked, low priority).** No red flag. Below the 63 proof-test floor, and participation rates (5 to 30%, per Clozd) still cap the value for small firms.
+- **The one piece of evidence that would move it:** a narrow segment with no incumbent, backed by its own pain and price evidence. For example, lost-tender debriefs for UK B2B services firms, where the public-sector debrief duty is checked against Clozd's, Klue's and User Intuition's own pages. That could take Competition to 5 or 6, which is still about 62.

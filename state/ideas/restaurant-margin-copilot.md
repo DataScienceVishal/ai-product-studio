@@ -86,6 +86,17 @@ UK restaurant margins are being squeezed. The UK's Top 100 restaurant groups saw
 - 2026-11-23: G0 spotted by scout.
 - 2026-11-23 | validator | G0→G1 | REVISE 66 | AI is essential and operators clearly pay, but Jelly already sells AI invoice capture, recipe costing and margin alerts to UK independents from about £129 and Bidfood gives its customers free real-time recipe costing, so the gap the scout claimed is largely filled.
 
+### Re-score 2026-11-24 (T-57, Q-10 wedge rule)
+Validator. Only the Competition row is re-scored, under the wedge rule in `playbooks/pipeline.md`. This is not a G1 attempt; the last attempt is still unspent.
+- **Competition: 3 → 3.** No wedge is both named and evidenced.
+  - *"Less product for much less money, no setup fee"* (SPEC.md: £39 to £69 against Jelly's £129 plus setup). To count as "cheaper for a segment it prices out", we need evidence that Jelly prices out 1 to 3 site independents. There is none. T-9 found no owner complaints about Jelly's price, and Jelly's own page says it serves "independent restaurants, pubs, cafés". The cheap end is also served already: Profito from €34 and KitchenIQ $89 (both unverified listings), and Kitchen Porter Tech at $25.
+  - *Accountant-led channel.* Jelly's pricing page shows no partner programme (round-11 summary, fetched 2026-11-24), but no source shows that accountants resell margin tools or that independents buy through them. This is a hypothesis, not evidence.
+  - *Weekly written "three fixes" message.* SPEC-CHECK.md shows that Jelly's homepage already sends daily price notifications and "margin warnings". The difference is a presentation layer Jelly could copy in weeks. It is not a measured quality gap.
+  - *Multi-supplier independents* (outside Bidfood's and Brakes' free tools): unsized, and Jelly already handles several suppliers.
+- **Knock-on:** none. Pain 13, Pay 14, AI 9, Reach 7, Build 11 and Risk 9 are unchanged.
+- **New total: 66 (unchanged). Verdict: REVISE (parked).** No red flag. Still 4 short of 70, and Competition is held at the top of the no-wedge band.
+- **The one piece of evidence that would move it:** a measured quality gap. That means the committed synthetic-invoice benchmark (about 50 UK-layout invoices with phone-photo distortion, ≥95% line accuracy within budget), run against a documented Jelly or Profito failure mode, such as review evidence of mis-reads or invoice caps. Alternatively, Vishal's partner turns out to be a hospitality accountant with clients priced out at £129. Either one could take Competition to 5 or 6, which is still only 68 to 69 without a Reach or Pay gain.
+
 ## Evidence pass T-9 (2026-11-23)
 
 Desk research by the scout, 2026-11-23. All pages were fetched on that date. Page text is quoted as the fetch tool returned it. "Unverified" means only a third-party listing or search summary was seen, not the vendor's own page. Several vendor pages (Profito, KitchenIQ, Supy, Nory) could not be fetched (403, 503 or redirect to a domain seller), so those rows are unverified.

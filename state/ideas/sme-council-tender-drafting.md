@@ -87,3 +87,15 @@ My estimate is that even with all three, the score tops out in the mid 60s, beca
 ## Gate log
 - 2026-11-23: G0 spotted by scout.
 - 2026-11-23 | validator | G0→G1 | REVISE 60 | Small firms clearly pay to bid, but the scout's proposed niche is taken: CleanTender already sells AI questionnaire drafts, compliance scoring and claim checks to cleaning, security, grounds, waste and catering firms for £99 a month, alongside SME tools such as BidWriter from £49 and Stotles' free tier.
+
+### Re-score 2026-11-24 (T-57, Q-10 wedge rule)
+Validator. Only the Competition row is re-scored, under the wedge rule in `playbooks/pipeline.md`. This is not a new G1 attempt.
+- **Competition: 1 → 1.** No wedge is named and evidenced. The incumbent the buyer would otherwise pay sells the same job to the same segment at a similar or lower price.
+  - CleanTender sells AI pack scanning, SQ drafting and claim checks to soft FM firms (cleaning, security, grounds, waste, catering) at £99 a month (https://cleantender.co.uk/, validator read).
+  - BidWriter has a free tier and plans up to £799 a month for "SMEs and sole traders".
+  - Stotles has a free Bid Studio. SwiftBid sells per bid.
+  - Round 11 (T-48) tested the segment, adviser-resale and cheaper-tier wedges and found none. No sector excluded by these tools was found, and Contracts Finder sizing was not done.
+  - The "citation-first, no invented claims" idea (relevant to Procurement Act Sch. 7 para 13) is not evidenced as a gap: CleanTender already sells a one-click claim check.
+- **Knock-on:** none. Pain 12, Pay 14, AI 6, Reach 8, Build 12 and Risk 7 are unchanged.
+- **New total: 60 (unchanged). Verdict: REVISE (parked, kill candidate).** No red flag. Below the 63 proof-test floor, and the validator's ceiling stays in the mid 60s. A second failed attempt kills it.
+- **The one piece of evidence that would move it:** a tender segment that CleanTender, BidWriter and Stotles don't serve, shown on their own pages and sized from the Contracts Finder OCDS API. For example, a sector with a mandatory accreditation or framework re-application cycle. That could take Competition to 5, which is still about 64.
