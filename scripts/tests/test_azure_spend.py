@@ -86,6 +86,24 @@ class Parsing(unittest.TestCase):
 """
         self.assertEqual(spend.projected_monthly(text), 12.5)
 
+    def test_projected_monthly_header_variants_and_missing(self):
+        variant = BUDGET.replace("Estimated $ per month", "Estimated $/month")
+        self.assertEqual(spend.projected_monthly(variant), 12.5)
+        self.assertIsNone(spend.projected_monthly(BUDGET.replace("Estimated $ per month", "Cost")))
+        self.assertIsNone(spend.projected_monthly("# Azure budget\n\nNo table yet.\n"))
+
+    def test_report_says_unknown_when_estimate_column_missing(self):
+        text = BUDGET.replace("Estimated $ per month", "Cost")
+        self.assertIn("unknown (no 'Estimated $ per month' column found)", render(text, ok(1.0, 1.0))[0])
+
+    def test_listed_names_read_only_the_resource_table_and_split_commas(self):
+        text = BUDGET.replace("| pg-shared |", "| `id-a`, `id-b` (identities) | x | - | 0 | planned |\n| pg-shared |") + """
+| UTC | Run | Use | Input |
+|---|---|---|---|
+| 2026-11-24 | f468 | pilot | 5,709 |
+"""
+        self.assertEqual(spend.listed_names(text), {"ca-starter-demo", "pg-shared", "id-a", "id-b"})
+
     def test_window_is_clamped_to_the_api_limit(self):
         start, end, clamped = spend.query_window("2025-01-01", TODAY)
         self.assertTrue(clamped)
