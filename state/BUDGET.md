@@ -24,20 +24,20 @@ Nothing exists yet: the deploy workflow refuses to create anything until Vishal 
 
 ## Azure OpenAI token log (existing deployment gpt-5.4-pro, outside our resources; draws on the same credit)
 
-Price per token for gpt-5.4-pro is not confirmed. As an assumption, the gpt-5-pro list price is about $15 per million input tokens and $120 per million output tokens (reasoning tokens count as output). Check this before any bigger run.
+Price (corrected 2026-11-24 by run 591a, T-58): gpt-5.4-pro is **$30 per million input tokens and $180 per million output tokens** (reasoning counts as output), on OpenAI's model page (https://developers.openai.com/api/docs/models/gpt-5.4-pro) and in Microsoft's Foundry launch post (https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-gpt-5-4-in-microsoft-foundry/4499785). Until then the studio assumed the older gpt-5-pro price of $15 / $120, which understated spend by about 1.5x. The Azure pricing page itself shows no figure, and an agreement could differ; the daily spend report is the final word once it returns data. The "Est. $ (assumed price)" column is kept as history; use "Real $".
 
-| UTC | Run | Use | Input | Output (incl. reasoning) | Reasoning | Est. $ (assumed price) |
-|---|---|---|---|---|---|---|
-| 2026-11-23 | 7a98 | T-1 test call | ~20 | 41 | 21 | <0.01 |
-| 2026-11-24 | f468 | T-12 pilot, 5 calls | 5,709 | 27,619 | 22,509 | ~3.40 |
-| 2026-11-24 | cf1a | T-12 full run, 15 calls (1 rejected probe, 12 done, 2 HTTP 502) | 11,263 | 36,041 | most | ~4.49 recorded (≤7.95 if the two 502s were billed at their full output cap) |
-| 2026-11-24 | e08c | T-56 tuning, 5 sheets (1 rejected probe at effort low, HTTP 400, unbilled); effort medium | 10,356 | 15,449 | most | 2.01 (ledger) of the $12 Q-11 cap |
+| UTC | Run | Use | Input | Output (incl. reasoning) | Reasoning | Est. $ (assumed price, superseded) | Real $ ($30/$180) |
+|---|---|---|---|---|---|---|---|
+| 2026-11-23 | 7a98 | T-1 test call | ~20 | 41 | 21 | <0.01 | 0.01 |
+| 2026-11-24 | f468 | T-12 pilot, 5 calls | 5,709 | 27,619 | 22,509 | ~3.40 | 5.14 |
+| 2026-11-24 | cf1a | T-12 full run, 15 calls (1 rejected probe, 12 done, 2 HTTP 502) | 11,263 | 36,041 | most | ~4.49 recorded (≤7.95 if the two 502s were billed at their full output cap) | 6.82 recorded (≤12.02 if the 502s were billed) |
+| 2026-11-24 | e08c | T-56 tuning, 5 sheets (1 rejected probe at effort low, HTTP 400, unbilled); effort medium | 10,356 | 15,449 | most | 2.01 (ledger) of the $12 Q-11 cap | 3.09 of the $12 Q-11 cap |
 
-A full T-12 benchmark at ~650k output tokens would be about $78 at that price. Vishal chose Q-7 B (2026-11-24): pro only, at most 20 documents in total, hard cap $15 of model spend for T-12.
+**Total model spend so far at the real price: about $15.07 recorded (up to $20.26 if both T-12 HTTP 502s were billed in full), not the ~$9.90 logged before.** It draws on the same $80 credit. A full T-12 benchmark at ~650k output tokens would be about $117 at the real price. Vishal chose Q-7 B (2026-11-24): pro only, at most 20 documents in total, hard cap $15 of model spend for T-12.
 
-T-56 so far: $2.01 of $12 (Q-11 A). The test set preflight needs 30 x $0.316 + one worst-case call ($1.02) = $10.50 and only $9.99 is left, so the test cannot start inside the cap (Q-12).
+T-56 so far: $3.09 of $12 at the real price (Q-11 A; the cap is read as real dollars). Tuning cost $0.14-1.08 a sheet, mean $0.62, about twice the pre-registered cost mark of $0.316, so a 30-sheet test on gpt-5.4-pro would cost about $18.50 (range ~$14-22) and cannot fit the cap (Q-12, rewritten).
 
-T-12 total so far: ~$7.89 recorded (≤$11.35 worst case) of the $15 Q-7 B cap; the 20-document call limit is used up, so T-12 makes no more model calls.
+T-12 total so far: ~$11.97 recorded at the real price (≤$17.16 if the two 502s were billed in full, which would pass the $15 Q-7 B cap; logged as a hurdle) (old assumed figure ~$7.89); the 20-document call limit is used up, so T-12 makes no more model calls.
 
 <!-- spend:auto:start -->
 ## Spend report (written daily by .github/workflows/azure-spend.yml)

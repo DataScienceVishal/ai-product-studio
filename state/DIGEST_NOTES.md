@@ -5,3 +5,8 @@ Runs add one line per notable result. The Desk clears this back to the header af
 
 - 2026-11-24 run e08c: Vishal's 1A/2A applied (wedge-scored Competition in pipeline.md; $12 approved for the pEPR test). Re-score under the new rule: no parked idea reaches 70 (holiday pay 64 best wedge; restaurant 66 unchanged). pEPR tuning run started on the real model: medium effort (low is refused by the model), first sheets $0.08 and $0.32.
 - 2026-11-24 run e08c: pEPR tuning done on the real model: 97.9% field accuracy on 5 sheets, all conflicts flagged, but 2 untraced values, 1 invented value, mean $0.40/sheet (mark $0.316). Test set can't start inside $12 (needs $10.50, $9.99 left): Q-12 asks to raise the cap to $20. Put Q-12 in the next digest.
+
+## Run 591a (T-58)
+- **Model price correction:** gpt-5.4-pro costs $30/$180 per million tokens, not $15/$120. Real model spend so far is about $15 of the $80 credit (up to ~$20 if two failed calls were billed), not ~$10. T-12 may have passed its $15 cap in the worst case. BUDGET.md is restated. The T-56 guard is fixed to the real price (in review).
+- **Q-12 rewritten before sending:** recommend a cheap mini deployment (option A). On the pro model, the pEPR test would cost ~$18.50 and fail the cost mark.
+- **Spend report bug:** the "$17,015 projected monthly" figure was a parser bug, not a real projection (real: $23.20). Fix in review.
