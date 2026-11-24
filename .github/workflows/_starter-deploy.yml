@@ -261,6 +261,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Product database and roles (every release; idempotent, no secret)
+        id: dbsetup
         # Runs as the server's Entra admin (the deploy service principal) with a token as the password
         # (ADR 0003, decision 4). Needs the object ids that the deploy step above just read from main.bicep.
         run: |
@@ -298,8 +299,12 @@ jobs:
             exit 1
           fi
           admin=$(jq -r --arg me "$me" '[.value[] | select((.name | ascii_downcase) == $me) | .properties.principalName][0] // empty' <<< "$admins")
+          if [ -z "$admin" ]; then
+            echo "::error::The deploy principal is not an Entra admin of $PG_SERVER. Run this workflow once with deploy_shared ticked."
+            exit 1
+          fi
           if ! [[ "$admin" =~ ^[A-Za-z0-9_.@-]{1,63}$ ]]; then
-            echo "::error::The deploy principal is not an Entra admin of $PG_SERVER (or its name is odd). Run this workflow once with deploy_shared ticked."
+            echo "::error::The Entra admin name of $PG_SERVER has characters this workflow doesn't allow (letters, digits and _ . @ - only, at most 63). Set postgresEntraAdminName to a name like sp-ai-studio-deployer and run with deploy_shared ticked."
             exit 1
           fi
           ip=$(curl -fsS --max-time 10 https://api.ipify.org || true)
@@ -313,11 +318,12 @@ jobs:
           # The host comes only from PG_SERVER, so a token can't be sent to another server (security B2).
           export PGHOST="$PG_SERVER.postgres.database.azure.com" PGSSLMODE=verify-full \
             PGSSLROOTCERT=/etc/ssl/certs/ca-certificates.crt PGCONNECT_TIMEOUT=10
+          exec 3>&1 # the mask lines below must reach the runner even when a call redirects stdout
           run_psql() { # a fresh token each time (5 to 60 minutes of life); it goes only through PGPASSWORD
             local t
             t=$(az account get-access-token --resource-type oss-rdbms --query accessToken --output tsv)
             if [ -z "$t" ]; then echo "az returned no database token" >&2; return 1; fi
-            echo "::add-mask::$t"
+            echo "::add-mask::$t" >&3
             PGPASSWORD="$t" psql -X -w -U "$admin" -d postgres "$@"
           }
           for attempt in $(seq 1 36); do # firewall changes can take up to five minutes
@@ -346,7 +352,8 @@ jobs:
           echo "Database $DB_NAME with roles ${DB_NAME}_migrator and ${DB_NAME}_app is ready."
 
       - name: Remove the runner's database firewall rule
-        if: always()
+        # Not when the run stopped before the database step (for example a Trivy failure before Azure sign-in).
+        if: always() && steps.dbsetup.outcome != 'skipped'
         run: |
           if ! az postgres flexible-server firewall-rule delete --resource-group "$RESOURCE_GROUP" --server-name "$PG_SERVER" \
             --name "gh-run-$GITHUB_RUN_ID" --yes --only-show-errors --output none 2> "$RUNNER_TEMP/firewall.err"; then

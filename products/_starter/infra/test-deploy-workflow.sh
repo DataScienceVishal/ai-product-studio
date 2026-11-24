@@ -71,7 +71,19 @@ names="$(grep -nE '^      - name: ' "$wf" | sed 's/^\([0-9]*\):      - name: /\1
 line() { grep -m1 -F -- "$1" <<< "$names" | cut -d' ' -f1; }
 d=$(line "Deploy the app and jobs"); s=$(line "Product database and roles"); m=$(line "Migrate the database")
 if [ -n "$d" ] && [ -n "$s" ] && [ -n "$m" ] && [ "$d" -lt "$s" ] && [ "$s" -lt "$m" ]; then ok "order: deploy main.bicep, database step, migration"; else bad "order: deploy main.bicep, database step, migration"; fi
-present "firewall rule is removed even when a step fails" "^        if: always\(\)$"
+present "firewall rule is removed even when a step fails" "^        if: always\(\) && steps\.dbsetup\.outcome != 'skipped'$"
+present "database step has the id the cleanup step tests" '^        id: dbsetup$'
+present "bad admin name and missing admin have separate errors" 'has characters this workflow doesn.t allow'
+
+# S1: run the real run_psql with a stub az and psql. Its stdout is redirected to /dev/null, as in the retry loop;
+# the mask line must still reach the runner's own stdout (the old code printed it into the redirect).
+fn=$(awk '/^ *run_psql\(\) \{/{f=1} f{print} f&&/^ *\}$/{exit}' "$wf")
+fd=$(grep -E '^ *exec 3>&1' "$wf" | head -1)
+stub=$(mktemp -d)
+printf '#!/bin/sh\necho TOKEN-ATTEMPT-1\n' > "$stub/az"; printf '#!/bin/sh\necho psql-output\n' > "$stub/psql"; chmod +x "$stub/az" "$stub/psql"
+runner_out=$(PATH="$stub:$PATH" admin=u bash -c "$fd"$'\n'"$fn"$'\n''run_psql -tAc "select 1" > /dev/null 2>&1' 2>&1 || true)
+rm -rf "$stub"
+grep -qxF '::add-mask::TOKEN-ATTEMPT-1' <<< "$runner_out" && ok "per-attempt token is masked on the runner's stdout even when psql output is redirected" || bad "per-attempt token is masked on the runner's stdout even when psql output is redirected"
 
 # ---- URLs and Bicep wiring --------------------------------------------------------------------------------------
 present "app URL has no password" 'DATABASE_URL_APP="postgresql\+psycopg://\$\{DB_NAME\}_app@\$\{host\}:5432/'
