@@ -10,3 +10,11 @@ Left:
 - **Slice 4:** run once on the 30 sheets, score with `score.py`, write results into the idea file, and have the validator re-score (pass) or record the failed G1 attempt (fail).
 
 Verify: `python3 -c "import json;json.load(open('benchmark/truth.schema.json'))"`; each truth file validates against the schema.
+
+## Status after run 37b8 (2026-11-24 ~15:50Z)
+Slices 1-2 done; reviewer CHANGES (reviews/T-56-slice2.md). Before slice 3, fix every numbered item there:
+the random single `missing` key per component (57 fields, pass mark 4 unscoreable), scoring rules for conflict fields /
+unit quotes / image-only traceability / component matching without material, harder layouts (labels not equal to schema
+names, more than 3 templates, varied missing markers), conflicts in the tuning set, nonsensical feature-component pairs.
+Fix the kill test wording "hand-written truth" to "generator-written truth, spot-checked by hand" on main (allowed: no run
+has happened yet; log it in DECISIONS.md). Then re-review, then slice 3.
