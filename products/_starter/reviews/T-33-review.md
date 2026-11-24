@@ -263,3 +263,12 @@ Either is a one-paragraph change. Don't claim a specific retention period withou
 - S1, S2, S3, S5 and S7 from the first review are still open. They stay non-blocking. S5 (passing
   `AZURE_OPENAI_API` from Bicep) and S2 (the pro model versus the 25 s deadline) should be settled before any
   product switches the cloud app to `responses`.
+
+## Final: PASS at 14140a3
+
+The 14140a3 diff only changes docs.
+
+- R1 is fixed. DATA.md drops the dead ADR 0002 pointer. It now says `store=false` only means Azure does not store the response object, that abuse monitoring is separate and may keep flagged content, and it cites the Microsoft Learn page with a "check before real customer data" note. It no longer claims a retention period.
+- R2 is fixed. The README now says about 1,690 tokens a day. At $120 per million that is $6.08 a month, so cost-guard.sh passes it.
+
+No code changed since the test runs at 0fe5d46: 238 passed, 1 skipped, with the `AZURE_OPENAI_*` variables both set and unset. R3 to R6 and S1, S2, S3, S5 and S7 stay open and are not blocking.
