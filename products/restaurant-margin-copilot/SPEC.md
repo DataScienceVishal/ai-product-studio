@@ -4,7 +4,7 @@
 
 **Status and dependencies (read first)**
 - **Process.** Q-6's written default was A. The studio logged a deliberate exception to build under option B (`state/QUESTIONS.md` Q-6; `state/DECISIONS.md` 2026-11-24T05:41Z). It skips the G1 gate: the idea scored 66 at G0 (REVISE) and its last G1 attempt is unspent. Nothing here is validated.
-- **Option B is really "B plus Q-7 A".** The pro deployment's daily cap allows about 1,690 tokens a day (starter README, "Sizing the daily AI cap"); one invoice needs about 5,500. Without Q-7 A (a mini model or a larger approved budget), no live extraction runs on Azure. Model-free parts are built first, on the fake AI (section 4).
+- **Option B is really "B plus Q-7 A".** The pro deployment's daily cap allows about 1,690 tokens a day (starter README, "Sizing the daily AI cap"); one invoice needs about 5,500. Without Q-7 A (a mini model; Q-7 B would only fund the ~$15 pro benchmark, not live use), no live extraction runs on Azure. Model-free parts are built first, on the fake AI (section 4).
 - **Evidence.** T-9 found no feature gap against Jelly or MarketMan. Under B the demo is the evidence, judged by the outcome defined in section 9.
 
 Market facts are sourced in `COMPETITORS.md` and `state/ideas/restaurant-margin-copilot.md`. "Own page" means the vendor page was read on 2026-11-23 or 24.
@@ -38,7 +38,7 @@ Jobs (our paraphrase, not customer quotes):
 4. **Match to ingredients, with one confirm screen.** Exact and fuzzy match against the site's alias table first; only unmatched lines go to the model, batched in one call, which proposes an ingredient and a pack conversion (for example "5kg case" to cost per kg) with a confidence. The owner confirms ("12 lines, 9 matched, 3 to check"). Confirmed matches are remembered.
 5. **Recalculate.** Ingredient costs and each dish's cost and GP% are recomputed in code, never by the model. With no recipes yet it still shows price changes ("beef mince up 12% vs your last invoice"). This is a fast first-value step, not a differentiator.
 6. **Recipes in.** Paste menu or recipe text; one model call structures it with portion weights; the owner confirms. Skippable at first.
-7. **Weekly fixes message.** Each Monday, an email with numbers from code and options from a fixed lever menu (re-price, portion, swap supplier, drop or feature the dish). Worked example, which the code must reproduce exactly: a 14 pound burger costs 4.48 (GP 68.0%), beef is 60% of cost. Beef up 12% makes cost 4.80 and GP 65.7%. Fixes: raise the price by 1.00 (GP back to 68.0%), or cut the patty from 180 g to 165 g (GP about 67.5%), or ask the butcher about a bulk case.
+7. **Weekly fixes message.** Each Monday, an email with numbers from code and options from a fixed lever menu (re-price, portion, swap supplier, drop or feature the dish). Worked example, which the code must reproduce exactly: a 14 pound burger (price net of VAT) costs 4.48 (GP 68.0%), beef is 60% of cost. Beef up 12% makes cost 4.80 and GP 65.7%. Fixes: raise the price by 1.00 (GP back to 68.0%), or cut the patty from 180 g to 165 g (GP about 67.5%), or ask the butcher about a bulk case.
 8. **Notify when async work finishes** ("Invoice ready: 14 lines, 2 to check") in-app and by email.
 
 ## 3. Wedge versus Jelly and MarketMan (honest)
@@ -158,14 +158,14 @@ Risks:
 | 1 | Line extraction under 90% on the clean tuning set with the best available model (pro measured; mini when Q-7 = A), or cost per invoice cannot get under 0.25 pounds on mini | 2026-12-02 | harness report in `products/restaurant-margin-copilot/` |
 | 2 | Held-out layout accuracy under 80%, or degraded photos under 75% after one prompt revision | 2026-12-09 | harness, held-out run, once |
 | 3 | Auto-match wrong rate above 5% after the confirm step is tuned, or more than about 20 clicks per invoice | 2026-12-09 | harness and click count |
-| 4 | Competitor trigger: Jelly or KitchenIQ publishes a written weekly "what to do" message **at under 60 pounds a month**, or Jelly adds a tier under 60 | re-checked every Tuesday from 2026-12-02 | re-read Jelly homepage and pricing page and the KitchenIQ listing; log in `COMPETITORS.md` |
+| 4 | Competitor trigger: Jelly or KitchenIQ publishes a written weekly "what to do" message **at under 60 pounds a month**, or Jelly adds a tier under 60 | re-checked every Wednesday from 2026-12-02 | re-read Jelly homepage and pricing page and the KitchenIQ listing; log in `COMPETITORS.md` |
 | 5 | Q-7 is not A by 2026-12-02 | 2026-12-02 | `state/QUESTIONS.md`; stop at the model-free prototype |
 | 6 | Friend demo outcome (above) fails | within 7 days of demo-ready | DECISIONS entry |
-| 7 | After unlock: 10 owner or bookkeeper conversations with fewer than 3 saying they would pay 39 pounds or more | after unlock | conversation log |
+| 7 | After unlock: 10 owner or bookkeeper conversations with fewer than 3 saying they would pay 39 pounds or more | within 30 days after unlock | conversation log |
 
 ## 10. Open questions
 
-- Q-7 answer (mini model or budget); without it this is a prototype only.
+- Q-7 answer A (mini model); Q-7 B funds only the ~$15 pro benchmark; without A this is a prototype only.
 - Postgres `bytea` storage versus Blob (Blob needs approval and a BUDGET entry).
 - Is a bookkeeper channel real through the friend's network? It changes user and price.
 - Jelly's exact setup fee and fair-use limit; do independents buy from one broadliner or several?

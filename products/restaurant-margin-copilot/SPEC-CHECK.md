@@ -82,3 +82,67 @@ Against the bar: `definition-of-done.md` §1 needs a deployed stable URL, "a new
 - https://dext.com/uk/business/pricing
 - Jelly-branded article mirror (search summary only, not an official page): https://ec2-34-250-149-172.eu-west-1.compute.amazonaws.com/uk-restaurant-price-hike-alerts/
 - Repo: `products/_starter/backend/app/config.py` (lines 28, 61), `products/_starter/README.md` ("Sizing the daily AI cap"), `state/BUDGET.md` (T-12 token log), `state/QUESTIONS.md` Q-6 and Q-7, `playbooks/definition-of-done.md` §1
+
+## Re-check (2026-11-24)
+
+- Checker: validator. I re-read the revised `SPEC.md`, the corrected `COMPETITORS.md`, `products/_starter/README.md`, `playbooks/definition-of-done.md`, `state/BUDGET.md`, `state/QUESTIONS.md` (Q-6, Q-7) and `state/DECISIONS.md` (2026-11-24T05:41:31Z). This is still not a G1 re-score: the score stays 66.
+
+### Verdict: PASS (ready to build if Q-6 resolves to B)
+
+All five fixes were made, and the numbers check out. Q-7 A is left as a stated dependency, which is allowed: it is at the top of the spec, in the build order, in the pricing section and as kill criterion #5. The five small items under "Non-blocking corrections" below should go into the first build commit. They do not hold up the build.
+
+### Fix 1: demo arithmetic (recomputed)
+
+| Step | Spec says | My computation | Result |
+|---|---|---|---|
+| Base GP | £14, cost £4.48, GP 68.0% | (14 - 4.48) / 14 = 68.00% | OK |
+| Beef share | 60% of cost | 0.60 x 4.48 = £2.688 | OK |
+| Beef +12% | cost £4.80, GP 65.7% | 2.688 x 0.12 = +£0.3226, cost £4.8026; (14 - 4.8026) / 14 = 65.70% | OK |
+| Fix: +£1.00 | GP back to 68.0% | (15 - 4.8026) / 15 = 67.98% | OK |
+| Fix: patty 180 g to 165 g | GP about 67.5% | new beef 3.0106 x 165/180 = £2.7597, a saving of £0.2509; cost £4.5517; (14 - 4.5517) / 14 = 67.49% | OK |
+
+The spec's "about 67.5%" is more accurate than my original note ("restores about 68%"). That note was wrong, and the spec was right to fix it. The section 4 week-1 test ("the section 2 burger example equals the code output") and rubric line (4) now protect the example.
+
+### Fix 2: the wedge restated
+
+Done. SPEC §3 drops day-one alerts ("NOT a differentiator"), quotes Jelly's homepage ("human-checked AI", "Daily notifications the moment a supplier moves a price", "margin warnings actioned the same day") and its pricing page ("Live price tracking"), and states "less product for much less money, no setup fee". COMPETITORS.md now has the Jelly row's invoice and alerts cells, section 3(c) marked CORRECTED, and the "Not found" bullet saying the fixes message is not a moat. All of these match what I saw on Jelly's pages.
+
+### Fix 3: process, budget and unit economics
+
+- Q-6: the written default is now B after 12 hours (QUESTIONS.md line 60), logged in DECISIONS 2026-11-24T05:41:31Z, with the G1 exception stated in both places. This is consistent with CLAUDE.md §6, because B is reversible and no money is spent until Q-7 is answered.
+- Per-invoice cost, checked against T-12. 27,619 output tokens over 5 calls is 5,524 per document. At $120 per million that is $0.663, about £0.52, which matches. Counting input as well, T-12 cost $3.40 over 5 calls, $0.68 each, about £0.54. Also within "about".
+- Daily cap: 6.10 / (30 x 120) x 1,000,000 = 1,694 tokens. That matches the README's "about 1,690", and is less than one 5,500-token invoice. The spec's claim is correct.
+- Invoice caps and margins, recomputed:
+
+| Plan | Cap | Pro at £0.52 | Mini at £0.03 to £0.10 | Pro margin | Mini margin |
+|---|---|---|---|---|---|
+| Trial | 10 | £5.20 | £0.30 to £1.00 | n/a | n/a |
+| Starter £39 | 25 | £13.00 | £0.75 to £2.50 | 66.7% ("about two thirds", OK) | 93.6% or more (OK) |
+| Standard £69 | 60 | £31.20 | £1.80 to £6.00 | 54.8% ("about 55%", OK) | 91.3% or more (OK) |
+
+- The mini assumption is conservative. 5,500 x $2 per million is $0.011, about £0.009, so the £0.03 to £0.10 range leaves 3 to 10 times headroom for image input and retries.
+- "No real pilot should run on pro" is stated, and is correct. Even ignoring margin, the studio-wide pro cap (about 51,000 tokens a month) covers fewer than 10 invoices a month for all tenants together.
+
+### Fix 4: starter gaps in scope
+
+Every gap I raised is now a Must item: bytea storage with a cap and retention, added to DATA.md and the purge; a 10 MB upload limit on that route only, a 5-page cap and downscaling; a Container Apps job for the queue plus a scheduled Monday job, costed in BUDGET.md; a separate worker deadline and retries; multimodal input and PDF rendering with pip-audit and about 2 days budgeted; cap sizing. The build is ordered model-free first, with the synthetic generator as a named week-1 task. CSV import and email-in are under Won't.
+
+### Fix 5: the bar and the kill criteria
+
+- DoD §1 "own data": the demo now uploads a fresh, uncached photo live, and "the live upload is never replaced by a cached result". The demo no longer depends on the cache. OK.
+- Held-out set: at least 3 layouts, generator written after the prompts are frozen, run once. Its kill line is #2. OK.
+- The degraded-photo kill line is #2 (under 75%). Reviewers are named by role with a 5-point written rubric. The friend-demo outcome is defined and dated (#6). OK.
+- Kill table: each row has a date or a dated trigger and a check method. #1 to #5 have calendar dates that "slip day for day". #6 is "within 7 days of demo-ready". #7 is "after unlock". OK, with the date nit below.
+
+### Non-blocking corrections (fix in the first build commit)
+
+1. **Day of week in kill #4.** 2026-12-02 is a Wednesday (2026-11-24 is a Tuesday). Change it to "every Tuesday from 2026-12-01" or "every Wednesday from 2026-12-02".
+2. **State the VAT basis in the worked example.** UK GP is normally worked on the price net of VAT. If £14 were the VAT-inclusive menu price, the net price would be £11.67 and the GP 61.6%, not 68.0%. Write "£14 net of VAT (£16.80 on the menu)" in §2 and §6, and make the fixture use the site's "prices exclude VAT" setting, so the test pins the basis.
+3. **Q-7 wording.** §0 says "a mini model or a larger approved budget". Q-7's options are A (mini), B (pro, at most about 20 documents and about $15) and C (no spend). Write "Q-7 A (a mini deployment); Q-7 B funds only the about-$15 pro benchmark". Pro benchmark spend is ask-first, so it waits for Vishal.
+4. **COMPETITORS.md sources.** Add https://www.getjelly.co.uk/ (the homepage) to section 2. It is quoted in the matrix but listed only under the pricing URL. Section 3 bullet 1 says "an entrant at GBP 30 to 50", but the spec prices at £39 to £69. Align them.
+5. **Kill #7 has no deadline.** Add "within 30 days of unlock" so it cannot drift.
+
+### Still true (no change needed, restated for the build)
+
+- Without Q-7 A, the deliverable is the model-free prototype, and the live-upload demo cannot run within budget (kill #5).
+- The wedge is thin: it is price plus a presentation layer. A pass here means the plan is buildable and honest. It does not mean the product will sell.
