@@ -95,3 +95,24 @@ the caller already passes it.
 
 - Test run (renamed `_t18v` copy): `passed: 28  failed: 0`.
 - Mutation one-liners and outputs: see Summary. Afterwards no `_t18v` roles or schemas were left on the local server.
+
+## Re-check (6dd1d34, 2026-11-24): PASS
+
+I ran a copy renamed to `_t18v` against local PG16: **passed 33, failed 0**. Afterwards no `_t18v` roles or schemas
+were left on the server.
+
+- **B1 fixed.** The test now gives both roles a password after the first run, checks it took, and asserts the re-run
+  wipes it. Removing `PASSWORD NULL` from the migrator, or from the app, now fails `rolpassword IS NULL` (1 fail each).
+- **B2 fixed.** `\set ON_ERROR_STOP on` is now in the script. Run without the flag and with `app_oid=bad`, it stops at
+  `app_oid is not a lower-case UUID` and creates no roles (0 `zz_t18v` roles). The test harness passes the flag
+  itself, so this line is checked by hand, not by the test. Acceptable.
+- **Item 1 fixed.** There are now six skew cases: objectid, isadmin and principaltype, each for both app and migrator.
+  Removing any of the six checks fails exactly 1 test: migrator oid, migrator isadmin, app isadmin, app type,
+  migrator type, and app oid (the existing case).
+- **Item 2 fixed.** The stub schema is now `pgaadauth_stub_t18s`, passed in as `-v entra_stub=<schema>` and used as
+  `:"entra_stub".principals`, which is quoted as an identifier. db-setup.sql has no hard-coded suffix. The header
+  comments now say the stub works through `search_path` and that calls must stay unqualified.
+- **Item 3 fixed.** The fixture heredoc's exit status is checked.
+- **Still open, non-blocking:** item 4 (Azure-only checks, record them at the first deploy) and item 5 (ADMIN OPTION
+  runbook line).
+- **Merge:** item 6 stands. This stays on the branch and merges together with slice 4.
