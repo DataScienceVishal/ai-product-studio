@@ -5,10 +5,9 @@ import re
 from pathlib import Path
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.main import create_app
 from app.spa import CLIENT_ROUTES, HTML_CSP
+from fastapi.testclient import TestClient
 
 INDEX = ('<!doctype html><html><head><script type="module" crossorigin src="/assets/index-abc123.js"></script>'
          '<link rel="stylesheet" href="/assets/index-abc123.css"></head><body><div id="root"></div></body></html>')
@@ -185,29 +184,89 @@ def test_assets_do_not_follow_symlinks(web, dist, tmp_path):
         assert r.status_code == 404 and "top secret" not in r.text, path
 
 
-_ROUTE = re.compile(r"""\bpath\s*===\s*(["'`])(/[^"'`$]*)\1""")
+# A compared value must end the operand: `path === "/a" + "/sub"` or `ROUTES.a.toLowerCase()` is not the route "/a".
+_END = r"""(?=\s*(?:\)|&&|\|\||\?\?|\?|;|:|,|\}|$))"""
+_ROUTE = re.compile(r"""\bpath\s*===\s*(["'`])(/[^"'`$]*)\1""" + _END, re.MULTILINE)
 # "/x" === path (literal first)
-_ROUTE_REVERSED = re.compile(r"""(["'`])(/[^"'`$]*)\1\s*===\s*path\b""")
+_ROUTE_REVERSED = re.compile(r"""(?<![\w$.)\]+])(["'`])(/[^"'`$]*)\1\s*===\s*path\b(?!\s*[.\[(])""")
 # path === ROUTES.x / ROUTES["x"], either order: a member of a constant object literal in the same source
 _MEMBER = r"""([A-Za-z_$][\w$]*)\s*(?:\.\s*([A-Za-z_$][\w$]*)|\[\s*(["'`])([^"'`$]+)\3\s*\])"""
-_ROUTE_MEMBER = re.compile(rf"""\bpath\s*===\s*{_MEMBER}|{_MEMBER}\s*===\s*path\b""")
+_ROUTE_MEMBER = re.compile(rf"""\bpath\s*===\s*{_MEMBER}{_END}|(?<![\w$.)\]+]){_MEMBER}\s*===\s*path\b(?!\s*[.\[(])""", re.MULTILINE)
 # PAGES[path]: object-lookup routing; the keys of the object literal are the routes
 _LOOKUP = re.compile(r"""(?<![\w$.])([A-Za-z_$][\w$]*)\s*\[\s*path\s*\]""")
 _OBJECT_START = re.compile(r"""\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::(?:[^=;]|=>)+)?=\s*\{""")
-# `key: "string"` entries (bare or quoted key) and quoted keys of any value
-_STR_ENTRY = re.compile(r"""(?:^|[{,])\s*(?:([A-Za-z_$][\w$]*)|(["'`])([^"'`$]+)\2)\s*:\s*(["'`])([^"'`$]*)\4\s*(?=[,}])""")
-_KEY_ENTRY = re.compile(r"""(?:^|[{,])\s*(["'`])([^"'`$]+)\1\s*:""")
+_ROUTE_KEY_ENTRY = re.compile(r"""^\s*(["'`])(/[^"'`$]*)\1\s*:""")
+_STR_ENTRY = re.compile(r"""^\s*(?:([A-Za-z_$][\w$]*)|(["'`])([^"'`$]+)\2)\s*:\s*(["'`])([^"'`$]*)\4\s*$""")
 # Other ways to compare the path would hide a route from the sync test: path.startsWith(..), path !== .., /re/.test(path),
-# or a non-literal the scanner could not resolve to a string above...
+# SET.has(path), or a non-literal the scanner could not resolve to a string above...
+# `PUBLIC.has(path)` is the app's sign-in check, not routing, so it is the one allowed membership test.
 _OTHER = re.compile(
-    r"""\bpath\s*(?:!==?|==(?!=))|\bpath\s*\.\s*\w+\s*\(|\bswitch\s*\(\s*path\s*\)|\.\s*(?:test|includes)\s*\(\s*path\s*\)"""
-    r"""|\bpath\s*===\s*[A-Za-z_$]|[A-Za-z_$][\w$.]*\s*\[\s*path\s*\]|(?:!==?|(?<![=!])==(?!=))\s*path\b|[A-Za-z_$][\w$.]*\s*===\s*path\b""")
+    r"""\bpath\s*(?:!==?|==(?!=))|\bpath\s*\.\s*\w+\s*\(|\bswitch\s*\(\s*path\s*\)"""
+    r"""|(?<!PUBLIC)\.\s*(?:test|includes|has|indexOf)\s*\(\s*path\s*\)"""
+    r"""|\bpath\s*===\s*[A-Za-z_$"'`]|[A-Za-z_$][\w$.]*\s*\[\s*path\s*\]|(?:!==?|(?<![=!])==(?!=))\s*path\b"""
+    r"""|[A-Za-z_$)\]"'`][\w$.]*\s*===\s*path\b""")
 
 
-def _object_literals(src: str) -> dict[str, str]:
-    """name -> the text of each `const NAME = { ... }` object literal (braces balanced, string contents skipped)."""
-    out: dict[str, str] = {}
+def _strip_comments(src: str) -> str:
+    """Remove // and /* */ comments (not inside strings; '" strings end at a newline, so JSX text apostrophes can't run on)."""
+    out, i, quote = [], 0, ""
+    while i < len(src):
+        c, two = src[i], src[i:i + 2]
+        if quote:
+            out.append(c)
+            if c == "\\" and i + 1 < len(src):
+                out.append(src[i + 1])
+                i += 1
+            elif c == quote or (c == "\n" and quote != "`"):
+                quote = ""
+        elif two == "//":
+            while i < len(src) and src[i] != "\n":
+                i += 1
+            continue
+        elif two == "/*":
+            end = src.find("*/", i + 2)
+            i = len(src) if end < 0 else end + 2
+            out.append(" ")
+            continue
+        else:
+            out.append(c)
+            if c in "\"'`":
+                quote = c
+        i += 1
+    return "".join(out)
+
+
+def _split_top_level(text: str) -> list[str]:
+    """Split on commas that are not inside brackets, braces, parentheses or strings."""
+    parts, depth, quote, start, i = [], 0, "", 0, 0
+    while i < len(text):
+        c = text[i]
+        if quote:
+            if c == "\\":
+                i += 1
+            elif c == quote:
+                quote = ""
+        elif c in "\"'`":
+            quote = c
+        elif c in "{[(":
+            depth += 1
+        elif c in "}])":
+            depth -= 1
+        elif c == "," and depth == 0:
+            parts.append(text[start:i])
+            start = i + 1
+        i += 1
+    parts.append(text[start:])
+    return [p for p in parts if p.strip()]
+
+
+def _object_literals(src: str) -> dict[str, list[str]]:
+    """name -> top-level entries of its `const NAME = { ... }` literal. A name declared twice, or assigned to anywhere
+    (`NAME[k] = v`, `NAME.k = v`, `NAME = ..`, Object.assign), is left out: its routes can't be known from one literal."""
+    out: dict[str, list[str]] = {}
+    declarations = _OBJECT_START.sub(" ", src)  # the literal's own `NAME = {` is not an assignment
     for m in _OBJECT_START.finditer(src):
+        name = m.group(1)
         depth, i, quote = 1, m.end(), ""
         while i < len(src) and depth:
             c = src[i]
@@ -223,8 +282,14 @@ def _object_literals(src: str) -> dict[str, str]:
             elif c == "}":
                 depth -= 1
             i += 1
-        if not depth:
-            out[m.group(1)] = "{" + src[m.end():i]
+        if depth:
+            continue
+        n = re.escape(name)
+        twice = len(re.findall(rf"\b(?:const|let|var)\s+{n}\b", src)) > 1
+        assigned = re.search(rf"(?<![\w$.]){n}\s*(?:\.\s*[\w$]+|\[[^\]]*\])*\s*(?:\*\*|\?\?|\|\||&&|<<|>>>?|[-+*/%&|^])?=(?![=>])", declarations) \
+            or re.search(rf"Object\s*\.\s*assign\s*\(\s*{n}\b", src)
+        if not twice and not assigned:
+            out[name] = _split_top_level(src[m.end():i - 1])
     return out
 
 
@@ -232,35 +297,53 @@ def scan_routes(src: str) -> tuple[set[str], list[str]]:
     """Literal routes the source compares `path` with, and the comparisons the scanner cannot read.
 
     Reads `path === "/x"`, `"/x" === path`, `path === ROUTES.x` (or `ROUTES["x"]`, either order) and `PAGES[path]`, resolving
-    ROUTES and PAGES from `const NAME = { ... }` literals in the same source. Whatever it cannot resolve is returned as unreadable."""
+    ROUTES and PAGES from a single, never-reassigned `const NAME = { ... }` literal in the same source. A PAGES literal is read
+    only if EVERY top-level entry is a quoted "/route": key (no spread, computed key, method or bare key). Whatever it cannot
+    resolve is returned as unreadable."""
+    src = _strip_comments(src)
     objects = _object_literals(src)
-    found = {m.group(2) for m in _ROUTE.finditer(src)} | {m.group(2) for m in _ROUTE_REVERSED.finditer(src)}
+    found: set[str] = set()
+
+    def literal(m: re.Match) -> str:
+        if m.string[:m.start()].rstrip()[-1:] in ("+", "-", "*", "/", "%", "."):  # `"/a" + "/sub" === path`: not the literal alone
+            return m.group(0)
+        found.add(m.group(2))
+        return " "
 
     def member(m: re.Match) -> str:
         left = m.group(1) is not None  # `path === NAME.key` fills groups 1-4, `NAME.key === path` groups 5-8
         name, key = (m.group(1), m.group(2) or m.group(4)) if left else (m.group(5), m.group(6) or m.group(8))
-        values = {(bare or quoted): val for bare, _q, quoted, _q2, val in _STR_ENTRY.findall(objects.get(name, ""))}
+        values = {}
+        for entry in objects.get(name, []):
+            e = _STR_ENTRY.match(entry)
+            if e:
+                values[e.group(1) or e.group(3)] = e.group(5)
         if values.get(key, "").startswith("/"):
             found.add(values[key])
             return " "  # resolved: hide it from the unreadable check
         return m.group(0)
 
     def lookup(m: re.Match) -> str:
-        keys = [k for _q, k in _KEY_ENTRY.findall(objects.get(m.group(1), ""))]
-        if keys and all(k.startswith("/") for k in keys):
-            found.update(keys)
+        entries = objects.get(m.group(1), [])
+        keys = [_ROUTE_KEY_ENTRY.match(e) for e in entries]
+        if keys and all(keys):
+            found.update(k.group(2) for k in keys)
             return " "
         return m.group(0)
 
-    rest = _LOOKUP.sub(lookup, _ROUTE_MEMBER.sub(member, src))
+    rest = _ROUTE.sub(literal, src)
+    rest = _ROUTE_REVERSED.sub(literal, rest)
+    rest = _ROUTE_MEMBER.sub(member, rest)
+    rest = _LOOKUP.sub(lookup, rest)
     return found, [m.group(0) for m in _OTHER.finditer(rest)]
 
 
 def test_route_scanner_accepts_any_quote_style_and_flags_other_comparisons():
-    assert {m.group(2) for m in _ROUTE.finditer("path === \"/a\" || path === '/b' || path === `/c`")} == {"/a", "/b", "/c"}
-    for bad in ("path.startsWith('/x')", "path !== '/x'", "path == '/x'", "switch (path) {", "/x/.test(path)", "ROUTES.includes(path)"):
+    assert scan_routes("path === \"/a\" || path === '/b' || path === `/c`") == ({"/a", "/b", "/c"}, [])
+    for bad in ("path.startsWith('/x')", "path !== '/x'", "path == '/x'", "switch (path) {", "/x/.test(path)", "ROUTES.includes(path)",
+                "ROUTES_SET.has(path)", "LIST.indexOf(path)"):
         assert _OTHER.search(bad), bad
-    assert not _OTHER.search('PUBLIC.has(path) && path === "/x"')
+    assert scan_routes('PUBLIC.has(path) && path === "/x"') == ({"/x"}, [])  # the sign-in check is not routing
 
 
 def test_route_scanner_reads_or_flags_the_other_ways_to_write_a_route():
@@ -279,6 +362,15 @@ def test_route_scanner_resolves_a_literal_on_the_left():
     assert scan_routes("""if ("/x" !== path) return null;""")[1]  # a different operator is still unreadable
 
 
+@pytest.mark.parametrize("expr", [
+    'path === "/a" + "/sub"', 'path === "/a".toLowerCase()', '"/a" + "/sub" === path', 'path === ROUTES.a + "/sub"',
+    "path === ROUTES.a.toLowerCase()", 'ROUTES.a.toLowerCase() === path', 'path === ROUTES["a"] + x',
+])
+def test_route_scanner_does_not_resolve_a_value_that_is_more_than_the_literal(expr):
+    found, other = scan_routes(f'const ROUTES = {{ a: "/a" }};\nif ({expr}) go();')
+    assert other and not found, expr
+
+
 def test_route_scanner_resolves_constant_object_members():
     src = """
     const ROUTES = { billing: "/billing", "team-page": '/team', settings: `/settings`, label: "not a route" } as const;
@@ -292,6 +384,10 @@ def test_route_scanner_resolves_constant_object_members():
         found, other = scan_routes(src + bad)
         assert other and found == {"/billing", "/settings", "/team"}, bad
     found, other = scan_routes("const ROUTES = { a: base + '/a' };\nif (path === ROUTES.a) x();")  # computed: not a literal
+    assert other and not found
+    found, other = scan_routes('const ROUTES = { x: { a: "/a" } };\nif (path === ROUTES.a) x();')  # nested, not top-level
+    assert other and not found
+    found, other = scan_routes('const ROUTES = { a: "/a" };\nROUTES.a = "/b";\nif (path === ROUTES.a) x();')  # reassigned
     assert other and not found
 
 
@@ -309,21 +405,67 @@ def test_route_scanner_resolves_object_lookup_routing():
     assert other and not found
     found, other = scan_routes("return PAGES[path];")  # no literal to resolve
     assert other and not found
+    assert scan_routes('const PAGES = { "/a": { "/b": B } };\nreturn PAGES[path];') == ({"/a"}, [])  # nested keys are not routes
+
+
+@pytest.mark.parametrize("literal", [
+    'const PAGES = { "/a": A, /* more */ [ROUTES.b]: B };',                 # computed key
+    'const PAGES = { "/a": A, [`/${x}`]: B };',                             # computed template key
+    'const PAGES = { ...MORE, "/a": A };',                                  # spread
+    'const PAGES = { "/a": A, "/b"() { return B; } };',                     # method shorthand
+    'const PAGES = { "/a": A, b };',                                        # shorthand property
+    'const PAGES = { "/a": A, home: B };',                                  # bare key
+    'const PAGES = { "/a": A };\nPAGES["/b"] = B;',                         # added later
+    'const PAGES = { "/a": A };\nPAGES.x = B;',
+    'const PAGES = { "/a": A };\nObject.assign(PAGES, MORE);',
+    'const PAGES = { "/a": A };\nfunction f() { const PAGES = { "/b": B }; }',  # declared twice
+    'let PAGES = { "/a": A };\nPAGES = { "/b": B };',                       # reassigned
+    'const PAGES = {};',                                                    # nothing to read
+])
+def test_route_scanner_flags_an_object_lookup_it_cannot_read_completely(literal):
+    _found, other = scan_routes(literal + "\nreturn PAGES[path];")
+    assert other, literal  # unreadable, so the sync test fails instead of passing with a route missing
+
+
+@pytest.mark.parametrize("literal", [
+    'const PAGES = {\n "/a": A, // home\n "/b": B };',      # comment after an entry
+    'const PAGES = { // pages\n "/a": A,\n "/b": B };',     # comment before the first entry
+    'const PAGES = { "/a": A, /* x, y */ "/b": B, // end\n};',
+])
+def test_route_scanner_reads_a_lookup_object_with_comments(literal):
+    assert scan_routes(literal + "\nreturn PAGES[path];") == ({"/a", "/b"}, [])
+
+
+def test_route_scanner_comments_do_not_hide_or_invent_routes():
+    src = '''
+    // if (path === "/old") go();
+    /* if (path === "/older") go(); */
+    const URL = "https://example.test/x"; // a // inside a string is not a comment
+    if (path === "/live") go(); // trailing
+    '''
+    assert scan_routes(src) == ({"/live"}, [])
+
+
+_GUARD_LINES = {
+    "/zero": 'if (path === "/zero") return <Zero />;',
+    "/left": 'if ("/left" === path) return <Left />;',
+    "/one": "if (path === ROUTES.one) return <One />;",
+    "/two": "return PAGES[path];",
+}
+_GUARD_SRC = 'const ROUTES = { one: "/one" };\nconst PAGES = { "/two": Two };\n'
 
 
 def test_route_scanner_regression_guard_on_a_synthetic_app():
-    """If the scanner stops seeing any one form, this fails: each route below comes from exactly one form."""
-    src = """
-    const ROUTES = { one: "/one" };
-    const PAGES = { "/two": Two };
-    if (path === "/zero") return <Zero />;
-    if ("/left" === path) return <Left />;
-    if (path === ROUTES.one) return <One />;
-    return PAGES[path];
-    """
-    found, other = scan_routes(src)
-    assert other == []
-    assert found == {"/zero", "/left", "/one", "/two"}
+    """If the scanner stops seeing any one form, this fails."""
+    found, other = scan_routes(_GUARD_SRC + "\n".join(_GUARD_LINES.values()))
+    assert other == [] and found == set(_GUARD_LINES)
+
+
+@pytest.mark.parametrize("route", sorted(_GUARD_LINES))
+def test_route_scanner_each_form_contributes_exactly_its_own_route(route):
+    lines = [line for r, line in _GUARD_LINES.items() if r != route]
+    found, other = scan_routes(_GUARD_SRC + "\n".join(lines))
+    assert other == [] and found == set(_GUARD_LINES) - {route}
 
 
 def test_client_routes_match_the_frontend_router():

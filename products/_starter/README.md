@@ -33,7 +33,7 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 
 | What | Command | Where it runs |
 |---|---|---|
-| Backend unit and API tests (422 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
+| Backend unit and API tests (449 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
 | Migrations match the models | `alembic upgrade head && alembic check` | every push |
 | Frontend type check and build | `cd frontend && npm run build` | every push (CI `frontend`) |
 | Browser end-to-end core flow | `./scripts/e2e.sh` | pushes to main and manual runs (CI `e2e`) |
@@ -160,11 +160,16 @@ day that deployment could cost up to $360 a month, far over the $80 credit. Chan
 `aiPricePerMillionTokens` and `aiGlobalDailyTokens` together; `infra/cost-guard.sh` fails the build when
 tokens x price x 30 passes $6.10. Raising the budget needs Vishal's approval.
 
-**Calls per day.** Each call reserves its upper bound before it runs: input bytes + the answer budget (1,200 output
-tokens by default) + `AI_REASONING_HEADROOM` (1,500, Responses API only), so about 2.7k tokens plus the input. The
-cap is checked against reservations, so it admits `cap / reservation` calls however short the real answers are.
-Worked example: 100,000 / (2,700 + about 300 input) = about 33 calls a day for all customers together, and free trials
-get half of that (`AI_TRIAL_SHARE` 0.5), about 16. Size the cap to the calls you want to allow, then check the cost
+**Calls per day.** A call reserves its upper bound before it runs, and `settle()` replaces the reservation with the
+tokens actually used. The reservation is `system prompt (287 bytes) + note bytes + 17 + 1,200 answer budget`, plus
+`AI_REASONING_HEADROOM` (1,500) only on the Responses API (Bicep `auto` picks chat unless the endpoint ends in
+`/openai/v1/responses`). So the cap is not a daily call count: a call is refused once less than its reservation is
+left, and `cap / reservation` is a floor (calls that all run at once, or each use their full budget). Short answers
+leave room for more.
+Worked example (Responses API, 1 KB note): reservation about 287 + 1,000 + 17 + 2,700 = 4,000, so 100,000 admits at
+least 25 such calls. A 20,000-character note reserves 23k to 83k (multibyte text), which can exceed the 30k trial cap on
+its own. Until `unlock selling`, `LIMITED_PROVIDERS` (mock, Stripe test) makes every tenant draw on the trial half
+(`AI_TRIAL_SHARE` 0.5, 50,000 of 100,000). Size the cap from the reservation of your typical note, then check the cost
 with the formula above.
 
 ## Azure OpenAI sign-in
