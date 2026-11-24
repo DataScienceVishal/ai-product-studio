@@ -159,7 +159,7 @@ def test_guard_runs_before_the_call_and_blocks_it(tmp_path):
 def test_failed_call_that_may_have_run_is_charged_worst_case(tmp_path):
     class Boom:
         output_headroom = 0
-        def complete(self, s, p, m):
+        def complete(self, s, p, m, **kw):
             raise providers.ProviderError("timeout", 5000, m, may_have_run=True)
     b = new_budget(tmp_path)
     with pytest.raises(providers.ProviderError):
@@ -356,7 +356,70 @@ def test_cli_starts_test_set_with_full_budget(tmp_path):
 
 def test_http_400_is_fatal_and_stops_the_run(monkeypatch, tmp_path):
     class P(providers.FakeProvider):
-        def complete(self, s, p, m):
+        def complete(self, s, p, m, **kw):
             raise providers.ProviderError("request rejected (HTTP 400)", fatal=True)
     monkeypatch.setattr(run, "make_provider", lambda name: P())
     assert run.main(["--set", "tuning", "--provider", "fake", "--out", str(tmp_path / "o"), "--no-score"]) == 5
+
+
+# ---- S2: every billable 5xx is charged at worst case, budget re-checked before each retry -------------------
+X = [{"type": "text", "text": "x"}]  # estimate_input_tokens = 1 + len(system "s") = 2
+
+
+def _ledger(path):
+    return [json.loads(l) for l in Path(path).read_text().splitlines()]
+
+
+def test_s2_three_5xx_then_200_records_three_worst_cases_plus_real(tmp_path):
+    seq = iter([(500, {}, b""), (502, {}, b""), (503, {}, b""), (200, {}, ok_body())])
+    b = B.Budget(tmp_path / "l.jsonl")
+    p = providers.AzureResponsesProvider(env=ENV, transport=lambda r, t: next(seq), sleep=lambda s: None)
+    res = p.complete("s", X, 1000, budget=b, label="S1")
+    b.record("S1", res.input_tokens, res.output_tokens, model=res.model)  # what extract_pdf does
+    rows = _ledger(tmp_path / "l.jsonl")
+    assert len(rows) == 4
+    assert [r["estimated"] for r in rows] == [True, True, True, False]
+    assert all((r["input_tokens"], r["output_tokens"]) == (2, 1000) for r in rows[:3])
+    assert rows[3]["input_tokens"] == 100 and b.tokens == 3 * 1002 + 150
+
+
+def test_s2_429_and_connect_errors_are_free(tmp_path):
+    def tr(req, t, seq=iter([(429, {}, b""), "conn", (200, {}, ok_body())])):
+        v = next(seq)
+        if v == "conn":
+            raise urllib.error.URLError(ConnectionRefusedError("no"))
+        return v
+    b = B.Budget(tmp_path / "l.jsonl")
+    p = providers.AzureResponsesProvider(env=ENV, transport=tr, sleep=lambda s: None)
+    p.complete("s", X, 1000, budget=b, label="S1")
+    assert not (tmp_path / "l.jsonl").exists() and b.tokens == 0
+
+
+def test_s2_retry_refused_when_next_attempt_could_cross_cap(tmp_path):
+    calls = []
+    def tr(req, t):
+        calls.append(1)
+        return 500, {}, b""
+    # cap fits the first attempt's worst case (1002 tokens) twice over, but not three times
+    b = B.Budget(tmp_path / "l.jsonl", max_tokens=2500)
+    b.check(2, 1000)
+    p = providers.AzureResponsesProvider(env=ENV, transport=tr, sleep=lambda s: None)
+    with pytest.raises(B.BudgetExceeded, match="retry 3"):
+        p.complete("s", X, 1000, budget=b, label="S1")
+    assert len(calls) == 2 and len(_ledger(tmp_path / "l.jsonl")) == 2 and b.tokens == 2004
+
+
+def test_s2_final_5xx_is_charged_and_gives_up(tmp_path):
+    b = B.Budget(tmp_path / "l.jsonl")
+    p = providers.AzureResponsesProvider(env=ENV, transport=lambda r, t: (500, {}, b""), sleep=lambda s: None, retries=2)
+    with pytest.raises(providers.ProviderError, match="gave up after 3 attempts") as e:
+        p.complete("s", X, 1000, budget=b, label="S1")
+    assert len(_ledger(tmp_path / "l.jsonl")) == 3 and not e.value.may_have_run  # no double charge in extract_pdf
+
+
+def test_s2_usd_cap_refuses_retry(tmp_path):
+    b = B.Budget(tmp_path / "l.jsonl", max_usd=0.25)  # worst case 1000 out + 2 in = USD 0.12003 per attempt
+    p = providers.AzureResponsesProvider(env=ENV, transport=lambda r, t: (500, {}, b""), sleep=lambda s: None)
+    with pytest.raises(B.BudgetExceeded, match="USD"):
+        p.complete("s", X, 1000, budget=b, label="S1")
+    assert len(_ledger(tmp_path / "l.jsonl")) == 2

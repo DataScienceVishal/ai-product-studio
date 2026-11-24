@@ -87,7 +87,7 @@ def extract_pdf(pdf_path, provider, budget, sheet_id=None, max_output_tokens=MAX
     est_in = providers.estimate_input_tokens(system, parts)
     budget.check(est_in, max_output_tokens + int(getattr(provider, "output_headroom", 0)), label=sheet_id)
     try:
-        res = provider.complete(system, parts, max_output_tokens)
+        res = provider.complete(system, parts, max_output_tokens, budget=budget, label=sheet_id)
     except providers.ProviderError as e:
         if e.may_have_run:
             budget.record(sheet_id, e.input_tokens, e.output_tokens, estimated=True, note=f"worst case after: {e}")

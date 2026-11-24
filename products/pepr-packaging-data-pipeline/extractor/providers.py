@@ -56,7 +56,7 @@ class FakeProvider:
         self.responder = responder
         self.calls = []
 
-    def complete(self, system, parts, max_output_tokens):
+    def complete(self, system, parts, max_output_tokens, budget=None, label=""):
         self.calls.append(parts)
         if self.responder:
             text = self.responder(system, parts)
@@ -124,7 +124,10 @@ class AzureResponsesProvider:
                 "reasoning": {"effort": self.reasoning_effort}, "store": False,
                 "input": [{"role": "user", "content": content}]}
 
-    def complete(self, system, parts, max_output_tokens):
+    def complete(self, system, parts, max_output_tokens, budget=None, label=""):
+        """With `budget`, every 5xx (the model may have run and billed) is recorded at its worst case before the next
+        attempt, and budget.check is re-run before each retry, so one reservation never covers two billable attempts.
+        BudgetExceeded propagates and no further call is made. Connect errors and 429 retry free."""
         if self._env.get("T56_SPEND_APPROVED") != "1":  # checked again at call time
             raise SpendNotApproved("Azure call refused: T56_SPEND_APPROVED is not 1")
         body = json.dumps(self.payload(system, parts, max_output_tokens)).encode()
@@ -146,6 +149,11 @@ class AzureResponsesProvider:
                 continue
             if status == 429 or status >= 500:
                 last = f"HTTP {status}"
+                if status >= 500 and budget is not None:
+                    budget.record(label, worst_in, max_output_tokens, estimated=True,
+                                  note=f"worst case, HTTP {status} on attempt {attempt + 1}")
+                    if attempt < self.retries:
+                        budget.check(worst_in, max_output_tokens, label=f"{label} retry {attempt + 2}")
                 self._pause(attempt, headers.get("retry-after") or headers.get("Retry-After"))
                 continue
             if status in (401, 403):

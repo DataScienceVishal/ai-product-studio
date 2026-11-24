@@ -48,3 +48,5 @@ Run (after approval): `T56_SPEND_APPROVED=1 python3 -m extractor.run --set tunin
 
 ## Review fixes for slice 3 (reviews/T-56-slice3.md)
 C1: default max_output_tokens 6000; `--set test` refuses to start (exit 4) unless remaining budget covers 30 x USD 0.316 + one worst-case reservation (and a token analogue). C2: pass mark 4b = share of conflicts flagged (Studio Lead decision); both-values rate is information only; README updated. S1 (unknown feature keys count as untraced), S3 (HTTP 400/401/403 stops the run, exit 5), S4, S5 done. Not done: S2 (5xx retries share one reservation), S6 (record image tokens after first scanned tuning sheet). After tuning set max_output_tokens to ~3x the largest output seen, minimum 4000.
+
+S2 fixed: `AzureResponsesProvider.complete(..., budget, label)` (passed by `extract_pdf`) records every 5xx at its worst case (estimated entry) and re-runs `budget.check` before each retry; a refused retry raises BudgetExceeded and makes no further call. Timeouts were already never retried and are charged by `extract_pdf`; connect errors and 429 stay free. S6 still not done.
