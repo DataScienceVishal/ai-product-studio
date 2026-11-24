@@ -1,3 +1,15 @@
+# T-34b status
+
+Done (reviews/T-33-review.md, T-34-review.md): S1 an incomplete/failed Responses answer is never saved as a summary;
+it is a billed `AIUnavailable` with its own message (out of room, thinking used it all, safety filter, declined,
+failed, no answer). Chat keeps its old "any text is an answer" rule. S3 `AI_REASONING_HEADROOM` (default 1500) is added to
+`max_output_tokens` in Responses mode and to the reservation (`reservation_estimate`), and a call whose reasoning used
+the whole budget is named. R5 `_parse` errors (bad usage numbers, chat `choices` shapes) raise a billed clean error
+instead of settling 0/0. S7 import moved, docstring, query string or fragment in the endpoint is a clear ValueError.
+Extras: cost-guard harness `backend/tests/test_cost_guard.py` (needs jq), cost-guard names a bad AI_MONTHLY_BUDGET_USD.
+Left: S2 (Q-7), README table row for AI_REASONING_HEADROOM, headroom price effect on pro caps (check sizing).
+Verify: backend `pytest` 290 passed 1 skipped; frontend `vitest run`.
+
 # T-33 status
 
 Done: Azure provider supports the v1 Responses API (`AZURE_OPENAI_API=auto|responses|chat`, endpoint

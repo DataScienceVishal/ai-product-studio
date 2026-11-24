@@ -17,6 +17,8 @@ set -euo pipefail
 
 AI_MONTHLY_BUDGET_USD="${AI_MONTHLY_BUDGET_USD:-6.10}"
 
+jq -en --arg b "$AI_MONTHLY_BUDGET_USD" '($b | tonumber? // null) | . != null and . > 0' >/dev/null 2>&1 \
+  || { echo "::error::cost-guard: AI_MONTHLY_BUDGET_USD must be a number above 0, got: $AI_MONTHLY_BUDGET_USD" >&2; exit 2; }
 [ "$#" -ge 1 ] || { echo "usage: cost-guard.sh <compiled template.json>..." >&2; exit 2; }
 problems=0
 report() {

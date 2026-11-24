@@ -189,7 +189,7 @@ def test_bad_credentials_are_a_friendly_error():
 
 import logging  # noqa: E402
 
-from app.ai import ManagedIdentityToken, build_provider  # noqa: E402
+from app.ai import ManagedIdentityToken, build_provider, normalise_endpoint, reservation_estimate  # noqa: E402
 
 IDENTITY_URL = "http://localhost:42356/msi/token"
 SECRET_HEADER = "hdr-secret-123"
@@ -516,7 +516,7 @@ def test_token_and_identity_header_never_reach_logs_or_errors(caplog):
 def test_build_provider_picks_the_auth_mode(monkeypatch):
     from types import SimpleNamespace
     base = dict(ai_provider="azure", azure_openai_endpoint="https://r.openai.azure.com", azure_openai_deployment="d",
-                azure_openai_api_key="", ai_timeout_seconds=5, ai_deadline_seconds=9, ai_retries=1, azure_client_id="cid", azure_openai_api="auto")
+                azure_openai_api_key="", ai_timeout_seconds=5, ai_deadline_seconds=9, ai_retries=1, ai_reasoning_headroom=0, azure_client_id="cid", azure_openai_api="auto")
     assert build_provider(SimpleNamespace(**base, azure_openai_auth="key")).token_provider is None
     built = build_provider(SimpleNamespace(**base, azure_openai_auth="managed_identity"))
     assert built.token_provider.client_id == "cid"
@@ -531,8 +531,6 @@ def test_settings_accept_only_known_auth_modes(monkeypatch):
 
 
 # --- Azure OpenAI v1 Responses API (T-33) ---------------------------------------------------------
-from app.ai import normalise_endpoint  # noqa: E402
-
 ROOT = "https://res.openai.azure.com"
 
 
@@ -661,7 +659,7 @@ def test_responses_with_managed_identity_sends_bearer_and_no_api_key():
 def test_build_provider_passes_the_api_setting():
     from types import SimpleNamespace
     base = dict(ai_provider="azure", azure_openai_endpoint=ROOT + "/openai/v1/responses", azure_openai_deployment="d",
-                azure_openai_api_key="k", ai_timeout_seconds=20.0, ai_deadline_seconds=25.0, ai_retries=1,
+                azure_openai_api_key="k", ai_timeout_seconds=20.0, ai_deadline_seconds=25.0, ai_retries=1, ai_reasoning_headroom=700,
                 azure_openai_auth="key", azure_client_id="")
     assert build_provider(SimpleNamespace(**base, azure_openai_api="auto")).api == "responses"
     assert build_provider(SimpleNamespace(**base, azure_openai_api="chat")).api == "chat"
@@ -673,3 +671,116 @@ def test_settings_accept_only_known_api_modes():
     assert Settings(env="test", azure_openai_api="responses").azure_openai_api == "responses"
     with pytest.raises(ValueError):
         Settings(env="test", azure_openai_api="soap")
+
+
+# --- T-34b: incomplete answers, reasoning headroom, parse gaps, endpoint query strings ---------------
+
+def _body(status="completed", text="partial", reason=None, out=200, reasoning=0, content=None):
+    msg = content if content is not None else [{"type": "output_text", "text": text}]
+    body = {"status": status, "output": [{"type": "reasoning"}] + ([{"type": "message", "content": msg}] if msg else []),
+            "usage": {"input_tokens": 40, "output_tokens": out, "output_tokens_details": {"reasoning_tokens": reasoning}}}
+    if reason:
+        body["incomplete_details"] = {"reason": reason}
+    return body
+
+
+def _fail(body, **kw):
+    with pytest.raises(AIUnavailable) as error:
+        _resp_az(lambda _: httpx.Response(200, json=body), api="responses", retries=0, **kw).complete("s", "u")
+    return error.value
+
+
+def test_responses_incomplete_with_partial_text_is_a_failure_not_a_summary():
+    error = _fail(_body("incomplete", "half a summ", "max_output_tokens"))
+    assert "ran out of room" in error.message and "half a summ" not in error.message
+    assert (error.input_tokens, error.output_tokens) == (40, 200)  # still billed
+
+
+@pytest.mark.parametrize("body, expect", [
+    (_body("incomplete", "", "content_filter"), "safety filter"),
+    (_body("incomplete", "x", None), "ran out of room"),  # no reason given: treated as out of room
+    (_body("failed", ""), "couldn't finish"),
+    (_body("completed", "", content=[{"type": "refusal", "text": "no"}]), "declined"),
+    (_body("completed", "", content=[]), "no answer"),
+])
+def test_responses_failure_messages_say_what_happened(body, expect):
+    error = _fail(body)
+    assert expect in error.message and (error.input_tokens, error.output_tokens) == (40, 200)
+
+
+def test_responses_reasoning_using_the_whole_budget_is_named():
+    error = _fail(_body("incomplete", "", "max_output_tokens", out=200, reasoning=200))
+    assert "thinking" in error.message
+
+
+def test_responses_completed_with_text_still_succeeds_and_missing_status_too():
+    body = _body("completed", "fine")
+    assert _resp_az(lambda _: httpx.Response(200, json=body), api="responses").complete("s", "u").text == "fine"
+    body.pop("status")
+    assert _resp_az(lambda _: httpx.Response(200, json=body), api="responses").complete("s", "u").text == "fine"
+
+
+def test_chat_with_text_and_finish_length_is_unchanged_and_empty_filtered_is_named():
+    ok = {"choices": [{"message": {"content": "cut"}, "finish_reason": "length"}], "usage": {}}
+    assert _azure(lambda _: httpx.Response(200, json=ok)).complete("s", "u").text == "cut"
+    empty = {"choices": [{"message": {"content": None}, "finish_reason": "content_filter"}],
+             "usage": {"prompt_tokens": 5, "completion_tokens": 7}}
+    with pytest.raises(AIUnavailable, match="safety filter") as error:
+        _azure(lambda _: httpx.Response(200, json=empty)).complete("s", "u")
+    assert (error.value.input_tokens, error.value.output_tokens) == (5, 7)
+
+
+def test_reasoning_headroom_is_added_to_the_budget_and_the_reservation():
+    seen = {}
+
+    def handler(request):
+        seen["max"] = json.loads(request.content)["max_output_tokens"]
+        return _responses_ok()
+
+    provider = AzureOpenAI(ROOT, "d", "k", api="responses", reasoning_headroom=1500,
+                           client=httpx.Client(transport=httpx.MockTransport(handler)))
+    provider.complete("s", "u", max_output_tokens=1200)
+    assert seen["max"] == 2700 and provider.output_headroom == 1500
+    assert reservation_estimate(provider, "ab", "cd", 1200) == 4 + 2700
+    chat = AzureOpenAI(ROOT, "d", "k", api="chat", reasoning_headroom=1500)
+    assert chat.output_headroom == 0 and reservation_estimate(chat, "ab", "cd", 1200) == 4 + 1200
+    assert reservation_estimate(ai_module.FakeAI(), "ab", "cd", 1200) == 4 + 1200
+
+
+def test_timeout_after_sending_bills_the_headroom_too():
+    def handler(request):
+        raise httpx.ReadTimeout("slow")
+
+    provider = AzureOpenAI(ROOT, "d", "k", api="responses", reasoning_headroom=500, retries=0,
+                           client=httpx.Client(transport=httpx.MockTransport(handler)))
+    with pytest.raises(AIUnavailable) as error:
+        provider.complete("s", "u", max_output_tokens=100)
+    assert error.value.output_tokens == 600
+
+
+@pytest.mark.parametrize("body", [
+    {"status": "completed", "output": [], "usage": {"input_tokens": "lots"}},
+    {"status": "incomplete", "incomplete_details": "oops", "output": [], "usage": {}},
+    {"status": "completed", "output": [], "usage": {"output_tokens": 5, "output_tokens_details": "x"}},
+])
+def test_responses_unparseable_usage_is_a_clean_billed_error(body):
+    error = _fail(body)  # none may escape as a bare TypeError/ValueError (that would settle at 0/0)
+    if body["usage"].get("input_tokens") == "lots":  # unreadable usage: the whole budget is billed, as for a timeout
+        assert error.output_tokens == 1200 and error.input_tokens > 0
+
+
+@pytest.mark.parametrize("body", [
+    {"choices": "x", "usage": {}}, {"choices": ["x"], "usage": {}}, {"choices": [{"message": "x"}], "usage": {}},
+    {"choices": [{"message": {"content": "hi"}}], "usage": {"prompt_tokens": "many"}},
+])
+def test_chat_malformed_body_is_a_clean_error(body):
+    with pytest.raises(AIUnavailable):
+        _azure(lambda _: httpx.Response(200, json=body), retries=0).complete("s", "u")
+
+
+@pytest.mark.parametrize("given", ["https://r.openai.azure.com?api-version=preview",
+                                   "https://r.openai.azure.com/openai/v1/responses?api-version=x",
+                                   "https://r.openai.azure.com/#frag"])
+def test_endpoint_with_a_query_or_fragment_is_refused_clearly(given):
+    with pytest.raises(ValueError, match="query string"):
+        normalise_endpoint(given)

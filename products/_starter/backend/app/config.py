@@ -57,6 +57,9 @@ class Settings(BaseSettings):
     ai_timeout_seconds: float = 20.0  # per attempt
     ai_deadline_seconds: float = 25.0  # whole call, retries included; below the frontend's 30 s abort
     ai_retries: int = 1
+    # Responses-API reasoning tokens share max_output_tokens with the answer; this many are added to each call's
+    # budget (and reserved) so thinking can't use up the answer's room. Chat completions ignore it.
+    ai_reasoning_headroom: int = 1500
     ai_rate_limit_per_minute: int = 20
     # All tenants together, per UTC day. Protects the studio's $80 of Azure credit from farmed free trials.
     ai_global_daily_tokens: int = 100_000

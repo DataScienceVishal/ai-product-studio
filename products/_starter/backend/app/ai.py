@@ -1,6 +1,6 @@
 """AI provider interface, a fake for dev/tests, Azure OpenAI, and per-tenant usage caps.
 
-Azure OpenAI uses the v1 API: POST {endpoint}/openai/v1/chat/completions with an `api-key`
+Azure OpenAI uses the v1 API (chat completions or responses): POST {endpoint}/openai/v1/chat/completions with an `api-key`
 header and the deployment name as `model` (Microsoft Learn, checked 2026-11-23). In cloud runs
 the key is injected by the environment's network secret, so AZURE_OPENAI_API_KEY holds only a
 placeholder. gpt-5-mini is a reasoning model: max_completion_tokens covers reasoning too.
@@ -62,6 +62,7 @@ class AIUnavailable(AppError):
 
 class AIProvider(Protocol):
     name: str
+    output_headroom: int  # extra output tokens the provider may add to a call's budget (reasoning); reserve them too
 
     def complete(self, system: str, user: str, max_output_tokens: int = 1200) -> AIResult: ...
 
@@ -69,6 +70,7 @@ class AIProvider(Protocol):
 class FakeAI:
     """Deterministic stand-in: no network, no cost. Used in dev and tests."""
     name = "fake"
+    output_headroom = 0
 
     def complete(self, system: str, user: str, max_output_tokens: int = 1200) -> AIResult:
         words = [w for w in user.split() if not (w.startswith("<") and w.endswith(">"))]  # drop delimiters
@@ -80,6 +82,11 @@ def estimate_tokens(system: str, user: str, max_output_tokens: int) -> int:
     """An upper bound: every token is at least one byte of UTF-8, so input bytes bound input tokens
     (characters don't: some scripts take several tokens per character). Plus the whole output budget."""
     return len(system.encode("utf-8")) + len(user.encode("utf-8")) + max_output_tokens
+
+
+def reservation_estimate(provider, system: str, user: str, max_output_tokens: int) -> int:
+    """estimate_tokens plus the provider's reasoning headroom, so a reservation covers what may be billed."""
+    return estimate_tokens(system, user, max_output_tokens + int(getattr(provider, "output_headroom", 0) or 0))
 
 
 class AISlots:
@@ -210,10 +217,23 @@ _ENDPOINT_SUFFIXES = ("/openai/v1/chat/completions", "/openai/v1/responses", "/o
 def normalise_endpoint(endpoint: str) -> str:
     """The resource root (no trailing slash, no API path), from a root or any known /openai/... form."""
     root = endpoint.strip().rstrip("/")
+    if "?" in root or "#" in root:
+        raise ValueError("AZURE_OPENAI_ENDPOINT must not contain a query string or fragment; the API version is fixed (v1)")
     for suffix in _ENDPOINT_SUFFIXES:
         if root.lower().endswith(suffix):
             return root[: -len(suffix)].rstrip("/")
     return root
+
+
+_NO_ANSWER = {
+    "max_output_tokens": "The AI ran out of room before finishing its answer. Try a shorter input.",
+    "length": "The AI ran out of room before finishing its answer. Try a shorter input.",
+    "reasoning": "The AI spent its whole allowance thinking and didn't answer. Try a shorter or simpler input.",
+    "content_filter": "The AI's safety filter blocked this answer. Try rewording the note.",
+    "refusal": "The AI declined to answer this note. Try rewording it.",
+    "failed": "The AI couldn't finish this request. Please try again.",
+    None: "The AI returned no answer. Please try again.",
+}
 
 
 class AzureOpenAI:
@@ -221,7 +241,8 @@ class AzureOpenAI:
 
     def __init__(self, endpoint: str, deployment: str, api_key: str, timeout: float = 20.0, deadline: float = 25.0,
                  retries: int = 1, client: httpx.Client | None = None, sleep=time.sleep, clock=time.monotonic,
-                 token_provider: ManagedIdentityToken | None = None, api: str = "auto"):
+                 token_provider: ManagedIdentityToken | None = None, api: str = "auto",
+                 reasoning_headroom: int = 0):
         if not endpoint:
             raise ValueError("AZURE_OPENAI_ENDPOINT is not set")
         if api not in ("auto", "chat", "responses"):
@@ -229,6 +250,8 @@ class AzureOpenAI:
         if api == "auto":
             api = "responses" if endpoint.strip().rstrip("/").lower().endswith("/openai/v1/responses") else "chat"
         self.api = api
+        # Responses reasoning tokens count inside max_output_tokens: add headroom so reasoning can't eat the answer.
+        self.output_headroom = max(int(reasoning_headroom), 0) if api == "responses" else 0
         path = "/openai/v1/responses" if api == "responses" else "/openai/v1/chat/completions"
         self.url = normalise_endpoint(endpoint) + path
         self.deployment = deployment
@@ -240,6 +263,7 @@ class AzureOpenAI:
 
     def complete(self, system: str, user: str, max_output_tokens: int = 1200) -> AIResult:
         if self.api == "responses":  # reasoning tokens count inside max_output_tokens
+            max_output_tokens += self.output_headroom  # the wanted answer length is then still available
             payload = {"model": self.deployment, "instructions": system, "max_output_tokens": max_output_tokens,
                        "store": False,  # Azure keeps no copy of the prompt or answer (DATA.md)
                        "input": [{"role": "user", "content": user}]}
@@ -293,12 +317,18 @@ class AzureOpenAI:
                 raise fail() from None
             if not isinstance(data, dict):
                 raise fail() from None
-            used_in, used_out, text, why = self._parse(data)
-            if not text:
-                log.warning("ai returned no text", extra={"finish_reason": why})
-                billed_in, billed_out = billed_in + used_in, billed_out + used_out
-                raise fail("The AI ran out of room before answering. Try a shorter input.")
-            return AIResult(text=text, input_tokens=used_in + billed_in, output_tokens=used_out + billed_out,
+            try:
+                used_in, used_out, text, why = self._parse(data)
+            except (TypeError, ValueError, AttributeError):  # malformed body: it ran, so bill what we can't read
+                log.warning("ai response could not be parsed")
+                billed_in += estimate_tokens(system, user, 0)
+                billed_out += max_output_tokens
+                raise fail() from None
+            billed_in, billed_out = billed_in + used_in, billed_out + used_out
+            if why is not None or not text:
+                log.warning("ai returned no usable answer", extra={"finish_reason": why})
+                raise fail(_NO_ANSWER.get(why, _NO_ANSWER[None]))
+            return AIResult(text=text, input_tokens=billed_in, output_tokens=billed_out,
                             model=data.get("model", self.deployment))
         raise fail()
 
@@ -306,18 +336,35 @@ class AzureOpenAI:
         """(input tokens, output tokens, text, why there is no text) for either API."""
         usage = data.get("usage") if isinstance(data.get("usage"), dict) else {}
         if self.api == "chat":
-            choice = (data.get("choices") or [{}])[0]
-            text = ((choice.get("message") or {}).get("content") or "").strip()
+            choices = data.get("choices")
+            choice = choices[0] if isinstance(choices, list) and choices and isinstance(choices[0], dict) else {}
+            message = choice.get("message") if isinstance(choice.get("message"), dict) else {}
+            content = message.get("content")
+            text = content.strip() if isinstance(content, str) else ""
+            # chat keeps its old rule: any text is an answer, even when finish_reason is "length"
             return (int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0), text,
-                    choice.get("finish_reason"))
-        parts = [part.get("text") or "" for item in _dicts(data.get("output")) if item.get("type") == "message"
+                    None if text else choice.get("finish_reason"))
+        output = _dicts(data.get("output"))
+        parts = [part.get("text") or "" for item in output if item.get("type") == "message"
                  for part in _dicts(item.get("content")) if part.get("type") == "output_text"
                  if isinstance(part.get("text"), str)]
-        why = data.get("status") if data.get("status") != "completed" else None
-        if why == "incomplete":
-            why = (data.get("incomplete_details") or {}).get("reason") or why
-        return (int(usage.get("input_tokens") or 0), int(usage.get("output_tokens") or 0),
-                "".join(parts).strip(), why)
+        refused = any(part.get("type") == "refusal" for item in output if item.get("type") == "message"
+                      for part in _dicts(item.get("content")))
+        used_out = int(usage.get("output_tokens") or 0)
+        details = usage.get("output_tokens_details")
+        reasoning = int(details.get("reasoning_tokens") or 0) if isinstance(details, dict) else 0
+        text = "".join(parts).strip()
+        why = None
+        if data.get("status") not in (None, "completed"):  # incomplete or failed: never saved as a success
+            why = data.get("status")
+            incomplete = data.get("incomplete_details")
+            if why == "incomplete":
+                why = (incomplete.get("reason") if isinstance(incomplete, dict) else None) or "max_output_tokens"
+            if why == "max_output_tokens" and not text and used_out and reasoning >= used_out:
+                why = "reasoning"  # all of the budget went on thinking
+        elif not text and refused:
+            why = "refusal"
+        return int(usage.get("input_tokens") or 0), used_out, text, why
 
     def _pause(self, attempt: int, retry_after: str | None, remaining) -> None:
         if attempt >= self.retries:
@@ -337,7 +384,8 @@ def build_provider(settings) -> AIProvider:
         return AzureOpenAI(settings.azure_openai_endpoint, settings.azure_openai_deployment,
                            settings.azure_openai_api_key, timeout=settings.ai_timeout_seconds,
                            deadline=settings.ai_deadline_seconds, retries=settings.ai_retries,
-                           token_provider=token, api=settings.azure_openai_api)
+                           token_provider=token, api=settings.azure_openai_api,
+                           reasoning_headroom=settings.ai_reasoning_headroom)
     return FakeAI()
 
 
