@@ -33,7 +33,7 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 
 | What | Command | Where it runs |
 |---|---|---|
-| Backend unit and API tests (469 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
+| Backend unit and API tests (484 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
 | Migrations match the models | `alembic upgrade head && alembic check` | every push |
 | Frontend type check and build | `cd frontend && npm run build` | every push (CI `frontend`) |
 | Browser end-to-end core flow | `./scripts/e2e.sh` | pushes to main and manual runs (CI `e2e`) |
@@ -102,6 +102,21 @@ AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
 | `AI_REASONING_HEADROOM` | extra output tokens (default 1500) added to each Responses-API call and to its token reservation, so reasoning cannot use up the answer's room; ignored for chat completions |
 | `AI_CONCURRENT_CALLS`, `AI_CALLS_PER_TENANT_AT_ONCE` | at most 8 AI calls at once per process, 2 per customer |
 | `SIGNUPS_PER_IP_PER_DAY`, `NEW_TRIALS_PER_DAY` | sign-up limits: 20 a day per IP, 200 new trials a day in total |
+
+## Billing and the early-customer offer
+
+`BILLING_PROVIDER=mock` is the default (no network). `stripe` uses Stripe test mode only; live keys are refused.
+
+- The offer code a customer enters in the app is checked against `OFFERS` in `app/billing.py` (EARLY50: 50% off for 3 months).
+- With Stripe, the app applies it **server-side**: it creates the coupon (`POST /v1/coupons`) and sends
+  `discounts[0][coupon]` when it creates the Checkout Session. The customer does not re-type anything on Stripe's page.
+- The coupon id comes from the offer's terms (`studio-early50-50pc-3m-v1`), so changing the percent or months makes a new
+  coupon (Stripe coupons cannot be edited). Creation uses an `Idempotency-Key`, and "resource_already_exists" counts as
+  success. In that case the coupon is read back once and must match the offer's terms, or checkout fails with
+  `billing_rejected` rather than give the wrong discount. Ensured ids are cached per process.
+- **Decision (T-15): `allow_promotion_codes` is no longer sent.** Stripe rejects it together with `discounts`, and it would
+  let customers type promotion codes the app never validated or recorded. Only app-validated offers exist. If you ever want
+  promotion codes, add them as a deliberate feature.
 
 ## Making a product from it
 

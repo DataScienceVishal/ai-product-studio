@@ -40,6 +40,12 @@ class Offer:
     months: int
     description: str
 
+    @property
+    def coupon_id(self) -> str:
+        """Deterministic Stripe coupon id. The terms are in the id, so changing percent or months makes a NEW coupon
+        (a Stripe coupon cannot be edited); bump the trailing version if the way coupons are made ever changes."""
+        return f"studio-{self.code.lower()}-{self.percent_off}pc-{self.months}m-v1"
+
 
 # Placeholder prices. Each product sets its own in its SPEC.md (strategist) and here.
 PLANS: dict[str, Plan] = {
@@ -190,8 +196,12 @@ class StripeBilling:
         self.key, self.secret = secret_key, webhook_secret
         self.client = client or httpx.Client(timeout=20.0)
         self.headers = {"Stripe-Version": api_version} if api_version else {}
+        self._coupons: set[str] = set()  # coupon ids already ensured (and checked) in this process
 
-    def _call(self, method: str, path: str, form: dict | None = None, idempotency_key: str | None = None) -> dict:
+    def _call(self, method: str, path: str, form: dict | None = None, idempotency_key: str | None = None,
+              accept_error_codes: frozenset[str] = frozenset()) -> dict:
+        """accept_error_codes: Stripe error codes on a 400 that the caller treats as an answer, not a failure.
+        The reply body is then returned (read `error.code`). Any other 4xx still raises billing_rejected."""
         headers = dict(self.headers)
         if idempotency_key:
             headers["Idempotency-Key"] = idempotency_key  # one key per logical request, reused across retries
@@ -210,6 +220,13 @@ class StripeBilling:
                 continue
             if response.status_code == 404 and method == "DELETE":
                 return {}  # already gone
+            if response.status_code == 400 and accept_error_codes:
+                try:
+                    error = (response.json().get("error") or {})
+                except (ValueError, AttributeError):
+                    error = {}
+                if error.get("code") in accept_error_codes:
+                    return {"error": error}
             if response.status_code >= 400:
                 raise AppError(502, "billing_rejected", "The payment provider rejected the request.")
             try:
@@ -217,6 +234,28 @@ class StripeBilling:
             except ValueError:
                 raise AppError(502, "billing_rejected", "The payment provider sent an unreadable reply.") from None
         raise AppError(503, "billing_unavailable", "Payments are unavailable. Try again shortly.")
+
+    def ensure_coupon(self, offer: Offer) -> str:
+        """Make sure the offer's coupon exists in Stripe (test mode) and return its id. Safe to call repeatedly.
+
+        POST /coupons with the deterministic id and an Idempotency-Key. If the coupon already exists (an earlier run,
+        another instance) we GET it once and check it carries these exact terms; a mismatch is an error, never a
+        silent discount of the wrong size. Only `resource_already_exists` is tolerated; other 400s raise."""
+        coupon_id = offer.coupon_id
+        if coupon_id in self._coupons:
+            return coupon_id
+        form = {"id": coupon_id, "percent_off": str(offer.percent_off), "duration": "repeating",
+                "duration_in_months": str(offer.months), "name": f"{offer.code} {offer.percent_off}% off for {offer.months} months"[:40]}  # Stripe max 40
+        body = self._call("POST", "/coupons", form, idempotency_key=f"coupon-{coupon_id}-{uuid.uuid4().hex}",  # fresh per call: a fixed key
+                          # would 409 on concurrent first checkouts and replay stale results for 24 h
+                          accept_error_codes=frozenset({"resource_already_exists"}))
+        if (body.get("error") or {}).get("code") == "resource_already_exists":
+            existing = self._call("GET", f"/coupons/{coupon_id}")
+            if (existing.get("percent_off") != offer.percent_off or existing.get("duration") != "repeating"
+                    or existing.get("duration_in_months") != offer.months or existing.get("valid") is False):
+                raise AppError(502, "billing_rejected", "The payment provider's early-customer coupon does not match the offer.")
+        self._coupons.add(coupon_id)
+        return coupon_id
 
     def create_checkout(self, tenant_id, plan, offer, success_url, cancel_url) -> Checkout:
         meta = {"tenant_id": str(tenant_id), "plan": plan.id, "offer": offer.code if offer else ""}
@@ -228,8 +267,12 @@ class StripeBilling:
             "line_items[0][price_data][unit_amount]": str(plan.price_pence),
             "line_items[0][price_data][recurring][interval]": plan.interval,
             "line_items[0][price_data][product_data][name]": plan.name,
-            "allow_promotion_codes": "true",  # the early-customer offer is a Stripe promotion code
         }
+        # Decision (T-15): only offers the app validated exist. The offer is applied here, server-side, as a coupon;
+        # allow_promotion_codes is NOT sent (Stripe rejects it together with discounts, and it would let customers
+        # type codes the app never checked or recorded).
+        if offer:
+            form["discounts[0][coupon]"] = self.ensure_coupon(offer)
         for key, value in meta.items():  # on the session (read at checkout.session.completed) and the subscription
             form[f"metadata[{key}]"] = value
             form[f"subscription_data[metadata][{key}]"] = value
