@@ -144,6 +144,11 @@ mapped to the object ids of `id-<slug>-app` and `id-<slug>-migrate`, so only a t
    call resolves to Azure's function, and a new label replaces the old mapping.
 4. Container Apps jobs get a user-assigned token with `lifecycle: Main`; `/healthz` says `"db":"ok"`.
 5. `rolpassword IS NULL` for both roles, and a sign-in as `<db>_app` with the migrator identity's token is refused.
+6. The deploy step finishes on a first release while `/healthz` is down. The web container's readiness probe is
+   `/healthz`, which checks the database, and on a first release the roles only exist after the database step. If
+   `main.bicep` fails there ("Operation expired" or no ready replica), do not retry the same run. Fallback: run
+   once with the readiness probe path temporarily set to `/livez` (or the probe removed), let the database step
+   create the roles, then release again with `/healthz` restored. Record which case happened in the T-18 review.
 
 ## Making a product from the starter
 

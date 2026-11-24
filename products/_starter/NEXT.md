@@ -276,3 +276,9 @@ Not verified: real Azure; actionlint and shellcheck and the bicep CLI are not in
 Left in place: `postgresAdminPassword` stays a random per-run value until phase 2; ADR 0002 pointer line (slice 5).
 Verify: `bash infra/test-deploy-workflow.sh`; `REQUIRE_PG=1 bash infra/test-db-setup.sh`; backend `pytest`; first real deploy per the README
 checklist.
+
+## T-43 (T-18 slice 4 review suggestions)
+Done: S1 retry-loop mask now goes to fd 3 (`exec 3>&1`), with a test that runs the real `run_psql` with stub az/psql and stdout redirected;
+S6 separate errors for a missing admin and a disallowed admin name; S2 first-deploy checklist item 6 (readiness probe vs `/healthz`, fallback);
+S3 cleanup step is `if: always() && steps.dbsetup.outcome != 'skipped'`; S4 SECURITY.md row 5 says passwordless per ADR 0003.
+Skipped: S5 (looser text checks, actionlint/shellcheck in CI), ADR 0002 (slice 5), state/ files.
