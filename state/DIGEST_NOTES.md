@@ -14,3 +14,5 @@ Runs add one line per notable result. The Desk clears this back to the header af
 
 - run 45ef (T-15 starter): the early-customer offer (EARLY50) is now applied automatically by Stripe at checkout, not re-typed by the customer. Reviewed PASS, merged, 484 backend + 114 frontend tests green. Test mode only; nothing run against real Stripe.
 - [studio] All Azure setup from you is in: new deploy sign-in (main only), France Central as the region, and a cheap AI model for the packaging test. The next run can use it.
+
+- run bb8d (T-56 pEPR proof test): the gpt-5-mini deployment works. The extractor now prices each ledger row by the model that actually answered (a wrong or missing model is charged at pro price and stops the run). Reviewer PASS (reviews/T-56-mini.md); Amendment 6 recorded before any test call; 181 tests. Re-tune on 5 sheets with gpt-5-mini: 100% field accuracy, 0 untraced, 0 fabricated, all conflicts flagged, USD 0.034 in total (~0.7 US cents a sheet, against the 31.6-cent cost mark). Single 30-sheet test run started.
