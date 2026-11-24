@@ -205,7 +205,7 @@ The admin role itself gets no connection limit (it is used once per release, by 
   connection floods using up the 35 slots, which can also delay the release's db step (the 6-minute retry
   covers it; logged by `log_connections`); a stolen identity token, valid up to 24 hours (needs code execution
   in our container, or the `IDENTITY_HEADER`, or a misdirected host as above).
-- **The biggest one (B1): the deploy SP's credential is now the DB admin credential.** `AZURE_CREDENTIALS` is a
+- **The biggest one (B1): the deploy SP's credential is now the DB admin credential.** The deployer credential (`AZURE_CREDENTIALS`, since replaced by the OIDC identity `id-github-deploy`, ADR 0002 decision 8) is a
   repository secret, and ADR 0002 decision 8 says any branch's workflow can read it; the main-only check
   "guards against accidents, not against a determined branch". Studio agents push every hour and may meet
   prompt injection (CLAUDE.md section 10). So one injected or mistaken workflow edit could dump every product

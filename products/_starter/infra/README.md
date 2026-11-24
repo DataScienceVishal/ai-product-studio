@@ -198,7 +198,8 @@ Rules the templates keep. Breaking one changes the bill:
 
 | You see | Likely cause | Fix |
 |---|---|---|
-| "AZURE_CREDENTIALS isn't set" notice | no deployer secret | SETUP.md step 3 |
+| "AZURE_CLIENT_ID, ... secrets aren't all set" notice | no OIDC secrets | SETUP.md step 3 |
+| "AADSTS700213" or "No matching federated identity record" at sign-in | the run is not on `main`, or the job uses `environment:` | run from main; or add a federated credential for that subject (SETUP.md step 3) |
 | "need Vishal's approval first" notice | `STUDIO_AZURE_APPROVED` isn't `yes` | setup step 3 |
 | "deploys run from main only" notice | dispatched on another branch | merge after review, then run on `main` |
 | `MissingSubscriptionRegistration` | resource providers not registered | setup step 2 |

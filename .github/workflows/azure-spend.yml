@@ -3,8 +3,10 @@
 # state/BUDGET.md on main. Every outcome is written to BUDGET.md, including "unavailable" (for example if
 # Cost Management doesn't support this subscription's offer), so the studio never mistakes silence for $0.
 #
-# Credentials: AZURE_COST_CREDENTIALS if set (recommended: a service principal with only Cost Management
-# Reader and Reader on rg-ai-studio), otherwise the AZURE_CREDENTIALS deployer secret (SETUP.md step 3).
+# Credentials: OIDC as the managed identity id-github-deploy (secrets AZURE_CLIENT_ID, AZURE_TENANT_ID,
+# AZURE_SUBSCRIPTION_ID; SETUP.md step 3). Its federated credential trusts refs/heads/main only, so the sign-in
+# runs only from main (the schedule always does) and the job must not use `environment:`. Temporary fallback:
+# the AZURE_COST_CREDENTIALS secret (a service principal JSON) if the OIDC secrets aren't set.
 # Optional: TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID as Actions secrets for alerts and failure pings.
 # Alerts also go to state/DIGEST_NOTES.md, so the next digest carries them even without Telegram.
 name: azure-spend
@@ -15,7 +17,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: azure-spend
@@ -25,8 +27,12 @@ jobs:
   report:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: write # commits state/BUDGET.md
+      id-token: write # OIDC token for azure/login
     env:
-      HAS_AZURE: ${{ secrets.AZURE_COST_CREDENTIALS != '' || secrets.AZURE_CREDENTIALS != '' }}
+      HAS_OIDC: ${{ secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' && secrets.AZURE_SUBSCRIPTION_ID != '' }}
+      HAS_COST_SP: ${{ secrets.AZURE_COST_CREDENTIALS != '' }}
       HAS_TELEGRAM: ${{ secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != '' }}
       ON_MAIN: ${{ github.ref == 'refs/heads/main' }}
       STUDIO_RESOURCE_GROUP: rg-ai-studio
@@ -39,15 +45,34 @@ jobs:
       - name: Test the report script
         run: python3 -m unittest discover -s scripts/tests
 
+      - name: Work out the Azure sign-in
+        run: |
+          if [ "$HAS_OIDC" = "true" ] && [ "$ON_MAIN" = "true" ]; then mode=oidc
+          elif [ "$HAS_OIDC" = "true" ]; then
+            echo "::error::The Azure identity's federated credential trusts refs/heads/main only. This run is on $GITHUB_REF. Re-run it from main."
+            exit 1
+          elif [ "$HAS_COST_SP" = "true" ]; then mode=sp
+          else mode=none; fi
+          echo "AZURE_MODE=$mode" >> "$GITHUB_ENV"
+          echo "HAS_AZURE=$([ "$mode" = none ] && echo false || echo true)" >> "$GITHUB_ENV"
+
       - name: Skip without Azure credentials
         if: env.HAS_AZURE != 'true'
-        run: echo "::notice::No Azure credentials secret is set, so no spend report today (SETUP.md step 3)."
+        run: echo "::notice::No Azure credentials are set, so no spend report today (SETUP.md step 3)."
 
-      - name: Sign in to Azure
-        if: env.HAS_AZURE == 'true'
+      - name: Sign in to Azure (OIDC)
+        if: env.AZURE_MODE == 'oidc'
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_COST_CREDENTIALS || secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sign in to Azure (temporary fallback, service principal secret)
+        if: env.AZURE_MODE == 'sp'
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_COST_CREDENTIALS }}
 
       - name: Report spend
         id: report

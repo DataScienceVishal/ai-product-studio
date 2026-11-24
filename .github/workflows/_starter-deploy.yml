@@ -4,7 +4,12 @@
 #
 # Manual only, for now. Every run compiles the Bicep and checks the compiled templates for features with a
 # fixed charge. It deploys only when all three hold; otherwise it stops with a notice:
-#   - the AZURE_CREDENTIALS secret exists (the deployer, Contributor on rg-ai-studio only);
+#   - the AZURE_CLIENT_ID, AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID secrets exist. They name the user-assigned
+#     managed identity id-github-deploy (Contributor on rg-ai-studio only), which GitHub signs in as through
+#     OIDC: no stored password. Its federated credential trusts only
+#     repo:DataScienceVishal/ai-product-studio:ref:refs/heads/main, so Azure sign-in works only from main. Don't
+#     add `environment:` to a job that signs in: the token's subject would change and the login would fail
+#     (ADR 0002, decision 8);
 #   - Vishal has approved the costs in state/BUDGET.md by setting the repository variable
 #     STUDIO_AZURE_APPROVED to "yes";
 #   - the run is on main, so only reviewed code reaches the public address. (Repository secrets are readable
@@ -110,12 +115,12 @@ jobs:
       - name: Credentials, approval and branch
         id: gate
         env:
-          HAS_AZURE: ${{ secrets.AZURE_CREDENTIALS != '' }}
+          HAS_AZURE: ${{ secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' && secrets.AZURE_SUBSCRIPTION_ID != '' }}
           APPROVED: ${{ vars.STUDIO_AZURE_APPROVED }}
         run: |
           go=false
           if [ "$HAS_AZURE" != "true" ]; then
-            echo "::notice::AZURE_CREDENTIALS isn't set, so nothing was deployed. The Bicep compiled. See $PRODUCT_DIR/infra/README.md."
+            echo "::notice::The AZURE_CLIENT_ID, AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID secrets aren't all set, so nothing was deployed. The Bicep compiled. See $PRODUCT_DIR/infra/README.md."
           elif [ "$APPROVED" != "yes" ]; then
             echo "::notice::Nothing was deployed: the costs in state/BUDGET.md need Vishal's approval first. He approves by setting the repository variable STUDIO_AZURE_APPROVED to yes."
           elif [ "$GITHUB_REF" != "refs/heads/main" ]; then
@@ -131,6 +136,9 @@ jobs:
     if: needs.check.outputs.go == 'true' && inputs.rollback_to == ''
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write # OIDC token for azure/login
     env:
       AI_PROVIDER: ${{ inputs.ai_provider }}
       BILLING_PROVIDER: ${{ inputs.billing_provider }}
@@ -164,10 +172,19 @@ jobs:
             --exit-code 1 --no-progress "${ignore[@]}"
           rm -f "$RUNNER_TEMP/scan/image.tar"
 
+      - name: Only from main (the Azure sign-in trusts main only)
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::This job signs in to Azure, and the identity's federated credential trusts refs/heads/main only. This run is on $GITHUB_REF. Re-run it from main."
+            exit 1
+          fi
+
       - name: Sign in to Azure
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Shared studio resources (only when asked)
         if: inputs.deploy_shared
@@ -462,6 +479,9 @@ jobs:
     if: needs.check.outputs.go == 'true' && inputs.rollback_to != ''
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # OIDC token for azure/login
     env:
       TARGET: ${{ inputs.rollback_to }}
     steps:
@@ -474,10 +494,19 @@ jobs:
             exit 1
           fi
 
+      - name: Only from main (the Azure sign-in trusts main only)
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::This job signs in to Azure, and the identity's federated credential trusts refs/heads/main only. This run is on $GITHUB_REF. Re-run it from main."
+            exit 1
+          fi
+
       - name: Sign in to Azure
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Activate the revision and smoke-test it
         run: |

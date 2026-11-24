@@ -243,17 +243,28 @@ needs Vishal's approval.
 
 ### 8. Identities and permissions
 
-- **Deployer:** the existing `AZURE_CREDENTIALS` service principal, Contributor on `rg-ai-studio` only
-  (SETUP.md step 3). Cloud runs never hold Azure credentials.
+- **Deployer (T-60, replaces the `AZURE_CREDENTIALS` service principal):** the user-assigned managed identity
+  `id-github-deploy` in `rg-ai-studio`, Contributor on that group only. GitHub signs in with OIDC (`azure/login`
+  with `client-id`, `tenant-id` and `subscription-id` from the secrets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
+  `AZURE_SUBSCRIPTION_ID`), so there is no stored password to leak or rotate. Jobs that sign in hold
+  `permissions: id-token: write` at job level only. Cloud runs never hold Azure credentials.
+- **The federated credential trusts one subject:** `repo:DataScienceVishal/ai-product-studio:ref:refs/heads/main`
+  (issuer `https://token.actions.githubusercontent.com`, audience `api://AzureADTokenExchange`). So the sign-in
+  works from `main` only, and the sign-in jobs start with a step that fails with a clear message elsewhere.
+  **A job with `environment: <name>` gets the subject `...:environment:<name>` instead, and its login fails.**
+  No job uses `environment:` today. If one is added (see the follow-up below), add a second federated
+  credential for `repo:DataScienceVishal/ai-product-studio:environment:<name>` first (command in SETUP.md step 3).
 - Contributor can't create role assignments (that needs Owner or Role Based Access Control Administrator)
   and can't register resource providers. So Vishal does three things once, in Cloud Shell (infra/README.md):
   register the providers, grant AcrPull to the pull identity, and later the Azure OpenAI role (T-17).
-- **Gates in the workflow:** it deploys only with `AZURE_CREDENTIALS` set, the repository variable
+- **Gates in the workflow:** it deploys only with the three OIDC secrets set, the repository variable
   `STUDIO_AZURE_APPROVED=yes` (Vishal's approval of `state/BUDGET.md`), and a run on `main` (reviewed code
   only). Otherwise it compiles the Bicep and stops with a notice.
 - **The main-only check guards against accidents, not against a determined branch.** Repository secrets are
   readable by workflows on any branch, and a branch can edit the workflow. The real boundary is a GitHub
-  environment holding `AZURE_CREDENTIALS` and `STUDIO_DB_SEED` (superseded by ADR 0003) with a main-only deployment-branch rule.
+  environment holding the deploy secrets with a main-only deployment-branch rule. With OIDC the federated
+  subject adds a second, Azure-side boundary: only runs on `main` can get a token at all, even if a branch reads
+  the (non-secret) IDs.
   GitHub Free can't use environments in private repositories ("Users with GitHub Free plans can only
   configure environments for public repositories"); GitHub Pro can, and the GitHub Student Developer Pack
   includes Pro. Which plan this account has is not checked yet: a question for Vishal, then a follow-up.
@@ -468,8 +479,8 @@ Already on the board: T-16 (serve the SPA from the backend: needed before any br
 OpenAI through a managed identity), T-18 (passwordless Postgres, which ends decision 5's conditions), T-19
 (pin the base image and actions), T-20 (compile the Bicep in CI). New:
 
-1. After Vishal answers the plan question, move `AZURE_CREDENTIALS` and `STUDIO_DB_SEED` (superseded by ADR 0003) into a main-only
-   GitHub environment and add `environment:` to the deploy and rollback jobs (decision 8).
+1. After Vishal answers the plan question, optionally add a main-only GitHub environment and `environment:` to
+   the deploy and rollback jobs (decision 8). This needs the extra federated credential described there first.
 2. A registry cleanup that keeps the last few images per product (decision 3).
 3. Only if the allowance doesn't apply: a stop/start schedule for Postgres.
 4. The starter README's "Not done yet" line still describes T-7 as pending; point it at this ADR when T-7 merges.
@@ -502,3 +513,16 @@ OpenAI through a managed identity), T-18 (passwordless Postgres, which ends deci
 - Managed identities cost nothing extra: https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/overview
 - Bicep schemas: containerApps and jobs 2025-07-01, managedEnvironments 2025-07-01, flexibleServers 2024-08-01, registries 2025-11-01 (learn.microsoft.com/azure/templates)
 - Trivy 0.76.2 image digest: Docker Hub tag list for aquasec/trivy (hub.docker.com)
+
+## Region (T-61)
+
+Azure for Students only allows new resources in `francecentral`, `swedencentral`, `spaincentral`, `polandcentral`
+and `italynorth`. `rg-ai-studio` is in `uksouth`, which is not on the list, and `main.bicep` and `shared.bicep`
+default `location` to `resourceGroup().location`, so a deploy would have been refused by policy. Both
+`.bicepparam` files now set `location = 'francecentral'` explicitly, and the deploy workflow's `az deployment group
+create` calls take the values from those files, so nothing falls back to uksouth. The resource group's own region
+only holds its metadata, so resources in `francecentral` inside a `uksouth` group are fine. `francecentral` was
+chosen from the allowed list because it is the nearest to the UK and has every service used here (Container Apps
+consumption, Postgres Flexible Server Burstable, ACR Basic, Log Analytics). Moving to another allowed region means
+changing `location` in both param files and nothing else. Prices differ slightly by region; the francecentral figures were checked against the Azure Retail Prices API
+(T-61 report) and belong in `state/BUDGET.md`.
