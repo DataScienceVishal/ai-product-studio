@@ -38,7 +38,7 @@ su()   { PGPASSWORD="$SU_PASSWORD" psql -X -qtA -v ON_ERROR_STOP=1 -U "$PGUSER" 
 setup() {  # setup <db> <app_oid> <migrator_oid>  -> runs db-setup.sql as the admin
   local db=$1
   PGPASSWORD="$ADMIN_PASSWORD" psql -X -w -q -U "$ADMIN" -d postgres -v ON_ERROR_STOP=1 \
-    -v entra_stub=1 -v db="$db" -v migrator="${db}_migrator" -v app="${db}_app" \
+    -v entra_stub=pgaadauth_stub_t18s -v db="$db" -v migrator="${db}_migrator" -v app="${db}_app" \
     -v app_oid="$2" -v migrator_oid="$3" -f "$here/db-setup.sql" 2>&1
 }
 expect_ok()   { local out; if out=$("$@" 2>&1); then ok "$DESC"; else bad "$DESC" "$out"; fi; }
@@ -52,7 +52,7 @@ as_role() {  # as_role <role> <db> <sql>  (superuser session, SET ROLE to the ro
 
 cleanup() {
   su -d postgres -c "DROP DATABASE IF EXISTS $P1" -c "DROP DATABASE IF EXISTS $P2" >/dev/null 2>&1
-  su -d postgres -c "DROP SCHEMA IF EXISTS pgaadauth_stub CASCADE" >/dev/null 2>&1
+  su -d postgres -c "DROP SCHEMA IF EXISTS pgaadauth_stub_t18s CASCADE" >/dev/null 2>&1
   for r in ${P1}_app ${P1}_migrator ${P2}_app ${P2}_migrator "$ADMIN"; do
     su -d postgres -c "DROP ROLE IF EXISTS $r" >/dev/null 2>&1
   done
@@ -63,26 +63,30 @@ cleanup
 # --- fixture: a non-superuser admin (CREATEROLE, CREATEDB) and the stub schema -------------------------------
 su -d postgres <<SQL
 CREATE ROLE $ADMIN LOGIN CREATEROLE CREATEDB PASSWORD '$ADMIN_PASSWORD';
-CREATE SCHEMA pgaadauth_stub;
-CREATE TABLE pgaadauth_stub.principals (rolename name PRIMARY KEY, principaltype text, objectid text,
+CREATE SCHEMA pgaadauth_stub_t18s;
+CREATE TABLE pgaadauth_stub_t18s.principals (rolename name PRIMARY KEY, principaltype text, objectid text,
                                         tenantid text, ismfa integer, isadmin integer);
 -- the admin itself, as Azure lists it: the one admin allowed
-INSERT INTO pgaadauth_stub.principals VALUES ('$ADMIN', 'service', '$OID_OTHER', 'stub-tenant', 0, 1);
+INSERT INTO pgaadauth_stub_t18s.principals VALUES ('$ADMIN', 'service', '$OID_OTHER', 'stub-tenant', 0, 1);
 -- like the real function: false = everyone, true = admins only
-CREATE FUNCTION pgaadauth_stub.pgaadauth_list_principals(admin_only boolean)
+CREATE FUNCTION pgaadauth_stub_t18s.pgaadauth_list_principals(admin_only boolean)
 RETURNS TABLE (rolename name, principaltype text, objectid text, tenantid text, ismfa integer, isadmin integer)
 LANGUAGE sql STABLE AS \$\$
   SELECT p.rolename, p.principaltype, p.objectid, p.tenantid, p.ismfa, p.isadmin
-    FROM pgaadauth_stub.principals p WHERE NOT admin_only OR p.isadmin = 1 \$\$;
-GRANT USAGE ON SCHEMA pgaadauth_stub TO $ADMIN;
-GRANT SELECT, INSERT, UPDATE ON pgaadauth_stub.principals TO $ADMIN;
-GRANT EXECUTE ON FUNCTION pgaadauth_stub.pgaadauth_list_principals(boolean) TO $ADMIN;
-ALTER ROLE $ADMIN SET search_path = pgaadauth_stub, public;
+    FROM pgaadauth_stub_t18s.principals p WHERE NOT admin_only OR p.isadmin = 1 \$\$;
+GRANT USAGE ON SCHEMA pgaadauth_stub_t18s TO $ADMIN;
+GRANT SELECT, INSERT, UPDATE ON pgaadauth_stub_t18s.principals TO $ADMIN;
+GRANT EXECUTE ON FUNCTION pgaadauth_stub_t18s.pgaadauth_list_principals(boolean) TO $ADMIN;
+ALTER ROLE $ADMIN SET search_path = pgaadauth_stub_t18s, public;
 SQL
+[ $? = 0 ] || { echo "FIXTURE: setup failed"; exit 1; }
 [ "$(su -d postgres -c "select rolsuper from pg_roles where rolname='$ADMIN'")" = f ] || { echo "FIXTURE: admin is a superuser"; exit 1; }
 
 # --- tests ------------------------------------------------------------------------------------------------------
 DESC="first run succeeds as a non-superuser admin"; expect_ok setup $P1 $OID_APP $OID_MIG
+# give both roles a password behind the script's back: the re-run must wipe it
+su -d postgres -c "ALTER ROLE ${P1}_app PASSWORD 'x'" -c "ALTER ROLE ${P1}_migrator PASSWORD 'x'" >/dev/null
+[ "$(su -d postgres -c "select count(*) from pg_authid where rolname like '${P1}_%' and rolpassword is not null")" = 2 ] || { echo "FIXTURE: passwords not set"; exit 1; }
 DESC="second run succeeds (re-runnable)";            expect_ok setup $P1 $OID_APP $OID_MIG
 DESC="a second product sets up beside the first";    expect_ok setup $P2 $OID_APP2 $OID_MIG2
 
@@ -92,13 +96,13 @@ pw=$(su -d postgres -c "select count(*) from pg_authid where rolname in ('${P1}_
 lim=$(su -d postgres -c "select string_agg(rolname || '=' || rolconnlimit, ',' order by rolname) from pg_roles where rolname like '${P1}_%'")
 [ "$lim" = "${P1}_app=12,${P1}_migrator=3" ] && ok "connection limits 12 (app) and 3 (migrator)" || bad "connection limits" "$lim"
 
-map=$(su -d postgres -c "select string_agg(rolename || ':' || objectid || ':' || isadmin, ',' order by rolename) from pgaadauth_stub.principals where rolename like '${P1}_%'")
+map=$(su -d postgres -c "select string_agg(rolename || ':' || objectid || ':' || isadmin, ',' order by rolename) from pgaadauth_stub_t18s.principals where rolename like '${P1}_%'")
 [ "$map" = "${P1}_app:$OID_APP:0,${P1}_migrator:$OID_MIG:0" ] && ok "roles are mapped to their oids as non-admins" || bad "mapping" "$map"
 
 # a changed oid re-maps on the next run (a recreated identity heals)
 setup $P1 $OID_OTHER $OID_MIG >/dev/null
 setup $P1 $OID_APP $OID_MIG >/dev/null
-[ "$(su -d postgres -c "select objectid from pgaadauth_stub.principals where rolename='${P1}_app'")" = "$OID_APP" ] \
+[ "$(su -d postgres -c "select objectid from pgaadauth_stub_t18s.principals where rolename='${P1}_app'")" = "$OID_APP" ] \
   && ok "re-running re-maps the label" || bad "re-running re-maps the label"
 
 for badoid in "not-a-uuid" "${OID_APP^^}" "" "$OID_APP' OR 1=1 --"; do
@@ -107,27 +111,32 @@ for badoid in "not-a-uuid" "${OID_APP^^}" "" "$OID_APP' OR 1=1 --"; do
 done
 DESC="malformed migrator oid refused"; expect_fail "not a lower-case UUID" setup $P1 $OID_APP "12345"
 # a bad oid must not have changed the mapping
-[ "$(su -d postgres -c "select objectid from pgaadauth_stub.principals where rolename='${P1}_app'")" = "$OID_APP" ] \
+[ "$(su -d postgres -c "select objectid from pgaadauth_stub_t18s.principals where rolename='${P1}_app'")" = "$OID_APP" ] \
   && ok "a refused oid left the mapping alone" || bad "a refused oid left the mapping alone"
 
 DESC="missing oid variable refused"
 expect_fail "app_oid is not set" env PGPASSWORD="$ADMIN_PASSWORD" psql -X -w -q -U "$ADMIN" -d postgres -v ON_ERROR_STOP=1 \
-  -v entra_stub=1 -v db=$P1 -v migrator=${P1}_migrator -v app=${P1}_app -v migrator_oid=$OID_MIG -f "$here/db-setup.sql"
+  -v entra_stub=pgaadauth_stub_t18s -v db=$P1 -v migrator=${P1}_migrator -v app=${P1}_app -v migrator_oid=$OID_MIG -f "$here/db-setup.sql"
 
-# label/oid mismatch: a trigger makes the stored oid differ from the one asked for, as a failed label would
-su -d postgres <<SQL
-CREATE FUNCTION pgaadauth_stub.skew() RETURNS trigger LANGUAGE plpgsql AS \$\$
-BEGIN NEW.objectid := '$OID_OTHER'; RETURN NEW; END \$\$;
-CREATE TRIGGER skew BEFORE INSERT OR UPDATE ON pgaadauth_stub.principals
-  FOR EACH ROW WHEN (NEW.rolename = '${P1}_app') EXECUTE FUNCTION pgaadauth_stub.skew();
-SQL
-DESC="label/oid mismatch raises"; expect_fail "app role is not mapped to app_oid" setup $P1 $OID_APP $OID_MIG
-su -d postgres -c "DROP TRIGGER skew ON pgaadauth_stub.principals; DROP FUNCTION pgaadauth_stub.skew()"
+# label mismatches: a trigger bends one column of one role's row, as a label that didn't take would
+skew() {  # skew <role> <column> <value> <expected error>
+  su -d postgres -c "CREATE FUNCTION pgaadauth_stub_t18s.skew() RETURNS trigger LANGUAGE plpgsql AS \$\$ BEGIN NEW.$2 := '$3'; RETURN NEW; END \$\$" \
+     -c "CREATE TRIGGER skew BEFORE INSERT OR UPDATE ON pgaadauth_stub_t18s.principals FOR EACH ROW WHEN (NEW.rolename = '$1') EXECUTE FUNCTION pgaadauth_stub_t18s.skew()" >/dev/null
+  DESC="$2 forced to '$3' on $1 raises"
+  expect_fail "$4" setup $P1 $OID_APP $OID_MIG
+  su -d postgres -c "DROP TRIGGER skew ON pgaadauth_stub_t18s.principals" -c "DROP FUNCTION pgaadauth_stub_t18s.skew()" >/dev/null
+}
+skew ${P1}_app objectid $OID_OTHER "app role is not mapped"
+skew ${P1}_migrator objectid $OID_OTHER "migrator role is not mapped"
+skew ${P1}_app isadmin 1 "app role is not mapped"
+skew ${P1}_migrator isadmin 1 "migrator role is not mapped"
+skew ${P1}_app principaltype user "app role is not mapped"
+skew ${P1}_migrator principaltype user "migrator role is not mapped"
 
 # an Entra admin besides the deploy principal fails the check
-su -d postgres -c "INSERT INTO pgaadauth_stub.principals VALUES ('rogue_t18s','user','$OID_OTHER','stub-tenant',0,1)"
+su -d postgres -c "INSERT INTO pgaadauth_stub_t18s.principals VALUES ('rogue_t18s','user','$OID_OTHER','stub-tenant',0,1)"
 DESC="an Entra admin other than the deploy principal raises"; expect_fail "other than the deploy principal" setup $P1 $OID_APP $OID_MIG
-su -d postgres -c "DELETE FROM pgaadauth_stub.principals WHERE rolename = 'rogue_t18s'"
+su -d postgres -c "DELETE FROM pgaadauth_stub_t18s.principals WHERE rolename = 'rogue_t18s'"
 DESC="setup works again once the rogue admin is gone"; expect_ok setup $P1 $OID_APP $OID_MIG
 
 # privileges, as the roles (superuser session with SET ROLE: the roles have no password to sign in with)

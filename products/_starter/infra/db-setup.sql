@@ -14,12 +14,15 @@
 -- for the object id in its pgaadauth security label. Re-running re-maps the label, so a recreated identity
 -- heals on the next release.
 --
--- CI only (infra/test-db-setup.sh): -v entra_stub=1 writes the mapping to a stub table instead of running
+-- CI only (infra/test-db-setup.sh): -v entra_stub=<stub schema> writes the mapping to <schema>.principals instead of running
 -- SECURITY LABEL, because a plain Postgres has no pgaadauth provider. Azure prints the function's columns as
 -- principalType, objectId, isAdmin and this file uses them unquoted (folded to lower case), and the stub
--- assumes the same. The first real deploy must confirm that casing (security review N4).
+-- assumes the same. The stub is found through the admin role's search_path, so keep calls unqualified.
+-- The first real deploy must confirm that casing (security review N4).
 --
 -- Idempotent. Needs PostgreSQL 16 (GRANT ... WITH INHERIT FALSE, SET TRUE).
+-- The checks below RAISE, so this script stops at the first error whatever flags the caller passes.
+\set ON_ERROR_STOP on
 
 -- 1. Both object ids must be lower-case UUIDs. The check can't fail, so a bad value is never part of a logged
 -- error; only the fixed message below is.
@@ -55,7 +58,7 @@ ALTER ROLE :"app" WITH LOGIN CONNECTION LIMIT 12 PASSWORD NULL;
 
 -- 4. Map each role to its identity as a service principal, never an admin.
 \if :{?entra_stub}
-  INSERT INTO pgaadauth_stub.principals (rolename, principaltype, objectid, tenantid, ismfa, isadmin)
+  INSERT INTO :"entra_stub".principals (rolename, principaltype, objectid, tenantid, ismfa, isadmin)
   VALUES (:'migrator', 'service', :'migrator_oid', 'stub-tenant', 0, 0),
          (:'app', 'service', :'app_oid', 'stub-tenant', 0, 0)
   ON CONFLICT (rolename) DO UPDATE
