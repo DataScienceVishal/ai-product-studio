@@ -57,8 +57,13 @@ Postgres. Per product, on every release (`infra/main.bicep`): one web app and tw
   maintenance window. A text search of the Bicep source runs as a second net. Neither can see a change made
   outside these templates, such as in the portal; the daily spend report (T-2) is the check for that.
 - Environments idle for 90 days are deleted automatically. The daily purge job keeps this one active.
-- `maxReplicas` is pinned to 1, because rate limits are in-process (ADR 0001, decision 8; T-15 moves them to
-  Redis). That also caps the worst case at one replica's cost.
+- `maxReplicas` is pinned to 1, because rate limits are in-process by default (ADR 0001, decision 8). That also caps the worst case
+  at one replica's cost.
+- Redis rate limits (T-15) are built but **Azure Cache for Redis is NOT provisioned**: it costs money, so it is
+  ask-first, and no Redis resource is in the Bicep. With `RATE_LIMIT_REDIS_URL` unset the single-replica default
+  keeps in-memory limits, unchanged. Before raising `maxReplicas` above 1: get approval, provision the cache,
+  put the `rediss://` URL in a Container Apps secret, and set `RATE_LIMIT_REDIS_URL` from it. If Redis is down
+  the app falls back to per-replica in-memory limits (warning logged), so auth never fails because of it.
 
 ### 2. One origin: the backend serves the built frontend
 

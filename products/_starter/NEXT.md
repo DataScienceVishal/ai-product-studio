@@ -1,3 +1,19 @@
+# T-15 Redis status
+
+Done: optional Redis rate-limit backend (`backend/app/ratelimit.py`, setting `RATE_LIMIT_REDIS_URL`; unset = unchanged
+in-memory). Sliding window as one Lua script on a sorted set per key (`rl:<key>`), scored by Redis server time, same
+keys/windows as before. Redis client: 200 ms connect/read timeouts, no retries, `rediss://` gives TLS. Fallback: on any
+Redis error the call uses the in-process limiter, logs one warning per 30 s (exception class only, never the URL), and
+skips Redis for 5 s so a hung Redis costs one timeout, not one per login; auth never 500s. Deps: `redis` (runtime),
+`fakeredis[lua]` (dev), lockfiles regenerated with uv. Docs: README row, `.env.example`, ADR 0002 note (no Azure Redis
+provisioned, no Bicep change).
+Tests: `backend/tests/test_ratelimit_redis.py` (12): two replicas share limits, window expiry and TTL, Retry-After,
+fallback on connection/timeout/response errors, warning rate limit, recovery, real unreachable client is fast, TLS and
+timeouts, app wiring.
+Left: provisioning Azure Cache for Redis and wiring the secret into Bicep (ask-first, costs money); the limiter call is
+synchronous, so a slow Redis can block the event loop up to 200 ms per request until the 5 s backoff starts.
+Verify: `cd backend && python -m pytest -q` (348 passed, 1 skipped); `cd frontend && npx vitest run` (111 passed).
+
 # T-37 status
 
 Done: backend/tests/conftest.py gives each pytest run its own database (`<db>_t<epoch>_<pid>_<rand>`, created via the

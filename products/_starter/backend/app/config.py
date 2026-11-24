@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     email_provider: Literal["outbox"] = "outbox"
     auth_rate_limit_per_minute: int = 10
     signups_per_ip_per_day: int = 20
+    # Empty = in-memory limits (one replica). redis:// or rediss:// (TLS) shares them across replicas. Contains a
+    # password, so it is a secret and is never logged. If Redis is down the app falls back to in-memory limits.
+    rate_limit_redis_url: str = ""
     new_trials_per_day: int = 200  # studio-wide, so farmed trials can't exhaust shared budgets
 
     # AI

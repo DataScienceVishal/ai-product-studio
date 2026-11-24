@@ -18,7 +18,7 @@ from .config import Settings
 from .db import Database
 from .email import EmailSender, OutboxEmail
 from .logs import end_request_fields, request_id_var, setup_logging, start_request_fields
-from .ratelimit import RateLimiter
+from .ratelimit import RateLimiter, build_redis_client
 from .routes import account, auth, billing, health, notes, team
 
 log = logging.getLogger("app.http")
@@ -174,7 +174,8 @@ def create_app(settings: Settings | None = None, *, ai: AIProvider | None = None
     app.state.settings = settings
     app.state.db = Database(settings.database_url, settings.db_statement_timeout_ms,
                             settings.db_idle_in_transaction_timeout_ms, settings.db_pool_size, settings.db_max_overflow)
-    app.state.limiter = RateLimiter()
+    app.state.limiter = RateLimiter(redis_client=build_redis_client(settings.rate_limit_redis_url)
+                                    if settings.rate_limit_redis_url else None)
     app.state.ai = ai or build_provider(settings)
     app.state.ai_slots = AISlots(settings.ai_concurrent_calls)
     app.state.billing = billing_provider or build_billing(settings)

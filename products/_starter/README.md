@@ -87,6 +87,7 @@ AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
 | `COOKIE_SECURE` | `true` everywhere except local http. When true the session cookie is `__Host-session` (Secure, `Path=/`, no Domain); when false it is plain `session` |
 | `REQUIRE_EMAIL_VERIFICATION` | `true` (default) makes owners verify their email before inviting or checking out; `false` only where no real email is sent |
 | `TRUST_PROXY_HEADERS` | `true` behind Azure Container Apps ingress, so rate limits see the real client IP |
+| `RATE_LIMIT_REDIS_URL` | empty (default) keeps rate limits in memory, per replica (fine for one replica). `redis://` or `rediss://` (TLS) shares them across replicas; it holds a password, so treat it as a secret. If Redis is unreachable (200 ms timeout) the app logs a rate-limited warning and uses in-memory limits, never a 500. Azure Cache for Redis is not provisioned yet (ADR 0002) |
 | `AI_PROVIDER` | `fake` (default) or `azure` |
 | `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_KEY` | the key is a placeholder in cloud runs; the network secret injects the real one |
 | `BILLING_PROVIDER` | `mock` (default) or `stripe` (test keys only; live keys are refused) |
@@ -110,7 +111,7 @@ AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
 ## Not done yet
 
 See `NEXT.md`. The Azure deploy is designed in `ADR/0002-azure-deploy.md` (Bicep in `infra/`, manual workflow
-`.github/workflows/_starter-deploy.yml`); it creates nothing until Vishal approves the costs (Q-5). Also open: Redis-backed rate limits before running more than one replica, a real email adapter
+`.github/workflows/_starter-deploy.yml`); it creates nothing until Vishal approves the costs (Q-5). Also open: provisioning Azure Cache for Redis (costs money, ask first; the code is ready, see `RATE_LIMIT_REDIS_URL`) before running more than one replica, a real email adapter
 (paid, needs approval), and frontend unit tests.
 
 ## Azure OpenAI API
