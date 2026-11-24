@@ -248,7 +248,8 @@ needs Vishal's approval.
   with `client-id`, `tenant-id` and `subscription-id` from the secrets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   `AZURE_SUBSCRIPTION_ID`), so there is no stored password to leak or rotate. Jobs that sign in hold
   `permissions: id-token: write` at job level only. Cloud runs never hold Azure credentials.
-- **The federated credential trusts one subject:** `repo:DataScienceVishal/ai-product-studio:ref:refs/heads/main`
+- **Subject format (found on the first live run, 2026-11-24):** GitHub sends the immutable-ID subject `repo:<owner>@<owner-id>/<repo>@<repo-id>:...`, so the readable `repo:DataScienceVishal/ai-product-studio:...` form never matches (AADSTS700213). The credential must use the IDs shown in azure/login's "Federated token details" log line.
+- **The federated credential trusts one subject:** `repo:DataScienceVishal@102427114/ai-product-studio@1468636475:ref:refs/heads/main`
   (issuer `https://token.actions.githubusercontent.com`, audience `api://AzureADTokenExchange`). So the sign-in
   works from `main` only, and the sign-in jobs start with a step that fails with a clear message elsewhere.
   **A job with `environment: <name>` gets the subject `...:environment:<name>` instead, and its login fails.**
@@ -256,7 +257,7 @@ needs Vishal's approval.
   (azure/login issue 372, AADSTS700024), so the deploy job signs in again before the registry push and before
   the database step, which come long after the first sign-in.
   No job uses `environment:` today. If one is added (see the follow-up below), add a second federated
-  credential for `repo:DataScienceVishal/ai-product-studio:environment:<name>` first (command in SETUP.md step 3).
+  credential for `repo:DataScienceVishal@102427114/ai-product-studio@1468636475:environment:<name>` first (command in SETUP.md step 3).
 - Contributor can't create role assignments (that needs Owner or Role Based Access Control Administrator)
   and can't register resource providers. So Vishal does three things once, in Cloud Shell (infra/README.md):
   register the providers, grant AcrPull to the pull identity, and later the Azure OpenAI role (T-17).

@@ -48,7 +48,7 @@ PRINCIPAL=$(az identity show -g rg-ai-studio -n id-github-deploy --query princip
 az identity federated-credential create --resource-group rg-ai-studio --identity-name id-github-deploy \
   --name github-main \
   --issuer https://token.actions.githubusercontent.com \
-  --subject repo:DataScienceVishal/ai-product-studio:ref:refs/heads/main \
+  --subject repo:DataScienceVishal@102427114/ai-product-studio@1468636475:ref:refs/heads/main \
   --audiences api://AzureADTokenExchange
 az role assignment create --assignee-object-id $PRINCIPAL --assignee-principal-type ServicePrincipal \
   --role Contributor --scope /subscriptions/$SUB/resourceGroups/rg-ai-studio
@@ -71,13 +71,13 @@ Then in GitHub open the repo's **Settings → Secrets and variables → Actions 
 
 These three IDs are not secrets in themselves; the trust lives in the federated credential. That credential matches **only** runs on `main` (`...:ref:refs/heads/main`), so the Azure workflows sign in from `main` only and refuse to run anywhere else.
 
-**Do not add `environment:` to a job that signs in to Azure.** A job with an environment gets the subject `repo:DataScienceVishal/ai-product-studio:environment:<name>`, which does not match, and the login fails. If you later want a GitHub environment (for example `production` with a required reviewer), add one more federated credential first:
+**Do not add `environment:` to a job that signs in to Azure.** A job with an environment gets the subject `repo:DataScienceVishal@102427114/ai-product-studio@1468636475:environment:<name>`, which does not match, and the login fails. If you later want a GitHub environment (for example `production` with a required reviewer), add one more federated credential first:
 
 ```bash
 az identity federated-credential create --resource-group rg-ai-studio --identity-name id-github-deploy \
   --name github-env-production \
   --issuer https://token.actions.githubusercontent.com \
-  --subject repo:DataScienceVishal/ai-product-studio:environment:production \
+  --subject repo:DataScienceVishal@102427114/ai-product-studio@1468636475:environment:production \
   --audiences api://AzureADTokenExchange
 ```
 

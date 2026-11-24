@@ -7,7 +7,7 @@
 #   - the AZURE_CLIENT_ID, AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID secrets exist. They name the user-assigned
 #     managed identity id-github-deploy (Contributor on rg-ai-studio only), which GitHub signs in as through
 #     OIDC: no stored password. Its federated credential trusts only
-#     repo:DataScienceVishal/ai-product-studio:ref:refs/heads/main, so Azure sign-in works only from main. Don't
+#     repo:DataScienceVishal@102427114/ai-product-studio@1468636475:ref:refs/heads/main, so Azure sign-in works only from main. Don't
 #     add `environment:` to a job that signs in: the token's subject would change and the login would fail
 #     (ADR 0002, decision 8);
 #   - Vishal has approved the costs in state/BUDGET.md by setting the repository variable
