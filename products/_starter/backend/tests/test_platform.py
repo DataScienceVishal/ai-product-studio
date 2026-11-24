@@ -98,7 +98,10 @@ GOOD_PROD = dict(env="prod", app_base_url="https://app.example.com", cors_origin
                  trust_proxy_headers=True)
 
 
-def test_prod_settings_refuse_unsafe_values():
+def test_prod_settings_refuse_unsafe_values(monkeypatch):
+    for name in ("AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_DEPLOYMENT", "AZURE_OPENAI_API_KEY", "AZURE_OPENAI_API",
+                 "AZURE_OPENAI_AUTH", "AI_PROVIDER"):
+        monkeypatch.delenv(name, raising=False)  # cloud sessions set these; the test needs them unset
     Settings(**GOOD_PROD)  # the safe baseline is accepted
     unsafe = {
         "BILLING_WEBHOOK_SECRET": dict(billing_webhook_secret=""),

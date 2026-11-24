@@ -395,7 +395,7 @@ def test_responses_request_shape_and_usage():
     result = _resp_az(handler, ROOT + "/openai/v1/responses").complete("be brief", "hi", max_output_tokens=300)
     assert seen["url"] == ROOT + "/openai/v1/responses" and seen["key"] == "k"
     assert seen["body"] == {"model": "gpt-5.4-pro", "instructions": "be brief", "max_output_tokens": 300,
-                            "input": [{"role": "user", "content": "hi"}]}
+                            "store": False, "input": [{"role": "user", "content": "hi"}]}
     assert (result.text, result.input_tokens, result.output_tokens, result.model) == ("ok", 13, 28, "gpt-5.4-pro")
 
 
@@ -422,6 +422,14 @@ def test_responses_joins_text_parts_and_ignores_reasoning_and_refusals():
         {"type": "message", "content": [{"type": "output_text", "text": "a"}, {"type": "refusal", "text": "x"},
                                         {"type": "output_text", "text": "b"}]}]}
     assert _resp_az(lambda _: httpx.Response(200, json=body), api="responses").complete("s", "u").text == "ab"
+
+
+@pytest.mark.parametrize("output", ["oops", [None, 3, {"type": "message", "content": "x"}], {"a": 1}])
+def test_responses_malformed_output_is_no_text_but_usage_is_still_billed(output):
+    body = {"status": "completed", "output": output, "usage": {"input_tokens": 40, "output_tokens": 200}}
+    with pytest.raises(AIUnavailable) as error:
+        _resp_az(lambda _: httpx.Response(200, json=body), api="responses", retries=0).complete("s", "u")
+    assert (error.value.input_tokens, error.value.output_tokens) == (40, 200)
 
 
 def test_responses_incomplete_is_a_clean_error_and_still_billed():

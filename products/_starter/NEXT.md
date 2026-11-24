@@ -2,8 +2,15 @@
 
 Done: Azure provider supports the v1 Responses API (`AZURE_OPENAI_API=auto|responses|chat`, endpoint
 normalisation, usage and failure billing as chat), tests in `backend/tests/test_ai.py`, README, .env.example.
-Left: set `AZURE_OPENAI_API=responses` (or the /openai/v1/responses endpoint) in the cloud app. Open question:
-25 s deadline vs ~8 s+ reasoning latency; budget logic unchanged.
+Review fixes (reviews/T-33-review.md): B1 `store=false` sent and documented in DATA.md; B2 new setting
+`AI_PRICE_PER_MILLION_TOKENS` (default 2.00), README "Sizing the daily AI cap" with the pro-model warning,
+Bicep `aiPricePerMillionTokens` param and corrected cap description, and `infra/cost-guard.sh` now fails when
+tokens a day x price x 30 passes $6.10; S6 prod-settings test clears AZURE_OPENAI_*/AI_PROVIDER env; S4 malformed
+`output` is treated as no text and billed usage is still recorded.
+Left: set `AZURE_OPENAI_API=responses` (or the /openai/v1/responses endpoint) in the cloud app. If the pro
+deployment is used, set `aiPricePerMillionTokens` and a much smaller `aiGlobalDailyTokens` together (needs a
+Bicep default change and Vishal's approval for any budget above $6.10). Price figures are assumptions to check.
+Open question: 25 s deadline vs ~8 s+ reasoning latency.
 
 # T-17 status
 

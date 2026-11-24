@@ -37,6 +37,11 @@ from .models import AIUsage
 log = logging.getLogger("app.ai")
 
 
+def _dicts(value) -> list[dict]:
+    """The dict items of a provider list; anything malformed counts as no items."""
+    return [v for v in value if isinstance(v, dict)] if isinstance(value, list) else []
+
+
 @dataclass(frozen=True)
 class AIResult:
     text: str
@@ -195,6 +200,7 @@ class AzureOpenAI:
     def complete(self, system: str, user: str, max_output_tokens: int = 1200) -> AIResult:
         if self.api == "responses":  # reasoning tokens count inside max_output_tokens
             payload = {"model": self.deployment, "instructions": system, "max_output_tokens": max_output_tokens,
+                       "store": False,  # Azure keeps no copy of the prompt or answer (DATA.md)
                        "input": [{"role": "user", "content": user}]}
         else:
             payload = {"model": self.deployment, "max_completion_tokens": max_output_tokens,
@@ -255,14 +261,15 @@ class AzureOpenAI:
 
     def _parse(self, data: dict) -> tuple[int, int, str, str | None]:
         """(input tokens, output tokens, text, why there is no text) for either API."""
-        usage = data.get("usage") or {}
+        usage = data.get("usage") if isinstance(data.get("usage"), dict) else {}
         if self.api == "chat":
             choice = (data.get("choices") or [{}])[0]
             text = ((choice.get("message") or {}).get("content") or "").strip()
             return (int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0), text,
                     choice.get("finish_reason"))
-        parts = [part.get("text") or "" for item in data.get("output") or [] if item.get("type") == "message"
-                 for part in item.get("content") or [] if part.get("type") == "output_text"]
+        parts = [part.get("text") or "" for item in _dicts(data.get("output")) if item.get("type") == "message"
+                 for part in _dicts(item.get("content")) if part.get("type") == "output_text"
+                 if isinstance(part.get("text"), str)]
         why = data.get("status") if data.get("status") != "completed" else None
         if why == "incomplete":
             why = (data.get("incomplete_details") or {}).get("reason") or why
