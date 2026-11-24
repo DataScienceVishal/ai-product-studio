@@ -201,3 +201,78 @@ def test_slow_limiter_does_not_block_the_event_loop(app):
 
     login_done, health_done = asyncio.run(run())
     assert health_done < login_done - 0.2  # /livez answered while the login's limiter calls were still sleeping
+
+
+# ---- own bounded pool for Redis checks (T-15 pool) ----
+
+import asyncio
+import threading
+from types import SimpleNamespace
+
+
+def _req(limiter):
+    return SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(limiter=limiter)))
+
+
+def test_redis_checks_run_on_the_limiters_own_pool(server):
+    limiter = RateLimiter(redis_client=fakeredis.FakeRedis(server=server), redis_threads=2)
+    seen = []
+    asyncio.run(ratelimit.off_loop(_req(limiter), lambda: seen.append(threading.current_thread().name)))
+    assert seen[0].startswith("ratelimit-redis")
+    limiter.shutdown()
+
+
+def test_pool_is_bounded(server):
+    limiter = RateLimiter(redis_client=fakeredis.FakeRedis(server=server), redis_threads=3)
+    names = set()
+    lock = threading.Lock()
+
+    def gate():
+        with lock:
+            names.add(threading.current_thread().name)
+        time.sleep(0.05)
+
+    async def go():
+        await asyncio.gather(*[ratelimit.off_loop(_req(limiter), gate) for _ in range(20)])
+
+    asyncio.run(go())
+    assert 1 <= len(names) <= 3
+    limiter.shutdown()
+
+
+def test_in_memory_stays_inline_with_no_pool():
+    limiter = RateLimiter()
+    seen = []
+    asyncio.run(ratelimit.off_loop(_req(limiter), lambda: seen.append(threading.current_thread())))
+    assert seen[0] is threading.main_thread() and limiter._executor is None
+    limiter.shutdown()  # harmless
+
+
+def test_threads_setting_validated(server):
+    from app.config import Settings
+    with pytest.raises(ValueError):
+        RateLimiter(redis_client=fakeredis.FakeRedis(server=server), redis_threads=0)
+    with pytest.raises(Exception):
+        Settings(rate_limit_redis_threads=0, _env_file=None)
+
+
+def test_shutdown_stops_pool_and_is_idempotent(server):
+    limiter = RateLimiter(redis_client=fakeredis.FakeRedis(server=server))
+    assert limiter.redis_threads == 8
+    limiter.shutdown()
+    limiter.shutdown()
+    with pytest.raises(RuntimeError):
+        limiter._executor.submit(lambda: None)
+
+
+def test_app_shutdown_stops_pool(app, monkeypatch):
+    _settings = app.state.settings
+    from fastapi.testclient import TestClient
+    from app.main import create_app
+    import app.main as main
+    monkeypatch.setattr(main, "build_redis_client", lambda url: fakeredis.FakeRedis())
+    app = create_app(_settings.model_copy(update={"rate_limit_redis_url": "redis://x", "rate_limit_redis_threads": 4}))
+    with TestClient(app) as c:
+        assert c.app.state.limiter.redis_threads == 4
+    with pytest.raises(RuntimeError):
+        c.app.state.limiter._executor.submit(lambda: None)
