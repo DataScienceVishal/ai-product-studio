@@ -19,3 +19,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - [_starter] Passwordless database: Azure setup files now create the app's and migration job's own identities (no cost), reviewed and merged; the database role script is reviewed and waits for the deploy-workflow change so both land together.
 - [studio] Got your answers: we keep scouting (ideas we can prove ourselves), and the MTD test runs on the premium model, capped at 20 documents (~$15).
 - [studio] The 08:00 update was saved on a side branch, so I merged it. To stop it recurring, add one line to both Desk tasks (state/SCHEDULED_TASKS.md has it).
+- [ideas] Scouting round 7 (your choice: ideas we can prove ourselves): 3 ideas, all killed; each job is already sold (minimum-wage audits, checkout fee checks, export classification). 0 of 42 ideas at the bar. Telling us your friend's sector (the old option C) is still the strongest lever.

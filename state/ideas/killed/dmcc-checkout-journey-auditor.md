@@ -1,7 +1,7 @@
 # DMCC checkout-journey auditor
 
 - slug: dmcc-checkout-journey-auditor
-- stage: G0
+- stage: killed (T-42 validator, 2026-11-24, 52)
 - market and segment: UK consumer-facing online sellers outside Shopify and with bespoke checkouts, where drip pricing is the CMA's focus: ticketing, travel and holiday sellers, gyms and leisure memberships, driving schools, home-services booking sites (about 20 to 500 staff)
 - one-line pitch: A browser agent walks the firm's own booking and checkout journeys, spots hidden mandatory fees, late-added charges and unsubstantiated urgency messages against the CMA's published price-transparency guidance, and keeps a dated evidence log with a fix list for the compliance owner.
 
@@ -52,8 +52,44 @@ Playwright agent with an LLM planner, a rules layer for CMA209 patterns, a journ
 - Wrong if a CRO or QA vendor already ships "price-at-each-step" checks, or if the Upfront team has a full-journey product.
 
 ## Score (validator)
+Validator score, 2026-11-24 (T-42):
+
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
+| 13 | 4 | 9 | 6 | 10 | 2 | 8 | 52 |
+
+**Verdict: KILL (first attempt; ceiling below 70).**
+
+**Falsification findings** (all accessed 2026-11-24; "fetched" means the page itself was read)
+- **Enforcement is real; the scout's figures hold on primary sources.**
+  - AA/BSM: 15 April 2026, £4.2m after a 40% settlement discount from £7m, more than £760,000 refunded to over 80,000 customers, for a mandatory £3 booking fee left out of the upfront price. Since April 2025 the CMA "has launched investigations into 14 businesses", and it runs a free "Clear Pricing" campaign with "a practical 3-step checklist" (https://www.gov.uk/government/news/cma-orders-the-aa-and-bsm-driving-schools-to-refund-learner-drivers-over-drip-pricing, fetched).
+  - StubHub: £889,200 fine, refunds of more than £590,000 to 51,350 customers (https://www.gov.uk/government/news/cma-orders-stubhub-uk-to-refund-customers-over-hidden-fees, search summary; matches Osborne Clarke, fetched). Marks Electrical: £720,000 for pre-selected paid extras (Osborne Clarke, fetched).
+  - The "more than £12 million in fines" in the Lewis Silkin note is not reconciled with nshift's "£5.1m+" (search summary). Use the per-case gov.uk figures only.
+- **The product already exists, at £14.99 a month.** Total Price (Total Price Ltd, Companies House 17292844) scans "the same path a customer takes, from browse to checkout" starting from the homepage, and checks booking and service fees, delivery costs, fake urgency timers, pre-ticked extras and subscription terms. Plans: Free (one check per site), £11.99 for 5 credits, Monitoring £14.99 a month with one automatic monthly check. It says it is "a compliance-checking tool, not a law firm or a substitute for legal advice" (https://totalprice.co.uk/, fetched). Its one stated limit: checkouts behind a login, where it "flags what it can see and tells you what to check yourself".
+- **Free and cheap rivals too.** TrustYourWebsite runs a free DMCCA scan for drip pricing, manufactured urgency and cancel parity "in under a minute" (https://trustyourwebsite.com/uk/en/guides/dmcca-dark-patterns-uk-cma, fetched; paid prices not shown, multi-step walking not stated). AuditSocials sells an "AI Compliance Audit" of landing and checkout pricing (search summary). Law firms give away checklists (Muckle drip-pricing checklist, search result) and advise "test journeys" (CMS, search summary).
+- **The regulator does it itself.** The CMA "has deployed agentic AI" that captures "the consumer journey at scale", and the StubHub, Marks Electrical and Euro Car Parks cases came from it (https://www.osborneclarke.com/insights/cma-issues-first-fines-under-its-new-uk-direct-consumer-enforcement-powers, fetched, 8 July 2026). That proves the technique works, and that it is not hard to copy.
+- **Cheapest substitute:** a product manager clicks through each journey after each release with the CMA's 3-step checklist (an hour), or adds one "total price unchanged at payment" assertion to the Playwright or Cypress suite the team already runs. Mid-sized sellers with dev teams already have the tooling.
+- **Off-limits check: not legal advice as scoped.** It is testing and evidence; Total Price shows the framing works. No scraping red flag if it only walks sites the customer owns and authorises.
+
+**Scores in brief**
+- Pain 13: real fines (£4.2m, £889k, £720k), a 10%-of-turnover cap and active CMA sweeps. Not higher: per-case fines fall on large firms, refunds average £9 to £10 per customer, and mid-market sellers may simply fix one fee line.
+- Pay 4: the only software price for this job is £11.99 to £14.99 a month (Total Price), with free scans beside it. No law-firm journey-review price was found.
+- AI 9: an agent that picks dates and options and judges mandatory versus optional fees is real AI work, but the CMA and at least two vendors already ship it.
+- Reach 6: online sellers are easy to list by sector; the partner's channel is unknown.
+- Build 10: a robust agent across arbitrary bespoke journeys is harder than the synthetic-site demo suggests; flaky runs would be the support burden.
+- Competition 2: Total Price matches the pitch, including monthly monitoring, at a price a two-person business can't undercut.
+- Risk 8: own-site testing, no personal data; a residual liability if a "clean" report misses a fee.
+
+**Reason (one paragraph).** The pitch, "an agent walks your checkout journey and flags hidden fees and urgency claims against CMA guidance, with monitoring", is already sold by Total Price at £14.99 a month with a free tier, offered free by TrustYourWebsite, and run by the CMA itself with agentic AI. The enforcement wave is real and confirmed on gov.uk, but it is equally visible to every vendor, and it has set the price anchor at the level of a cheap website scanner. The one gap left (journeys behind a login, multi-option bookings) is too narrow to lift Pay or Competition anywhere near 70. Best plausible re-score: Pain 14, Pay 7, AI 10, Reach 6, Build 10, Competition 4, Risk 8 = 59.
+
+**Lessons**
+- Public enforcement with named fines draws cheap single-purpose tools within months. Search "<regulation> checker / scan / check your website" as well as "<regulation> compliance software", and check Companies House for newly formed single-purpose firms.
+- If the regulator's own enforcement uses the same AI technique, treat the AI score as capped: it shows feasibility, not a moat.
+- For website-facing compliance, the price anchor is website scanners (£0 to £15 a month), not law-firm fees.
+
+**What would revive it**
+- Evidence that Total Price, TrustYourWebsite and similar tools miss authenticated or multi-option journeys (for example, a published comparison or their own documentation), plus a published price of at least £200 a month for authenticated journey testing in travel or leisure. Even then the ceiling is about 60.
 
 ## Gate log
 - 2026-11-24 T-42 scout round 7: written as G0. Most facts come from search summaries; only the Lewis Silkin Nov 2026 note and the Upfront page were fetched.
+- 2026-11-24 | validator | G0→G1 | KILL 52 | Total Price already walks the browse-to-checkout journey for hidden fees, urgency timers and pre-ticked extras, with monthly monitoring at £14.99 a month and a free tier; TrustYourWebsite scans free; the CMA runs agentic AI over consumer journeys itself. Fines confirmed on gov.uk (AA/BSM £4.2m, 15 Apr 2026). Ceiling about 59.
