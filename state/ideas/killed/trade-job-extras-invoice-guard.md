@@ -40,7 +40,34 @@ Demo from synthetic quote, thread and photos. Data route: each system's API need
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| 9 | 4 | 6 | 6 | 9 | 4 | 8 | **46** |
+
+### Validator checks (T-47, 2026-11-24, all accessed 2026-11-24)
+| Check | Source | Finding |
+|---|---|---|
+| ServiceM8 release notes (fetched, first 100k of 113k characters) | https://servicem8.com/updates | No "extras", "variation" or missed-charge entry. But the system already: drafts invoice items from the job card with AI (Auto Quote and Invoice, Oct 2023 and Sep 2024); has reply suggestions on emails and SMS; adds billable items by voice; and has an Office Agent (Sep 2025, extended Sep 2026) that discusses a job and prepares actions, with MCP connections for ChatGPT and Claude |
+| Search for the feature in ServiceM8, Fergus and Tradify | web search | Not shipped by any of the three. Enterprise DNA sells custom "scope-change detector" agents over notes, voice, photos and messages, so the pattern is commodity consulting work |
+| Cheapest substitute | reasoning | Paste the WhatsApp export and the quote into ChatGPT and ask "what did we agree that isn't on the quote?". ServiceM8's MCP connector already lets Claude or ChatGPT read the job. No product moat over a prompt |
+| Pay | scout's sources plus search | No price for unbilled-extras recovery. The leakage figures are vendor claims. Variation Tracker (Capterra) shows some paid demand for capture, but its price was not found |
+| Channel | scout file | WhatsApp threads are outside the system. Live capture needs manual forwarding (a behaviour change, no evidence) or the paid WhatsApp Business API (needs approval) |
+| Off-limits check | CLAUDE.md section 5 | Not off-limits. A variation note is a commercial document |
+
+### Score reasons
+- Pain 9: real (extras given away), but shown only by a newsletter, a consultancy and a capture app. No reviews or forum threads were counted.
+- Pay 4: no public price for the job.
+- AI 6: reading informal chat is a genuine LLM task, but copyable in a week and matched by a general chatbot.
+- Reach 6: plenty of trades firms, with ServiceM8 and Tradify add-on stores and trade groups.
+- Build 9: the demo is easy on synthetic data, but the live input depends on forwarding or a paid API.
+- Competition 4: no direct product, but every system vendor ships AI invoice drafting and agents over the job, and ServiceM8's MCP opens it to general assistants.
+- Risk 8: business messages with customers' names and addresses; low regulatory risk.
+
+## Verdict: KILL (first attempt, ceiling about 55)
+Nobody ships "extras from WhatsApp" yet, but the gap is a prompt, not a product. The job system vendors already read the job card and draft invoice items with AI (ServiceM8 since 2023), run office agents over jobs (ServiceM8 Office Agent, Fergus AI, simPRO Lightning), and ServiceM8 exposes jobs to ChatGPT and Claude through MCP. The one thing outside their view, the WhatsApp thread, can only be captured by a behaviour change or the paid Business API, and a tradesperson can paste the same thread into a free chatbot. There is no price for the job.
+
+**Lessons:** when the only gap is a channel the system can't see, the cheapest substitute is the user pasting that channel into a general assistant. Score the idea against that, and against the vendor's MCP or agent connectors, not only against the vendor's features.
+
+**What would revive it:** evidence that trades firms already route customer WhatsApp through a shared business inbox that has an API (so capture needs no behaviour change), plus a published price or a measured recovered-revenue figure from a pilot.
 
 ## Gate log
 - 2026-11-24 round 10 scout (T-47): written at G0 with low confidence. Scores left for the validator. Suggest killing quickly if ServiceM8 or Fergus already reads message threads.
+- 2026-11-24 validator (T-47): 46/100, KILL. Vendors already draft invoice items from the job with AI and expose jobs to general assistants (ServiceM8 MCP); the only gap is a WhatsApp paste a chatbot handles; no price. Move to `state/ideas/killed/`.

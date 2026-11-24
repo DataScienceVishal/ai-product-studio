@@ -46,7 +46,37 @@ The core forecast is arithmetic (low AI). AI earns its place in three parts: rea
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| 13 | 5 | 5 | 5 | 9 | 3 | 7 | **47** |
+
+### Validator checks (T-47, 2026-11-24, all accessed 2026-11-24)
+| Check | Source | Finding |
+|---|---|---|
+| Dentally native NHS reporting (fetched) | https://www.dentally.com/en-gb/solutions/nhs | "track UDAs, and stay on top of contracts", "real-time contract reporting", "from UDA progress to contract tracking and outstanding claims". No Compass, forecast or unscheduled-care feature on the page |
+| Dentally is building the core (fetched) | https://community.dentally.com/practice-management-58/calling-nhs-practices-help-shape-new-contract-performance-reporting-719 | 27 May 2026, a Dentally product designer: building "clear reporting on how you're tracking against your NHS contract" (ACV/UDA targets, per-clinician, "where the gaps are"), starting with Wales; recruiting practices for design calls. No date |
+| Pain is real but is a platform-feature request (fetched) | https://community.dentally.com/practice-management-58/urgent-improvement-needed-uda-tracking-reporting-564 | 19 Jan 2026: "Robust UDA tracking is not a nice to have"; a "major downgrade from EXACT". 70 views, 1 like. Dentally staff: logged on the internal board |
+| Rival PMS already ship it (fetched) | https://carestack.com/en-GB/dental-software/features/nhs-reporting | "Track confirmed versus claimed UDAs", "Spot completed NHS treatments awaiting submission", "Support reporting across Unscheduled Care, updated treatment mappings, fee changes", daily action lists. No forecast |
+| Forecasting already exists (search summary; SoE help page returned 403) | https://help.softwareofexcellence.com/hc/en-gb/articles/4991378416788-NHS-UDA-Manager | EXACT has an NHS UDA Manager (achieved versus confirmed gap flags rejected claims) and a Predictive UDA Manager. Dentally users ask for an "EXACT-style" tracker, so it is the market's reference feature |
+| Free official monitoring (search summary) | https://www.nhsbsa.nhs.uk/sites/default/files/2026-09/Guide%20for%20viewing%20contract%20reform%20changes%20activity%20information_0.pdf | NHSBSA names daily contract activity data in Compass as the monitoring source; eDEN has a contract performance summary dashboard |
+| Pay | search "dental practice NHS contract management consultancy UDA monitoring fee" | No published price for contract monitoring found. Only proxies: Zmartly accounting £129 to £250 a month (not this job); the BDA advises members on clawback as part of membership |
+| API route (fetched) | https://help.dentally.com/en/articles/15956843-dentally-partner-api-faq-s | NextGen API: apply to be a partner, sandbox demo video, then production credentials. "You'll authenticate directly with Dentally instead of practices creating and managing API tokens", so the practice-token workaround is gone. No fee stated |
+| Off-limits check | CLAUDE.md section 5 | As scoped (counts, claim references, contract arithmetic) this is contract admin, not medical advice. Not a red flag. Exports carry patient identifiers, so Risk is 7 |
+
+### Score reasons
+- Pain 13: clawback is real money, and forum posts show practice managers piecing figures together by hand. But the evidence is feature requests to the platform (1 like, 70 views), and NHSBSA gives a free daily view.
+- Pay 5: no price for the job anywhere. The value sits inside PMS subscriptions (Dentally, EXACT, CareStack) and BDA membership.
+- AI 5: the core (delivery against target, forecast, 8.2% share) is arithmetic. Reading pay statements and drafting the action list is thin and quick to copy.
+- Reach 5: the Dentally marketplace requires partner approval (needs Vishal's OK) and a sandbox demo. Practice managers can be found through BDA and practice-manager groups. Dentally's share of NHS contracts was not counted.
+- Build 9: synthetic Compass-style data is possible. But the Compass views changed in September 2026, more rules are still to come, and file upload means manual exports each month.
+- Competition 3: the platform owner is building the core with its users; EXACT already forecasts; CareStack already covers 2026 unscheduled care and claim exceptions.
+- Risk 7: health-adjacent records with patient identifiers in the exports, though admin-only in scope.
+
+## Verdict: KILL (first attempt, ceiling about 58)
+The gap the scout found ("no UDA app on the Dentally marketplace") exists because the platform owner treats contract tracking as its own core feature. Dentally's product team has been designing contract-performance reporting with NHS practices since May 2026. EXACT already sells a predictive UDA manager, and CareStack already reports 2026 unscheduled care and claim exceptions. NHSBSA gives daily activity data in Compass and a performance dashboard in eDEN for free. What would be left for an add-on is arithmetic plus a drafted action list, with no public price, behind a partner API the studio needs approval to use. Even with a price found, Competition and AI cap it below 70.
+
+**Lessons:** an empty marketplace category next to a forum feature request usually means the platform plans to build it, so search the vendor's community for "help shape" or "we're building" posts before writing the G0 file. Check rival PMS pages for the feature too: in a vertical market, the reference feature (EXACT's UDA Manager) sets what buyers expect to get bundled.
+
+**What would revive it:** Dentally publicly declining to build forecasting or unscheduled-care tracking, plus a published price that practices or dental groups pay for contract monitoring (for example a consultancy retainer). Or a multi-PMS dental group segment (corporates running EXACT and Dentally side by side) with evidence that it pays for consolidated NHS reporting.
 
 ## Gate log
 - 2026-11-24 round 10 scout (T-47): written at G0. Scores left for the validator.
+- 2026-11-24 validator (T-47): 47/100, KILL. Dentally is building contract-performance reporting (community post, 27 May 2026); EXACT forecasts; CareStack covers 2026 unscheduled care; no price for the job. Move to `state/ideas/killed/`.
