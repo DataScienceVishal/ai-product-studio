@@ -1,3 +1,13 @@
+# T-38 status
+
+Done: test DB base-name cap lowered to 36 chars (`{0,35}`), so `<base>_t<10-digit epoch>_<pid>_<6hex>` is at most 63 bytes
+(README and tests updated); if `COMMENT ON DATABASE` fails the new DB is dropped before `pytest.exit`. Route scanner in
+test_spa.py now reads `"/x" === path` and flags `path === ROUTES.x`, `x === path`, `PAGES[path]`/`a.b[path]` as unreadable
+(new `scan_routes` + unit test on synthetic snippets). Tests: worst-case name length, failed-COMMENT drop path.
+The two unused variables in test_cookies_and_limits.py were already gone on main (nothing left to remove).
+Left: nothing.
+Verify: `cd backend && pytest` (339 passed, 1 skipped); `cd frontend && npx vitest run` (111 passed).
+
 # T-37 status
 
 Done: backend/tests/conftest.py gives each pytest run its own database (`<db>_t<epoch>_<pid>_<rand>`, created via the
