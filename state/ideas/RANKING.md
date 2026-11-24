@@ -2,7 +2,7 @@
 
 Ordered by score, then build feasibility. The validator keeps this current.
 
-Updated 2026-11-24 (T-4, T-11, T-22, T-28, T-31, T-36, T-42 and T-44 complete, plus the mtd-quarterly-prep second attempt after T-12: 42 scored, 0 PASS, 15 KILL). No idea has passed G1 (70+) yet. Ties are broken by the Build score.
+Updated 2026-11-24 (T-4, T-11, T-22, T-28, T-31, T-36, T-42, T-44 and T-46 complete, plus the mtd-quarterly-prep second attempt after T-12: 44 scored, 0 PASS, 17 KILL). No idea has passed G1 (70+) yet. Ties are broken by the Build score.
 
 | Rank | Slug | Stage | Score | One-line pitch | Next step |
 |---|---|---|---|---|---|
@@ -48,6 +48,8 @@ Killed (in `killed/`):
 - uk-export-classification-workbench (50, T-42): the gap is a free ECJU service paused on 12 Oct 2026 with an update due by year end, and the same service came back in 2018 after a four-year suspension; Trademo, Digicust, traide AI and EC Compliance already sell AI dual-use classification from specs; no price; a wrong rating is the buyer's offence. Ceiling about 61.
 - sage-remittance-cash-allocator (57, T-44): RemitClear (a UK firm) already reads remittances and allocates them in Xero, QuickBooks Online and Sage Accounting according to its own site, and Sage 50 importers (PostTrans, Adept, Excel2Sage) already post allocated receipts. Only desktop Sage is left, which is the same blocked route as wholesale-email-order-entry-sage. Ceiling about 62. The file is still in `state/ideas/`; the lead should git mv it.
 - merchant-supplier-price-file-loader (53, T-44): Merlin's Price Update and BisTrack's import already load supplier price files, LUCKINSlive feeds prices into wholesaler ERPs (Profit4, Intact, OrderWise), BMF and NMBS run the Data Yard pool, and TableFlow sells the AI extraction. The only evidence on Pay is a modelled salary. Ceiling about 60. The file is still in `state/ideas/`; the lead should git mv it.
+- [section13-market-rent-evidence-desk](killed/section13-market-rent-evidence-desk.md) (57, T-46): MarketRent (the Fixflo co-founders, April 2026) already sells a rent-review platform with comparables, a rent suggestion and a tribunal-ready pack. LonRes Rental Checker reports from achieved rents, PropertyData includes rental valuations from £15 a month, and Rightmove and Goodlord serve the notice. Good comparables need achieved or licensed data, and the AI is only the narrative. Ceiling about 62. The file is still in `state/ideas/`; the lead should git mv it.
+- [food-supplier-cost-price-increase-pack](killed/food-supplier-cost-price-increase-pack.md) (57, T-46): no supplier-side tool was found, but a CPI happens once or twice a year per retailer (no basis for a subscription; only FD day rates and unpriced workshops), and the core is a weighted cost change. Buyers already run Expana's AI cost models against supplier increases. Ceiling about 63. The file is still in `state/ideas/`; the lead should git mv it.
 - mtd-quarterly-prep (64, after T-12, second failure): the benchmark failed the idea's own test. Model-only review time was 59-72% of manual and never halved; the halving needs a merchant-memory rules layer that Dext (bank and supplier rules) and IRIS (remembered categories) already ship. The scan and photo wedge was barely measured, and Dext Solo's £2.50 per client caps Pay.
 
 **Pattern:** every idea lost most of its points on Competition (1 to 5 out of 10; four of the UK batch scored 1). By late 2026 incumbents ship "AI over your documents" as a standard or free feature, so a gap has to be checked on the competitor's own product pages, and the stronger wedges are ones incumbents can't easily follow: a regulatory deadline, deep domain workflow, a channel they don't serve, or liability they won't take.
@@ -117,3 +119,12 @@ Killed (in `killed/`):
   - Fetch the competitor's homepage.
   - Search for the sector's data pool or aggregator, and for the existing desktop import add-ons that set the price of the non-AI half.
   - Next round, try jobs whose output is a judgement or recommendation (pricing, forecasting, exception detection) rather than extraction.
+
+**Round 9 (T-46): judgement outputs.** Both ideas were killed on the first attempt (57 and 57).
+- The Section 13 desk lost on Competition (2). A statutory process that started on 1 May 2026 had already drawn four launches, including MarketRent from the Fixflo founders.
+- The CPI pack had the round's only open gap, but it lost on Pay (6) and AI (7): the job is seasonal and the core is arithmetic.
+- Lessons for the next scout:
+  - Search the trade press for "<process> platform launched".
+  - For a recommendation job, find out who owns the transaction data before scoring Build.
+  - Check how often the job happens: yearly jobs don't support a subscription.
+  - Look at what the other side of the negotiation already buys.

@@ -1,7 +1,7 @@
 # Section 13 market-rent evidence desk
 
 - slug: section13-market-rent-evidence-desk
-- stage: G0
+- stage: killed (G1 attempt 1, 57, T-46)
 - market and segment: England letting agents and self-managing portfolio landlords (about 5 to 300 tenancies) that must justify every rent increase under the Renters' Rights Act from 1 May 2026
 - one-line pitch: For each tenancy due a review, recommends the rent to put in the Section 13 notice, ranks the comparables, and writes the evidence pack that would stand up at the First-tier Tribunal. A person signs it off.
 
@@ -48,7 +48,38 @@ Choosing comparables is a judgement over messy text: matching on size, condition
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| 16 | 11 | 6 | 7 | 8 | 2 | 7 | 57 |
 
 ## Gate log
 - G0 written by scout, round 9 (T-46), 2026-11-24. Not scored.
+- G1 attempt 1, validator, round 9 (T-46), 2026-11-24: **57, KILL** (ceiling about 62). See "Validator, round 9".
+
+## Validator, round 9 (T-46, 2026-11-24)
+
+**Verdict: KILL, 57/100.** The pain is real, but the product the scout describes already exists as a funded single-purpose UK startup.
+
+**Reason.** MarketRent, founded by Rajeev Nayyar and Duncan Careless (the Fixflo co-founders), opened on 14 April 2026 as a "workflow and evidence platform" for rent reviews. It brings market data, comparables, ONS indexation and landlord approvals into one system, compiles a "tribunal-ready pack for landlords with a rent suggestion", generates the prescribed form, takes the tenant's counter-evidence and keeps an audit trail. It also gives away a free ONS indexation tool and already integrates with Veco Plus. That is the scout's whole pitch, sold by founders who already have a distribution network among letting agents. Around it: LonRes Rental Checker (April 2026) gives like-for-like comparables from *achieved* rents, an accuracy barometer and a branded report with the method, which is better data than the studio can lawfully get. PropertyData includes instant rental valuations with a confidence score in every plan from £15 to £60 a month. Rightmove Tenancy Manager (September 2026) and Goodlord serve the notice. Landlord Law sells a Market Rent and Tribunal Kit with a comparables assessment pack (29 August 2026). The data problem is close to a red flag: the only good comparables are achieved rents (LonRes, the agent's own book) or licensed portal-derived data (PropertyData's API from about £28 a month is a paid service that would need Vishal's approval). ONS PIPR is area-level only, so a demo on open data plus synthetic comparables can't show the figure is accurate. The AI is the weakest part: picking comparables is a data and statistics job, and MarketRent and LonRes do it without an LLM. Drafting the narrative is the only LLM step, and anyone can copy it in a week.
+
+**Scores.**
+- Pain 16: statutory forcing function on every periodic tenancy every year. Record tribunal volume (166 decisions in July 2026, NRLA/Hamptons). Tenants are being coached to bring evidence (Shelter).
+- Pay 11: agents charge per review (the Cluttons £250 is still from a search summary and unverified; Your-Move and Reeds Rains charge on outcome). Data tools are priced at £15 to £60 a month. Nothing shows a separate subscription for the evidence pack.
+- AI 6: mostly data retrieval plus arithmetic. The LLM narrative is easy to copy.
+- Reach 7: letting agents are easy to find through Propertymark and the portals, but the channel already belongs to Fixflo's founders and Rightmove.
+- Build 8: the core flow is easy, but showing that the figure is accurate needs licensed data.
+- Competition 2: MarketRent, LonRes, PropertyData, Rightmove, Goodlord, MRI and the Landlord Law kit.
+- Risk 7: tenancy personal data, and the output is used in tribunal proceedings, so it sits close to legal advice.
+
+**Lessons.**
+- A new statutory process ("Section 13 from 1 May 2026") is seen by every proptech founder. Search the trade press (The Negotiator, Letting Agent Today, Property Industry Eye) for "<process> platform launched" before writing the G0 file. Four launches came up in one search.
+- For valuation or recommendation ideas, find out who owns the *achieved* (transaction) data first. If it is a data vendor or a portal, the studio's figure will be second-rate.
+
+**What would revive it.** A lawful, free or approved source of achieved rents (for example a partner agent's own book under a data agreement), plus evidence that MarketRent and LonRes don't serve self-managing landlords outside London at a price they will pay. Even then, the ceiling is about 62.
+
+**Evidence (accessed 2026-11-24).**
+- MarketRent launch: https://propertyindustryeye.com/platform-launched-to-support-rent-reviews-under-renters-rights-act/ (fetched); "tribunal-ready pack ... with a rent suggestion": https://thenegotiator.co.uk/news/products-services-news/new-rent-review-platform-launches-ahead-of-renters-right-act/ (search summary). No price was found.
+- LonRes Rental Checker: https://www.propertyreporter.co.uk/lonres-launches-rental-compliance-tool-ahead-of-renters-rights-act.html (fetched, 24 Apr 2026)
+- PropertyData plans, £15 to £60 a month, rental valuations included: https://propertydata.co.uk/pricing (fetched). API pricing: https://propertydata.co.uk/api/pricing (search summary, about £28 a month)
+- Landlord Law Market Rent and Tribunal Kit: https://landlordlaw.co.uk/introducing-the-landlord-law-market-rent-and-tribunal-kit/ (fetched; no price)
+- Rightmove Section 13 tool: https://thenegotiator.co.uk/news/rightmove-adds-rent-review-tool-to-tenancy-manager/ (search summary)
+- gov.uk process: tenant applies before the new rent's start date, £47 fee, tribunal outcome "might end up being lower or the same", two months' minimum notice from 1 May 2026: https://www.gov.uk/guidance/apply-for-a-market-rent-determination (fetched, page updated 10 Aug 2026)
+- Process guidance: https://www.nrla.org.uk/resources/managing-your-tenancy/increasing-rent-during-tenancy-agreement (search summary)

@@ -28,3 +28,5 @@ One line per blocker:
 - What: the 08:00 Desk run (desk-f702) committed its digest and the Q-6/Q-7 "sent" marks to `vishal/quirky-ritchie-5p7b9q` instead of `main`, so hourly runs didn't see that Q-6/Q-7 had been sent (Vishal's "1A"/"2B" would have been misread against the old 22:40 numbering).
 - Done: merged that branch into main (run cf1a).
 - Fix: the Desk prompt (state/SCHEDULED_TASKS.md) should say "push everything to main", as the Studio Run prompt does; or Vishal enables unrestricted branch pushes for the Desk task (SETUP.md step 6).
+
+- 2026-11-24T12:41Z | run 9075 | The auto-mode permission classifier blocked a local Bicep CLI build in a builder subagent. Not retried; CI's infra job compiles Bicep and runs test-bicep-identities.sh on every branch push, so the gate came from CI run 45394078774 (green). Also: subagents that switch branches in the primary checkout collide with state commits, so give each builder its own git worktree.
