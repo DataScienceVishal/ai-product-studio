@@ -47,6 +47,8 @@ class Settings(BaseSettings):
     # Empty = in-memory limits (one replica). redis:// or rediss:// (TLS) shares them across replicas. Contains a
     # password, so it is a secret and is never logged. If Redis is down the app falls back to in-memory limits.
     rate_limit_redis_url: str = ""
+    # Size of the limiter's own thread pool for Redis checks (kept apart from the shared worker threads).
+    rate_limit_redis_threads: int = Field(default=8, ge=1)
     new_trials_per_day: int = 200  # studio-wide, so farmed trials can't exhaust shared budgets
 
     # AI

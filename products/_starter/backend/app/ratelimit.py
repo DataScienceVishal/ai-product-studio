@@ -13,14 +13,16 @@ Auth routes therefore never 500 and never stall because of Redis; during an outa
 """
 from __future__ import annotations
 
+import asyncio
+import contextvars
 import hashlib
 import logging
 import threading
 import time
 import uuid
 from collections import deque
+from concurrent.futures import ThreadPoolExecutor
 
-import anyio.to_thread
 from fastapi import Request
 
 from .errors import AppError
@@ -60,7 +62,15 @@ _FALLBACK = object()
 
 
 class RateLimiter:
-    def __init__(self, max_keys: int = 50_000, redis_client=None, redis_prefix: str = "rl:"):
+    def __init__(self, max_keys: int = 50_000, redis_client=None, redis_prefix: str = "rl:",
+                 redis_threads: int = 8):
+        if redis_threads < 1:
+            raise ValueError("redis_threads must be at least 1")
+        # Redis checks get their own small pool so a slow Redis (200 ms timeout each) cannot use up the shared
+        # worker threads that serve sync routes. Not created for the in-memory limiter, which never leaves the loop.
+        self._executor = (ThreadPoolExecutor(max_workers=redis_threads, thread_name_prefix="ratelimit-redis")
+                          if redis_client is not None else None)
+        self.redis_threads = redis_threads
         self._redis = redis_client
         self._redis_script = redis_client.register_script(_SLIDING_WINDOW_LUA) if redis_client is not None else None
         self._redis_prefix = redis_prefix
@@ -86,6 +96,21 @@ class RateLimiter:
     def blocking(self) -> bool:
         """True when a hit does network I/O, so async callers must not run it on the event loop."""
         return self._redis is not None
+
+    async def run_blocking(self, fn) -> None:
+        """Run a sync gate off the event loop on the limiter's own bounded pool (the caller's context is kept)."""
+        ctx = contextvars.copy_context()
+        await asyncio.get_running_loop().run_in_executor(self._executor, ctx.run, fn)
+
+    def shutdown(self) -> None:
+        """Stop the Redis pool (queued checks are dropped, running ones finish) and close the client. Idempotent."""
+        if self._executor is not None:
+            self._executor.shutdown(wait=False, cancel_futures=True)
+        if self._redis is not None:
+            try:
+                self._redis.close()
+            except Exception:  # shutting down: nothing useful to do about it
+                pass
 
     def _redis_hit(self, key: str, limit: int, window_seconds: float):
         now = time.monotonic()
@@ -140,7 +165,7 @@ class RateLimiter:
 async def off_loop(request: Request, fn) -> None:
     """Run a sync rate-limit gate: in a worker thread if the limiter does network I/O, else inline (it is cheap)."""
     if request.app.state.limiter.blocking:
-        await anyio.to_thread.run_sync(fn)
+        await request.app.state.limiter.run_blocking(fn)
     else:
         fn()
 
