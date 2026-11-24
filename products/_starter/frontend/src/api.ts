@@ -15,13 +15,28 @@ export class ApiError extends Error {
   }
 }
 
-// Build-time VITE_API_TIMEOUT_SECONDS (default 30). The backend's AI_DEADLINE_SECONDS must stay at least 2 s below it
-// (FRONTEND_TIMEOUT_SECONDS on the server must carry the same number, or the server refuses to start).
-export function timeoutMs(raw: string | undefined = import.meta.env.VITE_API_TIMEOUT_SECONDS): number {
-  const seconds = Number(raw);
-  return raw && Number.isFinite(seconds) && seconds >= 1 ? seconds * 1000 : 30_000;
+// The browser's abort comes from the server (GET /api/config, FRONTEND_TIMEOUT_SECONDS), read once at startup, so the
+// startup check that keeps AI_DEADLINE_SECONDS below it guards the real value. Fallback: 30 s. Capped at 600 s: a
+// larger setTimeout overflows 2^31-1 ms and fires at once.
+const DEFAULT_TIMEOUT_MS = 30_000;
+const MAX_TIMEOUT_MS = 600_000;
+export function timeoutMs(raw: unknown): number {
+  const seconds = typeof raw === "number" ? raw : Number.NaN;
+  return Number.isFinite(seconds) && seconds >= 1 ? Math.min(seconds * 1000, MAX_TIMEOUT_MS) : DEFAULT_TIMEOUT_MS;
 }
-const TIMEOUT_MS = timeoutMs();
+let requestTimeoutMs = DEFAULT_TIMEOUT_MS;
+export async function loadClientConfig(): Promise<void> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5_000);
+  try {
+    const response = await fetch("/api/config", { credentials: "same-origin", signal: controller.signal });
+    if (response.ok) requestTimeoutMs = timeoutMs((await response.json()).api_timeout_seconds);
+  } catch {
+    requestTimeoutMs = DEFAULT_TIMEOUT_MS; // no config: keep the safe default
+  } finally {
+    clearTimeout(timer);
+  }
+}
 // Requests where a 401 is an expected answer, not "your session ended".
 const AUTH_PATHS = ["/api/auth/me", "/api/auth/login", "/api/auth/signup", "/api/invitations/accept",
   "/api/auth/password-reset/request", "/api/auth/password-reset/confirm"];
@@ -29,7 +44,7 @@ export const SESSION_ENDED = "session-ended";
 
 export async function api<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), requestTimeoutMs);
   let response: Response;
   try {
     response = await fetch(path, {

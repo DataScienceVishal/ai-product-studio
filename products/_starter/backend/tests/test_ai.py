@@ -659,11 +659,21 @@ def test_responses_with_managed_identity_sends_bearer_and_no_api_key():
 def test_build_provider_passes_the_api_setting():
     from types import SimpleNamespace
     base = dict(ai_provider="azure", azure_openai_endpoint=ROOT + "/openai/v1/responses", azure_openai_deployment="d",
-                azure_openai_api_key="k", ai_timeout_seconds=20.0, ai_deadline_seconds=25.0, ai_retries=1, ai_reasoning_headroom=700, azure_openai_reasoning_effort="",
+                azure_openai_api_key="k", ai_timeout_seconds=20.0, ai_deadline_seconds=25.0, ai_retries=1, ai_reasoning_headroom=700,
                 azure_openai_auth="key", azure_client_id="")
+    base = {**base, "azure_openai_reasoning_effort": ""}
     assert build_provider(SimpleNamespace(**base, azure_openai_api="auto")).api == "responses"
     assert build_provider(SimpleNamespace(**base, azure_openai_api="chat")).api == "chat"
     assert build_provider(SimpleNamespace(**base, azure_openai_api="chat")).url.endswith("/openai/v1/chat/completions")
+
+
+def test_build_provider_passes_the_reasoning_effort_setting():
+    from types import SimpleNamespace
+    cfg = SimpleNamespace(ai_provider="azure", azure_openai_endpoint=ROOT + "/openai/v1/responses", azure_openai_deployment="d",
+                          azure_openai_api_key="k", ai_timeout_seconds=20.0, ai_deadline_seconds=25.0, ai_retries=1,
+                          ai_reasoning_headroom=700, azure_openai_auth="key", azure_client_id="", azure_openai_api="auto",
+                          azure_openai_reasoning_effort="high")
+    assert build_provider(cfg).reasoning_effort == "high"
 
 
 def test_settings_accept_only_known_api_modes():
@@ -846,7 +856,7 @@ def test_reasoning_effort_is_sent_on_responses_when_set():
     assert _effort_payload("responses", reasoning_effort="high")["reasoning"] == {"effort": "high"}
 
 
-def test_reasoning_effort_is_absent_when_unset_and_on_chat():
+def test_reasoning_effort_is_absent_when_unset():
     assert "reasoning" not in _effort_payload("responses")
     assert "reasoning" not in _effort_payload("responses", reasoning_effort="")
 
@@ -884,3 +894,28 @@ def test_deadline_must_sit_below_the_frontend_timeout():
     with pytest.raises(ValueError, match="FRONTEND_TIMEOUT_SECONDS"):
         Settings(ai_deadline_seconds=30, frontend_timeout_seconds=30)
     Settings(ai_deadline_seconds=50, frontend_timeout_seconds=60)
+
+
+@pytest.mark.parametrize("name", ["ai_deadline_seconds", "ai_timeout_seconds", "frontend_timeout_seconds"])
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf"), 0, -1, 601])
+def test_timeouts_reject_non_finite_non_positive_and_huge_values(name, bad):
+    from app.config import Settings
+    with pytest.raises(ValueError):
+        Settings(**{name: bad})
+
+
+def test_timeouts_accept_the_upper_bound():
+    from app.config import Settings
+    Settings(ai_deadline_seconds=500, ai_timeout_seconds=600, frontend_timeout_seconds=600)
+
+
+def test_timeouts_from_the_environment_reject_nan(monkeypatch):
+    from app.config import Settings
+    monkeypatch.setenv("AI_DEADLINE_SECONDS", "nan")
+    with pytest.raises(ValueError):
+        Settings()
+
+
+def test_config_endpoint_serves_the_frontend_timeout(new_client):
+    r = new_client(csrf=False).get("/api/config")
+    assert r.status_code == 200 and r.json() == {"api_timeout_seconds": 30.0}

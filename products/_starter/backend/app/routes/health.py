@@ -32,3 +32,10 @@ def healthz(request: Request):
     status = 200 if db_state == "ok" else 503
     return JSONResponse({"status": "ok" if status == 200 else "degraded", "db": db_state, "version": __version__},
                         status_code=status)
+
+
+@router.get("/api/config")
+def client_config(request: Request):
+    """Runtime settings the SPA reads once at startup. The browser's abort comes from here, so it is the same number
+    the startup guard checked against AI_DEADLINE_SECONDS (no build-time copy to keep in step)."""
+    return {"api_timeout_seconds": request.app.state.settings.frontend_timeout_seconds}

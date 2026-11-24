@@ -13,6 +13,7 @@ from .dbauth import validate_entra_url
 MIN_WEBHOOK_SECRET = 32
 REASONING_EFFORTS = ("low", "medium", "high")
 FRONTEND_TIMEOUT_MARGIN_SECONDS = 2.0
+MAX_TIMEOUT_SECONDS = 600.0  # the frontend also clamps to this (a larger setTimeout overflows and fires at once)
 
 
 class Settings(BaseSettings):
@@ -68,12 +69,14 @@ class Settings(BaseSettings):
     azure_openai_api: Literal["auto", "chat", "responses"] = "auto"  # auto: responses if the endpoint ends /openai/v1/responses
     azure_openai_auth: Literal["key", "managed_identity"] = "key"
     azure_client_id: str = ""  # user-assigned identity; empty means the system-assigned one
-    ai_timeout_seconds: float = 20.0  # per attempt
-    ai_deadline_seconds: float = 25.0  # whole call, retries included; must stay below the frontend's abort (below)
-    # How long the browser waits before aborting a request. Must equal the frontend build's VITE_API_TIMEOUT_SECONDS
-    # (default 30). The app refuses to start if ai_deadline_seconds + FRONTEND_TIMEOUT_MARGIN_SECONDS exceeds it,
-    # because a call the browser has already abandoned is still billed and the user sees only a timeout.
-    frontend_timeout_seconds: float = Field(default=30.0, gt=0)
+    # The three timeouts are finite, positive and capped: nan or inf would silently switch the deadline or the guard off.
+    ai_timeout_seconds: float = Field(default=20.0, gt=0, le=MAX_TIMEOUT_SECONDS, allow_inf_nan=False)  # per attempt
+    # Whole call, retries included; must stay below the frontend's abort (below).
+    ai_deadline_seconds: float = Field(default=25.0, gt=0, le=MAX_TIMEOUT_SECONDS, allow_inf_nan=False)
+    # How long the browser waits before aborting a request. The backend serves this number at GET /api/config and the
+    # SPA reads it once at startup, so this is the single source. The app refuses to start if ai_deadline_seconds +
+    # FRONTEND_TIMEOUT_MARGIN_SECONDS exceeds it, because a call the browser has already abandoned is still billed.
+    frontend_timeout_seconds: float = Field(default=30.0, gt=0, le=MAX_TIMEOUT_SECONDS, allow_inf_nan=False)
     # Optional reasoning effort for the Responses API: low, medium or high; empty means "not sent" (model default).
     # Pro models may accept only high (they reject low), so it is unset by default.
     azure_openai_reasoning_effort: str = ""
@@ -114,7 +117,7 @@ class Settings(BaseSettings):
             raise ValueError(f"AI_DEADLINE_SECONDS ({self.ai_deadline_seconds:g}) must be at least "
                              f"{FRONTEND_TIMEOUT_MARGIN_SECONDS:g} s below FRONTEND_TIMEOUT_SECONDS "
                              f"({self.frontend_timeout_seconds:g}): the browser would give up before the AI call ends. "
-                             "Lower the deadline, or raise FRONTEND_TIMEOUT_SECONDS and VITE_API_TIMEOUT_SECONDS together")
+                             "Lower the deadline, or raise FRONTEND_TIMEOUT_SECONDS (the browser reads it from /api/config)")
         if len(self.billing_webhook_secret) < MIN_WEBHOOK_SECRET:
             raise ValueError(f"BILLING_WEBHOOK_SECRET must be at least {MIN_WEBHOOK_SECRET} characters "
                              "(leave it unset with mock billing)")

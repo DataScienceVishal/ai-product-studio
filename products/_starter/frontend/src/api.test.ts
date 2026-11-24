@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { reply, stubFetch } from "./test-utils";
-import { api, ApiError, formatPrice, SESSION_ENDED, timeoutMs } from "./api";
+import { api, ApiError, formatPrice, loadClientConfig, SESSION_ENDED, timeoutMs } from "./api";
 
 let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
@@ -59,12 +59,37 @@ describe("api: errors", () => {
     expect((err as Error).message).toMatch(/can't reach the server/i);
   });
 
-  it("reads the timeout from VITE_API_TIMEOUT_SECONDS and falls back to 30 seconds", () => {
+  it("validates the served timeout, falls back to 30 seconds and caps it at 600", () => {
     expect(timeoutMs(undefined)).toBe(30_000);
-    expect(timeoutMs("")).toBe(30_000);
-    expect(timeoutMs("abc")).toBe(30_000);
-    expect(timeoutMs("0")).toBe(30_000);
-    expect(timeoutMs("60")).toBe(60_000);
+    expect(timeoutMs("60")).toBe(30_000);
+    expect(timeoutMs(0)).toBe(30_000);
+    expect(timeoutMs(Number.NaN)).toBe(30_000);
+    expect(timeoutMs(60)).toBe(60_000);
+    expect(timeoutMs(3_000_000)).toBe(600_000);
+    expect(timeoutMs(Number.POSITIVE_INFINITY)).toBe(30_000);
+  });
+
+  it("uses the timeout served at /api/config, and the default if that call fails", async () => {
+    vi.useFakeTimers();
+    fetchMock.mockResolvedValueOnce(reply(200, { api_timeout_seconds: 60 }));
+    await loadClientConfig();
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/config");
+    fetchMock.mockImplementation((_p: string, init: RequestInit) => new Promise((_res, rej) => {
+      init.signal!.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError")));
+    }));
+    let outcome: unknown = "pending";
+    const pending = api("/api/slow").catch((e) => (outcome = e));
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(outcome).toBe("pending"); // still waiting at 30 s: the served 60 s is in force
+    await vi.advanceTimersByTimeAsync(30_000);
+    await pending;
+    expect(outcome).toMatchObject({ code: "timeout" });
+    fetchMock.mockRejectedValueOnce(new TypeError("down"));
+    await loadClientConfig();
+    const again = api("/api/slow").catch((e) => (outcome = e));
+    await vi.advanceTimersByTimeAsync(30_000);
+    await again;
+    expect(outcome).toMatchObject({ code: "timeout" });
   });
 
   it("aborts after 30 seconds (the default) and reports a timeout", async () => {
