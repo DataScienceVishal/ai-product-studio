@@ -2,6 +2,7 @@
 
 - Status: proposed (2026-11-24, board task T-18). Supersedes the password parts of ADR 0002 decisions 4, 5
   (condition 1), 6 (`DATABASE_URL`, seed rotation) and 9 (the seed caveats). Everything else in 0002 stands.
+  Revised 2026-11-24 after the security gate (`reviews/T-18-adr-security.md`): B1 to B3 fixed, N1 to N11 folded in.
 - Builds on the app side being written in parallel: `DB_AUTH=entra` makes the app and `migrations/env.py`
   fetch a token for `https://ossrdbms-aad.database.windows.net` from the Container Apps identity endpoint
   (`ManagedIdentityToken`, `AZURE_CLIENT_ID`) and pass it as the password in SQLAlchemy `do_connect`. The URL
@@ -28,7 +29,9 @@
 ```
 
 A token is a password that Entra issues, signs and expires. Postgres checks that the token is for its
-audience, from our tenant, and for the object id written on the role. Nothing long-lived exists to leak.
+audience (shared by every Azure Postgres server), from our tenant, and for the object id written on the
+role; the last two are what make it ours. No long-lived *database* secret exists; the deploy SP's own
+credential is the one that remains (decision 5).
 
 ## Decisions
 
@@ -48,7 +51,9 @@ audience, from our tenant, and for the object id written on the role. Nothing lo
   - `caj-<slug>-migrate`: `id-<slug>-migrate`, env `DB_AUTH=entra`, `AZURE_CLIENT_ID=<migrate clientId>`.
   - Outputs: both identities' `principalId` (the object id Postgres maps) and `clientId`.
 - **The purge job shares the app identity** because it signs in as `<db>_app` with identical privileges; a
-  third identity would add a role and connection budget without removing any privilege.
+  third identity would add a role and connection budget without removing any privilege. Once T-17 grants
+  the OpenAI role to this identity, the purge job could call OpenAI too; it runs with `AI_PROVIDER=fake`, so
+  its code never does (security N5).
 - **T-17 reuses `id-<slug>-app`.** `AZURE_CLIENT_ID` already names it, so the later "Cognitive Services
   OpenAI User" grant (Owner, ADR 0002 decision 7) goes to this identity. No second app identity.
 - **Rights:** Contributor on `rg-ai-studio` covers creating identities and attaching them
@@ -89,13 +94,17 @@ audience, from our tenant, and for the object id written on the role. Nothing lo
 - **Phase 1 (first shared deploy): both methods on.** The admin is a child of the server, so it can only be
   added after the server exists; keeping `passwordAuth: Enabled` for that first deploy avoids a server nobody
   can enter if the admin step fails. Only `studioadmin` has a password, and it is now **random per
-  `deploy_shared` run** (`openssl rand -base64 32`, masked, never stored). An Owner or Contributor can reset
+  `deploy_shared` run**, made and used only inside that step (decision 4, "Phase 1 password"). An Owner or Contributor can reset
   it through ARM if ever needed, so nothing is lost by not keeping it. App and migrator roles have no password
   from the start.
 - **Phase 2 (same session, after the starter's first Entra release passes its smoke tests):**
   `postgresPasswordAuth=Disabled`, run `deploy_shared` again. Enabling Entra on an existing server restarts
   it (Microsoft FAQ); on a fresh server that is moot.
-- **Nothing here needs Vishal.** User-assigned identities are Azure resources in `rg-ai-studio` at $0, of the
+- **Phase 2 must stay done.** The phase 2 PR sets `Disabled` both in `shared.bicepparam` and as the module's
+  default, and from then on **every release** reads `az postgres flexible-server show --query authConfig` and
+  fails unless `passwordAuth == 'Disabled'` and `activeDirectoryAuth == 'Enabled'`. A later default, a
+  portal click or a stray deploy can't quietly reopen password sign-in while real data is there.
+- **Nothing in the build needs Vishal.** (Ending decision 5's condition 1 does: Q-8, decision 5.) User-assigned identities are Azure resources in `rg-ai-studio` at $0, of the
   same kind as `id-studio-acrpull`, already approved under Q-5; they are not accounts for people or
   third-party services. No groups, no directory changes, nothing outside the RG. Afterwards he may delete
   the `STUDIO_DB_SEED` secret (tidy-up, not a decision).
@@ -116,8 +125,10 @@ audience, from our tenant, and for the object id written on the role. Nothing lo
    ever work for these roles, even in phase 1.
 4. `SECURITY LABEL … 'aadauth,oid=<oid>,type=service'` (never `admin`). Re-running re-maps, so a recreated
    identity heals on the next release.
-5. Check: `SELECT objectid, principaltype FROM pgaadauth_list_principals(false) WHERE rolename = …` must equal
-   the oid and `service`, or `RAISE EXCEPTION`. Names called unqualified: `pg_catalog` is searched first, so on
+5. Check: `pgaadauth_list_principals(false)` for each role must give the oid, `service` and `isadmin = 0`, or
+   `RAISE EXCEPTION`; and `pgaadauth_list_principals(true)` must list no admin but the deploy SP's role (N1).
+   Learn prints the columns as `principalType`, `objectId`, `isAdmin`; the SQL uses unquoted names (which
+   fold to lowercase) and the first deploy confirms the real casing; the CI stub notes this assumption (N4). Names called unqualified: `pg_catalog` is searched first, so on
    Azure the real functions win; CI puts stubs in another schema on `search_path`.
 6. `CREATE DATABASE` if missing, `REVOKE ALL … FROM PUBLIC`, `GRANT CONNECT` to the two roles (as today).
 7. `GRANT <db>_migrator TO CURRENT_USER WITH INHERIT FALSE, SET TRUE` (PostgreSQL 16 syntax). Then
@@ -151,6 +162,18 @@ The admin role itself gets no connection limit (it is used once per release, by 
   ```
   The token goes only through `PGPASSWORD` (Microsoft's documented way; it is too long for a prompt). The
   "password doesn't match the seed" branch becomes "the deploy SP is not an Entra admin: run deploy_shared".
+- **Token hygiene (N11):** fail if the token is empty *before* `::add-mask::` (an empty mask does nothing); no
+  `set -x` in the step; the token never goes into an `az`, `curl` or `psql` argument, only `PGPASSWORD`.
+- **Admin drift (N1):** the same step fails if `.../administrators` lists any object id other than the
+  deployer's (incremental Bicep never removes one).
+- **Phase 1 password (B3):** generated **inside** the `deploy_shared` step, masked before any use, handed to
+  `az deployment group create` only through that step's own environment (`readEnvironmentVariable()` in
+  `shared.bicepparam` into the `@secure()` param, passed through untransformed), and never written to
+  `$GITHUB_ENV`, `$GITHUB_OUTPUT`, a file or a command-line argument. Today's `PG_ADMIN_PASSWORD` in
+  `$GITHUB_ENV` goes. Azure wants 3 of 4 character classes, so append a fixed `Aa1!` to
+  `openssl rand -base64 32` (N10).
+- **Host pinning (B2):** the workflow builds every database URL's host only from `PG_SERVER`
+  (`$PG_SERVER.postgres.database.azure.com`); no input, variable or other step may set `DATABASE_URL`.
 - **URLs:** `postgresql+psycopg://<db>_app@<host>:5432/<db>?sslmode=verify-full&sslrootcert=…` (and
   `<db>_migrator` for the job). Still stored in the `database-url` secret, so older revisions' secret
   references never break (0002 decision 6), but it no longer contains anything secret.
@@ -162,8 +185,9 @@ The admin role itself gets no connection limit (it is used once per release, by 
   revision keeps signing in after a rollback. The old caveat "after a seed rotation it can't reach the
   database" is gone. New caveat: no revision built before T-18 can be rolled back to (none exist in Azure).
 - **Replaces seed rotation:** there is nothing to rotate; tokens expire by themselves. To cut a role off at
-  once: `ALTER ROLE … NOLOGIN` as the admin. To replace an identity: delete it; the next release recreates
-  it with a new object id and `db-setup.sql` re-labels the role.
+  once: `ALTER ROLE … NOLOGIN` as the admin (instant, per Learn). To replace an identity, in this order:
+  `NOLOGIN` first (cached managed-identity tokens live up to 24 hours and Azure can't force a refresh), then
+  delete the identity, then release: it recreates it with a new object id, re-labels the role and sets `LOGIN`.
 - **Token lifetimes:** psql tokens 5 to 60 minutes; managed-identity tokens up to 24 hours. Postgres checks
   the token at sign-in only, so pooled connections outlive it; each new connection takes the cached token.
 
@@ -171,15 +195,33 @@ The admin role itself gets no connection limit (it is used once per release, by 
 
 - **Keep "Allow Azure services".** Private networking is still about $25.55 a month (0002 decision 5).
 - **Residual risk, stated plainly:** the port is still reachable from any Azure tenant and any GitHub runner.
-  What changes is what an attacker needs: not a guessable or leaked password, but a token signed by Entra,
-  for our server's audience, from our tenant, for one of three object ids. Remaining risks: a pre-auth bug in
-  Azure's Postgres front end or TLS stack (Microsoft patches); connection floods using up the 35 slots (a
-  nuisance for demos, logged by `log_connections`); a stolen identity token, valid up to 24 hours (needs code
-  execution in our container, or the `IDENTITY_HEADER`); the deploy SP's client secret in GitHub, which now
-  is the DB admin (it already was, via the seed). OIDC federation for the SP would remove that secret: a follow-up.
-- **Decision 5 condition 1 ends when all of these hold:** phase 2 done (`passwordAuth: Disabled` confirmed by
-  `az postgres flexible-server show`), a password sign-in attempt refused, and the security gate's PASS. That
-  is what 0002 named as the end of "demo data only". It does **not** make the student subscription a
+  What changes is what an attacker needs: not a guessable or leaked password, but a token signed by Entra.
+- **What binds a token to us (B2):** not the audience. `https://ossrdbms-aad.database.windows.net` is one
+  shared audience for *every* Azure Database for PostgreSQL server. Only our tenant, the token's object id and
+  the label on our role tie it to this server. So a token sent to any other host can be replayed against ours
+  for its lifetime. `verify-full` stops a network attacker, but not a wrong host name that is itself a valid
+  `*.postgres.database.azure.com` server. Hence host pinning (decision 4): the host comes only from `PG_SERVER`.
+- **Remaining risks:** a pre-auth bug in Azure's Postgres front end or TLS stack (Microsoft patches);
+  connection floods using up the 35 slots, which can also delay the release's db step (the 6-minute retry
+  covers it; logged by `log_connections`); a stolen identity token, valid up to 24 hours (needs code execution
+  in our container, or the `IDENTITY_HEADER`, or a misdirected host as above).
+- **The biggest one (B1): the deploy SP's credential is now the DB admin credential.** `AZURE_CREDENTIALS` is a
+  repository secret, and ADR 0002 decision 8 says any branch's workflow can read it; the main-only check
+  "guards against accidents, not against a determined branch". Studio agents push every hour and may meet
+  prompt injection (CLAUDE.md section 10). So one injected or mistaken workflow edit could dump every product
+  database. The seed had the same weakness, but "demo data only" made it harmless, and this ADR removes that
+  control. The SP can also reset `studioadmin`, flip `passwordAuth` and add firewall rules as Contributor.
+- **Decision 5 condition 1 ends only when all of these hold:**
+  1. phase 2 done and enforced on every release (decision 2), a `studioadmin` password sign-in refused;
+  2. the first-deploy evidence in decision 6, recorded in the T-18 review, and the security gate's PASS;
+  3. **and one of:** (a) the deploy SP signs in by **OIDC federation**, with no client secret, and a federated
+     credential whose subject is limited to `main` (or a main-only GitHub environment), plus branch protection
+     or an environment rule so no studio run can change `.github/workflows/**` on `main` without review; or
+     (b) Vishal's explicit written acceptance of this risk, recorded in `state/DECISIONS.md`.
+  Adding a federated credential to the app registration is a directory change, so it is **ask-first**: it
+  depends on Vishal's answer to question **Q-8** (queued by the Studio Lead). Until Q-8 is answered with (a)
+  done or (b) given, the shared server stays demo data only. Nothing in this ADR creates the credential.
+- That is what 0002 named as the end of "demo data only". It does **not** make the student subscription a
   production host: safety.md's "no customer depends on this subscription" and handover still move hosting.
 
 ### 6. Build steps (small slices, each green in CI)
@@ -189,16 +231,20 @@ The admin role itself gets no connection limit (it is used once per release, by 
 | 1 | `main.bicep`: two identities, attachments, `identitySettings`, `DB_AUTH`/`AZURE_CLIENT_ID`, outputs | `az bicep build`; a jq test on the compiled JSON: web and purge have only pull + app identity, migrate only pull + migrate, pull is `None`, DB identity `Main` |
 | 2 | `postgres.bicep` / `shared.bicep`: `authConfig` with `tenantId`, `passwordAuth` param (default `Enabled`), `administrators` child | `az bicep build`; jq: admin depends on settings and firewall |
 | 3 | `db-setup.sql` as in decision 3 | Local PG16 with a non-superuser CREATEROLE admin and a stub schema (`pgaadauth_list_principals` reading a table; the label branch behind `\if :{?entra_stub}` writes to that table). Assert: re-runnable, `rolpassword IS NULL`, limits 12/3, bad oid refused, mismatch raises, app refused DDL and `alembic_version` writes, other products refused CONNECT |
-| 4 | Workflow: random admin password, step reorder, token, readback, oids, password-free URLs; remove `setup_database` | `actionlint`, `shellcheck`; the token-oid decode unit-tested on a fake JWT |
+| 4 | Workflow: phase 1 password kept step-local (B3), step reorder, token with hygiene checks, readback, admin-drift check, oids, password-free URLs with the host from `PG_SERVER` only; remove `setup_database` | `actionlint`, `shellcheck`; the token-oid decode unit-tested on a fake JWT; grep: no `PG_ADMIN_PASSWORD` in `$GITHUB_ENV`, no other writer of `DATABASE_URL` |
 | 5 | Delete `scram_verifier.py` and seed docs; README runbook "Entra sign-in"; one line in ADR 0002 pointing here | tests still green; grep finds no `STUDIO_DB_SEED` |
-| 6 | Phase 2 flip (`passwordAuth: Disabled`) as its own PR | `az bicep build` |
+| 6 | Phase 2 flip as its own PR: `Disabled` in `shared.bicepparam` **and** as the module default, plus the every-release `authConfig` assertion | `az bicep build`; the assertion tested against stubbed `az` output for both values |
+| 7 | Only after Q-8: OIDC login (`azure/login` with `client-id`/`tenant-id`/`subscription-id`, `permissions: id-token: write`), `azure/login` pinned by commit SHA (N9) | `actionlint` |
 
 **Only the first real deploy can verify** (record results in the T-18 review): the Contributor SP can create
 the `administrators` child with `deployer()`; the role name for the admin (readback); `SECURITY LABEL` and
 `GRANT … TO CURRENT_USER` are allowed for an Entra admin on Azure (fallback: `pgaadauth_create_principal_with_oid`
 on the still-empty roles); Container Apps jobs hand out user-assigned tokens with `lifecycle: Main`; the
-app's `/healthz` says `"db":"ok"`; after phase 2, re-deploying with `administratorLoginPassword` still set
-is accepted and `studioadmin` is refused.
+app's `/healthz` says `"db":"ok"`; the `pgaadauth_list_principals` column casing (N4); after phase 2,
+re-deploying with `administratorLoginPassword` still set is accepted and `studioadmin` is refused. Also the
+security review's list: `authConfig` shows `passwordAuth: Disabled` and `activeDirectoryAuth: Enabled`; a
+sign-in as `<db>_app` with the migrator identity's token is refused; the administrators list holds only the
+deploy SP; `rolpassword IS NULL` for both roles on Azure.
 
 ### 7. Cost
 
@@ -212,9 +258,19 @@ sign-in is a server setting, not a meter. `state/BUDGET.md` gains two $0 rows pe
 |---|---|---|
 | Admin creation refused for the SP | `deploy_shared` fails in phase 1; password auth still on | Vishal adds the SP as Entra admin in the portal (Authentication pane), then re-run |
 | `SECURITY LABEL` refused on Azure | `db-setup.sql` stops before any grant | Switch to `pgaadauth_create_principal_with_oid` on the empty roles (first deploy only) |
+| The deploy SP is recreated (new object id) (N2) | The next `deploy_shared` adds the new SP as admin; the old admin entry and role stay and still own every product database | Runbook: `ALTER DATABASE … OWNER TO` the new admin role, delete the old `administrators` entry through ARM, then `DROP ROLE` the old one |
+| Connection flood on the 35 slots (N7) | The admin has no reserved slot, so the release's db step waits | The 6-minute retry covers it; if not, release again later |
+| `passwordAuth` found `Enabled` after phase 2 | Every release fails at the `authConfig` check | Find out who changed it (Activity Log), run `deploy_shared` |
 | Identity endpoint down | New connections fail, `/healthz` not ready, old pooled ones work | The release stops before traffic moves; retry |
 | Role mapped to a stale oid | Sign-in fails; `db-setup.sql`'s check raises on the next release | It re-labels on every release |
 | Phase 2 locks out a forgotten client | Password clients refused | Intended; re-enable for one run via the param if truly needed |
+
+## Follow-ups (not blocking)
+
+- An Activity Log alert on writes to the server's `authConfig`, `administrators` and `firewallRules` would
+  catch a misused SP (N6). Check that activity-log alerts are $0 before adding.
+- `backend/app/dbauth.py` docstring wording (N8: the user is `<db>_app`, managed-identity tokens last up to
+  24 hours): for the T-18 app review.
 
 ## Sources (all read 2026-11-24; page "updated" dates in brackets)
 
