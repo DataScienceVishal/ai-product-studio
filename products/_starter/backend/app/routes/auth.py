@@ -18,7 +18,7 @@ from ..deps import Current, current, session_cookie, subscription_of
 from ..errors import AppError
 from ..logs import bind
 from ..models import AuthSession, EmailVerification, PasswordReset, Subscription, Tenant, User
-from ..ratelimit import client_ip
+from ..ratelimit import client_ip, email_key, off_loop
 from ..security import (hash_capacity_after, hash_password, needs_rehash, new_token, password_problem, token_hash,
                         verify_password)
 
@@ -111,8 +111,9 @@ def me_payload(db: Session, user: User, tenant: Tenant) -> dict:
     }
 
 
-# Cheap gates (rate limits, input checks) run BEFORE a hash slot is taken, so a rejected request never queues.
-async def _signup_gate(data: SignUp, request: Request) -> None:
+# With Redis limits the gate body does network I/O, so `off_loop` runs it in a worker thread; with the in-memory
+# limiter it runs inline (no thread). Cheap gates (rate limits, input checks) run BEFORE a hash slot is taken, so a rejected request never queues.
+def _signup_checks(data: SignUp, request: Request) -> None:
     settings = request.app.state.settings
     _limit(request, f"signup:{client_ip(request)}")
     request.app.state.limiter.check(f"signup-day:{client_ip(request)}", settings.signups_per_ip_per_day, 86400)
@@ -121,15 +122,24 @@ async def _signup_gate(data: SignUp, request: Request) -> None:
         raise AppError(422, "weak_password", problem)
 
 
+async def _signup_gate(data: SignUp, request: Request) -> None:
+    await off_loop(request, lambda: _signup_checks(data, request))
+
+
 async def _login_gate(data: SignIn, request: Request) -> None:
-    _limit(request, f"login-ip:{client_ip(request)}", f"login-email:{data.email.strip().lower()}")
+    await off_loop(request, lambda: _limit(request, f"login-ip:{client_ip(request)}",
+                                           f"login-email:{email_key(data.email)}"))
 
 
-async def _reset_gate(data: ResetConfirm, request: Request) -> None:
+def _reset_checks(data: ResetConfirm, request: Request) -> None:
     _limit(request, f"reset-confirm:{client_ip(request)}")
     problem = password_problem(data.new_password)
     if problem:
         raise AppError(422, "weak_password", problem)
+
+
+async def _reset_gate(data: ResetConfirm, request: Request) -> None:
+    await off_loop(request, lambda: _reset_checks(data, request))
 
 
 @router.post("/signup", status_code=201, dependencies=[Depends(hash_capacity_after(_signup_gate))])
@@ -226,7 +236,7 @@ def reset_request(data: ResetRequest, request: Request, background: BackgroundTa
     settings = request.app.state.settings
     email = data.email.strip().lower()
     _limit(request, f"reset-ip:{client_ip(request)}")
-    request.app.state.limiter.check(f"reset-email:{email}", settings.reset_requests_per_hour, 3600)  # no inbox bombing
+    request.app.state.limiter.check(f"reset-email:{email_key(email)}", settings.reset_requests_per_hour, 3600)  # no inbox bombing
     user_id = db.scalar(select(User.id).where(User.email == email))
     db.commit()
     if user_id is not None:

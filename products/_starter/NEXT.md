@@ -7,6 +7,27 @@ test_spa.py now reads `"/x" === path` and flags `path === ROUTES.x`, `x === path
 The two unused variables in test_cookies_and_limits.py were already gone on main (nothing left to remove).
 Left: nothing.
 Verify: `cd backend && pytest` (339 passed, 1 skipped); `cd frontend && npx vitest run` (111 passed).
+# T-15 Redis status
+
+Done: optional Redis rate-limit backend (`backend/app/ratelimit.py`, setting `RATE_LIMIT_REDIS_URL`; unset = unchanged
+in-memory). Sliding window as one Lua script on a sorted set per key (`rl:<key>`), scored by Redis server time, same
+keys/windows as before. Redis client: 200 ms connect/read timeouts, no retries, `rediss://` gives TLS. Fallback: on any
+Redis error the call uses the in-process limiter, logs one warning per 30 s (exception class only, never the URL), and
+skips Redis for 5 s so a hung Redis costs one timeout, not one per login; auth never 500s. Deps: `redis` (runtime),
+`fakeredis[lua]` (dev), lockfiles regenerated with uv. Docs: README row, `.env.example`, ADR 0002 note (no Azure Redis
+provisioned, no Bicep change).
+Tests: `backend/tests/test_ratelimit_redis.py` (12): two replicas share limits, window expiry and TTL, Retry-After,
+fallback on connection/timeout/response errors, warning rate limit, recovery, real unreachable client is fast, TLS and
+timeouts, app wiring.
+Review fixes (reviews/T-15-redis.md): login/signup/reset/accept gates stay async (so the hash-slot ordering and slot-leak
+tests are unchanged) but run the limiter in a worker thread via `off_loop` only when the limiter does network I/O
+(`blocking`, true with Redis); in-memory stays inline, no extra threads. Key prefix is `rl:<app_name>:<env>:`. `limit < 1`
+raises ValueError (not an outage, no backoff) and the four limit settings require >= 1. Login/reset email keys are hashed
+(`email_key`). Retry-After test strengthened; new tests for loop-not-blocked, prefix, limit<1, email hash (354 passed, 1 skipped;
+vitest 111 passed).
+Left: provisioning Azure Cache for Redis and wiring the secret into Bicep (ask-first, costs money). Non-auth routes call the limiter
+inline (rare, in sync `def` routes that already run in the threadpool).
+Verify: `cd backend && python -m pytest -q` (354 passed, 1 skipped); `cd frontend && npx vitest run` (111 passed).
 
 # T-37 status
 
