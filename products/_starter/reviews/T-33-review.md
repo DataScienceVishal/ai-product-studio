@@ -144,3 +144,122 @@ interactive summaries anyway (see S2).
 | Chat path unchanged | OK: same URL, payload and parsing; `or 0` and the dict check only harden it; existing tests pass |
 | Security: secrets, injection, SSRF | No new surface; the endpoint is operator config. Header handling unchanged |
 | Tests meaningful | Yes; 6 of 7 mutations caught |
+
+## Re-review at 0fe5d46
+
+Reviewer: reviewer agent, 2026-11-24. Scope: `git show 0fe5d46` (fixes for B1, B2, S4, S6), read against the
+whole `main...p/_starter/T-33` diff. No live Azure calls.
+
+**Verdict: CHANGES.** One small doc fix is left (R1). The code fixes are correct and tested. B1 and B2 are
+resolved, and S4 and S6 are done. Once R1 is fixed, a quick diff check is enough for a PASS. No new code review
+is needed.
+
+### Tests
+
+Postgres 16 `starter_test`, `TEST_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/starter_test`,
+Python 3.11 venv.
+
+| Environment | Result |
+|---|---|
+| Sandbox as is (`AZURE_OPENAI_ENDPOINT`, `_DEPLOYMENT`, `_API_KEY` exported) | **238 passed, 1 skipped** |
+| Those three unset (as in CI) | **238 passed, 1 skipped** |
+| Exported, plus `AI_PROVIDER=azure`, `AZURE_OPENAI_API=responses` | **238 passed, 1 skipped** |
+| `tests/test_ai.py` alone | 46 passed (43 before, plus 3 parametrised S4 cases) |
+
+The skip is `test_spa.py` (frontend not built), as before. The earlier failure in
+`test_prod_settings_refuse_unsafe_values` with the sandbox variables set is gone (S6).
+
+Frontend unit tests were not run. The branch doesn't touch `frontend/`, and the worktree has no `node_modules`.
+
+One more failure appears, but only with `AZURE_OPENAI_AUTH=managed_identity` exported:
+`test_ai.py::test_settings_accept_only_known_auth_modes`. It has the same non-hermetic pattern as S6 and is already
+on main. No session exports that variable today, so it is not blocking; see R4.
+
+### Prior items
+
+| Item | Status | Evidence |
+|---|---|---|
+| B1 `store: false` | **Resolved** | `ai.py:203` sends it. The exact-body assertion in `test_responses_request_shape_and_usage` now includes `"store": False`, so removing it fails the test. DATA.md documents it, but see R1 |
+| B2 cap priced for mini | **Resolved** | New `ai_price_per_million_tokens` (config.py:65) and Bicep `aiPricePerMillionTokens` (main.bicep:43-44), wired to the app env (main.bicep:220-223). The cap description is corrected. README "Sizing the daily AI cap" gives the formula and the pro warning. `cost-guard.sh` checks the defaults; results below |
+| S4 malformed `output` | **Done** | `_dicts()` drops non-list and non-dict items, and text must be `str`. The parametrised test covers a string, mixed junk and a dict `output`, and checks that usage (40/200) is still billed via `AIUnavailable` |
+| S6 hermetic prod-settings test | **Done** | `monkeypatch.delenv` for the five `AZURE_OPENAI_*` variables and `AI_PROVIDER` (test_platform.py:101-104) |
+
+### cost-guard.sh, run on hand-made templates
+
+There is no bicep CLI here, so I wrote JSON shaped like `bicep build` output (`int` default as a number, `string`
+default as a string) and ran the script on it. Script: `infra/cost-guard.sh:40-52`.
+
+| Template defaults | Exit | Message |
+|---|---|---|
+| 100,000 tokens, "2.00" (the shipped defaults) | 0 | pass ($6.00) |
+| 101,666 tokens, "2.00" | 0 | pass ($6.0999) |
+| 101,667 tokens, "2.00" | 1 | "= $6.1 a month, over the $6.10" (correct, but the rounding reads oddly) |
+| 100,000 tokens, "120" | 1 | $360 a month |
+| 1,700 tokens, "120" | 1 | $6.12, see R2 |
+| tokens only, or price only | 1 | "needs both ..." |
+| price "abc", or tokens an ARM expression | 1 | "not a number" |
+| price "-5" | 0 | passes, see R3 |
+| 0 tokens | 0 | pass |
+| both parameters present, no `defaultValue` | 0 | **skipped silently**, see R3 |
+| neither parameter (shared.json) | 0 | pass, as intended |
+| two files, first bad | 1 | the error is counted and the loop goes on to the next file |
+| `AI_MONTHLY_BUDGET_USD=1` | 1 | $6 over $1 |
+| `AI_MONTHLY_BUDGET_USD=abc` | 1 | fails closed, but blames "tokens or price" |
+
+The logic is sound for the shipped template. It fails closed on bad input. The deploy workflow doesn't override
+either parameter (main.bicepparam has no `aiGlobalDailyTokens` or `aiPricePerMillionTokens` line), so the checked
+defaults are the deployed values.
+
+### R1 (blocking, doc only). DATA.md points to an ADR section that doesn't exist
+
+`DATA.md:20-21`: "(Azure's separate abuse-monitoring retention is covered in ADR 0002)". ADR 0002 has no mention
+of abuse monitoring. `grep -in abuse ADR/0002-azure-deploy.md` returns nothing. Its OpenAI text (section 7, the
+line 388 cost row) covers only auth and cost.
+
+Why it matters: DATA.md is the customer-facing data inventory (the Sellable bar). The sentence before this says
+"Azure keeps no copy of the prompt or the answer". Read with a dead pointer, that sounds stronger than it is.
+Azure OpenAI abuse monitoring can still keep prompts and completions that its systems flag. A reader who follows
+the link finds nothing.
+
+Fix: choose one.
+- (a) Trim it to: "`store=false` means Azure keeps no stored response object. Azure's abuse monitoring is separate
+  and may still keep flagged content for a limited time (Microsoft Learn, 'Data, privacy, and security for Azure
+  OpenAI'). Check the current wording and period before launch." Cite the Learn page, not the ADR.
+- (b) Add a short "Abuse monitoring" bullet to ADR 0002 section 7 that says the same thing, with the link. Then
+  keep the pointer.
+
+Either is a one-paragraph change. Don't claim a specific retention period without checking the page.
+
+### Suggestions (non-blocking)
+
+- **R2. The README pro figure is a little high.** `README.md:129` says "about 1,700 tokens a day". 6.10 / (30 x 120)
+  x 1,000,000 is 1,694, and the guard rejects 1,700 at $120 ($6.12). Say "about 1,690" (or "under 1,700") so an
+  operator who copies the number doesn't hit a red build. Fix it with R1.
+- **R3. Make the guard check stricter.**
+  - A price of 0 or less passes. Require `$p > 0`.
+  - If a product drops the defaults and passes the values from `main.bicepparam`, the check is skipped without a
+    word. When either parameter exists without a `defaultValue`, report it.
+  - Round the message to two decimals with the trailing zero kept (`$6.10`, not `$6.1`), or print the unrounded
+    value.
+- **R4. App default `AI_GLOBAL_DAILY_TOKENS=500,000`** (config.py:62). Not blocking. Every deploy sets it from Bicep
+  (100,000, guarded), and the app default applies only to local or test runs that opt in with `AI_PROVIDER=azure`.
+  That opt-in still uses the studio's real key: 500k a day is about $30 a month at $2/M and about $60 a day at pro
+  prices. Two cheap fixes:
+  - lower the default to 100,000 so it matches Bicep and the README;
+  - or have `Settings` log a warning (or refuse, when `env=prod`) when `ai_global_daily_tokens x
+    ai_price_per_million_tokens x 30 / 1e6` passes 6.10. That would also give the new price setting a runtime use;
+    today only the deploy guard reads it.
+
+  Also make `test_settings_accept_only_known_auth_modes` hermetic: delete `AZURE_OPENAI_AUTH` from the env, as S6
+  did.
+- **R5. Leftover parse gaps** (low risk; the provider is trusted).
+  - A non-numeric `usage.input_tokens`, or a non-dict `incomplete_details`, still raises outside `fail()` and would
+    settle at 0/0.
+  - The chat path's `choices[0]` has the same S4 gap.
+
+  Wrapping `_parse` in `try/except (TypeError, ValueError, AttributeError)` would close all three.
+- **R6.** `.env.example` doesn't list `AI_GLOBAL_DAILY_TOKENS` or `AI_PRICE_PER_MILLION_TOKENS`. The README table
+  does, so this is optional.
+- S1, S2, S3, S5 and S7 from the first review are still open. They stay non-blocking. S5 (passing
+  `AZURE_OPENAI_API` from Bicep) and S2 (the pro model versus the 25 s deadline) should be settled before any
+  product switches the cloud app to `responses`.
