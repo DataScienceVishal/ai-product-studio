@@ -2,14 +2,14 @@
 
 Ordered by score, then build feasibility. The validator keeps this current.
 
-Updated 2026-11-24 (T-4, T-11, T-22, T-28, T-31 and T-36 complete: 37 scored, 0 PASS, 9 KILL). No idea has passed G1 (70+) yet. Ties are broken by the Build score.
+Updated 2026-11-24 (T-4, T-11, T-22, T-28, T-31, T-36 and T-42 complete: 40 scored, 0 PASS, 12 KILL). No idea has passed G1 (70+) yet. Ties are broken by the Build score.
 
 | Rank | Slug | Stage | Score | One-line pitch | Next step |
 |---|---|---|---|---|---|
 | 1 | pepr-packaging-data-pipeline | G0 (parked) | 68 | Turns SKU, bill-of-materials and supplier spec exports into recyclability evidence and a validated packaging data report, with a fee forecast (includes the PPT ledger as a later module) | Parked after T-13: Repackd already sells spec-sheet extraction, RAM scoring and fee simulation (£299-£1,999/month). Revive only if a Repackd trial (needs Vishal's OK to sign up) shows weak extraction on messy spec sheets |
 | 2 | restaurant-margin-copilot | G0 (parked) | 66 | Photograph each supplier invoice; AI matches lines to recipes, recalculates dish margins and sends weekly fixes | Parked after T-9: Jelly (£129 per site a month) and MarketMan ($249) already read invoices, cost recipes and alert on margins; only a written weekly-fixes message was missing. Revive only with a channel Jelly doesn't serve, such as an accountant-led offer. 2026-11-24 T-39: the draft spec for Q-6 option B was checked and got REVISE (`products/restaurant-margin-copilot/SPEC-CHECK.md`). Score unchanged; the G1 attempt is not spent |
 | 3 | mtd-quarterly-prep | G0 (parked) | 65 | Practices get sole traders' messy statements and receipts categorised into HMRC categories, with plain-English client queries | Parked after T-10: Dext Solo and Sage's MTD agent cover most of it. A narrower wedge (scans, photos and spreadsheets in, reviewed quarter totals out) waits for the T-12 extraction benchmark, which needs Azure OpenAI |
-| 4 | holiday-pay-payroll-lookback-audit | G0 (parked) | 63 | Recomputes each worker's holiday pay from the payroll's own exports under the 2024 rules and lists the exceptions with the working shown, for a payroll professional to sign off | Parked after T-23: kill test passes (no incumbent documents a look-back), but there is no government response, no enforcement date and no FWA calculator scope yet. Re-check monthly; then T-24 data design and T-25 benchmark |
+| 4 | holiday-pay-payroll-lookback-audit | G0 (parked) | 63 | Recomputes each worker's holiday pay from the payroll's own exports under the 2024 rules and lists the exceptions with the working shown, for a payroll professional to sign off | Parked after T-23: kill test passes (no incumbent documents a look-back), but there is no government response, no enforcement date and no FWA calculator scope yet. Re-check monthly; then T-24 data design and T-25 benchmark. T-42: add Fair Work Solutions (UK NMW payroll-upload platform) to the kill test |
 | 5 | sme-council-tender-drafting | G0 (REVISE) | 60 | Drafts compliant council tender answers from a service firm's own past bids | Park: CleanTender already sells this to the same niche. Re-score only for a segment none of the tools serve, sized from Contracts Finder |
 | 6 | subcontractor-rams-drafting | G0 (REVISE) | 59 | Drafts site-specific RAMS from the principal contractor's site pack and a short job description | Fallback (easiest build). One desk check: principal contractors' public RAMS standards that no tool produces |
 | 7 | b2b-win-loss-interviewer | G0 (REVISE) | 59 | AI interviews buyers after every closed deal and writes a weekly win-loss brief | Low priority: only re-score with a narrower wedge (churn interviews, lost-tender debriefs) |
@@ -44,6 +44,9 @@ Killed (in `killed/`):
 - apprenticeship-evidence-preaudit (53, T-36): Bud already alerts on missing, unsigned and overdue evidence and sells "Funding confidence" under its agents line, and Aptem bundles an independent compliance review (ACAR). Minors' data at scale. Ceiling about 63.
 - haulier-audit-workpapers (52, T-36): the buyers are about 50 DVSA-accredited audit providers plus consultants, with no current prices; records platforms (Samsara, Roadsoft, FleetCheck) hold the data. Ceiling about 60.
 - mot-advisory-dealer-risk-score (51, T-36): Car Guide and VehicleStats already predict MOT failures from MOT history, MOTCost is free, and dealers pay £1 to £4 per trade check, which already includes the MOT history. Ceiling about 60.
+- nmw-salaried-hours-audit (55, T-42): Fair Work Solutions already sells a UK NMW platform (payroll upload, pay codes and deductions, underpayments per worker and pay period in HMRC's format, monitoring); payroll and rota checks, HMRC's free self-review guide and many advisers surround it. Ceiling about 60.
+- dmcc-checkout-journey-auditor (52, T-42): Total Price already walks browse-to-checkout journeys for hidden fees, urgency timers and pre-ticked extras, with monthly monitoring at £14.99 a month; TrustYourWebsite scans free; the CMA runs agentic AI over journeys itself. Ceiling about 59.
+- uk-export-classification-workbench (50, T-42): the gap is a free ECJU service paused on 12 Oct 2026 with an update due by year end, and the same service came back in 2018 after a four-year suspension; Trademo, Digicust, traide AI and EC Compliance already sell AI dual-use classification from specs; no price; a wrong rating is the buyer's offence. Ceiling about 61.
 
 **Pattern:** every idea lost most of its points on Competition (1 to 5 out of 10; four of the UK batch scored 1). By late 2026 incumbents ship "AI over your documents" as a standard or free feature, so a gap has to be checked on the competitor's own product pages, and the stronger wedges are ones incumbents can't easily follow: a regulatory deadline, deep domain workflow, a channel they don't serve, or liability they won't take.
 
@@ -87,3 +90,12 @@ Killed (in `killed/`):
   - If the input is records held in a vertical system (an LMS, fleet software), that system's vendor is the main competitor, and some now bundle a human review too (Aptem ACAR).
   - Checker-side buyers (auditors, assessors) are a market capped by their headcount. Count them from gov.uk accreditation lists first.
   - Open datasets with a free government viewer already attract consumer and hobby scoring sites. Search "<dataset> predict/score" and the nearest per-unit data price before scoring Pay.
+
+**Round 7 (T-42): public enforcement costs.** All three were killed on the first attempt (55, 52, 50), each with a ceiling of about 60. The public-cost thesis found real pain each time, but public enforcement is a signal every builder sees.
+- Each idea had a direct competitor the scout's search missed: Total Price (DMCC, £14.99 a month), Fair Work Solutions (NMW), Trademo and the EU dual-use classifiers (export). Two are small single-purpose UK firms set up for a new rule or regulator.
+- Lessons for the next scout:
+  - Search "<regulation or regulator> checker / scan / platform / solutions", not only "<problem> software", and look at recent Companies House incorporations named after the rule.
+  - If the regulator runs the same AI technique itself (the CMA's agentic journey monitoring), AI shows feasibility, not a moat.
+  - A "free official service closed" gap needs the service's history: ECJU's CLC was suspended from 2014 to 2018 and came back.
+  - For harmonised lists (UK and EU dual-use), check the larger jurisdiction's vendors first.
+  - Pay is still the weakest score: only adviser fees (Muckle £500 to £1,500 + VAT per area) and a £14.99 scanner were found.
