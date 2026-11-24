@@ -86,7 +86,8 @@ AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
 | `BILLING_PROVIDER` | `mock` (default) or `stripe` (test keys only; live keys are refused) |
 | `BILLING_WEBHOOK_SECRET`, `STRIPE_SECRET_KEY` | leave the secret unset with mock billing (a random one is made); with Stripe, its `whsec_` value and a test key |
 | `MOCK_CHECKOUT_ENABLED` | `false` (default); `true` only for demos, where "Pay (test)" grants a plan with trial-sized AI allowances |
-| `AI_GLOBAL_DAILY_TOKENS`, `AI_TRIAL_SHARE` | studio-wide AI budget per UTC day (default 500,000), and the share all free trials may use together (0.5) |
+| `AI_GLOBAL_DAILY_TOKENS`, `AI_TRIAL_SHARE` | studio-wide AI budget per UTC day (default 100,000; the Bicep default too), and the share all free trials may use together (0.5). Size it from the price, see "Sizing the daily AI cap" |
+| `AI_PRICE_PER_MILLION_TOKENS` | blended USD price per million tokens of the deployment (default 2.00, the gpt-5-mini assumption); documents what the cap costs, and the Bicep cost guard checks it |
 | `AI_CONCURRENT_CALLS`, `AI_CALLS_PER_TENANT_AT_ONCE` | at most 8 AI calls at once per process, 2 per customer |
 | `SIGNUPS_PER_IP_PER_DAY`, `NEW_TRIALS_PER_DAY` | sign-up limits: 20 a day per IP, 200 new trials a day in total |
 
@@ -104,6 +105,31 @@ AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
 See `NEXT.md`. The Azure deploy is designed in `ADR/0002-azure-deploy.md` (Bicep in `infra/`, manual workflow
 `.github/workflows/_starter-deploy.yml`); it creates nothing until Vishal approves the costs (Q-5). Also open: Redis-backed rate limits before running more than one replica, a real email adapter
 (paid, needs approval), and frontend unit tests.
+
+## Azure OpenAI API
+
+`AZURE_OPENAI_API` is `auto` (default), `responses` or `chat`. `auto` uses the v1 Responses API
+(`/openai/v1/responses`) when `AZURE_OPENAI_ENDPOINT` ends in `/openai/v1/responses`, otherwise chat completions.
+The studio's reasoning deployment refuses chat (HTTP 400), so set `responses` or give that endpoint form. The
+endpoint may be the resource root or end in `/openai/v1`, `/openai/v1/responses` or `/openai/v1/chat/completions`.
+Reasoning tokens count inside the output budget, and an `incomplete` answer with no text is billed and shown as
+a friendly error. A reasoning model can take about 8 s for one word; the 25 s `AI_DEADLINE_SECONDS` still holds
+but is tight for long summaries (raise it together with the frontend's 30 s abort if needed).
+
+### Sizing the daily AI cap
+
+The cap counts tokens, not money, so it is only as safe as the price you assume:
+
+    monthly cost = AI_GLOBAL_DAILY_TOKENS x AI_PRICE_PER_MILLION_TOKENS / 1,000,000 x 30
+    AI_GLOBAL_DAILY_TOKENS = monthly budget / (30 x price) x 1,000,000
+
+The deployed budget is $6.10 a month (`state/BUDGET.md`). With a gpt-5-mini style blend of $2.00 per million,
+100,000 tokens a day costs $6.00 a month. **A pro deployment needs a much smaller cap.** Assuming (check the current
+Azure price list) about $120 per million output tokens, and counting every capped token as output, the same
+$6.10 allows only 6.10 / (30 x 120) x 1,000,000, about 1,690 tokens a day: one or two summaries. At 100,000 tokens a
+day that deployment could cost up to $360 a month, far over the $80 credit. Change the deployment, set
+`aiPricePerMillionTokens` and `aiGlobalDailyTokens` together; `infra/cost-guard.sh` fails the build when
+tokens x price x 30 passes $6.10. Raising the budget needs Vishal's approval.
 
 ## Azure OpenAI sign-in
 
