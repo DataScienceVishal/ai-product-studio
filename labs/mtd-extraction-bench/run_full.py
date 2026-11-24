@@ -54,7 +54,8 @@ def guarded_call(bud, label, content, est_in, max_out, effort):
         resp = http_call(content, max_out, effort)
     except urllib.error.HTTPError as e:
         msg = e.read().decode()[:300]
-        bud.settle(worst, label, None, note=f"HTTP {e.code} effort={effort}")
+        # 4xx = rejected before generation (no tokens). 5xx = unknown (the upstream may have generated): bill worst case.
+        bud.settle(worst, label, None, charge_worst=e.code >= 500, note=f"HTTP {e.code} effort={effort}")
         return None, f"HTTP {e.code}: {msg}"
     except Exception as e:
         bud.settle(worst, label, None, charge_worst=True, note=f"transport: {type(e).__name__}")

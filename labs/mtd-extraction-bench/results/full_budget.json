@@ -1,0 +1,119 @@
+{
+ "cap_usd": 11.5,
+ "max_calls": 15,
+ "price_per_m_input": 15.0,
+ "price_per_m_output": 120.0,
+ "calls": 15,
+ "usd": 4.4939,
+ "input_tokens": 11263,
+ "output_tokens": 36041,
+ "log": [
+  {
+   "label": "scan_trade",
+   "input_tokens": 0,
+   "output_tokens": 0,
+   "usd": 0.0,
+   "note": "HTTP 400 effort=minimal"
+  },
+  {
+   "label": "scan_trade",
+   "input_tokens": 1311,
+   "output_tokens": 10343,
+   "usd": 1.2608,
+   "note": "effort=medium status=completed"
+  },
+  {
+   "label": "corvid_trade",
+   "input_tokens": 957,
+   "output_tokens": 1623,
+   "usd": 0.2091,
+   "note": "effort=None status=completed"
+  },
+  {
+   "label": "fenwick_trade",
+   "input_tokens": 940,
+   "output_tokens": 3061,
+   "usd": 0.3814,
+   "note": "effort=None status=completed"
+  },
+  {
+   "label": "tarn_stall",
+   "input_tokens": 953,
+   "output_tokens": 2864,
+   "usd": 0.358,
+   "note": "effort=None status=completed"
+  },
+  {
+   "label": "quillon_consult",
+   "input_tokens": 953,
+   "output_tokens": 2202,
+   "usd": 0.2785,
+   "note": "effort=None status=completed"
+  },
+  {
+   "label": "sheet_trade",
+   "input_tokens": 783,
+   "output_tokens": 2345,
+   "usd": 0.2931,
+   "note": "effort=None status=completed"
+  },
+  {
+   "label": "csv_a_trade",
+   "input_tokens": 948,
+   "output_tokens": 1638,
+   "usd": 0.2108,
+   "note": "effort=None status=completed"
+  },
+  {
+   "label": "fenwick_consult",
+   "input_tokens": 948,
+   "output_tokens": 3750,
+   "usd": 0.4642,
+   "note": "effort=None status=completed"
+  },
+  {
+   "label": "csv_b_stall",
+   "input_tokens": 967,
+   "output_tokens": 2722,
+   "usd": 0.3411,
+   "note": "effort=None status=completed"
+  },
+  {
+   "label": "photo_consult",
+   "input_tokens": 0,
+   "output_tokens": 0,
+   "usd": 0.0,
+   "note": "HTTP 502 effort=medium"
+  },
+  {
+   "label": "sheet_stall",
+   "input_tokens": 785,
+   "output_tokens": 1619,
+   "usd": 0.2061,
+   "note": "effort=None status=completed"
+  },
+  {
+   "label": "sheet_consult",
+   "input_tokens": 773,
+   "output_tokens": 1493,
+   "usd": 0.1908,
+   "note": "effort=None status=completed"
+  },
+  {
+   "label": "scan_stall",
+   "input_tokens": 0,
+   "output_tokens": 0,
+   "usd": 0.0,
+   "note": "HTTP 502 effort=medium"
+  },
+  {
+   "label": "csv_a_consult",
+   "input_tokens": 945,
+   "output_tokens": 2381,
+   "usd": 0.2999,
+   "note": "effort=None status=completed"
+  }
+ ],
+ "note": "Two image calls (photo_consult, scan_stall) returned HTTP 502 and were recorded at $0 by the runner version that ran. Whether the upstream generated tokens is unknown. Upper bound if both were billed at max_output_tokens: 4.49 + 2 x 1.73 = 7.95 USD, still under the 11.50 cap. run_full.py now bills 5xx at worst case.",
+ "usd_upper_bound_if_502s_billed": 7.95
+}

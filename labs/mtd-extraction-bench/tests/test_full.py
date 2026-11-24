@@ -48,6 +48,15 @@ def test_parallel_reservations_never_exceed_cap(tmp_path):
     assert sum(ok) <= 2.0 and len(ok) == 2
 
 
+def _can_render():
+    try:
+        import reportlab.pdfgen.canvas, openpyxl  # noqa
+        return True
+    except Exception:       # e.g. a broken system PIL shadowing the pip one
+        return False
+
+
+@pytest.mark.skipif(not _can_render(), reason="reportlab/openpyxl not importable with this interpreter")
 @pytest.mark.parametrize("name,kind,layout,persona,seed", [p for p in gen2.PLAN if p[1] in ("pdf", "csv", "xlsx")])
 def test_deterministic_extraction_matches_truth(tmp_path, name, kind, layout, persona, seed):
     import random

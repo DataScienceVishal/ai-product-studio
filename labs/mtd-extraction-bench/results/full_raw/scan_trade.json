@@ -1,0 +1,260 @@
+{
+ "lines": [
+  {
+   "date": "2026-04-06",
+   "description": "DD PENNWORTH ACCOUNTANTS",
+   "amount": -45.0,
+   "balance": 2405.0,
+   "category": "professional_fees",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-04-07",
+   "description": "CARD PAYMENT TO QUICKFIX TYRES",
+   "amount": -76.3,
+   "balance": 2328.7,
+   "category": "car_van_travel",
+   "confidence": 0.89
+  },
+  {
+   "date": "2026-04-16",
+   "description": "DD TELLOWAY MOBILE",
+   "amount": -22.0,
+   "balance": 2306.7,
+   "category": "phone_office",
+   "confidence": 0.98
+  },
+  {
+   "date": "2026-04-22",
+   "description": "CARD PAYMENT TO STARLIGHT CINEMAS",
+   "amount": -10.9,
+   "balance": 2295.8,
+   "category": "drawings_personal",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-04-23",
+   "description": "CASH WITHDRAWAL ATM 9636",
+   "amount": -50.42,
+   "balance": 2245.38,
+   "category": "drawings_personal",
+   "confidence": 0.72
+  },
+  {
+   "date": "2026-04-24",
+   "description": "MONTHLY ACCOUNT FEE",
+   "amount": -7.0,
+   "balance": 2238.38,
+   "category": "interest_bank_charges",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-04-27",
+   "description": "DD STREAMBOX SUBSCRIPTION",
+   "amount": -10.0,
+   "balance": 2228.38,
+   "category": "drawings_personal",
+   "confidence": 0.95
+  },
+  {
+   "date": "2026-04-28",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -12.3,
+   "balance": 2216.08,
+   "category": "interest_bank_charges",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-04-28",
+   "description": "CARD PAYMENT TO BRICKWELL TIMBER SUPPLY",
+   "amount": -211.38,
+   "balance": 2004.7,
+   "category": "cost_of_goods",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-04-30",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -518.71,
+   "balance": 1485.99,
+   "category": "drawings_personal",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-05-01",
+   "description": "DD WESTFIELD POWER",
+   "amount": -70.92,
+   "balance": 1415.07,
+   "category": "premises",
+   "confidence": 0.86
+  },
+  {
+   "date": "2026-05-01",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -91.57,
+   "balance": 1323.5,
+   "category": "drawings_personal",
+   "confidence": 0.9
+  },
+  {
+   "date": "2026-05-03",
+   "description": "DD ELMSTEAD UNITS RENT",
+   "amount": -350.0,
+   "balance": 973.5,
+   "category": "premises",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-05-04",
+   "description": "TRANSFER TO SAVINGS 8841",
+   "amount": -156.39,
+   "balance": 817.11,
+   "category": "transfer",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-05-05",
+   "description": "BACS FROM KESTREL DENTAL T/O INV9829",
+   "amount": 1227.72,
+   "balance": 2044.83,
+   "category": "turnover",
+   "confidence": 0.98
+  },
+  {
+   "date": "2026-05-07",
+   "description": "CARD PAYMENT TO TRADEBODY SUBSCRIPTION",
+   "amount": -59.03,
+   "balance": 1985.8,
+   "category": "other_expenses",
+   "confidence": 0.78
+  },
+  {
+   "date": "2026-05-07",
+   "description": "CARD PAYMENT TO MERIDIAN PARKING",
+   "amount": -12.4,
+   "balance": 1973.4,
+   "category": "car_van_travel",
+   "confidence": 0.98
+  },
+  {
+   "date": "2026-05-09",
+   "description": "DD HARLOW FUEL STATION 4378",
+   "amount": -43.7,
+   "balance": 1929.7,
+   "category": "car_van_travel",
+   "confidence": 0.97
+  },
+  {
+   "date": "2026-05-10",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 136.32,
+   "balance": 2066.02,
+   "category": "transfer",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-05-11",
+   "description": "CARD PAYMENT TO TOPMART HARDWARE",
+   "amount": -25.66,
+   "balance": 2040.36,
+   "category": "cost_of_goods",
+   "confidence": 0.85
+  },
+  {
+   "date": "2026-05-15",
+   "description": "DD STREAMBOX SUBSCRIPTION",
+   "amount": -10.0,
+   "balance": 2030.36,
+   "category": "drawings_personal",
+   "confidence": 0.94
+  },
+  {
+   "date": "2026-05-18",
+   "description": "DD TELLOWAY MOBILE",
+   "amount": -22.0,
+   "balance": 2008.36,
+   "category": "phone_office",
+   "confidence": 0.98
+  },
+  {
+   "date": "2026-05-18",
+   "description": "TRANSFER TO SAVINGS 8841",
+   "amount": -217.86,
+   "balance": 1790.5,
+   "category": "transfer",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-05-27",
+   "description": "CARD PAYMENT TO QUICKFIX TYRES",
+   "amount": -47.45,
+   "balance": 1743.05,
+   "category": "car_van_travel",
+   "confidence": 0.9
+  },
+  {
+   "date": "2026-05-28",
+   "description": "CASH WITHDRAWAL ATM 3861",
+   "amount": -31.8,
+   "balance": 1711.25,
+   "category": "drawings_personal",
+   "confidence": 0.72
+  },
+  {
+   "date": "2026-06-02",
+   "description": "CARD PAYMENT TO TRADEBODY SUBSCRIPTION",
+   "amount": -17.17,
+   "balance": 1694.08,
+   "category": "other_expenses",
+   "confidence": 0.78
+  },
+  {
+   "date": "2026-06-03",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -8.53,
+   "balance": 1685.55,
+   "category": "interest_bank_charges",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-06-04",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -10.52,
+   "balance": 1675.03,
+   "category": "interest_bank_charges",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-06-05",
+   "description": "DD STREAMBOX SUBSCRIPTION",
+   "amount": -10.0,
+   "balance": 1665.03,
+   "category": "drawings_personal",
+   "confidence": 0.95
+  },
+  {
+   "date": "2026-06-08",
+   "description": "DD HARLOW FUEL STATION 3967",
+   "amount": -63.54,
+   "balance": 1601.49,
+   "category": "car_van_travel",
+   "confidence": 0.97
+  },
+  {
+   "date": "2026-06-21",
+   "description": "DD TELLOWAY MOBILE",
+   "amount": -22.0,
+   "balance": 1579.49,
+   "category": "phone_office",
+   "confidence": 0.88
+  },
+  {
+   "date": "2026-07-02",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -474.36,
+   "balance": 1105.13,
+   "category": "drawings_personal",
+   "confidence": 0.99
+  }
+ ]
+}

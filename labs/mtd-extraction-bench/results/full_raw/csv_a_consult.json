@@ -1,0 +1,260 @@
+{
+ "lines": [
+  {
+   "date": "2026-04-13",
+   "description": "CARD PAYMENT TO PAPERBOX STATIONERY",
+   "amount": -14.04,
+   "balance": 2435.96,
+   "category": "phone_office",
+   "confidence": 0.98
+  },
+  {
+   "date": "2026-04-16",
+   "description": "DD STREAMBOX SUBSCRIPTION",
+   "amount": -10.0,
+   "balance": 2425.96,
+   "category": "drawings_personal",
+   "confidence": 0.35
+  },
+  {
+   "date": "2026-04-16",
+   "description": "DD WESTFIELD POWER",
+   "amount": -68.72,
+   "balance": 2357.24,
+   "category": "premises",
+   "confidence": 0.48
+  },
+  {
+   "date": "2026-04-16",
+   "description": "CASH WITHDRAWAL ATM 3205",
+   "amount": -20.18,
+   "balance": 2337.06,
+   "category": "drawings_personal",
+   "confidence": 0.3
+  },
+  {
+   "date": "2026-04-18",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 107.46,
+   "balance": 2444.52,
+   "category": "transfer",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-04-18",
+   "description": "FASTER PAYMENT S WINTERBOURNE REF5403",
+   "amount": 886.19,
+   "balance": 3330.71,
+   "category": "turnover",
+   "confidence": 0.68
+  },
+  {
+   "date": "2026-04-23",
+   "description": "CARD PAYMENT TO CLOUDHAVEN SOFTWARE",
+   "amount": -22.46,
+   "balance": 3308.25,
+   "category": "phone_office",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-04-23",
+   "description": "CARD PAYMENT TO NORTHSTAR ELECTRONICS",
+   "amount": -425.1,
+   "balance": 2883.15,
+   "category": "other_expenses",
+   "confidence": 0.73
+  },
+  {
+   "date": "2026-04-27",
+   "description": "DD PENNYWORTH ACCOUNTANTS",
+   "amount": -45.0,
+   "balance": 2838.15,
+   "category": "professional_fees",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-04-30",
+   "description": "TRANSFER TO SAVINGS 8841",
+   "amount": -381.51,
+   "balance": 2456.64,
+   "category": "transfer",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-05-02",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -10.17,
+   "balance": 2446.47,
+   "category": "interest_bank_charges",
+   "confidence": 1.0
+  },
+  {
+   "date": "2026-05-04",
+   "description": "DD TELLOWAY MOBILE",
+   "amount": -22.0,
+   "balance": 2424.47,
+   "category": "phone_office",
+   "confidence": 0.72
+  },
+  {
+   "date": "2026-05-08",
+   "description": "DD PROFESSIONAL INSTITUTE FEE",
+   "amount": -15.0,
+   "balance": 2409.47,
+   "category": "professional_fees",
+   "confidence": 0.76
+  },
+  {
+   "date": "2026-05-10",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -72.87,
+   "balance": 2336.6,
+   "category": "drawings_personal",
+   "confidence": 0.82
+  },
+  {
+   "date": "2026-05-14",
+   "description": "CARD PAYMENT TO RAILLINK TICKETS",
+   "amount": -64.6,
+   "balance": 2272.0,
+   "category": "car_van_travel",
+   "confidence": 0.87
+  },
+  {
+   "date": "2026-05-14",
+   "description": "DD HOMEFIELD BROADBAND",
+   "amount": -34.0,
+   "balance": 2238.0,
+   "category": "phone_office",
+   "confidence": 0.62
+  },
+  {
+   "date": "2026-05-18",
+   "description": "CARD PAYMENT TO STARLIGHT CINEMAS",
+   "amount": -16.33,
+   "balance": 2221.67,
+   "category": "drawings_personal",
+   "confidence": 0.98
+  },
+  {
+   "date": "2026-05-18",
+   "description": "BACS FROM ASHBY JOINERY LTD INV2396",
+   "amount": 1056.5,
+   "balance": 3278.17,
+   "category": "turnover",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-05-19",
+   "description": "MONTHLY ACCOUNT FEE",
+   "amount": -7.0,
+   "balance": 3271.17,
+   "category": "interest_bank_charges",
+   "confidence": 1.0
+  },
+  {
+   "date": "2026-05-19",
+   "description": "CARD PAYMENT TO BRIGHTADS ONLINE",
+   "amount": -15.06,
+   "balance": 3256.11,
+   "category": "advertising",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-05-20",
+   "description": "CARD PAYMENT TO CAFE LUNA",
+   "amount": -12.45,
+   "balance": 3243.66,
+   "category": "drawings_personal",
+   "confidence": 0.58
+  },
+  {
+   "date": "2026-05-31",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -488.38,
+   "balance": 2755.28,
+   "category": "drawings_personal",
+   "confidence": 1.0
+  },
+  {
+   "date": "2026-06-06",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -431.4,
+   "balance": 2323.88,
+   "category": "drawings_personal",
+   "confidence": 1.0
+  },
+  {
+   "date": "2026-06-06",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -55.73,
+   "balance": 2268.15,
+   "category": "drawings_personal",
+   "confidence": 0.82
+  },
+  {
+   "date": "2026-06-11",
+   "description": "DD PROFESSIONAL INSTITUTE FEE",
+   "amount": -15.0,
+   "balance": 2253.15,
+   "category": "professional_fees",
+   "confidence": 0.76
+  },
+  {
+   "date": "2026-06-12",
+   "description": "CARD PAYMENT TO BRIGHTADS ONLINE",
+   "amount": -76.44,
+   "balance": 2176.71,
+   "category": "advertising",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-06-17",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -12.94,
+   "balance": 2163.77,
+   "category": "drawings_personal",
+   "confidence": 0.78
+  },
+  {
+   "date": "2026-06-18",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 164.62,
+   "balance": 2328.39,
+   "category": "transfer",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-06-25",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -13.85,
+   "balance": 2314.54,
+   "category": "interest_bank_charges",
+   "confidence": 1.0
+  },
+  {
+   "date": "2026-06-27",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -597.35,
+   "balance": 1717.19,
+   "category": "drawings_personal",
+   "confidence": 1.0
+  },
+  {
+   "date": "2026-06-29",
+   "description": "DD PENNYWORTH ACCOUNTANTS",
+   "amount": -45.0,
+   "balance": 1672.19,
+   "category": "professional_fees",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-07-02",
+   "description": "CARD PAYMENT TO PAPERBOX STATIONERY",
+   "amount": -8.12,
+   "balance": 1664.07,
+   "category": "phone_office",
+   "confidence": 0.98
+  }
+ ]
+}

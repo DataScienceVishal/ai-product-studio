@@ -1,0 +1,260 @@
+{
+ "lines": [
+  {
+   "date": "2026-04-11",
+   "description": "CASH WITHDRAWAL ATM 6618",
+   "amount": -20.72,
+   "balance": null,
+   "category": "drawings_personal",
+   "confidence": 0.36
+  },
+  {
+   "date": "2026-04-15",
+   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "amount": -568.71,
+   "balance": null,
+   "category": "drawings_personal",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-04-17",
+   "description": "DD STREAMBOX SUBSCRIPTION",
+   "amount": -10.0,
+   "balance": null,
+   "category": "drawings_personal",
+   "confidence": 0.94
+  },
+  {
+   "date": "2026-04-18",
+   "description": "OVERDRAFT INTEREST",
+   "amount": -13.42,
+   "balance": null,
+   "category": "interest_bank_charges",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-04-25",
+   "description": "DD TELLOWAY MOBILE",
+   "amount": -22.0,
+   "balance": null,
+   "category": "phone_office",
+   "confidence": 0.74
+  },
+  {
+   "date": "2026-04-27",
+   "description": "CARD PAYMENT TO TOPMART HARDWARE",
+   "amount": -53.32,
+   "balance": null,
+   "category": "repairs",
+   "confidence": 0.5
+  },
+  {
+   "date": "2026-05-02",
+   "description": "CARD PAYMENT TO MARKETHALL PITCH FEE",
+   "amount": -25.0,
+   "balance": null,
+   "category": "premises",
+   "confidence": 0.98
+  },
+  {
+   "date": "2026-05-03",
+   "description": "CASH WITHDRAWAL FLOAT 3246",
+   "amount": -64.47,
+   "balance": null,
+   "category": "transfer",
+   "confidence": 0.98
+  },
+  {
+   "date": "2026-05-04",
+   "description": "CARD PAYMENT TO CRAFTFAYRE ONLINE",
+   "amount": -36.04,
+   "balance": null,
+   "category": "cost_of_goods",
+   "confidence": 0.79
+  },
+  {
+   "date": "2026-05-05",
+   "description": "MONTHLY ACCOUNT FEE",
+   "amount": -7.0,
+   "balance": null,
+   "category": "interest_bank_charges",
+   "confidence": 0.98
+  },
+  {
+   "date": "2026-05-06",
+   "description": "CARD SETTLEMENT SPARKPAY 1006",
+   "amount": 295.72,
+   "balance": null,
+   "category": "turnover",
+   "confidence": 0.97
+  },
+  {
+   "date": "2026-05-07",
+   "description": "CARD PAYMENT TO STARLIGHT CINEMAS",
+   "amount": -28.94,
+   "balance": null,
+   "category": "drawings_personal",
+   "confidence": 0.97
+  },
+  {
+   "date": "2026-05-10",
+   "description": "CARD PAYMENT TO CAFE LUNA",
+   "amount": -4.45,
+   "balance": null,
+   "category": "drawings_personal",
+   "confidence": 0.45
+  },
+  {
+   "date": "2026-05-10",
+   "description": "CASH DEPOSIT MARKET TAKINGS",
+   "amount": 260.67,
+   "balance": null,
+   "category": "turnover",
+   "confidence": 0.98
+  },
+  {
+   "date": "2026-05-13",
+   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "amount": -23.05,
+   "balance": null,
+   "category": "drawings_personal",
+   "confidence": 0.39
+  },
+  {
+   "date": "2026-05-13",
+   "description": "DD PENNYWORTH ACCOUNTANTS",
+   "amount": -45.0,
+   "balance": null,
+   "category": "professional_fees",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-05-14",
+   "description": "CARD PAYMENT TO WAXWORKS WHOLESALE",
+   "amount": -239.34,
+   "balance": null,
+   "category": "cost_of_goods",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-05-14",
+   "description": "DD STALLSURE INSURANCE",
+   "amount": -19.0,
+   "balance": null,
+   "category": "other_expenses",
+   "confidence": 0.84
+  },
+  {
+   "date": "2026-05-15",
+   "description": "TRANSFER FROM SAVINGS 8841",
+   "amount": 282.51,
+   "balance": null,
+   "category": "transfer",
+   "confidence": 0.98
+  },
+  {
+   "date": "2026-05-26",
+   "description": "DD HARLOW FUEL STATION 3911",
+   "amount": -33.52,
+   "balance": null,
+   "category": "car_van_travel",
+   "confidence": 0.66
+  },
+  {
+   "date": "2026-05-27",
+   "description": "TRANSFER TO SAVINGS 8841",
+   "amount": -300.83,
+   "balance": null,
+   "category": "transfer",
+   "confidence": 0.98
+  },
+  {
+   "date": "2026-05-30",
+   "description": "CARD PAYMENT TO JARBARN PACKAGING",
+   "amount": -84.18,
+   "balance": null,
+   "category": "cost_of_goods",
+   "confidence": 0.96
+  },
+  {
+   "date": "2026-05-31",
+   "description": "CARD PAYMENT TO STARLIGHT CINEMAS",
+   "amount": -23.71,
+   "balance": null,
+   "category": "drawings_personal",
+   "confidence": 0.97
+  },
+  {
+   "date": "2026-06-01",
+   "description": "CARD PAYMENT TO MARKETHALL PITCH FEE",
+   "amount": -25.0,
+   "balance": null,
+   "category": "premises",
+   "confidence": 0.98
+  },
+  {
+   "date": "2026-06-03",
+   "description": "CASH WITHDRAWAL ATM 1969",
+   "amount": -117.05,
+   "balance": null,
+   "category": "drawings_personal",
+   "confidence": 0.34
+  },
+  {
+   "date": "2026-06-06",
+   "description": "DD STALLSURE INSURANCE",
+   "amount": -19.0,
+   "balance": null,
+   "category": "other_expenses",
+   "confidence": 0.84
+  },
+  {
+   "date": "2026-06-17",
+   "description": "CARD PAYMENT TO JARBARN PACKAGING",
+   "amount": -39.73,
+   "balance": null,
+   "category": "cost_of_goods",
+   "confidence": 0.96
+  },
+  {
+   "date": "2026-06-22",
+   "description": "CARD PAYMENT TO WAXWORKS WHOLESALE",
+   "amount": -126.96,
+   "balance": null,
+   "category": "cost_of_goods",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-06-23",
+   "description": "DD HARLOW FUEL STATION 7161",
+   "amount": -44.51,
+   "balance": null,
+   "category": "car_van_travel",
+   "confidence": 0.66
+  },
+  {
+   "date": "2026-06-25",
+   "description": "CARD PAYMENT TO WAXWORKS WHOLESALE",
+   "amount": -65.52,
+   "balance": null,
+   "category": "cost_of_goods",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-07-01",
+   "description": "DD TELLOWAY MOBILE",
+   "amount": -22.0,
+   "balance": null,
+   "category": "phone_office",
+   "confidence": 0.74
+  },
+  {
+   "date": "2026-07-02",
+   "description": "CASH WITHDRAWAL FLOAT 5252",
+   "amount": -43.47,
+   "balance": null,
+   "category": "transfer",
+   "confidence": 0.98
+  }
+ ]
+}
