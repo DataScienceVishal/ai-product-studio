@@ -62,3 +62,7 @@ Run in `products/_starter/backend`, with TEST_DATABASE_URL and DATABASE_URL set 
 ## Security and performance
 
 No new endpoints, queries or secrets. The new Bicep param is restricted by `@allowed`, so it can't inject an arbitrary value. Lowering the default cap reduces the worst-case AI spend for local runs that opt into `AI_PROVIDER=azure` from about $30 to about $6 a month at $2/M.
+
+## Final: PASS at 24abb6c
+
+`git diff 1f9c80f 24abb6c` touches only `README.md:89`, which now reads "(default 100,000; the Bicep default too)". That matches `config.py:62` and `main.bicep:55`. No other non-historical 500,000 remains: SECURITY.md is past evidence, and `billing.py:47` is the plan allowance. Code is unchanged since the test runs at 90df50f (238 passed, 1 skipped, with `AZURE_OPENAI_AUTH` both unset and set). Suggestions S-a to S-e stay open and do not block.
