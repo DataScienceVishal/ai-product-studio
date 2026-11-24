@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { reply, stubFetch } from "./test-utils";
-import { api, ApiError, formatPrice, SESSION_ENDED } from "./api";
+import { api, ApiError, formatPrice, SESSION_ENDED, timeoutMs } from "./api";
 
 let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
@@ -59,7 +59,15 @@ describe("api: errors", () => {
     expect((err as Error).message).toMatch(/can't reach the server/i);
   });
 
-  it("aborts after 30 seconds and reports a timeout", async () => {
+  it("reads the timeout from VITE_API_TIMEOUT_SECONDS and falls back to 30 seconds", () => {
+    expect(timeoutMs(undefined)).toBe(30_000);
+    expect(timeoutMs("")).toBe(30_000);
+    expect(timeoutMs("abc")).toBe(30_000);
+    expect(timeoutMs("0")).toBe(30_000);
+    expect(timeoutMs("60")).toBe(60_000);
+  });
+
+  it("aborts after 30 seconds (the default) and reports a timeout", async () => {
     vi.useFakeTimers();
     fetchMock.mockImplementation((_path: string, init: RequestInit) => new Promise((_resolve, reject) => {
       init.signal!.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));

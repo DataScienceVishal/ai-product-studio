@@ -516,7 +516,7 @@ def test_token_and_identity_header_never_reach_logs_or_errors(caplog):
 def test_build_provider_picks_the_auth_mode(monkeypatch):
     from types import SimpleNamespace
     base = dict(ai_provider="azure", azure_openai_endpoint="https://r.openai.azure.com", azure_openai_deployment="d",
-                azure_openai_api_key="", ai_timeout_seconds=5, ai_deadline_seconds=9, ai_retries=1, ai_reasoning_headroom=0, azure_client_id="cid", azure_openai_api="auto")
+                azure_openai_api_key="", ai_timeout_seconds=5, ai_deadline_seconds=9, ai_retries=1, ai_reasoning_headroom=0, azure_openai_reasoning_effort="", azure_client_id="cid", azure_openai_api="auto")
     assert build_provider(SimpleNamespace(**base, azure_openai_auth="key")).token_provider is None
     built = build_provider(SimpleNamespace(**base, azure_openai_auth="managed_identity"))
     assert built.token_provider.client_id == "cid"
@@ -659,7 +659,7 @@ def test_responses_with_managed_identity_sends_bearer_and_no_api_key():
 def test_build_provider_passes_the_api_setting():
     from types import SimpleNamespace
     base = dict(ai_provider="azure", azure_openai_endpoint=ROOT + "/openai/v1/responses", azure_openai_deployment="d",
-                azure_openai_api_key="k", ai_timeout_seconds=20.0, ai_deadline_seconds=25.0, ai_retries=1, ai_reasoning_headroom=700,
+                azure_openai_api_key="k", ai_timeout_seconds=20.0, ai_deadline_seconds=25.0, ai_retries=1, ai_reasoning_headroom=700, azure_openai_reasoning_effort="",
                 azure_openai_auth="key", azure_client_id="")
     assert build_provider(SimpleNamespace(**base, azure_openai_api="auto")).api == "responses"
     assert build_provider(SimpleNamespace(**base, azure_openai_api="chat")).api == "chat"
@@ -829,3 +829,58 @@ def test_unreadable_200_bills_the_whole_budget(content):
 def test_reservation_estimate_needs_the_headroom_attribute():
     with pytest.raises(AttributeError):
         reservation_estimate(object(), "a", "b", 10)
+
+
+def _effort_payload(api, **kw):
+    seen = {}
+
+    def handler(request):
+        seen.update(json.loads(request.content))
+        return _responses_ok()
+
+    AzureOpenAI(ROOT, "d", "k", api=api, client=httpx.Client(transport=httpx.MockTransport(handler)), **kw).complete("s", "u")
+    return seen
+
+
+def test_reasoning_effort_is_sent_on_responses_when_set():
+    assert _effort_payload("responses", reasoning_effort="high")["reasoning"] == {"effort": "high"}
+
+
+def test_reasoning_effort_is_absent_when_unset_and_on_chat():
+    assert "reasoning" not in _effort_payload("responses")
+    assert "reasoning" not in _effort_payload("responses", reasoning_effort="")
+
+
+def test_reasoning_effort_is_not_sent_on_chat_completions():
+    seen = {}
+
+    def handler(request):
+        seen.update(json.loads(request.content))
+        return httpx.Response(200, json={"choices": [{"message": {"content": "x"}, "finish_reason": "stop"}],
+                                         "usage": {"prompt_tokens": 1, "completion_tokens": 1}})
+
+    AzureOpenAI(ROOT, "d", "k", api="chat", reasoning_effort="high",
+                client=httpx.Client(transport=httpx.MockTransport(handler))).complete("s", "u")
+    assert "reasoning" not in seen
+
+
+def test_invalid_reasoning_effort_is_rejected_by_provider_and_settings():
+    import pytest
+    from app.config import Settings
+    with pytest.raises(ValueError, match="REASONING_EFFORT"):
+        AzureOpenAI(ROOT, "d", "k", api="responses", reasoning_effort="extreme")
+    with pytest.raises(ValueError, match="AZURE_OPENAI_REASONING_EFFORT"):
+        Settings(azure_openai_reasoning_effort="extreme")
+    assert Settings(azure_openai_reasoning_effort=" High ").azure_openai_reasoning_effort == "high"
+    assert Settings().azure_openai_reasoning_effort == ""
+
+
+def test_deadline_must_sit_below_the_frontend_timeout():
+    import pytest
+    from app.config import Settings
+    Settings(ai_deadline_seconds=28, frontend_timeout_seconds=30)  # exactly the margin: fine
+    with pytest.raises(ValueError, match="FRONTEND_TIMEOUT_SECONDS"):
+        Settings(ai_deadline_seconds=29)
+    with pytest.raises(ValueError, match="FRONTEND_TIMEOUT_SECONDS"):
+        Settings(ai_deadline_seconds=30, frontend_timeout_seconds=30)
+    Settings(ai_deadline_seconds=50, frontend_timeout_seconds=60)

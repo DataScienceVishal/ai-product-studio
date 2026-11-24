@@ -15,7 +15,13 @@ export class ApiError extends Error {
   }
 }
 
-const TIMEOUT_MS = 30_000;
+// Build-time VITE_API_TIMEOUT_SECONDS (default 30). The backend's AI_DEADLINE_SECONDS must stay at least 2 s below it
+// (FRONTEND_TIMEOUT_SECONDS on the server must carry the same number, or the server refuses to start).
+export function timeoutMs(raw: string | undefined = import.meta.env.VITE_API_TIMEOUT_SECONDS): number {
+  const seconds = Number(raw);
+  return raw && Number.isFinite(seconds) && seconds >= 1 ? seconds * 1000 : 30_000;
+}
+const TIMEOUT_MS = timeoutMs();
 // Requests where a 401 is an expected answer, not "your session ended".
 const AUTH_PATHS = ["/api/auth/me", "/api/auth/login", "/api/auth/signup", "/api/invitations/accept",
   "/api/auth/password-reset/request", "/api/auth/password-reset/confirm"];
