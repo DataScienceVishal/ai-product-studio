@@ -73,6 +73,19 @@ class Parsing(unittest.TestCase):
     def test_projected_monthly_sums_the_estimates_column(self):
         self.assertEqual(spend.projected_monthly(BUDGET), 12.5)
 
+    def test_projected_monthly_ignores_other_tables(self):
+        # Regression (T-58): the column index from the resource table used to carry into the
+        # token log below it, adding token counts as dollars ($17015.20 on 2026-11-24).
+        text = BUDGET + """
+## Azure OpenAI token log
+
+| UTC | Run | Use | Input | Output | Est. $ |
+|---|---|---|---|---|---|
+| 2026-11-24 | f468 | pilot | 5,709 | 27,619 | ~3.40 |
+| 2026-11-24 | cf1a | run | 11,263 | 36,041 | ~4.49 |
+"""
+        self.assertEqual(spend.projected_monthly(text), 12.5)
+
     def test_window_is_clamped_to_the_api_limit(self):
         start, end, clamped = spend.query_window("2025-01-01", TODAY)
         self.assertTrue(clamped)
