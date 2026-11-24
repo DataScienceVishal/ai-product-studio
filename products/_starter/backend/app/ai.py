@@ -98,6 +98,10 @@ class AISlots:
         self._slots.release()
 
 
+class _CallerTimeout(AIUnavailable):
+    """The token fetch ran out of the caller's own (short) budget. Never cached as an endpoint failure."""
+
+
 class ManagedIdentityToken:
     """Bearer tokens for Azure OpenAI from the Container Apps managed identity endpoint.
 
@@ -114,29 +118,60 @@ class ManagedIdentityToken:
 
     def __init__(self, client_id: str = "", endpoint: str | None = None, header: str | None = None,
                  client: httpx.Client | None = None, timeout: float = 5.0, refresh_margin: float = 300.0,
-                 now=time.time):
+                 now=time.time, monotonic=time.monotonic):
         self.client_id = client_id
         self._endpoint = endpoint if endpoint is not None else os.environ.get("IDENTITY_ENDPOINT", "")
         self._header = header if header is not None else os.environ.get("IDENTITY_HEADER", "")
         self._client = client or httpx.Client(timeout=timeout)
-        self._timeout, self._margin, self._now = timeout, refresh_margin, now
+        self._timeout, self._margin, self._now, self._mono = timeout, refresh_margin, now, monotonic
         self._lock = threading.Lock()
         self._token = ""
         self._expires_on = 0.0
+        self._failed_until = 0.0  # a failed fetch is remembered until then, so queued callers fail fast
+        self._failure: AIUnavailable | None = None
 
-    def get(self) -> str:
-        with self._lock:
+    FAILURE_TTL = 10.0
+
+    def get(self, timeout: float | None = None) -> str:
+        """`timeout` is the caller's remaining deadline. It bounds the lock wait and the fetch together: the
+        fetch gets only what is left after the wait, so `get(t)` never takes much longer than t.
+
+        Only a failure of the endpoint itself is remembered (for FAILURE_TTL). A timeout caused by the caller's
+        own short budget says nothing about the endpoint, so it is raised but not cached."""
+        budget = self._timeout if timeout is None else min(self._timeout, timeout)
+        if budget <= 0:
+            raise AIUnavailable()
+        started = self._mono()
+        if not self._lock.acquire(timeout=budget):
+            log.warning("managed identity token wait timed out")
+            raise AIUnavailable()
+        try:
             if self._token and self._now() < self._expires_on - self._margin:
                 return self._token
-            self._token, self._expires_on = self._fetch()
+            if self._failure is not None and self._mono() < self._failed_until:
+                raise AIUnavailable(self._failure.message)
+            left = budget - (self._mono() - started)
+            if left <= 0:
+                raise AIUnavailable()
+            try:
+                self._token, self._expires_on = self._fetch(left, short=left < self._timeout - 0.05)
+            except _CallerTimeout:
+                raise  # the caller's own deadline, not an endpoint failure: do not cache
+            except AIUnavailable as error:
+                self._failure, self._failed_until = error, self._mono() + self.FAILURE_TTL
+                raise
+            self._failure = None
             return self._token
+        finally:
+            self._lock.release()
 
     def invalidate(self) -> None:
-        """Forget the cached token (the service rejected it), so the next call fetches a fresh one."""
+        """Forget the cached token (the service rejected it), so the next call fetches a fresh one.
+        It leaves a remembered fetch failure alone: that expires by itself after FAILURE_TTL."""
         with self._lock:
             self._token, self._expires_on = "", 0.0
 
-    def _fetch(self) -> tuple[str, float]:
+    def _fetch(self, timeout: float, short: bool = False) -> tuple[str, float]:
         if not self._endpoint or not self._header:
             log.error("managed identity endpoint is not available")
             raise AIUnavailable("The AI service isn't configured correctly. The team has been notified.")
@@ -145,7 +180,13 @@ class ManagedIdentityToken:
             params["client_id"] = self.client_id
         try:
             response = self._client.get(self._endpoint, params=params, headers={"X-IDENTITY-HEADER": self._header},
-                                        timeout=self._timeout)
+                                        timeout=timeout)
+        except httpx.TimeoutException as error:
+            log.log(logging.WARNING if short else logging.ERROR, "managed identity token request failed",
+                    extra={"kind": type(error).__name__})
+            if short:  # timed out on a budget shorter than our own timeout: the caller's deadline, not the endpoint
+                raise _CallerTimeout() from None
+            raise AIUnavailable() from None
         except httpx.HTTPError as error:  # only the class name: messages can echo the URL
             log.error("managed identity token request failed", extra={"kind": type(error).__name__})
             raise AIUnavailable() from None
@@ -220,7 +261,9 @@ class AzureOpenAI:
             try:
                 headers = self.headers
                 if self.token_provider is not None:  # may raise AIUnavailable; nothing was sent, so nothing billed
-                    headers = {"Authorization": f"Bearer {self.token_provider.get()}", "Content-Type": "application/json"}
+                    headers = {"Authorization": f"Bearer {self.token_provider.get(remaining())}", "Content-Type": "application/json"}
+                if remaining() < 1.0:  # the token wait used the budget: never hand httpx a tiny or negative timeout
+                    break
                 response = self.client.post(self.url, json=payload, headers=headers,
                                             timeout=min(self.timeout, remaining()))
             except (httpx.ConnectError, httpx.ConnectTimeout) as error:  # never reached the model: no cost

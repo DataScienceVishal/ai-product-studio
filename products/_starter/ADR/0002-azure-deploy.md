@@ -222,7 +222,7 @@ needs Vishal's approval.
   api-version 2019-08-01, `AZURE_CLIENT_ID` for a user-assigned identity) and send `Authorization: Bearer`
   instead of `api-key`. Tokens are cached until 5 minutes before expiry; any failure is `AIUnavailable`, and
   neither token nor header is logged. The audience is `https://cognitiveservices.azure.com/.default`
-  (the Azure OpenAI data-plane scope; this corrects the `ai.azure.com` guess written earlier).
+  (the Azure OpenAI data-plane scope). Microsoft Learn documents both `https://cognitiveservices.azure.com` and `https://ai.azure.com` audiences; we use `cognitiveservices.azure.com`.
 - **Not in Bicep, on purpose:** the only identity the infra attaches is the shared pull identity, with
   `lifecycle: None` so code in the containers can't get tokens for it (and it must not get an OpenAI role).
   A per-app identity plus a role assignment needs a design of its own and an Owner. Manual steps for Vishal
