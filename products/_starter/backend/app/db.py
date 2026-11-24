@@ -13,6 +13,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
+from .dbauth import ENTRA_POOL_RECYCLE_SECONDS, attach_entra_token, build_token_provider, validate_entra_url
+
 
 class Base(DeclarativeBase):
     pass
@@ -20,7 +22,14 @@ class Base(DeclarativeBase):
 
 class Database:
     def __init__(self, url: str, statement_timeout_ms: int = 10_000, idle_in_transaction_timeout_ms: int = 15_000,
-                 pool_size: int = 5, max_overflow: int = 5):
+                 pool_size: int = 5, max_overflow: int = 5, db_auth: str = "password", token_provider=None,
+                 client_id: str = ""):
+        extra = {}
+        if db_auth == "entra":
+            validate_entra_url(url)
+            extra["pool_recycle"] = ENTRA_POOL_RECYCLE_SECONDS
+        elif db_auth != "password":
+            raise ValueError("DB_AUTH must be password or entra")
         connect_args = {}
         if url.startswith("postgresql"):
             # Every query has a timeout, idle transactions are cut off, and connecting gives up after 5 seconds.
@@ -30,7 +39,9 @@ class Database:
         # hide_parameters: SQLAlchemy otherwise puts bound values (emails, password hashes, note text)
         # into exception messages, and those reach the logs.
         self.engine: Engine = create_engine(url, pool_pre_ping=True, pool_size=pool_size, max_overflow=max_overflow,
-                                            pool_timeout=10, hide_parameters=True, connect_args=connect_args)
+                                            pool_timeout=10, hide_parameters=True, connect_args=connect_args, **extra)
+        if db_auth == "entra":
+            attach_entra_token(self.engine, token_provider or build_token_provider(client_id))
         self.sessions = sessionmaker(bind=self.engine, expire_on_commit=False)
 
     def dispose(self) -> None:

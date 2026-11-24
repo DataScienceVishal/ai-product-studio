@@ -1,3 +1,17 @@
+# T-18 app-side (Entra database sign-in) status
+
+Done: `DB_AUTH=password|entra` (config.py). `app/dbauth.py`: URL validation (postgres only, no password, user present,
+sslmode=verify-full), `do_connect` hook setting `cparams["password"]` from `ManagedIdentityToken`, pool_recycle 45 min.
+`ManagedIdentityToken` gained an optional `resource` (default unchanged); the DB provider uses audience
+`https://ossrdbms-aad.database.windows.net` with a 120 s refresh margin. Wired into `Database` (so main.py and
+maintenance.py get it) and `migrations/env.py` (config attributes `db_auth`/`token_provider` let tests inject).
+Unsafe URLs are refused in the Settings validator and in `Database`. README section and `.env.example` updated.
+Tests: `backend/tests/test_db_entra.py` (16). No network; `psycopg.connect` is faked and the parameters asserted.
+Not verified: a real Entra connection (none in the sandbox) and the real identity endpoint for this audience (contract
+from Microsoft Learn, security-connect-with-managed-identity). Token lifetime 5-60 min assumed.
+Left to ADR 0003 infra: Entra role creation, DB_AUTH/DATABASE_URL/AZURE_CLIENT_ID on the app and the migration job.
+Verify: `cd backend && .venv/bin/python -m pytest -q`.
+
 # T-15 pool follow-ups status
 
 Done (reviews/T-15-pool.md S1-S7): S2 the wait for a free Redis pool thread is bounded by `RATE_LIMIT_REDIS_QUEUE_TIMEOUT`

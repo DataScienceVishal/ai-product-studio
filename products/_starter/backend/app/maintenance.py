@@ -60,7 +60,8 @@ def main() -> None:
     parser.add_argument("command", choices=["purge"])
     parser.parse_args()
     settings = Settings()
-    database = Database(settings.database_url, settings.db_statement_timeout_ms)
+    database = Database(settings.database_url, settings.db_statement_timeout_ms, db_auth=settings.db_auth,
+                        client_id=settings.azure_client_id)
     try:
         with database.sessions() as db:
             # Only when people can actually verify: verification required AND real email (not the outbox).
