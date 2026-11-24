@@ -2,6 +2,193 @@
   "components": [
     {
       "colour": {
+        "accepted_values": [
+          "wht"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "bright white"
+          }
+        ],
+        "status": "present",
+        "value": "white"
+      },
+      "features": {
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "alu-foil barrier"
+            }
+          ],
+          "status": "present",
+          "value": "aluminium foil barrier"
+        },
+        "closure": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "print: UV-curable ink"
+            }
+          ],
+          "status": "present",
+          "value": "UV-cured ink"
+        },
+        "label": {
+          "status": "missing"
+        },
+        "sleeve": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "high-density polyethylene",
+          "PE-HD"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "high-density polyethylene"
+          }
+        ],
+        "status": "present",
+        "value": "HDPE"
+      },
+      "name": "bottle",
+      "ram_category": "plastic",
+      "weight_g": {
+        "conflict_values": [
+          32.5,
+          36.0
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.0325 kg"
+          },
+          {
+            "page": 2,
+            "quote": "0.036 kg"
+          }
+        ],
+        "status": "conflict"
+      }
+    },
+    {
+      "colour": {
+        "accepted_values": [
+          "blu"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "royal blue"
+          }
+        ],
+        "status": "present",
+        "value": "blue"
+      },
+      "features": {
+        "adhesive": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polypropylene film"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PP film"
+          }
+        ],
+        "status": "present",
+        "value": "PP"
+      },
+      "name": "label",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "1.6 g"
+          }
+        ],
+        "status": "present",
+        "value": 1.6
+      }
+    },
+    {
+      "colour": {
+        "status": "missing"
+      },
+      "features": {
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "monolayer, no barrier"
+            }
+          ],
+          "status": "present",
+          "value": "no barrier layer"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "polypropylene film label"
+            }
+          ],
+          "status": "present",
+          "value": "PP film label"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "PET/PE laminate",
+          "PE/PET lam."
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PET/PE laminate"
+          }
+        ],
+        "status": "present",
+        "value": "PE/PET laminate"
+      },
+      "name": "pouch",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.0071 kg"
+          }
+        ],
+        "status": "present",
+        "value": 7.1
+      }
+    },
+    {
+      "colour": {
+        "accepted_values": [
+          "nat.",
+          "uncoloured"
+        ],
         "refs": [
           {
             "page": 1,
@@ -12,106 +199,11 @@
         "value": "natural"
       },
       "features": {
-        "adhesive": {
+        "barrier_layer": {
           "status": "missing"
         },
-        "sleeve": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PETG shrink sleeve"
-            }
-          ],
-          "status": "present",
-          "value": "PETG shrink sleeve"
-        }
-      },
-      "material": {
-        "status": "missing"
-      },
-      "name": "bottle",
-      "ram_category": "missing",
-      "weight_g": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "0.0562 kg"
-          }
-        ],
-        "status": "present",
-        "value": 56.2
-      }
-    },
-    {
-      "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "white"
-          }
-        ],
-        "status": "present",
-        "value": "white"
-      },
-      "features": {
-        "adhesive": {
+        "ink_coating": {
           "status": "missing"
-        },
-        "sleeve": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PVC shrink sleeve"
-            }
-          ],
-          "status": "present",
-          "value": "PVC shrink sleeve"
-        }
-      },
-      "material": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "corrugated board"
-          }
-        ],
-        "status": "present",
-        "value": "corrugated board"
-      },
-      "name": "outer carton",
-      "ram_category": "paper_board",
-      "weight_g": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "142 g"
-          }
-        ],
-        "status": "present",
-        "value": 142.0
-      }
-    },
-    {
-      "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "brown"
-          }
-        ],
-        "status": "present",
-        "value": "brown"
-      },
-      "features": {
-        "closure": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "HDPE cap with PE liner"
-            }
-          ],
-          "status": "present",
-          "value": "HDPE cap with PE liner"
         },
         "label": {
           "status": "missing"
@@ -119,80 +211,28 @@
       },
       "material": {
         "accepted_values": [
-          "polystyrene"
+          "tinplate"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "PS"
+            "quote": "tinplate steel"
           }
         ],
         "status": "present",
-        "value": "PS"
+        "value": "steel"
       },
-      "name": "tray",
-      "ram_category": "plastic",
+      "name": "can",
+      "ram_category": "steel",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "0.0185 kg"
+            "quote": "20.4 g"
           }
         ],
         "status": "present",
-        "value": 18.5
-      }
-    },
-    {
-      "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "white"
-          }
-        ],
-        "status": "present",
-        "value": "white"
-      },
-      "features": {
-        "barrier_layer": {
-          "status": "missing"
-        },
-        "sleeve": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PVC shrink sleeve"
-            }
-          ],
-          "status": "present",
-          "value": "PVC shrink sleeve"
-        }
-      },
-      "material": {
-        "accepted_values": [
-          "high-density polyethylene"
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "HDPE"
-          }
-        ],
-        "status": "present",
-        "value": "HDPE"
-      },
-      "name": "cap",
-      "ram_category": "plastic",
-      "weight_g": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "8.8 g"
-          }
-        ],
-        "status": "present",
-        "value": 8.8
+        "value": 20.4
       }
     }
   ],
@@ -200,5 +240,6 @@
   "seed": 20261124,
   "sheet_id": "S018",
   "source": "synthetic",
+  "template": "two_column",
   "tier": "moderate"
 }

@@ -2,68 +2,44 @@
   "components": [
     {
       "colour": {
+        "accepted_values": [
+          "amb"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "blue"
+            "quote": "amb"
           }
         ],
         "status": "present",
-        "value": "blue"
+        "value": "amber"
       },
       "features": {
         "adhesive": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "water-based adhesive"
-            }
-          ],
-          "status": "present",
-          "value": "water-based adhesive"
-        },
-        "barrier_layer": {
           "status": "missing"
         },
-        "label": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "paper label, wash-off"
-            }
-          ],
-          "status": "present",
-          "value": "paper label, wash-off"
-        },
-        "sleeve": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PVC shrink sleeve"
-            }
-          ],
-          "status": "present",
-          "value": "PVC shrink sleeve"
+        "ink_coating": {
+          "status": "missing"
         }
       },
       "material": {
         "status": "missing"
       },
-      "name": "outer carton",
+      "name": "label",
       "ram_category": "missing",
       "weight_g": {
         "conflict_values": [
-          175.2,
-          178.2
+          0.8,
+          2.8
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "175.2 g"
+            "quote": "0.028 oz"
           },
           {
             "page": 2,
-            "quote": "178.2 g"
+            "quote": "2.8 g"
           }
         ],
         "status": "conflict"
@@ -71,93 +47,14 @@
     },
     {
       "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "brown"
-          }
-        ],
-        "status": "present",
-        "value": "brown"
-      },
-      "features": {
-        "adhesive": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "hot-melt adhesive"
-            }
-          ],
-          "status": "present",
-          "value": "hot-melt adhesive"
-        },
-        "label": {
-          "status": "missing"
-        },
-        "sleeve": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PETG shrink sleeve"
-            }
-          ],
-          "status": "present",
-          "value": "PETG shrink sleeve"
-        }
-      },
-      "material": {
-        "accepted_values": [
-          "high-density polyethylene"
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "HDPE"
-          }
-        ],
-        "status": "present",
-        "value": "HDPE"
-      },
-      "name": "cap",
-      "ram_category": "plastic",
-      "weight_g": {
-        "conflict_values": [
-          6.7,
-          8.7
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "0.236 oz"
-          },
-          {
-            "page": 2,
-            "quote": "8.7 g"
-          }
-        ],
-        "status": "conflict"
-      }
-    },
-    {
-      "colour": {
-        "accepted_values": [
-          "nat."
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "nat."
-          }
-        ],
-        "status": "present",
-        "value": "natural"
+        "status": "missing"
       },
       "features": {
         "barrier_layer": {
           "refs": [
             {
               "page": 1,
-              "quote": "EVOH barrier layer"
+              "quote": "EVOH barrier in wall"
             }
           ],
           "status": "present",
@@ -167,30 +64,96 @@
           "refs": [
             {
               "page": 1,
-              "quote": "water-based varnish"
+              "quote": "solvent ink print"
             }
           ],
           "status": "present",
-          "value": "water-based varnish"
+          "value": "solvent-based ink"
         },
         "label": {
           "status": "missing"
         }
       },
       "material": {
-        "status": "missing"
+        "accepted_values": [
+          "aluminum",
+          "Al"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "aluminium"
+          }
+        ],
+        "status": "present",
+        "value": "aluminium"
       },
       "name": "can",
-      "ram_category": "missing",
+      "ram_category": "aluminium",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "0.0345 kg"
+            "quote": "33.6 g"
           }
         ],
         "status": "present",
-        "value": 34.5
+        "value": 33.6
+      }
+    },
+    {
+      "colour": {
+        "accepted_values": [
+          "blk"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "black"
+          }
+        ],
+        "status": "present",
+        "value": "black"
+      },
+      "features": {
+        "adhesive": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polyvinyl chloride"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "polyvinyl chloride"
+          }
+        ],
+        "status": "present",
+        "value": "PVC"
+      },
+      "name": "sleeve",
+      "ram_category": "plastic",
+      "weight_g": {
+        "conflict_values": [
+          3.5,
+          5.6
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.0035 kg"
+          },
+          {
+            "page": 2,
+            "quote": "0.0056 kg"
+          }
+        ],
+        "status": "conflict"
       }
     }
   ],
@@ -198,5 +161,6 @@
   "seed": 20261124,
   "sheet_id": "S028",
   "source": "synthetic",
+  "template": "two_column",
   "tier": "messy"
 }

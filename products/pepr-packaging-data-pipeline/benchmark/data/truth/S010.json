@@ -2,61 +2,58 @@
   "components": [
     {
       "colour": {
+        "accepted_values": [
+          "transparent",
+          "clr"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "natural"
+            "quote": "clear"
           }
         ],
         "status": "present",
-        "value": "natural"
+        "value": "clear"
       },
       "features": {
-        "barrier_layer": {
+        "adhesive": {
           "refs": [
             {
               "page": 1,
-              "quote": "EVOH barrier layer"
+              "quote": "water-based adhesive"
             }
           ],
           "status": "present",
-          "value": "EVOH barrier layer"
+          "value": "water-based adhesive"
         },
-        "sleeve": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PETG shrink sleeve"
-            }
-          ],
-          "status": "present",
-          "value": "PETG shrink sleeve"
+        "ink_coating": {
+          "status": "missing"
         }
       },
       "material": {
         "accepted_values": [
-          "tinplate"
+          "polyvinyl chloride"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "tinplate steel"
+            "quote": "PVC"
           }
         ],
         "status": "present",
-        "value": "steel"
+        "value": "PVC"
       },
-      "name": "can",
-      "ram_category": "steel",
+      "name": "sleeve",
+      "ram_category": "plastic",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "14.3 g"
+            "quote": "3.2 g"
           }
         ],
         "status": "present",
-        "value": 14.3
+        "value": 3.2
       }
     }
   ],
@@ -64,5 +61,6 @@
   "seed": 20261124,
   "sheet_id": "S010",
   "source": "synthetic",
+  "template": "table",
   "tier": "clean"
 }

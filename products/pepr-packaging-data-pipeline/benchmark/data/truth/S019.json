@@ -2,82 +2,98 @@
   "components": [
     {
       "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "green"
-          }
-        ],
-        "status": "present",
-        "value": "green"
+        "status": "missing"
       },
       "features": {
-        "closure": {
+        "adhesive": {
           "refs": [
             {
               "page": 1,
-              "quote": "PP cap, no liner"
+              "quote": "hot melt glue"
             }
           ],
           "status": "present",
-          "value": "PP cap, no liner"
+          "value": "hot-melt adhesive"
         },
-        "label": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "ink_coating": {
           "status": "missing"
         }
       },
       "material": {
         "status": "missing"
       },
-      "name": "sleeve",
+      "name": "outer carton",
       "ram_category": "missing",
       "weight_g": {
-        "status": "missing"
+        "refs": [
+          {
+            "page": 1,
+            "quote": "3.425 oz"
+          }
+        ],
+        "status": "present",
+        "value": 97.1
       }
     },
     {
       "colour": {
-        "status": "missing"
+        "accepted_values": [
+          "carbon black pigmented",
+          "black, carbon black",
+          "CB black",
+          "carbon black"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "carbon black pigmented"
+          }
+        ],
+        "status": "present",
+        "value": "black (carbon black)"
       },
       "features": {
-        "closure": {
+        "barrier_layer": {
           "status": "missing"
         },
-        "label": {
+        "ink_coating": {
           "refs": [
             {
               "page": 1,
-              "quote": "paper label, wash-off"
+              "quote": "UV ink print"
             }
           ],
           "status": "present",
-          "value": "paper label, wash-off"
+          "value": "UV-cured ink"
+        },
+        "label": {
+          "status": "missing"
         }
       },
       "material": {
-        "accepted_values": [
-          "polystyrene"
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "PS"
-          }
-        ],
-        "status": "present",
-        "value": "PS"
+        "status": "missing"
       },
-      "name": "tray",
-      "ram_category": "plastic",
+      "name": "pouch",
+      "ram_category": "missing",
       "weight_g": {
+        "conflict_values": [
+          4.7,
+          6.3
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "10.7 g"
+            "quote": "4.7 g"
+          },
+          {
+            "page": 2,
+            "quote": "0.222 oz"
           }
         ],
-        "status": "present",
-        "value": 10.7
+        "status": "conflict"
       }
     }
   ],
@@ -85,5 +101,6 @@
   "seed": 20261124,
   "sheet_id": "S019",
   "source": "synthetic",
+  "template": "table",
   "tier": "moderate"
 }

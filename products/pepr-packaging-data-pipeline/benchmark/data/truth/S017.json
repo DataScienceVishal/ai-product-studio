@@ -2,117 +2,150 @@
   "components": [
     {
       "colour": {
+        "accepted_values": [
+          "blu"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "green"
+            "quote": "blue"
           }
         ],
         "status": "present",
-        "value": "green"
+        "value": "blue"
       },
       "features": {
         "barrier_layer": {
           "refs": [
             {
               "page": 1,
-              "quote": "EVOH barrier layer"
+              "quote": "barrier: EVOH core layer"
             }
           ],
           "status": "present",
           "value": "EVOH barrier layer"
         },
-        "sleeve": {
+        "ink_coating": {
           "status": "missing"
-        }
-      },
-      "material": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "PE/PET laminate"
-          }
-        ],
-        "status": "present",
-        "value": "PE/PET laminate"
-      },
-      "name": "pouch",
-      "ram_category": "plastic",
-      "weight_g": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "11.3 g"
-          }
-        ],
-        "status": "present",
-        "value": 11.3
-      }
-    },
-    {
-      "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "brown"
-          }
-        ],
-        "status": "present",
-        "value": "brown"
-      },
-      "features": {
-        "barrier_layer": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "EVOH barrier layer"
-            }
-          ],
-          "status": "present",
-          "value": "EVOH barrier layer"
         },
         "label": {
-          "status": "missing"
-        },
-        "sleeve": {
           "refs": [
             {
               "page": 1,
-              "quote": "PVC shrink sleeve"
+              "quote": "permanent paper label"
             }
           ],
           "status": "present",
-          "value": "PVC shrink sleeve"
+          "value": "paper label, permanent"
         }
       },
       "material": {
         "accepted_values": [
-          "polypropylene"
+          "recycled PET",
+          "r-PET"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "PP"
+            "quote": "r-PET"
           }
         ],
         "status": "present",
-        "value": "PP"
+        "value": "rPET"
       },
-      "name": "cap",
+      "name": "tray",
       "ram_category": "plastic",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "0.007 kg"
+            "quote": "0.0176 kg"
           }
         ],
         "status": "present",
-        "value": 7.0
+        "value": 17.6
       }
     },
     {
       "colour": {
+        "accepted_values": [
+          "nat.",
+          "uncoloured"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "uncoloured"
+          }
+        ],
+        "status": "present",
+        "value": "natural"
+      },
+      "features": {
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "barrier layer: none"
+            }
+          ],
+          "status": "present",
+          "value": "no barrier layer"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "UV ink print"
+            }
+          ],
+          "status": "present",
+          "value": "UV-cured ink"
+        },
+        "label": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "aluminum",
+          "Al"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "aluminum"
+          }
+        ],
+        "status": "present",
+        "value": "aluminium"
+      },
+      "name": "can",
+      "ram_category": "aluminium",
+      "weight_g": {
+        "conflict_values": [
+          16.2,
+          19.7
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "16.2 g"
+          },
+          {
+            "page": 2,
+            "quote": "19.7 g"
+          }
+        ],
+        "status": "conflict"
+      }
+    },
+    {
+      "colour": {
+        "accepted_values": [
+          "nat.",
+          "uncoloured"
+        ],
         "refs": [
           {
             "page": 1,
@@ -123,51 +156,45 @@
         "value": "natural"
       },
       "features": {
-        "adhesive": {
+        "ink_coating": {
           "refs": [
             {
               "page": 1,
-              "quote": "water-based adhesive"
+              "quote": "ultraviolet-cured print"
             }
           ],
           "status": "present",
-          "value": "water-based adhesive"
+          "value": "UV-cured ink"
         },
-        "closure": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PP cap, no liner"
-            }
-          ],
-          "status": "present",
-          "value": "PP cap, no liner"
-        },
-        "label": {
+        "liner": {
           "status": "missing"
         }
       },
       "material": {
+        "accepted_values": [
+          "high-density polyethylene",
+          "PE-HD"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "paper"
+            "quote": "PE-HD"
           }
         ],
         "status": "present",
-        "value": "paper"
+        "value": "HDPE"
       },
-      "name": "label",
-      "ram_category": "paper_board",
+      "name": "cap",
+      "ram_category": "plastic",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "0.0007 kg"
+            "quote": "0.0077 kg"
           }
         ],
         "status": "present",
-        "value": 0.7
+        "value": 7.7
       }
     },
     {
@@ -179,47 +206,51 @@
           "refs": [
             {
               "page": 1,
-              "quote": "hot-melt adhesive"
+              "quote": "self-adhesive coating"
             }
           ],
           "status": "present",
-          "value": "hot-melt adhesive"
+          "value": "pressure-sensitive adhesive"
         },
-        "closure": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "ink_coating": {
           "refs": [
             {
               "page": 1,
-              "quote": "HDPE cap with PE liner"
+              "quote": "UV ink print"
             }
           ],
           "status": "present",
-          "value": "HDPE cap with PE liner"
-        },
-        "label": {
-          "status": "missing"
+          "value": "UV-cured ink"
         }
       },
       "material": {
+        "accepted_values": [
+          "corrugated fibreboard",
+          "corr. board"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "PETG"
+            "quote": "corr. board"
           }
         ],
         "status": "present",
-        "value": "PETG"
+        "value": "corrugated board"
       },
-      "name": "sleeve",
-      "ram_category": "plastic",
+      "name": "outer carton",
+      "ram_category": "paper_board",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "1.7 g"
+            "quote": "92.9 g"
           }
         ],
         "status": "present",
-        "value": 1.7
+        "value": 92.9
       }
     }
   ],
@@ -227,5 +258,6 @@
   "seed": 20261124,
   "sheet_id": "S017",
   "source": "synthetic",
+  "template": "matrix",
   "tier": "moderate"
 }

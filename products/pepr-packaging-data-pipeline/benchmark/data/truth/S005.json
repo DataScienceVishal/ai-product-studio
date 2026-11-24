@@ -2,48 +2,70 @@
   "components": [
     {
       "colour": {
+        "accepted_values": [
+          "carbon black pigmented",
+          "black, carbon black",
+          "CB black",
+          "carbon black"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "clear"
+            "quote": "black (carbon black)"
           }
         ],
         "status": "present",
-        "value": "clear"
+        "value": "black (carbon black)"
       },
       "features": {
+        "barrier_layer": {
+          "status": "missing"
+        },
         "ink_coating": {
           "refs": [
             {
               "page": 1,
-              "quote": "water-based varnish"
+              "quote": "UV-cured ink"
             }
           ],
           "status": "present",
-          "value": "water-based varnish"
+          "value": "UV-cured ink"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "paper label, permanent"
+            }
+          ],
+          "status": "present",
+          "value": "paper label, permanent"
         }
       },
       "material": {
+        "accepted_values": [
+          "polystyrene"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "PE/PET laminate"
+            "quote": "PS"
           }
         ],
         "status": "present",
-        "value": "PE/PET laminate"
+        "value": "PS"
       },
-      "name": "pouch",
+      "name": "tray",
       "ram_category": "plastic",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "10.9 g"
+            "quote": "17.9 g"
           }
         ],
         "status": "present",
-        "value": 10.9
+        "value": 17.9
       }
     }
   ],
@@ -51,5 +73,6 @@
   "seed": 20261124,
   "sheet_id": "S005",
   "source": "synthetic",
+  "template": "bom",
   "tier": "clean"
 }

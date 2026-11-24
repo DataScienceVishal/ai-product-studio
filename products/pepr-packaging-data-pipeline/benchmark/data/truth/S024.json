@@ -5,85 +5,21 @@
         "status": "missing"
       },
       "features": {
-        "barrier_layer": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "EVOH barrier layer"
-            }
-          ],
-          "status": "present",
-          "value": "EVOH barrier layer"
-        },
-        "label": {
-          "status": "missing"
-        }
-      },
-      "material": {
-        "accepted_values": [
-          "polypropylene",
-          "PP film"
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "PP film"
-          }
-        ],
-        "status": "present",
-        "value": "PP"
-      },
-      "name": "label",
-      "ram_category": "plastic",
-      "weight_g": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "700 mg"
-          }
-        ],
-        "status": "present",
-        "value": 0.7
-      }
-    },
-    {
-      "colour": {
-        "accepted_values": [
-          "blk"
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "blk"
-          }
-        ],
-        "status": "present",
-        "value": "black"
-      },
-      "features": {
         "ink_coating": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "UV-cured ink"
-            }
-          ],
-          "status": "present",
-          "value": "UV-cured ink"
+          "status": "missing"
         },
-        "label": {
+        "liner": {
           "status": "missing"
         }
       },
       "material": {
         "accepted_values": [
-          "polypropylene",
-          "PP blk"
+          "polypropylene"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "PP blk"
+            "quote": "PP copolymer"
           }
         ],
         "status": "present",
@@ -92,62 +28,149 @@
       "name": "cap",
       "ram_category": "plastic",
       "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.0021 kg"
+          }
+        ],
+        "status": "present",
+        "value": 2.1
+      }
+    },
+    {
+      "colour": {
+        "accepted_values": [
+          "nat.",
+          "uncoloured"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "natural"
+          }
+        ],
+        "status": "present",
+        "value": "natural"
+      },
+      "features": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "plain, no print or coating"
+            }
+          ],
+          "status": "present",
+          "value": "no ink or coating"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "polypropylene film label"
+            }
+          ],
+          "status": "present",
+          "value": "PP film label"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "tinplate"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "tinplate"
+          }
+        ],
+        "status": "present",
+        "value": "steel"
+      },
+      "name": "can",
+      "ram_category": "steel",
+      "weight_g": {
         "status": "missing"
       }
     },
     {
       "colour": {
         "accepted_values": [
-          "blk"
+          "carbon black pigmented",
+          "black, carbon black",
+          "CB black",
+          "carbon black"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "blk"
+            "quote": "black, carbon black"
           }
         ],
         "status": "present",
-        "value": "black"
+        "value": "black (carbon black)"
       },
       "features": {
-        "adhesive": {
+        "barrier_layer": {
           "status": "missing"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "UV ink print"
+            }
+          ],
+          "status": "present",
+          "value": "UV-cured ink"
         },
         "label": {
           "refs": [
             {
               "page": 1,
-              "quote": "paper label, wash-off"
+              "quote": "paper label (permanent glue)"
             }
           ],
           "status": "present",
-          "value": "paper label, wash-off"
+          "value": "paper label, permanent"
         }
       },
       "material": {
         "accepted_values": [
-          "recycled PET"
+          "PET/PE laminate",
+          "PE/PET lam."
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "rPET"
+            "quote": "PE/PET lam."
           }
         ],
         "status": "present",
-        "value": "rPET"
+        "value": "PE/PET laminate"
       },
-      "name": "tray",
+      "name": "pouch",
       "ram_category": "plastic",
       "weight_g": {
+        "conflict_values": [
+          4.3,
+          6.9
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "0.575 oz"
+            "quote": "4.3 g"
+          },
+          {
+            "page": 1,
+            "quote": "6.9 g"
           }
         ],
-        "status": "present",
-        "value": 16.3
+        "status": "conflict"
       }
     }
   ],
@@ -155,5 +178,6 @@
   "seed": 20261124,
   "sheet_id": "S024",
   "source": "synthetic",
+  "template": "bom",
   "tier": "messy"
 }

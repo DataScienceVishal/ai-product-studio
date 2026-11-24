@@ -4,83 +4,277 @@
   "title": "Ground truth for one packaging spec sheet",
   "type": "object",
   "additionalProperties": false,
-  "required": ["sheet_id", "tier", "layout", "components"],
+  "required": [
+    "sheet_id",
+    "tier",
+    "layout",
+    "components"
+  ],
   "properties": {
-    "sheet_id": {"type": "string", "pattern": "^S[0-9]{3}$"},
-    "tier": {"enum": ["clean", "moderate", "messy"]},
-    "layout": {"enum": ["table", "prose", "scanned", "mixed_units", "multi_component", "missing_fields", "contradictory", "public"]},
-    "source": {"enum": ["synthetic", "public"]},
-    "seed": {"type": "integer"},
+    "sheet_id": {
+      "type": "string",
+      "pattern": "^S[0-9]{3}$"
+    },
+    "tier": {
+      "enum": [
+        "clean",
+        "moderate",
+        "messy"
+      ]
+    },
+    "layout": {
+      "enum": [
+        "table",
+        "prose",
+        "scanned",
+        "mixed_units",
+        "multi_component",
+        "missing_fields",
+        "contradictory",
+        "public"
+      ]
+    },
+    "source": {
+      "enum": [
+        "synthetic",
+        "public"
+      ]
+    },
+    "seed": {
+      "type": "integer"
+    },
     "components": {
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["name", "material", "colour", "weight_g", "features", "ram_category"],
+        "required": [
+          "name",
+          "material",
+          "colour",
+          "weight_g",
+          "features",
+          "ram_category"
+        ],
         "properties": {
-          "name": {"type": "string"},
-          "material": {"$ref": "#/$defs/field_string"},
-          "colour": {"$ref": "#/$defs/field_string"},
-          "weight_g": {"$ref": "#/$defs/field_number"},
+          "name": {
+            "type": "string"
+          },
+          "material": {
+            "$ref": "#/$defs/field_string"
+          },
+          "colour": {
+            "$ref": "#/$defs/field_string"
+          },
+          "weight_g": {
+            "$ref": "#/$defs/field_number"
+          },
           "features": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
-              "label": {"$ref": "#/$defs/field_string"},
-              "closure": {"$ref": "#/$defs/field_string"},
-              "ink_coating": {"$ref": "#/$defs/field_string"},
-              "sleeve": {"$ref": "#/$defs/field_string"},
-              "adhesive": {"$ref": "#/$defs/field_string"},
-              "barrier_layer": {"$ref": "#/$defs/field_string"}
-            }
+              "label": {
+                "$ref": "#/$defs/field_string"
+              },
+              "closure": {
+                "$ref": "#/$defs/field_string"
+              },
+              "ink_coating": {
+                "$ref": "#/$defs/field_string"
+              },
+              "sleeve": {
+                "$ref": "#/$defs/field_string"
+              },
+              "adhesive": {
+                "$ref": "#/$defs/field_string"
+              },
+              "barrier_layer": {
+                "$ref": "#/$defs/field_string"
+              },
+              "liner": {
+                "$ref": "#/$defs/field_string"
+              }
+            },
+            "description": "Keys plausible for the component type are all present (status present or missing); see taxonomy.py PLAUSIBLE"
           },
           "ram_category": {
-            "enum": ["plastic", "paper_board", "glass", "aluminium", "steel", "wood", "other", "missing"]
+            "enum": [
+              "plastic",
+              "paper_board",
+              "glass",
+              "aluminium",
+              "steel",
+              "wood",
+              "other",
+              "missing"
+            ]
           }
         }
       }
+    },
+    "template": {
+      "enum": [
+        "table",
+        "matrix",
+        "bom",
+        "prose",
+        "prose_buried",
+        "two_column"
+      ]
     }
   },
   "$defs": {
     "page_ref": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["page", "quote"],
+      "required": [
+        "page",
+        "quote"
+      ],
       "properties": {
-        "page": {"type": "integer", "minimum": 1},
-        "quote": {"type": "string", "minLength": 1}
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "quote": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "field_string": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["status"],
+      "required": [
+        "status"
+      ],
       "properties": {
-        "status": {"enum": ["present", "missing", "conflict"]},
-        "value": {"type": "string"},
-        "accepted_values": {"type": "array", "items": {"type": "string"}, "description": "Normalised synonyms also scored as correct"},
-        "conflict_values": {"type": "array", "items": {"type": "string"}},
-        "refs": {"type": "array", "items": {"$ref": "#/$defs/page_ref"}}
+        "status": {
+          "enum": [
+            "present",
+            "missing",
+            "conflict"
+          ]
+        },
+        "value": {
+          "type": "string"
+        },
+        "accepted_values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Normalised synonyms also scored as correct"
+        },
+        "conflict_values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/page_ref"
+          }
+        }
       },
       "allOf": [
-        {"if": {"properties": {"status": {"const": "present"}}}, "then": {"required": ["value", "refs"]}},
-        {"if": {"properties": {"status": {"const": "conflict"}}}, "then": {"required": ["conflict_values", "refs"]}}
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "present"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "value",
+              "refs"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "conflict"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "conflict_values",
+              "refs"
+            ]
+          }
+        }
       ]
     },
     "field_number": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["status"],
+      "required": [
+        "status"
+      ],
       "properties": {
-        "status": {"enum": ["present", "missing", "conflict"]},
-        "value": {"type": "number", "description": "Grams, normalised"},
-        "conflict_values": {"type": "array", "items": {"type": "number"}},
-        "refs": {"type": "array", "items": {"$ref": "#/$defs/page_ref"}}
+        "status": {
+          "enum": [
+            "present",
+            "missing",
+            "conflict"
+          ]
+        },
+        "value": {
+          "type": "number",
+          "description": "Grams, normalised"
+        },
+        "conflict_values": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/page_ref"
+          }
+        }
       },
       "allOf": [
-        {"if": {"properties": {"status": {"const": "present"}}}, "then": {"required": ["value", "refs"]}},
-        {"if": {"properties": {"status": {"const": "conflict"}}}, "then": {"required": ["conflict_values", "refs"]}}
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "present"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "value",
+              "refs"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "conflict"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "conflict_values",
+              "refs"
+            ]
+          }
+        }
       ]
     }
   }

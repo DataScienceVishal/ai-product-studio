@@ -2,68 +2,104 @@
   "components": [
     {
       "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "blue"
-          }
-        ],
-        "status": "present",
-        "value": "blue"
+        "status": "missing"
       },
       "features": {
-        "barrier_layer": {
+        "adhesive": {
           "refs": [
             {
               "page": 1,
-              "quote": "no barrier layer"
+              "quote": "adhesive: water-based"
             }
           ],
           "status": "present",
-          "value": "no barrier layer"
-        },
-        "closure": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "HDPE cap with PE liner"
-            }
-          ],
-          "status": "present",
-          "value": "HDPE cap with PE liner"
+          "value": "water-based adhesive"
         },
         "ink_coating": {
           "status": "missing"
         }
       },
       "material": {
-        "accepted_values": [
-          "kraft"
-        ],
         "refs": [
           {
             "page": 1,
-            "quote": "kraft"
+            "quote": "uncoated paper"
           }
         ],
         "status": "present",
-        "value": "kraft paper"
+        "value": "paper"
       },
-      "name": "outer carton",
+      "name": "label",
       "ram_category": "paper_board",
       "weight_g": {
-        "conflict_values": [
-          150.9,
-          153.9
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.035 oz"
+          }
+        ],
+        "status": "present",
+        "value": 1.0
+      }
+    },
+    {
+      "colour": {
+        "accepted_values": [
+          "nat.",
+          "uncoloured"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "0.1509 kg"
+            "quote": "natural"
+          }
+        ],
+        "status": "present",
+        "value": "natural"
+      },
+      "features": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "aqueous varnish"
+            }
+          ],
+          "status": "present",
+          "value": "water-based varnish"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "paper label (washes off)"
+            }
+          ],
+          "status": "present",
+          "value": "paper label, wash-off"
+        }
+      },
+      "material": {
+        "status": "missing"
+      },
+      "name": "pouch",
+      "ram_category": "missing",
+      "weight_g": {
+        "conflict_values": [
+          5.5,
+          8.7
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "5.5 g"
           },
           {
             "page": 2,
-            "quote": "153.9 g"
+            "quote": "8.7 g"
           }
         ],
         "status": "conflict"
@@ -72,82 +108,20 @@
     {
       "colour": {
         "accepted_values": [
-          "blk"
+          "wht"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "blk"
+            "quote": "white"
           }
         ],
         "status": "present",
-        "value": "black"
+        "value": "white"
       },
       "features": {
         "adhesive": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "hot-melt adhesive"
-            }
-          ],
-          "status": "present",
-          "value": "hot-melt adhesive"
-        },
-        "closure": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "HDPE cap with PE liner"
-            }
-          ],
-          "status": "present",
-          "value": "HDPE cap with PE liner"
-        },
-        "label": {
           "status": "missing"
-        },
-        "sleeve": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PETG shrink sleeve"
-            }
-          ],
-          "status": "present",
-          "value": "PETG shrink sleeve"
-        }
-      },
-      "material": {
-        "status": "missing"
-      },
-      "name": "tray",
-      "ram_category": "missing",
-      "weight_g": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "24700 mg"
-          }
-        ],
-        "status": "present",
-        "value": 24.7
-      }
-    },
-    {
-      "colour": {
-        "status": "missing"
-      },
-      "features": {
-        "adhesive": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "hot-melt adhesive"
-            }
-          ],
-          "status": "present",
-          "value": "hot-melt adhesive"
         },
         "barrier_layer": {
           "status": "missing"
@@ -156,34 +130,38 @@
           "refs": [
             {
               "page": 1,
-              "quote": "UV-cured ink"
+              "quote": "water-based overprint varnish"
             }
           ],
           "status": "present",
-          "value": "UV-cured ink"
+          "value": "water-based varnish"
         }
       },
       "material": {
+        "accepted_values": [
+          "corrugated fibreboard",
+          "corr. board"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "PETG"
+            "quote": "corrugated board"
           }
         ],
         "status": "present",
-        "value": "PETG"
+        "value": "corrugated board"
       },
-      "name": "sleeve",
-      "ram_category": "plastic",
+      "name": "outer carton",
+      "ram_category": "paper_board",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "0.0025 kg"
+            "quote": "0.1349 kg"
           }
         ],
         "status": "present",
-        "value": 2.5
+        "value": 134.9
       }
     }
   ],
@@ -191,5 +169,6 @@
   "seed": 20261124,
   "sheet_id": "S021",
   "source": "synthetic",
+  "template": "prose_buried",
   "tier": "messy"
 }

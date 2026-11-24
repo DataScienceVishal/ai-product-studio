@@ -2,35 +2,150 @@
   "components": [
     {
       "colour": {
+        "accepted_values": [
+          "grn"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "amber"
+            "quote": "grn"
           }
         ],
         "status": "present",
-        "value": "amber"
+        "value": "green"
+      },
+      "features": {
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "no barrier layer present"
+            }
+          ],
+          "status": "present",
+          "value": "no barrier layer"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "paper label, caustic wash-off"
+            }
+          ],
+          "status": "present",
+          "value": "paper label, wash-off"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "PET/PE laminate",
+          "PE/PET lam."
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PET/PE laminate"
+          }
+        ],
+        "status": "present",
+        "value": "PE/PET laminate"
+      },
+      "name": "pouch",
+      "ram_category": "plastic",
+      "weight_g": {
+        "conflict_values": [
+          4.3,
+          6.9
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "4300 mg"
+          },
+          {
+            "page": 2,
+            "quote": "6900 mg"
+          }
+        ],
+        "status": "conflict"
+      }
+    },
+    {
+      "colour": {
+        "accepted_values": [
+          "nat.",
+          "uncoloured"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "natural"
+          }
+        ],
+        "status": "present",
+        "value": "natural"
       },
       "features": {
         "adhesive": {
           "refs": [
             {
               "page": 1,
-              "quote": "hot-melt adhesive"
+              "quote": "PSA (pressure sensitive)"
             }
           ],
           "status": "present",
-          "value": "hot-melt adhesive"
+          "value": "pressure-sensitive adhesive"
         },
+        "ink_coating": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polypropylene film"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "polypropylene film"
+          }
+        ],
+        "status": "present",
+        "value": "PP"
+      },
+      "name": "label",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "2.6 g"
+          }
+        ],
+        "status": "present",
+        "value": 2.6
+      }
+    },
+    {
+      "colour": {
+        "status": "missing"
+      },
+      "features": {
         "barrier_layer": {
+          "status": "missing"
+        },
+        "ink_coating": {
           "refs": [
             {
               "page": 1,
-              "quote": "no barrier layer"
+              "quote": "water-based overprint varnish"
             }
           ],
           "status": "present",
-          "value": "no barrier layer"
+          "value": "water-based varnish"
         },
         "label": {
           "status": "missing"
@@ -42,125 +157,18 @@
       "name": "tray",
       "ram_category": "missing",
       "weight_g": {
-        "status": "missing"
-      }
-    },
-    {
-      "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "brown"
-          }
-        ],
-        "status": "present",
-        "value": "brown"
-      },
-      "features": {
-        "closure": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "HDPE cap with PE liner"
-            }
-          ],
-          "status": "present",
-          "value": "HDPE cap with PE liner"
-        },
-        "sleeve": {
-          "status": "missing"
-        }
-      },
-      "material": {
-        "accepted_values": [
-          "kraft"
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "kraft"
-          }
-        ],
-        "status": "present",
-        "value": "kraft paper"
-      },
-      "name": "outer carton",
-      "ram_category": "paper_board",
-      "weight_g": {
         "conflict_values": [
-          130.1,
-          131.6
+          12.5,
+          15.9
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "130.1 g"
+            "quote": "0.0125 kg"
           },
           {
             "page": 2,
-            "quote": "131.6 g"
-          }
-        ],
-        "status": "conflict"
-      }
-    },
-    {
-      "colour": {
-        "accepted_values": [
-          "nat."
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "nat."
-          }
-        ],
-        "status": "present",
-        "value": "natural"
-      },
-      "features": {
-        "ink_coating": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "water-based varnish"
-            }
-          ],
-          "status": "present",
-          "value": "water-based varnish"
-        },
-        "label": {
-          "status": "missing"
-        }
-      },
-      "material": {
-        "accepted_values": [
-          "PE/PET lam."
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "PE/PET lam."
-          }
-        ],
-        "status": "present",
-        "value": "PE/PET laminate"
-      },
-      "name": "pouch",
-      "ram_category": "plastic",
-      "weight_g": {
-        "conflict_values": [
-          11.5,
-          14.0
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "0.0115 kg"
-          },
-          {
-            "page": 2,
-            "quote": "14 g"
+            "quote": "0.0159 kg"
           }
         ],
         "status": "conflict"
@@ -171,5 +179,6 @@
   "seed": 20261124,
   "sheet_id": "S027",
   "source": "synthetic",
+  "template": "prose_buried",
   "tier": "messy"
 }

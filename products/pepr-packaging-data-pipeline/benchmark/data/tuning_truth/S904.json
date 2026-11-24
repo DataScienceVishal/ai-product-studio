@@ -2,146 +2,152 @@
   "components": [
     {
       "colour": {
+        "accepted_values": [
+          "nat.",
+          "uncoloured"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "black"
+            "quote": "uncoloured"
           }
         ],
         "status": "present",
-        "value": "black"
+        "value": "natural"
       },
       "features": {
-        "adhesive": {
+        "barrier_layer": {
           "refs": [
             {
               "page": 1,
-              "quote": "water-based adhesive"
+              "quote": "barrier layer: none"
             }
           ],
           "status": "present",
-          "value": "water-based adhesive"
+          "value": "no barrier layer"
         },
-        "barrier_layer": {
-          "status": "missing"
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "print in solvent-based inks"
+            }
+          ],
+          "status": "present",
+          "value": "solvent-based ink"
         },
         "label": {
           "refs": [
             {
               "page": 1,
-              "quote": "full wrap PP label"
+              "quote": "polypropylene film label"
             }
           ],
           "status": "present",
-          "value": "full wrap PP label"
+          "value": "PP film label"
         }
       },
       "material": {
         "accepted_values": [
-          "polypropylene"
+          "tinplate"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "PP"
+            "quote": "tinplate steel"
           }
         ],
         "status": "present",
-        "value": "PP"
+        "value": "steel"
       },
-      "name": "cap",
-      "ram_category": "plastic",
+      "name": "can",
+      "ram_category": "steel",
       "weight_g": {
+        "conflict_values": [
+          26.5,
+          29.3
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "0.0062 kg"
+            "quote": "0.0265 kg"
+          },
+          {
+            "page": 1,
+            "quote": "0.0293 kg"
           }
         ],
-        "status": "present",
-        "value": 6.2
+        "status": "conflict"
       }
     },
     {
       "colour": {
+        "accepted_values": [
+          "grn"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "blue"
+            "quote": "flint green"
           }
         ],
         "status": "present",
-        "value": "blue"
+        "value": "green"
       },
       "features": {
-        "closure": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "HDPE cap with PE liner"
-            }
-          ],
-          "status": "present",
-          "value": "HDPE cap with PE liner"
+        "adhesive": {
+          "status": "missing"
         },
         "ink_coating": {
           "status": "missing"
-        },
-        "sleeve": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PVC shrink sleeve"
-            }
-          ],
-          "status": "present",
-          "value": "PVC shrink sleeve"
         }
       },
       "material": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "kraft paper"
-          }
-        ],
-        "status": "present",
-        "value": "kraft paper"
+        "status": "missing"
       },
-      "name": "outer carton",
-      "ram_category": "paper_board",
+      "name": "label",
+      "ram_category": "missing",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "171.2 g"
+            "quote": "1.6 g"
           }
         ],
         "status": "present",
-        "value": 171.2
+        "value": 1.6
       }
     },
     {
       "colour": {
+        "accepted_values": [
+          "carbon black pigmented",
+          "black, carbon black",
+          "CB black",
+          "carbon black"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "white"
+            "quote": "carbon black pigmented"
           }
         ],
         "status": "present",
-        "value": "white"
+        "value": "black (carbon black)"
       },
       "features": {
-        "adhesive": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "ink_coating": {
           "refs": [
             {
               "page": 1,
-              "quote": "hot-melt adhesive"
+              "quote": "solvent ink print"
             }
           ],
           "status": "present",
-          "value": "hot-melt adhesive"
+          "value": "solvent-based ink"
         },
         "label": {
           "status": "missing"
@@ -149,34 +155,36 @@
       },
       "material": {
         "accepted_values": [
-          "polystyrene"
+          "PET/PE laminate",
+          "PE/PET lam."
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "PS"
+            "quote": "PET/PE laminate"
           }
         ],
         "status": "present",
-        "value": "PS"
+        "value": "PE/PET laminate"
       },
-      "name": "tray",
+      "name": "pouch",
       "ram_category": "plastic",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "0.497 oz"
+            "quote": "10700 mg"
           }
         ],
         "status": "present",
-        "value": 14.1
+        "value": 10.7
       }
     }
   ],
-  "layout": "mixed_units",
+  "layout": "scanned",
   "seed": 20261125,
   "sheet_id": "S904",
   "source": "synthetic",
-  "tier": "moderate"
+  "template": "bom",
+  "tier": "messy"
 }

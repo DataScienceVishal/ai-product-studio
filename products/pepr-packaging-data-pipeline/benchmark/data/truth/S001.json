@@ -2,48 +2,68 @@
   "components": [
     {
       "colour": {
+        "accepted_values": [
+          "wht"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "blue"
+            "quote": "white"
           }
         ],
         "status": "present",
-        "value": "blue"
+        "value": "white"
       },
       "features": {
         "adhesive": {
+          "status": "missing"
+        },
+        "barrier_layer": {
           "refs": [
             {
               "page": 1,
-              "quote": "hot-melt adhesive"
+              "quote": "no barrier layer"
             }
           ],
           "status": "present",
-          "value": "hot-melt adhesive"
+          "value": "no barrier layer"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "water-based varnish"
+            }
+          ],
+          "status": "present",
+          "value": "water-based varnish"
         }
       },
       "material": {
+        "accepted_values": [
+          "kraft liner",
+          "kraft"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "PVC"
+            "quote": "kraft paper"
           }
         ],
         "status": "present",
-        "value": "PVC"
+        "value": "kraft paper"
       },
-      "name": "sleeve",
-      "ram_category": "plastic",
+      "name": "outer carton",
+      "ram_category": "paper_board",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "4 g"
+            "quote": "179.7 g"
           }
         ],
         "status": "present",
-        "value": 4.0
+        "value": 179.7
       }
     }
   ],
@@ -51,5 +71,6 @@
   "seed": 20261124,
   "sheet_id": "S001",
   "source": "synthetic",
+  "template": "table",
   "tier": "clean"
 }

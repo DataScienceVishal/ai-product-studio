@@ -2,6 +2,9 @@
   "components": [
     {
       "colour": {
+        "accepted_values": [
+          "amb"
+        ],
         "refs": [
           {
             "page": 1,
@@ -13,72 +16,132 @@
       },
       "features": {
         "barrier_layer": {
+          "status": "missing"
+        },
+        "ink_coating": {
           "refs": [
             {
               "page": 1,
-              "quote": "no barrier layer"
+              "quote": "ultraviolet-cured print"
             }
           ],
           "status": "present",
-          "value": "no barrier layer"
+          "value": "UV-cured ink"
         },
-        "closure": {
-          "status": "missing"
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "wash-off paper label"
+            }
+          ],
+          "status": "present",
+          "value": "paper label, wash-off"
         }
       },
       "material": {
         "accepted_values": [
-          "recycled PET"
+          "PET/PE laminate",
+          "PE/PET lam."
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "rPET"
+            "quote": "PE/PET lam."
           }
         ],
         "status": "present",
-        "value": "rPET"
+        "value": "PE/PET laminate"
       },
-      "name": "tray",
+      "name": "pouch",
+      "ram_category": "plastic",
+      "weight_g": {
+        "conflict_values": [
+          5.5,
+          7.7
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "5500 mg"
+          },
+          {
+            "page": 1,
+            "quote": "0.0077 kg"
+          }
+        ],
+        "status": "conflict"
+      }
+    },
+    {
+      "colour": {
+        "accepted_values": [
+          "transparent",
+          "clr"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "transparent"
+          }
+        ],
+        "status": "present",
+        "value": "clear"
+      },
+      "features": {
+        "ink_coating": {
+          "status": "missing"
+        },
+        "liner": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "aluminium foil inner seal"
+            }
+          ],
+          "status": "present",
+          "value": "foil induction seal"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polypropylene"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PP"
+          }
+        ],
+        "status": "present",
+        "value": "PP"
+      },
+      "name": "cap",
       "ram_category": "plastic",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "0.702 oz"
+            "quote": "0.008 kg"
           }
         ],
         "status": "present",
-        "value": 19.9
+        "value": 8.0
       }
     },
     {
       "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "white"
-          }
-        ],
-        "status": "present",
-        "value": "white"
+        "status": "missing"
       },
       "features": {
         "barrier_layer": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "no barrier layer"
-            }
-          ],
-          "status": "present",
-          "value": "no barrier layer"
+          "status": "missing"
         },
         "closure": {
           "refs": [
             {
               "page": 1,
-              "quote": "HDPE cap with PE liner"
+              "quote": "HDPE cap fitted with PE liner"
             }
           ],
           "status": "present",
@@ -88,58 +151,9 @@
           "status": "missing"
         },
         "label": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "paper label, wash-off"
-            }
-          ],
-          "status": "present",
-          "value": "paper label, wash-off"
-        }
-      },
-      "material": {
-        "status": "missing"
-      },
-      "name": "label",
-      "ram_category": "missing",
-      "weight_g": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "1000 mg"
-          }
-        ],
-        "status": "present",
-        "value": 1.0
-      }
-    },
-    {
-      "colour": {
-        "accepted_values": [
-          "blk"
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "blk"
-          }
-        ],
-        "status": "present",
-        "value": "black"
-      },
-      "features": {
-        "adhesive": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "hot-melt adhesive"
-            }
-          ],
-          "status": "present",
-          "value": "hot-melt adhesive"
+          "status": "missing"
         },
-        "closure": {
+        "sleeve": {
           "status": "missing"
         }
       },
@@ -149,21 +163,14 @@
       "name": "bottle",
       "ram_category": "missing",
       "weight_g": {
-        "conflict_values": [
-          54.0,
-          56.5
-        ],
         "refs": [
           {
             "page": 1,
-            "quote": "0.054 kg"
-          },
-          {
-            "page": 2,
-            "quote": "56.5 g"
+            "quote": "1.400 oz"
           }
         ],
-        "status": "conflict"
+        "status": "present",
+        "value": 39.7
       }
     }
   ],
@@ -171,5 +178,6 @@
   "seed": 20261124,
   "sheet_id": "S025",
   "source": "synthetic",
+  "template": "two_column",
   "tier": "messy"
 }

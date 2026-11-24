@@ -3,95 +3,44 @@
     {
       "colour": {
         "accepted_values": [
-          "nat."
+          "blu"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "nat."
+            "quote": "blu"
           }
         ],
         "status": "present",
-        "value": "natural"
+        "value": "blue"
       },
       "features": {
         "barrier_layer": {
           "status": "missing"
         },
-        "label": {
+        "ink_coating": {
           "refs": [
             {
               "page": 1,
-              "quote": "full wrap PP label"
+              "quote": "aqueous varnish"
             }
           ],
           "status": "present",
-          "value": "full wrap PP label"
-        }
-      },
-      "material": {
-        "accepted_values": [
-          "recycled PET"
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "rPET"
-          }
-        ],
-        "status": "present",
-        "value": "rPET"
-      },
-      "name": "tray",
-      "ram_category": "plastic",
-      "weight_g": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "12800 mg"
-          }
-        ],
-        "status": "present",
-        "value": 12.8
-      }
-    },
-    {
-      "colour": {
-        "status": "missing"
-      },
-      "features": {
-        "adhesive": {
+          "value": "water-based varnish"
+        },
+        "label": {
           "status": "missing"
-        },
-        "barrier_layer": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "EVOH barrier layer"
-            }
-          ],
-          "status": "present",
-          "value": "EVOH barrier layer"
-        },
-        "label": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "paper label, wash-off"
-            }
-          ],
-          "status": "present",
-          "value": "paper label, wash-off"
         }
       },
       "material": {
         "accepted_values": [
+          "PET/PE laminate",
           "PE/PET lam."
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "PE/PET lam."
+            "quote": "PE/PET laminate"
           }
         ],
         "status": "present",
@@ -103,47 +52,23 @@
         "refs": [
           {
             "page": 1,
-            "quote": "8.7 g"
+            "quote": "0.0068 kg"
           }
         ],
         "status": "present",
-        "value": 8.7
+        "value": 6.8
       }
     },
     {
       "colour": {
-        "accepted_values": [
-          "blk"
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "blk"
-          }
-        ],
-        "status": "present",
-        "value": "black"
+        "status": "missing"
       },
       "features": {
-        "closure": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PP cap, no liner"
-            }
-          ],
-          "status": "present",
-          "value": "PP cap, no liner"
+        "barrier_layer": {
+          "status": "missing"
         },
         "ink_coating": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "UV-cured ink"
-            }
-          ],
-          "status": "present",
-          "value": "UV-cured ink"
+          "status": "missing"
         },
         "label": {
           "status": "missing"
@@ -151,21 +76,78 @@
       },
       "material": {
         "accepted_values": [
-          "corr. board"
+          "recycled PET",
+          "r-PET"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "corr. board"
+            "quote": "recycled PET"
           }
         ],
         "status": "present",
-        "value": "corrugated board"
+        "value": "rPET"
       },
-      "name": "outer carton",
+      "name": "tray",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.716 oz"
+          }
+        ],
+        "status": "present",
+        "value": 20.3
+      }
+    },
+    {
+      "colour": {
+        "status": "missing"
+      },
+      "features": {
+        "adhesive": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PSA (pressure sensitive)"
+            }
+          ],
+          "status": "present",
+          "value": "pressure-sensitive adhesive"
+        },
+        "ink_coating": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "wet-strength paper"
+          }
+        ],
+        "status": "present",
+        "value": "paper"
+      },
+      "name": "label",
       "ram_category": "paper_board",
       "weight_g": {
-        "status": "missing"
+        "conflict_values": [
+          1.2,
+          3.2
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "1200 mg"
+          },
+          {
+            "page": 2,
+            "quote": "0.0032 kg"
+          }
+        ],
+        "status": "conflict"
       }
     }
   ],
@@ -173,5 +155,6 @@
   "seed": 20261124,
   "sheet_id": "S022",
   "source": "synthetic",
+  "template": "matrix",
   "tier": "messy"
 }

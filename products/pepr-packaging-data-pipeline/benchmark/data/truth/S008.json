@@ -2,77 +2,65 @@
   "components": [
     {
       "colour": {
+        "accepted_values": [
+          "wht"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "natural"
+            "quote": "white"
           }
         ],
         "status": "present",
-        "value": "natural"
+        "value": "white"
       },
       "features": {
-        "closure": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PP cap, no liner"
-            }
-          ],
-          "status": "present",
-          "value": "PP cap, no liner"
+        "adhesive": {
+          "status": "missing"
         },
         "ink_coating": {
           "refs": [
             {
               "page": 1,
-              "quote": "UV-cured ink"
+              "quote": "solvent-based ink"
             }
           ],
           "status": "present",
-          "value": "UV-cured ink"
-        },
-        "label": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "full wrap PP label"
-            }
-          ],
-          "status": "present",
-          "value": "full wrap PP label"
+          "value": "solvent-based ink"
         }
       },
       "material": {
         "accepted_values": [
-          "aluminum"
+          "PET-G",
+          "glycol-modified PET"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "aluminium"
+            "quote": "PETG"
           }
         ],
         "status": "present",
-        "value": "aluminium"
+        "value": "PETG"
       },
-      "name": "can",
-      "ram_category": "aluminium",
+      "name": "sleeve",
+      "ram_category": "plastic",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "23.5 g"
+            "quote": "2.3 g"
           }
         ],
         "status": "present",
-        "value": 23.5
+        "value": 2.3
       }
     }
   ],
-  "layout": "table",
+  "layout": "prose",
   "seed": 20261124,
   "sheet_id": "S008",
   "source": "synthetic",
+  "template": "prose",
   "tier": "clean"
 }

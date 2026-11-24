@@ -2,68 +2,55 @@
   "components": [
     {
       "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "amber"
-          }
-        ],
-        "status": "present",
-        "value": "amber"
+        "status": "missing"
       },
       "features": {
         "adhesive": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "hot-melt adhesive"
-            }
-          ],
-          "status": "present",
-          "value": "hot-melt adhesive"
+          "status": "missing"
         },
         "barrier_layer": {
           "refs": [
             {
               "page": 1,
-              "quote": "EVOH barrier layer"
+              "quote": "foil barrier layer"
             }
           ],
           "status": "present",
-          "value": "EVOH barrier layer"
+          "value": "aluminium foil barrier"
         },
-        "closure": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "HDPE cap with PE liner"
-            }
-          ],
-          "status": "present",
-          "value": "HDPE cap with PE liner"
-        },
-        "sleeve": {
+        "ink_coating": {
           "status": "missing"
         }
       },
       "material": {
-        "status": "missing"
-      },
-      "name": "sleeve",
-      "ram_category": "missing",
-      "weight_g": {
-        "conflict_values": [
-          3.3,
-          5.8
+        "accepted_values": [
+          "corrugated fibreboard",
+          "corr. board"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "0.116 oz"
+            "quote": "corrugated board"
+          }
+        ],
+        "status": "present",
+        "value": "corrugated board"
+      },
+      "name": "outer carton",
+      "ram_category": "paper_board",
+      "weight_g": {
+        "conflict_values": [
+          88.7,
+          92.9
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.0887 kg"
           },
           {
             "page": 2,
-            "quote": "5.8 g"
+            "quote": "3.277 oz"
           }
         ],
         "status": "conflict"
@@ -71,130 +58,120 @@
     },
     {
       "colour": {
+        "accepted_values": [
+          "carbon black pigmented",
+          "black, carbon black",
+          "CB black",
+          "carbon black"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "blue"
+            "quote": "black, carbon black"
           }
         ],
         "status": "present",
-        "value": "blue"
+        "value": "black (carbon black)"
       },
       "features": {
         "barrier_layer": {
           "refs": [
             {
               "page": 1,
-              "quote": "no barrier layer"
+              "quote": "foil barrier layer"
             }
           ],
           "status": "present",
-          "value": "no barrier layer"
+          "value": "aluminium foil barrier"
         },
-        "closure": {
+        "ink_coating": {
+          "status": "missing"
+        },
+        "label": {
           "status": "missing"
         }
       },
       "material": {
         "accepted_values": [
-          "polystyrene"
+          "PET/PE laminate",
+          "PE/PET lam."
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "PS"
+            "quote": "PET/PE laminate"
           }
         ],
         "status": "present",
-        "value": "PS"
+        "value": "PE/PET laminate"
       },
-      "name": "tray",
+      "name": "pouch",
+      "ram_category": "plastic",
+      "weight_g": {
+        "status": "missing"
+      }
+    },
+    {
+      "colour": {
+        "accepted_values": [
+          "wht"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "bright white"
+          }
+        ],
+        "status": "present",
+        "value": "white"
+      },
+      "features": {
+        "adhesive": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "adhesive: water-based"
+            }
+          ],
+          "status": "present",
+          "value": "water-based adhesive"
+        },
+        "ink_coating": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "PET-G",
+          "glycol-modified PET"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PETG"
+          }
+        ],
+        "status": "present",
+        "value": "PETG"
+      },
+      "name": "sleeve",
       "ram_category": "plastic",
       "weight_g": {
         "conflict_values": [
-          11.8,
-          14.3
+          1.3,
+          2.8
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "0.416 oz"
+            "quote": "1300 mg"
           },
           {
             "page": 2,
-            "quote": "14.3 g"
+            "quote": "0.0028 kg"
           }
         ],
         "status": "conflict"
-      }
-    },
-    {
-      "colour": {
-        "accepted_values": [
-          "nat."
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "nat."
-          }
-        ],
-        "status": "present",
-        "value": "natural"
-      },
-      "features": {
-        "adhesive": {
-          "status": "missing"
-        },
-        "barrier_layer": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "EVOH barrier layer"
-            }
-          ],
-          "status": "present",
-          "value": "EVOH barrier layer"
-        },
-        "ink_coating": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "UV-cured ink"
-            }
-          ],
-          "status": "present",
-          "value": "UV-cured ink"
-        },
-        "label": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "full wrap PP label"
-            }
-          ],
-          "status": "present",
-          "value": "full wrap PP label"
-        }
-      },
-      "material": {
-        "accepted_values": [
-          "tinplate",
-          "tinplate"
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "tinplate"
-          }
-        ],
-        "status": "present",
-        "value": "steel"
-      },
-      "name": "can",
-      "ram_category": "steel",
-      "weight_g": {
-        "status": "missing"
       }
     }
   ],
@@ -202,5 +179,6 @@
   "seed": 20261124,
   "sheet_id": "S026",
   "source": "synthetic",
+  "template": "table",
   "tier": "messy"
 }

@@ -3,116 +3,54 @@
     {
       "colour": {
         "accepted_values": [
-          "nat."
+          "wht"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "nat."
+            "quote": "wht"
           }
         ],
         "status": "present",
-        "value": "natural"
+        "value": "white"
       },
       "features": {
-        "closure": {
+        "adhesive": {
           "refs": [
             {
               "page": 1,
-              "quote": "PP cap, no liner"
+              "quote": "adhesive: water-based"
             }
           ],
           "status": "present",
-          "value": "PP cap, no liner"
+          "value": "water-based adhesive"
         },
-        "sleeve": {
-          "status": "missing"
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "plain, no print or coating"
+            }
+          ],
+          "status": "present",
+          "value": "no ink or coating"
         }
       },
       "material": {
         "accepted_values": [
-          "aluminum",
-          "Al"
+          "PET-G",
+          "glycol-modified PET"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "Al"
+            "quote": "PET-G"
           }
         ],
         "status": "present",
-        "value": "aluminium"
+        "value": "PETG"
       },
-      "name": "can",
-      "ram_category": "aluminium",
-      "weight_g": {
-        "conflict_values": [
-          23.6,
-          26.6
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "23.6 g"
-          },
-          {
-            "page": 2,
-            "quote": "26.6 g"
-          }
-        ],
-        "status": "conflict"
-      }
-    },
-    {
-      "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "green"
-          }
-        ],
-        "status": "present",
-        "value": "green"
-      },
-      "features": {
-        "barrier_layer": {
-          "status": "missing"
-        },
-        "closure": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PP cap, no liner"
-            }
-          ],
-          "status": "present",
-          "value": "PP cap, no liner"
-        },
-        "sleeve": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PETG shrink sleeve"
-            }
-          ],
-          "status": "present",
-          "value": "PETG shrink sleeve"
-        }
-      },
-      "material": {
-        "accepted_values": [
-          "high-density polyethylene"
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "HDPE"
-          }
-        ],
-        "status": "present",
-        "value": "HDPE"
-      },
-      "name": "cap",
+      "name": "sleeve",
       "ram_category": "plastic",
       "weight_g": {
         "status": "missing"
@@ -120,38 +58,112 @@
     },
     {
       "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "clear"
-          }
-        ],
-        "status": "present",
-        "value": "clear"
+        "status": "missing"
       },
       "features": {
-        "adhesive": {
-          "status": "missing"
-        },
-        "ink_coating": {
+        "barrier_layer": {
           "refs": [
             {
               "page": 1,
-              "quote": "UV-cured ink"
+              "quote": "barrier layer: none"
             }
           ],
           "status": "present",
-          "value": "UV-cured ink"
+          "value": "no barrier layer"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "label": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "tinplate"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "tinplate steel"
+          }
+        ],
+        "status": "present",
+        "value": "steel"
+      },
+      "name": "can",
+      "ram_category": "steel",
+      "weight_g": {
+        "conflict_values": [
+          23.2,
+          26.9
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.818 oz"
+          },
+          {
+            "page": 1,
+            "quote": "0.949 oz"
+          }
+        ],
+        "status": "conflict"
+      }
+    },
+    {
+      "colour": {
+        "accepted_values": [
+          "carbon black pigmented",
+          "black, carbon black",
+          "CB black",
+          "carbon black"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "CB black"
+          }
+        ],
+        "status": "present",
+        "value": "black (carbon black)"
+      },
+      "features": {
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "alu-foil barrier"
+            }
+          ],
+          "status": "present",
+          "value": "aluminium foil barrier"
+        },
+        "closure": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "status": "missing"
         },
         "label": {
           "refs": [
             {
               "page": 1,
-              "quote": "paper label, wash-off"
+              "quote": "paper label, caustic wash-off"
             }
           ],
           "status": "present",
           "value": "paper label, wash-off"
+        },
+        "sleeve": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "PETG heat-shrink sleeve"
+            }
+          ],
+          "status": "present",
+          "value": "PETG shrink sleeve"
         }
       },
       "material": {
@@ -170,7 +182,21 @@
       "name": "bottle",
       "ram_category": "plastic",
       "weight_g": {
-        "status": "missing"
+        "conflict_values": [
+          54.3,
+          57.9
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "54.3 g"
+          },
+          {
+            "page": 1,
+            "quote": "57.9 g"
+          }
+        ],
+        "status": "conflict"
       }
     }
   ],
@@ -178,5 +204,6 @@
   "seed": 20261124,
   "sheet_id": "S029",
   "source": "synthetic",
+  "template": "bom",
   "tier": "messy"
 }

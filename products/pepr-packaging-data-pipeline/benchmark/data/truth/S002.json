@@ -2,35 +2,54 @@
   "components": [
     {
       "colour": {
+        "accepted_values": [
+          "blu"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "amber"
+            "quote": "blue"
           }
         ],
         "status": "present",
-        "value": "amber"
+        "value": "blue"
       },
       "features": {
         "barrier_layer": {
+          "status": "missing"
+        },
+        "closure": {
           "refs": [
             {
               "page": 1,
-              "quote": "EVOH barrier layer"
+              "quote": "PP cap, no liner"
             }
           ],
           "status": "present",
-          "value": "EVOH barrier layer"
+          "value": "PP cap, no liner"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "no ink or coating"
+            }
+          ],
+          "status": "present",
+          "value": "no ink or coating"
+        },
+        "label": {
+          "status": "missing"
         },
         "sleeve": {
           "refs": [
             {
               "page": 1,
-              "quote": "PETG shrink sleeve"
+              "quote": "PVC shrink sleeve"
             }
           ],
           "status": "present",
-          "value": "PETG shrink sleeve"
+          "value": "PVC shrink sleeve"
         }
       },
       "material": {
@@ -52,11 +71,11 @@
         "refs": [
           {
             "page": 1,
-            "quote": "50 g"
+            "quote": "36 g"
           }
         ],
         "status": "present",
-        "value": 50.0
+        "value": 36.0
       }
     }
   ],
@@ -64,5 +83,6 @@
   "seed": 20261124,
   "sheet_id": "S002",
   "source": "synthetic",
+  "template": "table",
   "tier": "clean"
 }

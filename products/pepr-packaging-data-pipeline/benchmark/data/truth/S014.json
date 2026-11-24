@@ -2,182 +2,175 @@
   "components": [
     {
       "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "amber"
-          }
+        "accepted_values": [
+          "nat.",
+          "uncoloured"
         ],
-        "status": "present",
-        "value": "amber"
-      },
-      "features": {
-        "closure": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PP cap, no liner"
-            }
-          ],
-          "status": "present",
-          "value": "PP cap, no liner"
-        },
-        "ink_coating": {
-          "status": "missing"
-        },
-        "sleeve": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PETG shrink sleeve"
-            }
-          ],
-          "status": "present",
-          "value": "PETG shrink sleeve"
-        }
-      },
-      "material": {
         "refs": [
           {
             "page": 1,
-            "quote": "kraft paper"
-          }
-        ],
-        "status": "present",
-        "value": "kraft paper"
-      },
-      "name": "outer carton",
-      "ram_category": "paper_board",
-      "weight_g": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "159500 mg"
-          }
-        ],
-        "status": "present",
-        "value": 159.5
-      }
-    },
-    {
-      "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "natural"
+            "quote": "nat."
           }
         ],
         "status": "present",
         "value": "natural"
       },
       "features": {
-        "closure": {
-          "status": "missing"
-        },
-        "label": {
+        "adhesive": {
           "refs": [
             {
               "page": 1,
-              "quote": "paper label, wash-off"
+              "quote": "hot melt glue"
             }
           ],
           "status": "present",
-          "value": "paper label, wash-off"
-        }
-      },
-      "material": {
-        "accepted_values": [
-          "aluminum"
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "aluminium"
-          }
-        ],
-        "status": "present",
-        "value": "aluminium"
-      },
-      "name": "can",
-      "ram_category": "aluminium",
-      "weight_g": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "15700 mg"
-          }
-        ],
-        "status": "present",
-        "value": 15.7
-      }
-    },
-    {
-      "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "black"
-          }
-        ],
-        "status": "present",
-        "value": "black"
-      },
-      "features": {
-        "barrier_layer": {
-          "status": "missing"
-        },
-        "closure": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PP cap, no liner"
-            }
-          ],
-          "status": "present",
-          "value": "PP cap, no liner"
+          "value": "hot-melt adhesive"
         },
         "ink_coating": {
           "refs": [
             {
               "page": 1,
-              "quote": "water-based varnish"
+              "quote": "no print, no coating"
             }
           ],
           "status": "present",
-          "value": "water-based varnish"
-        },
-        "sleeve": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PVC shrink sleeve"
-            }
-          ],
-          "status": "present",
-          "value": "PVC shrink sleeve"
+          "value": "no ink or coating"
         }
       },
       "material": {
+        "accepted_values": [
+          "polypropylene film"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "PE/PET laminate"
+            "quote": "PP film"
           }
         ],
         "status": "present",
-        "value": "PE/PET laminate"
+        "value": "PP"
       },
-      "name": "pouch",
+      "name": "label",
       "ram_category": "plastic",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "0.370 oz"
+            "quote": "0.102 oz"
           }
         ],
         "status": "present",
-        "value": 10.5
+        "value": 2.9
+      }
+    },
+    {
+      "colour": {
+        "accepted_values": [
+          "blu"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "royal blue"
+          }
+        ],
+        "status": "present",
+        "value": "blue"
+      },
+      "features": {
+        "adhesive": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polyvinyl chloride"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PVC"
+          }
+        ],
+        "status": "present",
+        "value": "PVC"
+      },
+      "name": "sleeve",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "1.7 g"
+          }
+        ],
+        "status": "present",
+        "value": 1.7
+      }
+    },
+    {
+      "colour": {
+        "accepted_values": [
+          "carbon black pigmented",
+          "black, carbon black",
+          "CB black",
+          "carbon black"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "black, carbon black"
+          }
+        ],
+        "status": "present",
+        "value": "black (carbon black)"
+      },
+      "features": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "aqueous varnish"
+            }
+          ],
+          "status": "present",
+          "value": "water-based varnish"
+        },
+        "label": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "recycled PET",
+          "r-PET"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "recycled PET"
+          }
+        ],
+        "status": "present",
+        "value": "rPET"
+      },
+      "name": "tray",
+      "ram_category": "plastic",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.019 kg"
+          }
+        ],
+        "status": "present",
+        "value": 19.0
       }
     }
   ],
@@ -185,5 +178,6 @@
   "seed": 20261124,
   "sheet_id": "S014",
   "source": "synthetic",
+  "template": "matrix",
   "tier": "moderate"
 }

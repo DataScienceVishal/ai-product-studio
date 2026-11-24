@@ -3,133 +3,64 @@
     {
       "colour": {
         "accepted_values": [
-          "nat."
+          "carbon black pigmented",
+          "black, carbon black",
+          "CB black",
+          "carbon black"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "nat."
+            "quote": "black (carbon black)"
           }
         ],
         "status": "present",
-        "value": "natural"
+        "value": "black (carbon black)"
       },
       "features": {
         "adhesive": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "water-based adhesive"
-            }
-          ],
-          "status": "present",
-          "value": "water-based adhesive"
-        },
-        "barrier_layer": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "EVOH barrier layer"
-            }
-          ],
-          "status": "present",
-          "value": "EVOH barrier layer"
-        },
-        "closure": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PP cap, no liner"
-            }
-          ],
-          "status": "present",
-          "value": "PP cap, no liner"
-        },
-        "sleeve": {
           "status": "missing"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "undecorated, uncoated"
+            }
+          ],
+          "status": "present",
+          "value": "no ink or coating"
         }
       },
       "material": {
         "accepted_values": [
-          "tinplate",
-          "tinplate"
+          "PET-G",
+          "glycol-modified PET"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "tinplate"
+            "quote": "PET-G"
           }
         ],
         "status": "present",
-        "value": "steel"
+        "value": "PETG"
       },
-      "name": "can",
-      "ram_category": "steel",
-      "weight_g": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "34.6 g"
-          }
-        ],
-        "status": "present",
-        "value": 34.6
-      }
-    },
-    {
-      "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "white"
-          }
-        ],
-        "status": "present",
-        "value": "white"
-      },
-      "features": {
-        "barrier_layer": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "no barrier layer"
-            }
-          ],
-          "status": "present",
-          "value": "no barrier layer"
-        },
-        "closure": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PP cap, no liner"
-            }
-          ],
-          "status": "present",
-          "value": "PP cap, no liner"
-        },
-        "ink_coating": {
-          "status": "missing"
-        }
-      },
-      "material": {
-        "status": "missing"
-      },
-      "name": "pouch",
-      "ram_category": "missing",
+      "name": "sleeve",
+      "ram_category": "plastic",
       "weight_g": {
         "conflict_values": [
-          4.1,
-          6.6
+          2.5,
+          5.6
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "4.1 g"
+            "quote": "0.0025 kg"
           },
           {
-            "page": 2,
-            "quote": "6.6 g"
+            "page": 1,
+            "quote": "0.0056 kg"
           }
         ],
         "status": "conflict"
@@ -137,54 +68,107 @@
     },
     {
       "colour": {
-        "status": "missing"
+        "accepted_values": [
+          "nat.",
+          "uncoloured"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "uncoloured"
+          }
+        ],
+        "status": "present",
+        "value": "natural"
       },
       "features": {
-        "closure": {
+        "barrier_layer": {
           "status": "missing"
         },
         "ink_coating": {
           "refs": [
             {
               "page": 1,
-              "quote": "water-based varnish"
+              "quote": "UV ink print"
             }
           ],
           "status": "present",
-          "value": "water-based varnish"
+          "value": "UV-cured ink"
         },
         "label": {
           "refs": [
             {
               "page": 1,
-              "quote": "paper label, wash-off"
+              "quote": "paper label (permanent glue)"
             }
           ],
           "status": "present",
-          "value": "paper label, wash-off"
+          "value": "paper label, permanent"
         }
       },
       "material": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "paper"
-          }
-        ],
-        "status": "present",
-        "value": "paper"
+        "status": "missing"
       },
-      "name": "label",
-      "ram_category": "paper_board",
+      "name": "tray",
+      "ram_category": "missing",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "0.060 oz"
+            "quote": "21800 mg"
           }
         ],
         "status": "present",
-        "value": 1.7
+        "value": 21.8
+      }
+    },
+    {
+      "colour": {
+        "accepted_values": [
+          "transparent",
+          "clr"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "clr"
+          }
+        ],
+        "status": "present",
+        "value": "clear"
+      },
+      "features": {
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "plain, no print or coating"
+            }
+          ],
+          "status": "present",
+          "value": "no ink or coating"
+        },
+        "liner": {
+          "status": "missing"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polypropylene"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "polypropylene"
+          }
+        ],
+        "status": "present",
+        "value": "PP"
+      },
+      "name": "cap",
+      "ram_category": "plastic",
+      "weight_g": {
+        "status": "missing"
       }
     }
   ],
@@ -192,5 +176,6 @@
   "seed": 20261124,
   "sheet_id": "S023",
   "source": "synthetic",
+  "template": "table",
   "tier": "messy"
 }

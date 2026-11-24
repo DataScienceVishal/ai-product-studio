@@ -2,77 +2,65 @@
   "components": [
     {
       "colour": {
+        "accepted_values": [
+          "grn"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "natural"
+            "quote": "green"
           }
         ],
         "status": "present",
-        "value": "natural"
+        "value": "green"
       },
       "features": {
-        "closure": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PP cap, no liner"
-            }
-          ],
-          "status": "present",
-          "value": "PP cap, no liner"
+        "adhesive": {
+          "status": "missing"
         },
-        "label": {
+        "ink_coating": {
           "refs": [
             {
               "page": 1,
-              "quote": "full wrap PP label"
+              "quote": "water-based varnish"
             }
           ],
           "status": "present",
-          "value": "full wrap PP label"
-        },
-        "sleeve": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PETG shrink sleeve"
-            }
-          ],
-          "status": "present",
-          "value": "PETG shrink sleeve"
+          "value": "water-based varnish"
         }
       },
       "material": {
         "accepted_values": [
-          "aluminum"
+          "PET-G",
+          "glycol-modified PET"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "aluminium"
+            "quote": "PETG"
           }
         ],
         "status": "present",
-        "value": "aluminium"
+        "value": "PETG"
       },
-      "name": "can",
-      "ram_category": "aluminium",
+      "name": "sleeve",
+      "ram_category": "plastic",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "33.2 g"
+            "quote": "4 g"
           }
         ],
         "status": "present",
-        "value": 33.2
+        "value": 4.0
       }
     }
   ],
-  "layout": "table",
+  "layout": "prose",
   "seed": 20261124,
   "sheet_id": "S007",
   "source": "synthetic",
+  "template": "prose",
   "tier": "clean"
 }

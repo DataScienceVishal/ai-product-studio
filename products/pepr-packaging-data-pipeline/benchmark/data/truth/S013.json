@@ -5,116 +5,130 @@
         "status": "missing"
       },
       "features": {
-        "adhesive": {
+        "barrier_layer": {
           "status": "missing"
         },
         "closure": {
           "refs": [
             {
               "page": 1,
-              "quote": "HDPE cap with PE liner"
+              "quote": "polypropylene cap, unlined"
             }
           ],
           "status": "present",
-          "value": "HDPE cap with PE liner"
-        },
-        "sleeve": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PVC shrink sleeve"
-            }
-          ],
-          "status": "present",
-          "value": "PVC shrink sleeve"
-        }
-      },
-      "material": {
-        "accepted_values": [
-          "high-density polyethylene"
-        ],
-        "refs": [
-          {
-            "page": 1,
-            "quote": "HDPE"
-          }
-        ],
-        "status": "present",
-        "value": "HDPE"
-      },
-      "name": "bottle",
-      "ram_category": "plastic",
-      "weight_g": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "0.0455 kg"
-          }
-        ],
-        "status": "present",
-        "value": 45.5
-      }
-    },
-    {
-      "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "natural"
-          }
-        ],
-        "status": "present",
-        "value": "natural"
-      },
-      "features": {
-        "adhesive": {
-          "status": "missing"
-        },
-        "barrier_layer": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "no barrier layer"
-            }
-          ],
-          "status": "present",
-          "value": "no barrier layer"
+          "value": "PP cap, no liner"
         },
         "ink_coating": {
           "refs": [
             {
               "page": 1,
-              "quote": "UV-cured ink"
+              "quote": "solvent-borne ink"
             }
           ],
           "status": "present",
-          "value": "UV-cured ink"
+          "value": "solvent-based ink"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "paper label (permanent glue)"
+            }
+          ],
+          "status": "present",
+          "value": "paper label, permanent"
+        },
+        "sleeve": {
+          "status": "missing"
         }
       },
       "material": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "soda-lime glass"
+          }
+        ],
+        "status": "present",
+        "value": "glass"
+      },
+      "name": "bottle",
+      "ram_category": "glass",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.0535 kg"
+          }
+        ],
+        "status": "present",
+        "value": 53.5
+      }
+    },
+    {
+      "colour": {
         "accepted_values": [
-          "polystyrene"
+          "wht"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "PS"
+            "quote": "bright white"
           }
         ],
         "status": "present",
-        "value": "PS"
+        "value": "white"
       },
-      "name": "tray",
+      "features": {
+        "barrier_layer": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "foil barrier layer"
+            }
+          ],
+          "status": "present",
+          "value": "aluminium foil barrier"
+        },
+        "ink_coating": {
+          "status": "missing"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "BOPP wrap-around label"
+            }
+          ],
+          "status": "present",
+          "value": "PP film label"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "PET/PE laminate",
+          "PE/PET lam."
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "PE/PET laminate"
+          }
+        ],
+        "status": "present",
+        "value": "PE/PET laminate"
+      },
+      "name": "pouch",
       "ram_category": "plastic",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "0.0274 kg"
+            "quote": "7.5 g"
           }
         ],
         "status": "present",
-        "value": 27.4
+        "value": 7.5
       }
     }
   ],
@@ -122,5 +136,6 @@
   "seed": 20261124,
   "sheet_id": "S013",
   "source": "synthetic",
+  "template": "prose",
   "tier": "moderate"
 }

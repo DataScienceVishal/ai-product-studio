@@ -2,58 +2,68 @@
   "components": [
     {
       "colour": {
+        "accepted_values": [
+          "wht"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "blue"
+            "quote": "white"
           }
         ],
         "status": "present",
-        "value": "blue"
+        "value": "white"
       },
       "features": {
-        "closure": {
+        "adhesive": {
           "refs": [
             {
               "page": 1,
-              "quote": "PP cap, no liner"
+              "quote": "water-based adhesive"
             }
           ],
           "status": "present",
-          "value": "PP cap, no liner"
+          "value": "water-based adhesive"
+        },
+        "barrier_layer": {
+          "status": "missing"
         },
         "ink_coating": {
           "refs": [
             {
               "page": 1,
-              "quote": "water-based varnish"
+              "quote": "solvent-based ink"
             }
           ],
           "status": "present",
-          "value": "water-based varnish"
+          "value": "solvent-based ink"
         }
       },
       "material": {
+        "accepted_values": [
+          "corrugated fibreboard",
+          "corr. board"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "PETG"
+            "quote": "corrugated board"
           }
         ],
         "status": "present",
-        "value": "PETG"
+        "value": "corrugated board"
       },
-      "name": "sleeve",
-      "ram_category": "plastic",
+      "name": "outer carton",
+      "ram_category": "paper_board",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "2.7 g"
+            "quote": "128 g"
           }
         ],
         "status": "present",
-        "value": 2.7
+        "value": 128.0
       }
     }
   ],
@@ -61,5 +71,6 @@
   "seed": 20261124,
   "sheet_id": "S003",
   "source": "synthetic",
+  "template": "table",
   "tier": "clean"
 }

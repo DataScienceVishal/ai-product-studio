@@ -2,161 +2,171 @@
   "components": [
     {
       "colour": {
+        "accepted_values": [
+          "brn"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "brown"
+            "quote": "brn"
           }
         ],
         "status": "present",
         "value": "brown"
       },
       "features": {
-        "adhesive": {
+        "barrier_layer": {
           "refs": [
             {
               "page": 1,
-              "quote": "water-based adhesive"
+              "quote": "monolayer, no barrier"
             }
           ],
           "status": "present",
-          "value": "water-based adhesive"
+          "value": "no barrier layer"
+        },
+        "closure": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "high-density PE cap + liner"
+            }
+          ],
+          "status": "present",
+          "value": "HDPE cap with PE liner"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "solvent ink print"
+            }
+          ],
+          "status": "present",
+          "value": "solvent-based ink"
         },
         "label": {
           "status": "missing"
         },
         "sleeve": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PETG shrink sleeve"
-            }
-          ],
-          "status": "present",
-          "value": "PETG shrink sleeve"
+          "status": "missing"
         }
       },
       "material": {
-        "accepted_values": [
-          "polyethylene terephthalate"
-        ],
         "refs": [
           {
             "page": 1,
-            "quote": "PET"
+            "quote": "soda-lime glass"
           }
         ],
         "status": "present",
-        "value": "PET"
+        "value": "glass"
       },
       "name": "bottle",
-      "ram_category": "plastic",
+      "ram_category": "glass",
       "weight_g": {
+        "conflict_values": [
+          20.5,
+          23.1
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "54.1 g"
+            "quote": "20.5 g"
+          },
+          {
+            "page": 1,
+            "quote": "0.0231 kg"
           }
         ],
-        "status": "present",
-        "value": 54.1
+        "status": "conflict"
       }
     },
     {
       "colour": {
+        "accepted_values": [
+          "blu"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "blue"
+            "quote": "blu"
           }
         ],
         "status": "present",
         "value": "blue"
       },
       "features": {
-        "adhesive": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "hot-melt adhesive"
-            }
-          ],
-          "status": "present",
-          "value": "hot-melt adhesive"
-        },
-        "closure": {
+        "barrier_layer": {
           "status": "missing"
         },
         "ink_coating": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "water-based varnish"
-            }
-          ],
-          "status": "present",
-          "value": "water-based varnish"
+          "status": "missing"
         },
-        "sleeve": {
+        "label": {
           "refs": [
             {
               "page": 1,
-              "quote": "PVC shrink sleeve"
+              "quote": "polypropylene film label"
             }
           ],
           "status": "present",
-          "value": "PVC shrink sleeve"
+          "value": "PP film label"
         }
       },
       "material": {
         "accepted_values": [
-          "recycled PET"
+          "PET/PE laminate",
+          "PE/PET lam."
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "rPET"
+            "quote": "PE/PET laminate"
           }
         ],
         "status": "present",
-        "value": "rPET"
+        "value": "PE/PET laminate"
       },
-      "name": "tray",
+      "name": "pouch",
       "ram_category": "plastic",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "22400 mg"
+            "quote": "0.268 oz"
           }
         ],
         "status": "present",
-        "value": 22.4
+        "value": 7.6
       }
     },
     {
       "colour": {
+        "accepted_values": [
+          "blk"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "natural"
+            "quote": "jet black"
           }
         ],
         "status": "present",
-        "value": "natural"
+        "value": "black"
       },
       "features": {
-        "adhesive": {
+        "ink_coating": {
           "refs": [
             {
               "page": 1,
-              "quote": "water-based adhesive"
+              "quote": "undecorated, uncoated"
             }
           ],
           "status": "present",
-          "value": "water-based adhesive"
+          "value": "no ink or coating"
         },
-        "closure": {
+        "liner": {
           "status": "missing"
         }
       },
@@ -167,23 +177,23 @@
         "refs": [
           {
             "page": 1,
-            "quote": "PP film"
+            "quote": "PP copolymer"
           }
         ],
         "status": "present",
         "value": "PP"
       },
-      "name": "label",
+      "name": "cap",
       "ram_category": "plastic",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "0.0029 kg"
+            "quote": "0.0048 kg"
           }
         ],
         "status": "present",
-        "value": 2.9
+        "value": 4.8
       }
     }
   ],
@@ -191,5 +201,6 @@
   "seed": 20261124,
   "sheet_id": "S016",
   "source": "synthetic",
+  "template": "two_column",
   "tier": "moderate"
 }

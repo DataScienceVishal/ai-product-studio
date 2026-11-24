@@ -12,252 +12,407 @@
     "S030"
   ],
   "seed": 20261124,
+  "stats": {
+    "test": {
+      "carbon_black_components": 8,
+      "components": 68,
+      "conflict_slots": 22,
+      "missing_slots": 137,
+      "present_slots": 307,
+      "scored_slots": 466,
+      "sheets": 30
+    },
+    "tuning": {
+      "carbon_black_components": 3,
+      "components": 14,
+      "conflict_slots": 3,
+      "missing_slots": 30,
+      "present_slots": 63,
+      "scored_slots": 96,
+      "sheets": 5
+    }
+  },
   "test": [
     {
+      "conflict_modes": [],
       "layout": "table",
       "pages": 1,
       "scanned": false,
       "sheet_id": "S001",
+      "template": "table",
       "tier": "clean"
     },
     {
+      "conflict_modes": [],
       "layout": "table",
       "pages": 1,
       "scanned": false,
       "sheet_id": "S002",
+      "template": "table",
       "tier": "clean"
     },
     {
+      "conflict_modes": [],
       "layout": "table",
       "pages": 1,
       "scanned": false,
       "sheet_id": "S003",
+      "template": "table",
       "tier": "clean"
     },
     {
+      "conflict_modes": [],
       "layout": "table",
       "pages": 1,
       "scanned": false,
       "sheet_id": "S004",
+      "template": "matrix",
       "tier": "clean"
     },
     {
+      "conflict_modes": [],
       "layout": "table",
       "pages": 1,
       "scanned": false,
       "sheet_id": "S005",
+      "template": "bom",
       "tier": "clean"
     },
     {
+      "conflict_modes": [],
       "layout": "table",
       "pages": 1,
       "scanned": false,
       "sheet_id": "S006",
+      "template": "bom",
       "tier": "clean"
     },
     {
-      "layout": "table",
+      "conflict_modes": [],
+      "layout": "prose",
       "pages": 1,
       "scanned": false,
       "sheet_id": "S007",
+      "template": "prose",
       "tier": "clean"
     },
     {
-      "layout": "table",
+      "conflict_modes": [],
+      "layout": "prose",
       "pages": 1,
       "scanned": false,
       "sheet_id": "S008",
+      "template": "prose",
       "tier": "clean"
     },
     {
-      "layout": "table",
+      "conflict_modes": [],
+      "layout": "prose",
       "pages": 1,
       "scanned": false,
       "sheet_id": "S009",
+      "template": "prose",
       "tier": "clean"
     },
     {
+      "conflict_modes": [],
       "layout": "table",
       "pages": 1,
       "scanned": false,
       "sheet_id": "S010",
+      "template": "table",
       "tier": "clean"
     },
     {
+      "conflict_modes": [],
       "layout": "prose",
       "pages": 1,
       "scanned": false,
       "sheet_id": "S011",
+      "template": "prose",
       "tier": "moderate"
     },
     {
+      "conflict_modes": [
+        "notes"
+      ],
       "layout": "prose",
-      "pages": 1,
+      "pages": 2,
       "scanned": false,
       "sheet_id": "S012",
+      "template": "prose",
       "tier": "moderate"
     },
     {
+      "conflict_modes": [],
       "layout": "prose",
       "pages": 1,
       "scanned": false,
       "sheet_id": "S013",
+      "template": "prose",
       "tier": "moderate"
     },
     {
+      "conflict_modes": [],
       "layout": "mixed_units",
       "pages": 1,
       "scanned": false,
       "sheet_id": "S014",
+      "template": "matrix",
       "tier": "moderate"
     },
     {
+      "conflict_modes": [
+        "notes"
+      ],
       "layout": "mixed_units",
-      "pages": 1,
+      "pages": 2,
       "scanned": false,
       "sheet_id": "S015",
+      "template": "bom",
       "tier": "moderate"
     },
     {
+      "conflict_modes": [
+        "footnote"
+      ],
       "layout": "mixed_units",
       "pages": 1,
       "scanned": false,
       "sheet_id": "S016",
+      "template": "two_column",
       "tier": "moderate"
     },
     {
+      "conflict_modes": [
+        "notes"
+      ],
       "layout": "multi_component",
-      "pages": 1,
+      "pages": 2,
       "scanned": false,
       "sheet_id": "S017",
+      "template": "matrix",
       "tier": "moderate"
     },
     {
+      "conflict_modes": [
+        "notes"
+      ],
       "layout": "multi_component",
-      "pages": 1,
+      "pages": 2,
       "scanned": false,
       "sheet_id": "S018",
+      "template": "two_column",
       "tier": "moderate"
     },
     {
+      "conflict_modes": [
+        "notes"
+      ],
       "layout": "missing_fields",
-      "pages": 1,
+      "pages": 2,
       "scanned": false,
       "sheet_id": "S019",
+      "template": "table",
       "tier": "moderate"
     },
     {
+      "conflict_modes": [
+        "notes"
+      ],
       "layout": "missing_fields",
-      "pages": 1,
+      "pages": 2,
       "scanned": false,
       "sheet_id": "S020",
+      "template": "bom",
       "tier": "moderate"
     },
     {
+      "conflict_modes": [
+        "notes"
+      ],
       "layout": "scanned",
+      "page_text": [
+        "Oakridge Converters | Packaging Specification | CONFIDENTIAL\nOakridge Converters\nPackaging Specification Sheet\nRef S021-7990   Issue 4   Product code B719\nwrap label (technical remarks)\nFor the wrap label we have standardised on uncoated paper. Weighed samples averaged\n0.035 oz. Finish colour: to be confirmed. Artwork proofs must be signed off before\ntooling is released. Lead time is quoted at five weeks from order confirmation.\nProduction is on line 3 at the Telford plant, two shifts. Pallet weight is 512 kg.\nCase count is 48 per case. Customer sign-off covered the following: adhesive:\nwater-based.\nsachet (technical remarks)\nColour was matched to the approved sample: natural. Production is on line 3 at the\nTelford plant, two shifts. Weighed samples averaged 5.5 g. Batch records are held for\nseven years and available on request. Construction: to be confirmed. As per trial,\npaper label (washes off) is used. As per trial, aqueous varnish is used. Pallet weight\nis 463 kg. Tolerance is +/- 0.3 g. Following the March trial run this item was\napproved by the customer.\nouter carton (technical remarks)\nMinimum order quantity applies; see the price list for break points. Tolerance is +/-\n0.2 g. Supply for this item is corrugated board from the Telford plant. Following the\nMarch trial run this item was approved by the customer. Lead time is quoted at five\nweeks from order confirmation. Gross wt per case is 8.1 kg. The customer specified\nwhite. Please note water-based overprint varnish on this item. Unit mass is 0.1349 kg\n(see also pallet data).\nPage 1 of 2   Form PS-211 rev C",
+        "Oakridge Converters | Packaging Specification | CONFIDENTIAL\nPacking and handling notes\nPacking note: sachet net weight 8.7 g per unit.\nPallet pattern and carton quantities per customer order.\nPage 2 of 2   Form PS-211 rev C"
+      ],
       "pages": 2,
       "scanned": true,
       "sheet_id": "S021",
+      "template": "prose_buried",
       "tier": "messy"
     },
     {
+      "conflict_modes": [
+        "notes"
+      ],
       "layout": "scanned",
-      "pages": 1,
+      "page_text": [
+        "Hartley Print and Pack | Packaging Specification | CONFIDENTIAL\nHartley Print and Pack\nPackaging Specification Sheet\nRef S022-2018   Issue 2   Product code F617\nComponent summary\nComponent | Construction | Tint | Nett wt\npouch | PE/PET laminate | blu | 0.0068 kg\nfood tray | recycled PET | TBC | 0.716 oz\nwrap label | wet-strength paper | n/a | 1200 mg\nAdditional specification notes\npouch - labelling: TBC\npouch - gross wt per case: 7.1 kg\npouch - decoration: aqueous varnish\npouch - oxygen barrier: to be confirmed\npouch - case count: 48 per case\nfood tray - tolerance: +/- 0.3 g\nfood tray - labelling: to be confirmed\nfood tray - oxygen barrier: none stated\nfood tray - print: TBC\nfood tray - case count: 48 per case\nwrap label - bonding: PSA (pressure sensitive)\nwrap label - tolerance: +/- 0.5 g\nwrap label - pallet weight: 448 kg\nPage 1 of 2   Form PS-315 rev B",
+        "Hartley Print and Pack | Packaging Specification | CONFIDENTIAL\nPacking and handling notes\nPacking note: wrap label net weight 0.0032 kg per unit.\nPallet pattern and carton quantities per customer order.\nPage 2 of 2   Form PS-315 rev B"
+      ],
+      "pages": 2,
       "scanned": true,
       "sheet_id": "S022",
+      "template": "matrix",
       "tier": "messy"
     },
     {
+      "conflict_modes": [
+        "footnote"
+      ],
       "layout": "scanned",
+      "page_text": [
+        "Hartley Print and Pack | Packaging Specification | CONFIDENTIAL\nHartley Print and Pack\nPackaging Specification Sheet\nRef S023-5536   Issue 1   Product code B510\nComponent: sleeve\nProperty | Specification\nWall thickness | 0.49 mm\nColour | black (carbon black)\nMass | 0.0025 kg (1)\nResin | PET-G\nGross wt per case | 11.4 kg\nInk / coating | undecorated, uncoated\nComponent: tray\nProperty | Specification\nConstruction | n/a\nPallet weight | 514 kg\nPrint | UV ink print\nGross weight (filled) | 321 g\nUnit weight | 21800 mg\nShade | uncoloured\nBarrier layer | to be confirmed\nGross wt per case | 7.9 kg\nLabelling | paper label (permanent glue)\nComponent: screw cap\nProperty | Specification\nPallet weight | 435 kg\nDecoration | plain, no print or coating\nMass | to be confirmed\nConstruction | polypropylene\nShade | clr\nTolerance | +/- 0.3 g\nCap torque | 2.3 Nm\n(1) sleeve: unit weight on retest 0.0056 kg.\nPage 1 of 2   Form PS-455 rev C",
+        "Hartley Print and Pack | Packaging Specification | CONFIDENTIAL\nPage 2 of 2   Form PS-455 rev C"
+      ],
       "pages": 2,
       "scanned": true,
       "sheet_id": "S023",
+      "template": "table",
       "tier": "messy"
     },
     {
+      "conflict_modes": [
+        "footnote"
+      ],
       "layout": "scanned",
+      "page_text": [
+        "Hartley Print and Pack | Packaging Specification | CONFIDENTIAL\nHartley Print and Pack\nPackaging Specification Sheet\nRef S024-6847   Issue 1   Product code C525\nBill of materials\nNo. | Item | Resin / Tint | Weight\n1 | cap | PP copolymer, TBC | 0.0021 kg\n2 | tin can | tinplate, natural | TBC\n3 | pouch | PE/PET lam., black, carbon black | 4.3 g (1)\nDecoration, fittings and logistics\nItem 1 (cap) - Wall thickness: 0.32 mm\nItem 1 (cap) - Pallet weight: 523 kg\nItem 1 (cap) - Gross wt per case: 10.1 kg\nItem 2 (tin can) - Tolerance: +/- 0.3 g\nItem 2 (tin can) - Case count: 12 per case\nItem 2 (tin can) - Print: plain, no print or coating\nItem 2 (tin can) - Labelling: polypropylene film label\nItem 3 (pouch) - Wall thickness: 0.64 mm\nItem 3 (pouch) - Gross weight (filled): 79 g\nItem 3 (pouch) - Ink / coating: UV ink print\nItem 3 (pouch) - Gross wt per case: 11.4 kg\nItem 3 (pouch) - Labelling: paper label (permanent glue)\n(1) pouch: unit weight on retest 6.9 g.\nPage 1 of 1   Form PS-259 rev A"
+      ],
       "pages": 1,
       "scanned": true,
       "sheet_id": "S024",
+      "template": "bom",
       "tier": "messy"
     },
     {
+      "conflict_modes": [
+        "footnote"
+      ],
       "layout": "scanned",
-      "pages": 2,
+      "page_text": [
+        "Brightwell Containers | Packaging Specification | CONFIDENTIAL\nBrightwell Containers\nPackaging Specification Sheet\nRef S025-4751   Issue 4   Product code D482\nsachet   cap\nWall thickness: 0.46 mm   Material: PP\nNet mass: 5500 mg (1)   Finish colour: transparent\nPrint: ultraviolet-cured print   Liner: aluminium foil inner seal\nShade: amber   Mass: 0.008 kg\nLabel: wash-off paper label   Cap torque: 1.4 Nm\nPolymer: PE/PET lam.   Gross weight (filled): 117 g\nPallet weight: 401 kg\nBarrier layer: to be confirmed\nbottle body\nClosure: HDPE cap fitted with PE liner\nGross wt per case: 7.6 kg\nWall thickness: 0.57 mm\nConstruction: TBC\nNet mass: 1.400 oz\nSleeving: to be confirmed\n(1) sachet: unit weight on retest 0.0077 kg.\nPage 1 of 1   Form PS-650 rev D"
+      ],
+      "pages": 1,
       "scanned": true,
       "sheet_id": "S025",
+      "template": "two_column",
       "tier": "messy"
     },
     {
+      "conflict_modes": [
+        "notes",
+        "notes"
+      ],
       "layout": "contradictory",
       "pages": 2,
       "scanned": false,
       "sheet_id": "S026",
+      "template": "table",
       "tier": "messy"
     },
     {
+      "conflict_modes": [
+        "notes",
+        "notes"
+      ],
       "layout": "contradictory",
       "pages": 2,
       "scanned": false,
       "sheet_id": "S027",
+      "template": "prose_buried",
       "tier": "messy"
     },
     {
+      "conflict_modes": [
+        "notes",
+        "notes"
+      ],
       "layout": "contradictory",
       "pages": 2,
       "scanned": false,
       "sheet_id": "S028",
+      "template": "two_column",
       "tier": "messy"
     },
     {
+      "conflict_modes": [
+        "footnote",
+        "footnote"
+      ],
       "layout": "contradictory",
-      "pages": 2,
+      "pages": 1,
       "scanned": false,
       "sheet_id": "S029",
+      "template": "bom",
       "tier": "messy"
     },
     {
+      "conflict_modes": [
+        "footnote",
+        "footnote"
+      ],
       "layout": "contradictory",
-      "pages": 2,
+      "pages": 1,
       "scanned": false,
       "sheet_id": "S030",
+      "template": "matrix",
       "tier": "messy"
     }
   ],
   "tuning": [
     {
+      "conflict_modes": [],
       "layout": "table",
       "pages": 1,
       "scanned": false,
       "sheet_id": "S901",
+      "template": "table",
       "tier": "clean"
     },
     {
-      "layout": "table",
+      "conflict_modes": [],
+      "layout": "multi_component",
       "pages": 1,
       "scanned": false,
       "sheet_id": "S902",
-      "tier": "clean"
-    },
-    {
-      "layout": "prose",
-      "pages": 1,
-      "scanned": false,
-      "sheet_id": "S903",
+      "template": "matrix",
       "tier": "moderate"
     },
     {
+      "conflict_modes": [],
       "layout": "mixed_units",
       "pages": 1,
       "scanned": false,
-      "sheet_id": "S904",
+      "sheet_id": "S903",
+      "template": "two_column",
       "tier": "moderate"
     },
     {
+      "conflict_modes": [
+        "footnote"
+      ],
       "layout": "scanned",
+      "page_text": [
+        "Tamar Closures | Packaging Specification | CONFIDENTIAL\nTamar Closures\nPackaging Specification Sheet\nRef S904-1817   Issue 1   Product code A806\nBill of materials\nNo. | Item | Material / Shade | Weight\n1 | can | tinplate steel, uncoloured | 0.0265 kg (1)\n2 | front label | flint green | 1.6 g\n3 | sachet | PET/PE laminate, carbon black pigmented | 10700 mg\nDecoration, fittings and logistics\nItem 1 (can) - Tolerance: +/- 0.3 g\nItem 1 (can) - Print: print in solvent-based inks\nItem 1 (can) - Pallet weight: 515 kg\nItem 1 (can) - Decoration label: polypropylene film label\nItem 1 (can) - Barrier: barrier layer: none\nItem 2 (front label) - Pallet weight: 540 kg\nItem 2 (front label) - Gross wt per case: 6.4 kg\nItem 3 (sachet) - Ink / coating: solvent ink print\nItem 3 (sachet) - Gross wt per case: 5.7 kg\nItem 3 (sachet) - Gross weight (filled): 129 g\nItem 3 (sachet) - Case count: 24 per case\nItem 3 (sachet) - Labelling: none stated\n(1) can: unit weight on retest 0.0293 kg.\nPage 1 of 1   Form PS-856 rev A"
+      ],
       "pages": 1,
       "scanned": true,
+      "sheet_id": "S904",
+      "template": "bom",
+      "tier": "messy"
+    },
+    {
+      "conflict_modes": [
+        "footnote",
+        "notes"
+      ],
+      "layout": "contradictory",
+      "pages": 2,
+      "scanned": false,
       "sheet_id": "S905",
+      "template": "table",
       "tier": "messy"
     }
   ],

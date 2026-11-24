@@ -2,25 +2,29 @@
   "components": [
     {
       "colour": {
+        "accepted_values": [
+          "nat.",
+          "uncoloured"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "black"
+            "quote": "natural"
           }
         ],
         "status": "present",
-        "value": "black"
+        "value": "natural"
       },
       "features": {
-        "adhesive": {
+        "barrier_layer": {
           "refs": [
             {
               "page": 1,
-              "quote": "water-based adhesive"
+              "quote": "EVOH barrier in wall"
             }
           ],
           "status": "present",
-          "value": "water-based adhesive"
+          "value": "EVOH barrier layer"
         },
         "ink_coating": {
           "status": "missing"
@@ -29,96 +33,93 @@
           "refs": [
             {
               "page": 1,
-              "quote": "full wrap PP label"
+              "quote": "paper label, caustic wash-off"
             }
           ],
           "status": "present",
-          "value": "full wrap PP label"
+          "value": "paper label, wash-off"
         }
       },
       "material": {
         "status": "missing"
       },
-      "name": "cap",
+      "name": "can",
       "ram_category": "missing",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "0.0056 kg"
+            "quote": "0.0273 kg"
           }
         ],
         "status": "present",
-        "value": 5.6
+        "value": 27.3
       }
     },
     {
       "colour": {
+        "accepted_values": [
+          "wht"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "black"
+            "quote": "wht"
           }
         ],
         "status": "present",
-        "value": "black"
+        "value": "white"
       },
       "features": {
         "adhesive": {
           "refs": [
             {
               "page": 1,
-              "quote": "hot-melt adhesive"
+              "quote": "pressure-sensitive glue"
             }
           ],
           "status": "present",
-          "value": "hot-melt adhesive"
+          "value": "pressure-sensitive adhesive"
         },
         "barrier_layer": {
           "refs": [
             {
               "page": 1,
-              "quote": "EVOH barrier layer"
+              "quote": "barrier: EVOH core layer"
             }
           ],
           "status": "present",
           "value": "EVOH barrier layer"
         },
-        "closure": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "HDPE cap with PE liner"
-            }
-          ],
-          "status": "present",
-          "value": "HDPE cap with PE liner"
-        },
-        "label": {
+        "ink_coating": {
           "status": "missing"
         }
       },
       "material": {
+        "accepted_values": [
+          "kraft liner",
+          "kraft"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "PVC"
+            "quote": "kraft"
           }
         ],
         "status": "present",
-        "value": "PVC"
+        "value": "kraft paper"
       },
-      "name": "sleeve",
-      "ram_category": "plastic",
+      "name": "outer carton",
+      "ram_category": "paper_board",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "2.6 g"
+            "quote": "86.3 g"
           }
         ],
         "status": "present",
-        "value": 2.6
+        "value": 86.3
       }
     }
   ],
@@ -126,5 +127,6 @@
   "seed": 20261124,
   "sheet_id": "S011",
   "source": "synthetic",
+  "template": "prose",
   "tier": "moderate"
 }

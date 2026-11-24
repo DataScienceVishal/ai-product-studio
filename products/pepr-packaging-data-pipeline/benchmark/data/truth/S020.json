@@ -2,102 +2,173 @@
   "components": [
     {
       "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "white"
-          }
-        ],
-        "status": "present",
-        "value": "white"
-      },
-      "features": {
-        "closure": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PP cap, no liner"
-            }
-          ],
-          "status": "present",
-          "value": "PP cap, no liner"
-        },
-        "ink_coating": {
-          "status": "missing"
-        },
-        "sleeve": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PETG shrink sleeve"
-            }
-          ],
-          "status": "present",
-          "value": "PETG shrink sleeve"
-        }
-      },
-      "material": {
         "status": "missing"
-      },
-      "name": "pouch",
-      "ram_category": "missing",
-      "weight_g": {
-        "status": "missing"
-      }
-    },
-    {
-      "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "blue"
-          }
-        ],
-        "status": "present",
-        "value": "blue"
       },
       "features": {
         "barrier_layer": {
           "refs": [
             {
               "page": 1,
-              "quote": "EVOH barrier layer"
+              "quote": "barrier layer: none"
             }
           ],
           "status": "present",
-          "value": "EVOH barrier layer"
+          "value": "no barrier layer"
         },
-        "label": {
-          "status": "missing"
-        },
-        "sleeve": {
+        "ink_coating": {
           "refs": [
             {
               "page": 1,
-              "quote": "PVC shrink sleeve"
+              "quote": "ultraviolet-cured print"
             }
           ],
           "status": "present",
-          "value": "PVC shrink sleeve"
+          "value": "UV-cured ink"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "paper label (permanent glue)"
+            }
+          ],
+          "status": "present",
+          "value": "paper label, permanent"
         }
       },
       "material": {
         "accepted_values": [
-          "polypropylene"
+          "recycled PET",
+          "r-PET"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "PP film"
+            "quote": "rPET"
           }
         ],
         "status": "present",
-        "value": "PP"
+        "value": "rPET"
       },
-      "name": "label",
+      "name": "tray",
       "ram_category": "plastic",
       "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "9.5 g"
+          }
+        ],
+        "status": "present",
+        "value": 9.5
+      }
+    },
+    {
+      "colour": {
         "status": "missing"
+      },
+      "features": {
+        "ink_coating": {
+          "status": "missing"
+        },
+        "liner": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "unlined"
+            }
+          ],
+          "status": "present",
+          "value": "no liner"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "high-density polyethylene",
+          "PE-HD"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "high-density polyethylene"
+          }
+        ],
+        "status": "present",
+        "value": "HDPE"
+      },
+      "name": "cap",
+      "ram_category": "plastic",
+      "weight_g": {
+        "conflict_values": [
+          5.0,
+          7.7
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "0.176 oz"
+          },
+          {
+            "page": 2,
+            "quote": "7.7 g"
+          }
+        ],
+        "status": "conflict"
+      }
+    },
+    {
+      "colour": {
+        "status": "missing"
+      },
+      "features": {
+        "barrier_layer": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "aqueous varnish"
+            }
+          ],
+          "status": "present",
+          "value": "water-based varnish"
+        },
+        "label": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "paper label (washes off)"
+            }
+          ],
+          "status": "present",
+          "value": "paper label, wash-off"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "tinplate"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "steel"
+          }
+        ],
+        "status": "present",
+        "value": "steel"
+      },
+      "name": "can",
+      "ram_category": "steel",
+      "weight_g": {
+        "refs": [
+          {
+            "page": 1,
+            "quote": "33.6 g"
+          }
+        ],
+        "status": "present",
+        "value": 33.6
       }
     }
   ],
@@ -105,5 +176,6 @@
   "seed": 20261124,
   "sheet_id": "S020",
   "source": "synthetic",
+  "template": "bom",
   "tier": "moderate"
 }

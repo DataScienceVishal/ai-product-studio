@@ -2,61 +2,68 @@
   "components": [
     {
       "colour": {
+        "accepted_values": [
+          "amb"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "natural"
+            "quote": "amber"
           }
         ],
         "status": "present",
-        "value": "natural"
+        "value": "amber"
       },
       "features": {
-        "ink_coating": {
+        "barrier_layer": {
           "refs": [
             {
               "page": 1,
-              "quote": "UV-cured ink"
+              "quote": "EVOH barrier layer"
             }
           ],
           "status": "present",
-          "value": "UV-cured ink"
+          "value": "EVOH barrier layer"
         },
-        "sleeve": {
+        "ink_coating": {
+          "status": "missing"
+        },
+        "label": {
           "refs": [
             {
               "page": 1,
-              "quote": "PETG shrink sleeve"
+              "quote": "paper label, wash-off"
             }
           ],
           "status": "present",
-          "value": "PETG shrink sleeve"
+          "value": "paper label, wash-off"
         }
       },
       "material": {
         "accepted_values": [
-          "recycled PET"
+          "PET/PE laminate",
+          "PE/PET lam."
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "rPET"
+            "quote": "PE/PET laminate"
           }
         ],
         "status": "present",
-        "value": "rPET"
+        "value": "PE/PET laminate"
       },
-      "name": "tray",
+      "name": "pouch",
       "ram_category": "plastic",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "8.8 g"
+            "quote": "9.6 g"
           }
         ],
         "status": "present",
-        "value": 8.8
+        "value": 9.6
       }
     }
   ],
@@ -64,5 +71,6 @@
   "seed": 20261125,
   "sheet_id": "S901",
   "source": "synthetic",
+  "template": "table",
   "tier": "clean"
 }

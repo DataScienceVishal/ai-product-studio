@@ -2,126 +2,102 @@
   "components": [
     {
       "colour": {
+        "accepted_values": [
+          "amb"
+        ],
         "refs": [
           {
             "page": 1,
-            "quote": "amber"
+            "quote": "amb"
           }
         ],
         "status": "present",
         "value": "amber"
       },
       "features": {
-        "barrier_layer": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "EVOH barrier layer"
-            }
-          ],
-          "status": "present",
-          "value": "EVOH barrier layer"
-        },
-        "ink_coating": {
+        "adhesive": {
           "status": "missing"
         },
-        "sleeve": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "PETG shrink sleeve"
-            }
-          ],
-          "status": "present",
-          "value": "PETG shrink sleeve"
-        }
-      },
-      "material": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "corrugated board"
-          }
-        ],
-        "status": "present",
-        "value": "corrugated board"
-      },
-      "name": "outer carton",
-      "ram_category": "paper_board",
-      "weight_g": {
-        "status": "missing"
-      }
-    },
-    {
-      "colour": {
-        "refs": [
-          {
-            "page": 1,
-            "quote": "natural"
-          }
-        ],
-        "status": "present",
-        "value": "natural"
-      },
-      "features": {
-        "adhesive": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "hot-melt adhesive"
-            }
-          ],
-          "status": "present",
-          "value": "hot-melt adhesive"
-        },
-        "barrier_layer": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "no barrier layer"
-            }
-          ],
-          "status": "present",
-          "value": "no barrier layer"
-        },
         "ink_coating": {
-          "refs": [
-            {
-              "page": 1,
-              "quote": "UV-cured ink"
-            }
-          ],
-          "status": "present",
-          "value": "UV-cured ink"
-        },
-        "sleeve": {
           "status": "missing"
         }
       },
       "material": {
         "accepted_values": [
-          "aluminum"
+          "polypropylene film"
         ],
         "refs": [
           {
             "page": 1,
-            "quote": "aluminium"
+            "quote": "BOPP"
           }
         ],
         "status": "present",
-        "value": "aluminium"
+        "value": "PP"
       },
-      "name": "can",
-      "ram_category": "aluminium",
+      "name": "label",
+      "ram_category": "plastic",
       "weight_g": {
         "refs": [
           {
             "page": 1,
-            "quote": "0.0235 kg"
+            "quote": "0.0023 kg"
           }
         ],
         "status": "present",
-        "value": 23.5
+        "value": 2.3
+      }
+    },
+    {
+      "colour": {
+        "status": "missing"
+      },
+      "features": {
+        "adhesive": {
+          "status": "missing"
+        },
+        "ink_coating": {
+          "refs": [
+            {
+              "page": 1,
+              "quote": "no print, no coating"
+            }
+          ],
+          "status": "present",
+          "value": "no ink or coating"
+        }
+      },
+      "material": {
+        "accepted_values": [
+          "polyvinyl chloride"
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "rigid PVC film"
+          }
+        ],
+        "status": "present",
+        "value": "PVC"
+      },
+      "name": "sleeve",
+      "ram_category": "plastic",
+      "weight_g": {
+        "conflict_values": [
+          2.0,
+          4.6
+        ],
+        "refs": [
+          {
+            "page": 1,
+            "quote": "2 g"
+          },
+          {
+            "page": 2,
+            "quote": "0.0046 kg"
+          }
+        ],
+        "status": "conflict"
       }
     }
   ],
@@ -129,5 +105,6 @@
   "seed": 20261124,
   "sheet_id": "S012",
   "source": "synthetic",
+  "template": "prose",
   "tier": "moderate"
 }
