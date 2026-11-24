@@ -13,3 +13,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - Spend parser fix and follow-ups merged (T-58, T-59). The starter README's pro-model cap example now uses $180/1M output (about 1,130 tokens a day for $6.10).
 
 - run 45ef (T-15 starter): the early-customer offer (EARLY50) is now applied automatically by Stripe at checkout, not re-typed by the customer. Reviewed PASS, merged, 484 backend + 114 frontend tests green. Test mode only; nothing run against real Stripe.
+- [studio] All Azure setup from you is in: new deploy sign-in (main only), France Central as the region, and a cheap AI model for the packaging test. The next run can use it.
