@@ -1,7 +1,7 @@
 # Quote price guidance for small B2B distributors and job shops
 
 - slug: sme-quote-price-guidance
-- stage: G0
+- stage: killed (T-49 validator, 2026-11-24, score 50, data red flag; the Studio Lead should git mv this file to killed/)
 - market and segment: UK trade distributors, merchants and make-to-order manufacturers with 10 to 250 staff that quote customers by hand or from ERP price lists (Sage, Xero-based, Epicor, Acumatica, simple ERPs).
 - one-line pitch: Reads the firm's own quote and invoice history, learns win probability and margin by customer, product and quote size (a bandit or RL style price policy), and suggests a price band and discount limit on each new quote, with the reason shown.
 
@@ -59,7 +59,40 @@ The recommendation comes from a model of win probability against price by segmen
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
-|  |  |  |  |  |  |  |  |
+| 8 | 7 | 9 | 6 | 7 | 4 | 9 | 50 |
+
+## Validator, round 12 (T-49, 2026-11-24)
+
+**Verdict: KILL (50/100, first attempt, red flag: the core value can't be shown without real customer data the studio can't get). Ceiling about 60.**
+
+| Line | Score | Why |
+|---|---|---|
+| Pain /20 | 8 | Margin leakage from discounting is a real theme, but every source is vendor-authored (Vistaar, Revology, Conga, ManufacturingTomorrow). The only semi-independent data is a Phocas survey (2026, 100+ distributors). It shows 34% don't measure new-business win rates, which is a measurement gap, not a cost or a complaint. There is no UK merchant source and no job ads for a pricing analyst at SME scale. |
+| Pay /20 | 7 | The only prices found are mid-market and enterprise: PriceEdge €1,490 a month (G2), BlackCurve from €599 a month (aggregator, unverified, retail-focused) and Pricefx at $100k+ a year (vendor-stated). Cavallo, Phocas and Revology are all quote or demo only. No SME price for the job was found, and no modelled salary was accepted. |
+| AI /15 | 9 | Win-probability modelling on sparse data is real ML and fits Vishal's edge. But the scout admits that a gradient-boosted model plus a margin floor may match RL, and margin-floor alerts capture most of the leakage value without any model. |
+| Reach /10 | 6 | Trade bodies (Builders Merchants Federation, Electrical Distributors' Association, NMBS) are findable. But the buyer is the owner or sales director, the sale needs ERP data access, and a two-person business would struggle with onboarding. |
+| Build /15 | 7 | The web app and model are easy. The proof is not. Synthetic data with a known elasticity structure only recovers the structure the studio put in (circular), and there is no public B2B quote-outcome dataset. Lost quotes are often not recorded: 34% and 32% of distributors don't measure win rates (Phocas), and verbal quotes aren't captured in the system (MDM). Without loss data there is no win-probability model, only a margin-history report. |
+| Competition /10 | 4 | ERP-native pricing exists: Sage 200 Price Book (price bands, limited prices, discount groups, price checks with exception reports). Phocas sells margin floors with automated alerts and live margin for reps before a negotiation. Cavallo Profit Scan is free on Business Central and flags low-margin orders, and Profit Max adds AI. PriceEdge, Revology and Pricefx sit above. No one sells self-serve quote win-probability to SMEs, but the leakage half is served or free. |
+| Risk /10 | 9 | Business data only, with human sign-off. A small risk of lost accounts if the advice is followed blindly. |
+
+**Why killed.** The idea's value is "our recommended price beats your own policy". That can only be shown on a firm's real won-and-lost quote history. The studio can't get one before selling is unlocked, and the evidence suggests many small distributors don't record lost quotes at all, so the input often doesn't exist. Without win-loss data the product falls back to margin-leakage reporting. That half is already covered by ERP price books (Sage 200), Phocas margin-floor alerts and Cavallo's free Profit Scan, so the down-market gap is narrow and unpriced. The Pain evidence is vendor-authored and there is no SME price, so Pay and Pain are both weak even before the data problem.
+
+**Lessons.** For any "learns from your history" product, confirm first that SMEs actually hold the label the model needs (here, lost quotes), using an independent survey. A synthetic dataset can show the pipeline works but cannot prove uplift. Check the free ERP-marketplace tier (Cavallo Profit Scan on AppSource) before calling a job enterprise-only.
+
+**What would revive it.** A licensed or public B2B quote dataset with won and lost outcomes. Or a quoting system that records losses by design, such as a job-shop CPQ like Paperless Parts or a merchant trade-counter system that exposes quote status, as the channel. Plus an independent UK source on discount leakage in merchants or wholesalers. Then re-score as an add-on to that system.
+
+Evidence, all accessed 2026-11-24:
+- https://www.phocassoftware.com/industries/wholesale-distribution/pricing-strategy (fetched: margin floors with automated alerts, live margin for reps; demo only; no price recommendations or win rate).
+- https://www.marketscale.com/industries/software-and-technology/phocas-finds-39-of-distributors-dont-measure-sales-forecast-accuracy (search summary: 34% don't measure new-business win rates, 32% don't measure existing-account win rates).
+- https://www.mdm.com/?p=9635 (search summary: lost follow-up, verbal quotes not captured, systems can't track project quotes).
+- https://desktophelp.sage.co.uk/sage200/professional/Content/PB/Manage_Pricing.htm and https://desktophelp.sage.co.uk/sage200/professional/Content/PB/Prepare_pricing_reports.htm (search summaries: Sage 200 price bands, limited prices, discounts, price checks and exception reports; no win-rate or recommendation feature).
+- https://www.cavallo.com/profit-scan/ and https://appsource.microsoft.com/en-us/product/dynamics-365-business-central/PUBID.salespadllcdbacavallosolutions1644863490847%7CAID.cavallo_profit_scan%7CPAPPID.3ef0e9b2-aa85-4f7d-a902-e99d78c2d049 (search summaries: free Profit Scan flags low-margin orders; Business Central only).
+- https://www.g2.com/products/cavallo/pricing (search summary: Profit Max custom quote by seats, volume and modules).
+- https://www.softwareadvice.com/pricing-optimization/black-curve-profile/ (search summary: BlackCurve from €599 a month, retail integrations; unverified).
+- https://www.g2.com/compare/priceedge-vs-pricefx (scout: PriceEdge €1,490 a month).
+- Unleashed and Cin7: Capterra lists Unleashed at $399 a month and Cin7 Core from $349 a month (https://www.capterra.com/compare/126644-133038/Unleashed-vs-Cin7-Core, search summary). No quote price-recommendation feature was found for either, so this is unconfirmed rather than ruled out.
+- Revology: consultancy-led, no SME price (https://revologyanalytics.com/industrials-overview/wholesale-and-distribution/, search summary via a mirror).
 
 ## Gate log
 - 2026-11-24 T-49 scout round 12: written at G0. Scores left for the validator. Evidence base is thinner than the origin idea; treat the Competition pass as unconfirmed.
+- 2026-11-24 T-49 validator: KILL, 50/100 (Pain 8, Pay 7, AI 9, Reach 6, Build 7, Competition 4, Risk 9), with the data red flag: uplift can't be shown without real won and lost quote histories, which many SMEs don't record. The leakage half is served by Sage 200 Price Book, Phocas margin floors and the free Cavallo Profit Scan. Ceiling about 60.
