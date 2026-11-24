@@ -2,6 +2,10 @@
 // `az bicep build-params` compile the file anywhere. A product copying the starter changes appName.
 using './main.bicep'
 
+// Azure for Students allows new resources only in francecentral, swedencentral, spaincentral, polandcentral and
+// italynorth (ADR 0002, Region). rg-ai-studio is in uksouth, so never rely on resourceGroup().location.
+param location = 'francecentral'
+
 param appName = 'starter'
 
 param image = readEnvironmentVariable('IMAGE', 'acrstudioznp96r.azurecr.io/starter:not-set')
