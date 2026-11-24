@@ -1,13 +1,15 @@
 """Billing: API behaviour plus a contract every provider (mock and Stripe test mode) must meet."""
 import json
 import time
+from urllib.parse import parse_qs
 import uuid
 from datetime import datetime, timedelta, timezone
 
 import httpx
 import pytest
 
-from app.billing import (OFFERS, PLANS, InvalidSignature, MockBilling, StripeBilling, has_access, sign,
+from app.errors import AppError
+from app.billing import (OFFERS, Offer, PLANS, InvalidSignature, MockBilling, StripeBilling, has_access, sign,
                          verify)
 
 SECRET = "whsec_test_contract"
@@ -72,6 +74,8 @@ def test_webhook_needs_no_csrf_header_but_other_writes_do(new_client, app):
 
 def stripe_provider() -> StripeBilling:
     def handler(request: httpx.Request):
+        if request.url.path == "/v1/coupons":  # the offer's coupon is ensured before the session
+            return httpx.Response(200, json={"id": "studio-coupon"})
         assert request.url.path == "/v1/checkout/sessions"
         form = dict(x.split("=", 1) for x in request.content.decode().split("&"))
         assert form["mode"] == "subscription" and "client_reference_id" in form
@@ -168,3 +172,106 @@ def test_oversized_webhook_is_refused_without_reading_it_all(new_client):
 
     streamed = client.post("/api/billing/webhook", content=chunks(), headers={"x-billing-signature": "t=1,v1=0"})
     assert streamed.status_code == 413
+
+
+# --- Early-customer offer as a server-side Stripe coupon -------------------------------------------
+
+def coupon_stripe(coupon_reply=None):
+    """A StripeBilling on a recording MockTransport. coupon_reply(request) answers POST/GET /v1/coupons."""
+    calls = []
+
+    def handler(request: httpx.Request):
+        form = {k: v[0] for k, v in parse_qs(request.content.decode(), keep_blank_values=True).items()}
+        calls.append((request.method, request.url.path, form, request.headers.get("idempotency-key")))
+        if request.url.path.startswith("/v1/coupons"):
+            return coupon_reply(request) if coupon_reply else httpx.Response(200, json={"id": form.get("id")})
+        return httpx.Response(200, json={"id": "cs_test_1", "url": "https://checkout.stripe.com/c/cs_test_1"})
+
+    return StripeBilling("sk_test_x", SECRET, client=httpx.Client(transport=httpx.MockTransport(handler))), calls
+
+
+def checkout_form(calls):
+    return next(c[2] for c in calls if c[1] == "/v1/checkout/sessions")
+
+
+def test_checkout_with_offer_applies_the_coupon_server_side():
+    stripe, calls = coupon_stripe()
+    stripe.create_checkout(uuid.uuid4(), PLANS["starter"], OFFERS["EARLY50"], "https://a/ok", "https://a/no")
+    form = checkout_form(calls)
+    assert form["discounts[0][coupon]"] == OFFERS["EARLY50"].coupon_id
+    assert "allow_promotion_codes" not in form  # Stripe rejects both together
+    assert form["metadata[offer]"] == "EARLY50"
+    assert calls[0][:2] == ("POST", "/v1/coupons")  # the coupon exists before the session refers to it
+    assert calls[0][2] == {"id": OFFERS["EARLY50"].coupon_id, "percent_off": "50", "duration": "repeating",
+                           "duration_in_months": "3", "name": "EARLY50 50% off for 3 months"}
+    assert calls[0][3] == f"coupon-{OFFERS['EARLY50'].coupon_id}"  # Idempotency-Key
+
+
+def test_checkout_without_offer_has_no_discount_and_no_promotion_codes():
+    stripe, calls = coupon_stripe()
+    stripe.create_checkout(uuid.uuid4(), PLANS["starter"], None, "https://a/ok", "https://a/no")
+    form = checkout_form(calls)
+    assert not any(k.startswith("discounts") for k in form) and "allow_promotion_codes" not in form
+    assert form["metadata[offer]"] == ""
+    assert [c[1] for c in calls] == ["/v1/checkout/sessions"]  # no coupon call
+
+
+def test_coupon_is_created_once_then_cached():
+    stripe, calls = coupon_stripe()
+    for _ in range(3):
+        stripe.create_checkout(uuid.uuid4(), PLANS["pro"], OFFERS["EARLY50"], "https://a/ok", "https://a/no")
+    assert [c[1] for c in calls].count("/v1/coupons") == 1
+
+
+def already_exists(terms):
+    def reply(request: httpx.Request):
+        if request.method == "POST":
+            return httpx.Response(400, json={"error": {"code": "resource_already_exists", "type": "invalid_request_error"}})
+        return httpx.Response(200, json=terms)
+    return reply
+
+
+def test_coupon_already_exists_is_accepted_when_it_matches():
+    same = {"id": OFFERS["EARLY50"].coupon_id, "percent_off": 50, "duration": "repeating", "duration_in_months": 3, "valid": True}
+    stripe, calls = coupon_stripe(already_exists(same))
+    stripe.create_checkout(uuid.uuid4(), PLANS["starter"], OFFERS["EARLY50"], "https://a/ok", "https://a/no")
+    assert checkout_form(calls)["discounts[0][coupon]"] == OFFERS["EARLY50"].coupon_id
+    assert ("GET", f"/v1/coupons/{OFFERS['EARLY50'].coupon_id}") == calls[1][:2]
+
+
+@pytest.mark.parametrize("change", [{"percent_off": 90}, {"duration_in_months": 12}, {"duration": "forever"}, {"valid": False}])
+def test_existing_coupon_with_other_terms_is_refused(change):
+    terms = {"percent_off": 50, "duration": "repeating", "duration_in_months": 3, "valid": True, **change}
+    stripe, calls = coupon_stripe(already_exists(terms))
+    with pytest.raises(AppError) as error:
+        stripe.create_checkout(uuid.uuid4(), PLANS["starter"], OFFERS["EARLY50"], "https://a/ok", "https://a/no")
+    assert error.value.code == "billing_rejected"
+    assert not any(c[1] == "/v1/checkout/sessions" for c in calls)
+
+
+@pytest.mark.parametrize("body", [{"error": {"code": "parameter_invalid_integer"}}, {"error": {"code": "resource_missing"}}, {}, None])
+def test_other_400s_on_the_coupon_are_billing_rejected(body):
+    stripe, calls = coupon_stripe(lambda r: httpx.Response(400, json=body) if body is not None else httpx.Response(400, text="no"))
+    with pytest.raises(AppError) as error:
+        stripe.create_checkout(uuid.uuid4(), PLANS["starter"], OFFERS["EARLY50"], "https://a/ok", "https://a/no")
+    assert error.value.code == "billing_rejected"
+    assert not any(c[1] == "/v1/checkout/sessions" for c in calls)
+
+
+def test_checkout_400_stays_billing_rejected_even_with_already_exists_code():
+    """Only the coupon call tolerates resource_already_exists; a checkout session 400 must still fail."""
+    def handler(request):
+        return httpx.Response(400, json={"error": {"code": "resource_already_exists"}})
+    stripe = StripeBilling("sk_test_x", SECRET, client=httpx.Client(transport=httpx.MockTransport(handler)))
+    with pytest.raises(AppError) as error:
+        stripe.create_checkout(uuid.uuid4(), PLANS["starter"], None, "https://a/ok", "https://a/no")
+    assert error.value.code == "billing_rejected"
+
+
+def test_coupon_id_changes_with_the_offer_terms():
+    base = Offer("EARLY50", 50, 3, "d")
+    ids = {base.coupon_id, Offer("EARLY50", 40, 3, "d").coupon_id, Offer("EARLY50", 50, 6, "d").coupon_id,
+           Offer("LAUNCH", 50, 3, "d").coupon_id}
+    assert len(ids) == 4
+    assert base.coupon_id == Offer("EARLY50", 50, 3, "other text").coupon_id  # wording does not matter
+    assert OFFERS["EARLY50"].coupon_id == "studio-early50-50pc-3m-v1"

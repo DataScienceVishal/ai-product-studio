@@ -1,3 +1,12 @@
+# T-15 coupon slice status (branch p/_starter/T-15-coupon)
+
+Done: the early-customer offer is a server-side Stripe coupon (`StripeBilling.ensure_coupon`, `Offer.coupon_id`);
+checkout sends `discounts[0][coupon]` and no longer sends `allow_promotion_codes` (decision recorded in billing.py and the
+README "Billing" section). Tests in tests/test_billing.py, each mutation-checked. Scanner nits: F2 (assertion message names the
+likely causes) and F1 (quote-ignoring entry count) in tests/test_spa.py.
+Not done: never run against real Stripe test keys; first live test-mode checkout should confirm Stripe accepts the coupon form.
+Review and merge are still to do.
+
 # T-18 Bicep slices 1 and 2 status (ADR 0003, branch p/_starter/T-18-bicep)
 
 Done: slice 1 (main.bicep: `id-<slug>-app` and `id-<slug>-migrate`, web + purge on pull + app identity, migrate job on

@@ -232,6 +232,8 @@ def test_stripe_checkout_sends_metadata_on_the_session_and_one_idempotency_key()
     seen = []
 
     def handler(request):
+        if request.url.path == "/v1/coupons":  # the offer's coupon is ensured first
+            return httpx.Response(200, json={"id": "c"})
         seen.append((dict(x.split("=", 1) for x in request.content.decode().split("&")), request.headers.get("idempotency-key")))
         return httpx.Response(200, json={"id": "cs_test_1", "url": "https://checkout.stripe.com/x"})
 

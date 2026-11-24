@@ -256,7 +256,9 @@ def _split_top_level(text: str) -> tuple[list[str], bool]:
     """Split on commas that are not inside brackets, braces, parentheses or strings.
 
     The flag is True if a ' or " string was closed by a newline instead of its own quote: that is always a misread
-    (an apostrophe in JSX text), and it may have hidden a comma, so the entries cannot be trusted."""
+    (an apostrophe in JSX text), and it may have hidden a comma, so the entries cannot be trusted. It is also True if
+    a second count, with quotes ignored altogether, finds a different number of entries: two apostrophes on one line
+    can pair up as a "string" and swallow a non-route entry without ever hitting a newline."""
     parts, depth, quote, start, i, misread = [], 0, "", 0, 0, False
     while i < len(text):
         c = text[i]
@@ -278,7 +280,23 @@ def _split_top_level(text: str) -> tuple[list[str], bool]:
             start = i + 1
         i += 1
     parts.append(text[start:])
-    return [p for p in parts if p.strip()], misread
+    entries = [p for p in parts if p.strip()]
+    return entries, misread or _count_ignoring_quotes(text) != len(entries)
+
+
+def _count_ignoring_quotes(text: str) -> int:
+    """Top-level entries counting only brackets and commas. Differs from the quote-aware count when a quote pairs up wrong."""
+    depth, commas, last_comma, i = 0, 0, -1, 0
+    for i, c in enumerate(text):
+        if c in "{[(":
+            depth += 1
+        elif c in "}])":
+            depth -= 1
+        elif c == "," and depth == 0:
+            if text[last_comma + 1:i].strip():
+                commas += 1
+            last_comma = i
+    return commas + (1 if text[last_comma + 1:].strip() else 0)
 
 
 def _object_literals(src: str) -> dict[str, tuple[list[str], str, bool]]:
@@ -552,7 +570,10 @@ def test_client_routes_match_the_frontend_router():
     src = app_tsx.read_text()  # missing file: fail, not skip
     found, other = scan_routes(src)
     found |= {"/"}
-    assert not other, f"App.tsx compares the path in a way this test cannot read ({other}); use path === '/route'"
+    assert not other, (f"App.tsx compares the path in a way this test cannot read ({other}). Use path === '/route', or look for "
+                       "the usual causes of a misread: an apostrophe in JSX text inside a PAGES object (write &apos; or move "
+                       "the text out), a // or /* comment marker mid-line in code or JSX text, or a ROUTES/PAGES object that "
+                       "is spread, computed, assigned to later or declared twice.")
     assert found == set(CLIENT_ROUTES)
 
 
@@ -566,3 +587,14 @@ def test_assets_without_an_assets_folder_is_404_not_a_redirect(settings, tmp_pat
     with TestClient(create_app(settings)) as client:
         r = getattr(client, method)(path, follow_redirects=False)
     assert r.status_code == 404 and "location" not in r.headers
+
+
+def test_one_line_pages_object_with_paired_apostrophes_is_unreadable():
+    """F1: two apostrophes on one line pair up as a string and hide a spread between them. Must not pass silently."""
+    src = '''const PAGES = { "/a": () => <p>Don't</p>, ...MORE, [X]: () => <p>It's</p>, "/c": C };
+    return PAGES[path];'''
+    found, other = scan_routes(src)
+    assert other and not found
+    # the same object without the apostrophes is read normally
+    ok = 'const PAGES = { "/a": A, "/c": C };\nreturn PAGES[path];'
+    assert scan_routes(ok) == ({"/a", "/c"}, [])
