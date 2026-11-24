@@ -21,7 +21,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE.parent))
 import taxonomy as tx  # noqa: E402
+from extractor import budget as _budget  # noqa: E402  (single source of the token price)
 
 DATA = HERE / "data"
 USD_PER_SHEET_MAX = 0.316  # GBP 0.25 at 0.79 GBP/USD, README "Run budget"
@@ -220,14 +222,16 @@ def summarise(c):
 
 
 def read_ledger_cost(ledger, sheet_ids):
-    """USD per sheet from the JSONL ledger (sum of that sheet's entries)."""
+    """USD per sheet from the JSONL ledger (sum of that sheet's entries), recomputed from each row's billed input and
+    output tokens at the current price in extractor/budget.py. The stored `usd` field is ignored: old rows were priced
+    at 15/120, the real gpt-5.4-pro price is 30/180 (T-58)."""
     per = {}
     if ledger and Path(ledger).exists():
         for line in Path(ledger).read_text().splitlines():
             if line.strip():
                 e = json.loads(line)
                 if e.get("sheet_id") in sheet_ids:
-                    per[e["sheet_id"]] = per.get(e["sheet_id"], 0.0) + float(e.get("usd", 0.0))
+                    per[e["sheet_id"]] = per.get(e["sheet_id"], 0.0) + _budget.entry_usd(e)
     return per
 
 

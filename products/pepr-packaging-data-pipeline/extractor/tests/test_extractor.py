@@ -119,7 +119,7 @@ def test_ram_mapping_matches_generator_materials():
 
 def test_budget_refuses_worst_case_over_usd_cap(tmp_path):
     b = new_budget(tmp_path)
-    b.record("x", 0, int(11.5e6 / 120 * 1) , note="seed")  # USD 11.5 spent
+    b.record("x", 0, int(11.5e6 / B.USD_PER_M_OUT), note="seed")  # USD 11.5 spent
     with pytest.raises(B.BudgetExceeded):
         b.check(10_000, 12_000)  # worst 0.15 + 1.44 > 0.5 left
     b.check(1000, 1000)  # 0.015 + 0.12 fits
@@ -134,18 +134,18 @@ def test_budget_refuses_token_cap(tmp_path):
 
 def test_budget_exact_boundary(tmp_path):
     b = new_budget(tmp_path, max_usd=1.0)
-    b.check(0, int(1e6 / 120))  # 8333 tokens = USD 0.99996: allowed
+    b.check(0, int(1e6 / B.USD_PER_M_OUT))  # 8333 tokens = USD 0.99996: allowed
     with pytest.raises(B.BudgetExceeded):
-        b.check(0, int(1e6 / 120) + 2)
+        b.check(0, int(1e6 / B.USD_PER_M_OUT) + 2)
 
 
 def test_ledger_persists_and_is_shared(tmp_path):
     b = new_budget(tmp_path)
     b.record("S1", 1000, 500, model="m")
     b2 = new_budget(tmp_path)
-    assert b2.tokens == 1500 and b2.spent_usd == pytest.approx(0.015 + 0.06)
+    assert b2.tokens == 1500 and b2.spent_usd == pytest.approx(1000 * B.USD_PER_M_IN / 1e6 + 500 * B.USD_PER_M_OUT / 1e6)
     e = json.loads((tmp_path / "ledger.jsonl").read_text().splitlines()[0])
-    assert e["sheet_id"] == "S1" and e["usd"] == pytest.approx(0.075)
+    assert e["sheet_id"] == "S1" and e["usd"] == pytest.approx(0.12) and e["price_in"] == 30.0 and e["price_out"] == 180.0
 
 
 def test_guard_runs_before_the_call_and_blocks_it(tmp_path):
@@ -334,11 +334,11 @@ def test_preflight_arithmetic(tmp_path):
     B.preflight(new_budget(tmp_path / "fresh"), 30, 6000)
     need = 30 * 0.316 + B.usd(B.WORST_INPUT_TOKENS, 6000)
     b = new_budget(tmp_path / "short")
-    b.record("x", 0, int((12 - need + 0.05) * 1e6 / 120))
+    b.record("x", 0, int((12 - need + 0.05) * 1e6 / B.USD_PER_M_OUT))
     with pytest.raises(B.BudgetExceeded, match="short by"):
         B.preflight(b, 30, 6000)
     b2 = new_budget(tmp_path / "enough")
-    b2.record("x", 0, int((12 - need - 0.05) * 1e6 / 120))
+    b2.record("x", 0, int((12 - need - 0.05) * 1e6 / B.USD_PER_M_OUT))
     B.preflight(b2, 30, 6000)
 
 
@@ -349,7 +349,7 @@ def test_preflight_token_analogue(tmp_path):
 
 def test_cli_refuses_to_start_test_set_when_budget_short(tmp_path, capsys):
     ledger = tmp_path / "ledger.jsonl"
-    B.Budget(ledger).record("tuning", 0, int(5e6 / 120))  # USD 5 spent: 7 left < ~10.3 needed
+    B.Budget(ledger).record("tuning", 0, int(5e6 / B.USD_PER_M_OUT))  # USD 5 spent: 7 left < ~11.2 needed
     rc = run.main(["--set", "test", "--provider", "fake", "--out", str(tmp_path / "o"), "--ledger", str(ledger)])
     assert rc == 4 and "short by" in capsys.readouterr().err
     assert not list((tmp_path / "o").glob("S*.json"))
@@ -426,7 +426,7 @@ def test_s2_final_5xx_is_charged_and_gives_up(tmp_path):
 
 
 def test_s2_usd_cap_refuses_retry(tmp_path):
-    b = B.Budget(tmp_path / "l.jsonl", max_usd=0.25)  # worst case 1000 out + 2 in = USD 0.12003 per attempt
+    b = B.Budget(tmp_path / "l.jsonl", max_usd=0.4)  # worst case 1000 out + 2 in = USD 0.18006 per attempt
     p = providers.AzureResponsesProvider(env=ENV, transport=lambda r, t: (500, {}, b""), sleep=lambda s: None)
     with pytest.raises(B.BudgetExceeded, match="USD"):
         p.complete("s", X, 1000, budget=b, label="S1")
@@ -588,3 +588,40 @@ def test_tuning1_s902_misses_would_now_be_dropped_not_scored_untraced():
     assert before["untraced"] == 2
     extract.drop_unverified(pred["components"], pages, [])
     assert score.score_sheet(truth, pred, texts)["untraced"] == 0
+
+
+# ---- T-58: price is 30/180 and old ledger rows are repriced from tokens --------------------------------
+
+def _old_ledger(path):
+    """Two rows priced at the old 15/120 (stored usd understates), one S-row, as in results/ledger.jsonl."""
+    rows = [{"sheet_id": "S001", "input_tokens": 10_000, "output_tokens": 2_000, "usd": 0.39},
+            {"sheet_id": "S001", "input_tokens": 1_000, "output_tokens": 1_000, "usd": 0.135},
+            {"sheet_id": "S002", "input_tokens": 0, "output_tokens": 5_000, "usd": 0.6}]
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows))
+
+
+def test_price_constants_are_30_180():
+    assert (B.USD_PER_M_IN, B.USD_PER_M_OUT) == (30.0, 180.0)
+    assert B.usd(1_000_000, 1_000_000) == pytest.approx(210.0)
+
+
+def test_budget_spent_is_repriced_from_tokens_not_stored_usd(tmp_path):
+    _old_ledger(tmp_path / "l.jsonl")
+    b = B.Budget(tmp_path / "l.jsonl")
+    want = (11_000 * 30 + 8_000 * 180) / 1e6
+    assert b.spent_usd == pytest.approx(want) and want == pytest.approx(1.77)
+    assert b.spent_usd != pytest.approx(0.39 + 0.135 + 0.6)
+
+
+def test_score_cost_check_uses_tokens_at_current_price(tmp_path):
+    _old_ledger(tmp_path / "l.jsonl")
+    per = score.read_ledger_cost(tmp_path / "l.jsonl", {"S001", "S002"})
+    assert per["S001"] == pytest.approx((11_000 * 30 + 3_000 * 180) / 1e6)
+    assert per["S002"] == pytest.approx(0.9)
+    # a sheet whose stored usd passes 0.316 but whose repriced cost fails
+    (tmp_path / "m.jsonl").write_text(json.dumps({"sheet_id": "S1", "input_tokens": 0, "output_tokens": 1_500, "usd": 0.18}) + "\n")
+    per = score.read_ledger_cost(tmp_path / "m.jsonl", {"S1"})
+    assert per["S1"] == pytest.approx(0.27) and per["S1"] <= 0.316
+    (tmp_path / "n.jsonl").write_text(json.dumps({"sheet_id": "S1", "input_tokens": 0, "output_tokens": 1_900, "usd": 0.228}) + "\n")
+    per = score.read_ledger_cost(tmp_path / "n.jsonl", {"S1"})
+    assert per["S1"] == pytest.approx(0.342) and per["S1"] > score.USD_PER_SHEET_MAX
