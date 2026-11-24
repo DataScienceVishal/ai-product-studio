@@ -45,7 +45,8 @@ On the three runs that worked, assisted review takes roughly half the manual tim
 ## What this shows
 
 - Extraction from clean text and CSV is mechanically solved: every date, amount, description and balance matched.
-- Category accuracy is about 84 to 94%. The misses were plausible (tyres as car/van instead of repairs, a trade subscription as professional fees, a "transfer from savings" given the wrong sign in the sheet).
+- Category accuracy is about 84 to 94%. The misses were plausible (tyres as car/van instead of repairs, a trade subscription as professional fees, two sheet lines that were fine on category but whose amount sign the model flipped, see below).
+- Messy sheet: the 2 lines at 93.8% date/amount/description are "moved to savings" rows whose sheet amount is positive while the bank text says "TRANSFER FROM SAVINGS". The model returned them negative (both at confidence 0.58, so flagged). The scorer counts them as missed lines, not category errors. The sheet's own signs are inconsistent, so this is a defensible miss.
 - Confidence is only weakly useful: 4 lines were wrong at confidence 0.8 or above and went into the auto-accepted pile. These errors are invisible to a reviewer who only checks flagged lines. Any real product needs a sampling check or a rule for this.
 
 ## Caveats
