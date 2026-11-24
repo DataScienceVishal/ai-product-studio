@@ -10,3 +10,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - T-56 (run 37b8): pEPR proof test started. Pass/fail rules written first (>=90% field accuracy, every value traced to a page, <=£0.25 a sheet; a fail kills pEPR). 35 synthetic spec sheets generated; review asked for a harder, fully scoreable set before any AI run.
 
 - T-56 pEPR proof test (run 4500): reviewer's 12 fixes done (harder sheets, 22 conflicts, fixed scoring rules, deterministic data; 19 tests pass); kill-test amendment on main before any run. Re-review found two scoring-rule gaps (material/colour variants, quote matching), being fixed. Q-11 asks for the $12 model spend; until then no Azure call.
+- T-56 update (run 4500): benchmark and scorer/extractor both passed review (73 tests). The run itself waits for Q-11 ($12 model spend).
