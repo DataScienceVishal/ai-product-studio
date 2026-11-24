@@ -451,3 +451,38 @@ def test_s2_retry_check_includes_output_headroom(tmp_path):
     b = B.Budget(tmp_path / "l.jsonl", max_tokens=2500)
     with pytest.raises(B.BudgetExceeded, match="retry 2"):
         p.complete("s", X, 1000, budget=b, label="S1")
+
+
+# ---- realism supplement (S7, Amendment 4) ---------------------------------------------------------
+
+SUPP = PRODUCT / "benchmark" / "supplement"
+
+
+def test_encrypted_supplement_sheet_is_read_by_pdfio():
+    pages = pdfio.read_pages(SUPP / "data" / "sheets" / "S812.pdf")
+    assert pages[0]["mode"] == "layout_text" and "Bottle weight" in pages[0]["text"]
+    assert b"/AESV2" in (SUPP / "data" / "sheets" / "S812.pdf").read_bytes()
+
+
+def test_oracle_through_pipeline_scores_100_percent_on_supplement(tmp_path):
+    truths, _, texts, messy = score.load_set("supplement", "/none")
+    b = new_budget(tmp_path)
+    preds = {sid: extract.extract_pdf(SUPP / "data" / "sheets" / f"{sid}.pdf", providers.FakeProvider(oracle_for(t)), b)
+             for sid, t in truths.items()}
+    assert len(preds) == 12 and all(p["components"] for p in preds.values())
+    r = score.score_set(truths, preds, texts, messy, None, require_cost=False)
+    assert r["overall"]["field_accuracy"] == 1.0 and r["overall"]["untraced"] == 0, r["checks"]
+    assert r["overall"]["fabricated"] == 0
+    r["checks"].pop("2_messy10_field_accuracy>=0.80")  # no messy-10 in the supplement (score.main drops it too)
+    assert all(r["checks"].values())
+
+
+def test_cli_supplement_set_fake(tmp_path, capsys):
+    run.main(["--set", "supplement", "--provider", "fake", "--out", str(tmp_path / "o")])
+    assert len(list((tmp_path / "o").glob("S8*.json"))) == 12 and "OVERALL" in capsys.readouterr().out
+
+
+def test_prompt_has_amendment_4_lines():
+    s = prompt.system_prompt()
+    for need in ("largest share", "Weight (g) | 25.5", "gsm", "title names one item code"):
+        assert need in s

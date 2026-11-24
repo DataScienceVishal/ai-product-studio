@@ -78,6 +78,12 @@ Pass mark 4b (Studio Lead decision, 2026-11-24, before any run) is the kill test
 - Reading costs: the ledger (`results/ledger.jsonl`) is the source of truth for spend and for pass mark 5. It holds one row per billable attempt: a server error (5xx) after the model may have run is charged at its worst case (`estimated: true`) before any retry. The per-sheet line that `run.py` prints and each prediction's `usage` show only the successful attempt, so they can be lower than the ledger.
 - Runs: 3 permitted for slices 2-4. Slice 2 used 1; this fix run is 2 of 3.
 
+## Realism supplement (S7, Amendment 4)
+
+12 extra sheets S801-S812 (seed 20261126) that add the wording and layout problems found in `REALISM.md`: weight forms ("37.00gm +/- 2.00gm", oz with tolerance, a bare number under "Weight (g)"), blends and recycled-content wording, "Finish: Clear", an out-of-vocabulary colour code, only gsm / micrometre / case weights (truth `missing`), a catalogue sheet with a target item, "various closure options" and secondary-packaging lines, a two-block layout, a unit-in-header table, a French page and an AES-encrypted PDF.
+Generate: `python3 supplement.py` (writes `supplement/`, byte-for-byte reproducible). Score: `python3 score.py --set supplement --pred DIR`; run: `python3 -m extractor.run --set supplement ...`.
+It is reported separately with the same pass marks (no messy-10 mark) and does not decide the kill test. Decisions D1-D4: `KILL_TEST_AMENDMENT_4.md`. Truth gains the optional field `target_item`.
+
 ## Regenerate and test
 
 ```

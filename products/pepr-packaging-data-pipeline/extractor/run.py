@@ -12,7 +12,8 @@ from . import budget as budget_mod
 from . import extract, providers
 
 PRODUCT = Path(__file__).resolve().parents[1]
-SETS = {"test": PRODUCT / "benchmark" / "data" / "sheets", "tuning": PRODUCT / "benchmark" / "data" / "tuning"}
+SETS = {"test": PRODUCT / "benchmark" / "data" / "sheets", "tuning": PRODUCT / "benchmark" / "data" / "tuning",
+        "supplement": PRODUCT / "benchmark" / "supplement" / "data" / "sheets"}
 DEFAULT_LEDGER = PRODUCT / "results" / "ledger.jsonl"
 
 

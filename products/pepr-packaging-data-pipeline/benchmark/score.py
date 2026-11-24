@@ -250,7 +250,20 @@ def score_set(truths, preds, page_texts, messy_ids, cost_per_sheet=None, require
             "pass": all(checks.values())}
 
 
+SUPP = HERE / "supplement"
+
+
 def load_set(which, pred_dir, data=DATA):
+    if which == "supplement":  # realism supplement (Amendment 4): own manifest, no messy-10
+        manifest = json.loads((SUPP / "manifest.json").read_text())
+        truths, preds, texts = {}, {}, {}
+        for e in manifest["supplement"]:
+            sid = e["sheet_id"]
+            truths[sid] = json.loads((SUPP / "data" / "truth" / f"{sid}.json").read_text())
+            pf = Path(pred_dir) / f"{sid}.json"
+            preds[sid] = json.loads(pf.read_text()) if pf.exists() else {}
+            texts[sid] = page_texts_for(sid, SUPP / "data" / "sheets" / f"{sid}.pdf", e)
+        return truths, preds, texts, set()
     manifest = json.loads((data / "manifest.json").read_text())
     entries = {e["sheet_id"]: e for e in manifest["test" if which == "test" else "tuning"]}
     tdir, pdfdir = ("truth", "sheets") if which == "test" else ("tuning_truth", "tuning")
@@ -285,7 +298,7 @@ def format_report(r):
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--set", choices=["test", "tuning"], required=True)
+    ap.add_argument("--set", choices=["test", "tuning", "supplement"], required=True)
     ap.add_argument("--pred", required=True)
     ap.add_argument("--ledger")
     ap.add_argument("--out")
@@ -293,7 +306,7 @@ def main(argv=None):
     truths, preds, texts, messy = load_set(a.set, a.pred)
     cost = read_ledger_cost(a.ledger, set(truths)) if a.ledger else None
     r = score_set(truths, preds, texts, messy, cost, require_cost=(a.set == "test"))
-    if a.set == "tuning":
+    if a.set != "test":  # tuning and supplement have no messy-10
         r["checks"].pop("2_messy10_field_accuracy>=0.80", None)
         r["pass"] = all(r["checks"].values())
     print(format_report(r))

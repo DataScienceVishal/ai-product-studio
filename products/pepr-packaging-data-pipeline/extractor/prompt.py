@@ -51,6 +51,18 @@ Never join two table cells or both columns of a two-column row into one quote; n
 (quote the material cell alone, not the colour cell next to it). Quote the paraphrase as printed, not the canonical value. "page" is the PAGE number
 the quote is on. For image pages, read the quote from the image exactly as printed.
 
+EXCEPTIONS to the one-cell quote rule, each for one row only:
+  - Blend. A material cell that names several materials with shares (for example "rPET 30% + PET 70%"): the value is the one canonical material
+    with the largest share (equal shares: "PET"). Quote that whole cell; the quote must show every share. Recycled-content text on a single
+    material ("rPET (PCR 100%)") is not a blend: value is that material.
+  - Unit only in the row label. When the unit is printed only in the row label (for example "Weight (g)" with the bare number 25.5 in the next
+    cell), quote that one row as "label cell | value cell", for example "Weight (g) | 25.5". This is not the side-by-side case above: that rule
+    forbids joining cells of different products or components; this exception joins the label and value of the same single row.
+UNIT WEIGHT ABSENT. If a component gives only grams per square metre (gsm), thickness (micrometres, gauge), or a case, pallet or board weight,
+weight_g is missing; never compute a unit weight from them.
+CATALOGUE. If the title names one item code and the sheet lists many codes or sizes, extract only the row of that item.
+Secondary packaging lines (inner liner, outer box, pallet) are not components unless the sheet gives them a material and describes them as part of the item.
+
 {RAM_NOTE}
 Output JSON shape: {{"components":[{{"name":..,"material":F,"colour":F,"weight_g":F,"features":{{key:F,..}}}},..]}}"""
 
