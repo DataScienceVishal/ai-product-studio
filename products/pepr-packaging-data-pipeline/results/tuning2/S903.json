@@ -1,0 +1,190 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Tint: carbon black pigmented"
+     }
+    ],
+    "status": "present",
+    "value": "black (carbon black)"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "ultraviolet-cured print"
+      }
+     ],
+     "status": "present",
+     "value": "UV-cured ink"
+    },
+    "label": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Material: PS"
+     }
+    ],
+    "status": "present",
+    "value": "PS"
+   },
+   "name": "tray",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Unit weight: 16900 mg"
+     }
+    ],
+    "status": "present",
+    "value": 16.9
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Tint: carbon black pigmented"
+     }
+    ],
+    "status": "present",
+    "value": "black (carbon black)"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "alu-foil barrier"
+      }
+     ],
+     "status": "present",
+     "value": "aluminium foil barrier"
+    },
+    "closure": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "PP screw cap without liner"
+      }
+     ],
+     "status": "present",
+     "value": "PP cap, no liner"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "status": "missing"
+    },
+    "sleeve": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Polymer: HDPE"
+     }
+    ],
+    "status": "present",
+    "value": "HDPE"
+   },
+   "name": "bottle",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Nett wt: 0.034 kg"
+     }
+    ],
+    "status": "present",
+    "value": 34.0
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "foil barrier layer"
+      }
+     ],
+     "status": "present",
+     "value": "aluminium foil barrier"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "polypropylene film label"
+      }
+     ],
+     "status": "present",
+     "value": "PP film label"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Material: tinplate"
+     }
+    ],
+    "status": "present",
+    "value": "steel"
+   },
+   "name": "can",
+   "ram_category": "steel",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Net mass: 1.203 oz"
+     }
+    ],
+    "status": "present",
+    "value": 34.1044485
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 621,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S903",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2109,
+  "model": "gpt-5-mini",
+  "output_tokens": 3830,
+  "price_model": "gpt-5-mini",
+  "usd": 0.008187
+ },
+ "warnings": []
+}

@@ -1,0 +1,219 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "natural"
+     }
+    ],
+    "status": "present",
+    "value": "natural"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "monolayer, no barrier"
+      }
+     ],
+     "status": "present",
+     "value": "no barrier layer"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "print: UV-curable ink"
+      }
+     ],
+     "status": "present",
+     "value": "UV-cured ink"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "paper label, caustic wash-off"
+      }
+     ],
+     "status": "present",
+     "value": "paper label, wash-off"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "aluminium"
+     }
+    ],
+    "status": "present",
+    "value": "aluminium"
+   },
+   "name": "can",
+   "ram_category": "aluminium",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "0.024 kg"
+     }
+    ],
+    "status": "present",
+    "value": 24.0
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "adhesive": {
+     "status": "missing"
+    },
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "kraft"
+     }
+    ],
+    "status": "present",
+    "value": "kraft paper"
+   },
+   "name": "outer carton",
+   "ram_category": "paper_board",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "66.8 g"
+     }
+    ],
+    "status": "present",
+    "value": 66.8
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "clear"
+     }
+    ],
+    "status": "present",
+    "value": "clear"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "no barrier layer present"
+      }
+     ],
+     "status": "present",
+     "value": "no barrier layer"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "wash-off paper label"
+      }
+     ],
+     "status": "present",
+     "value": "paper label, wash-off"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PE/PET laminate"
+     }
+    ],
+    "status": "present",
+    "value": "PE/PET laminate"
+   },
+   "name": "pouch",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "0.01 kg"
+     }
+    ],
+    "status": "present",
+    "value": 10.0
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "natural"
+     }
+    ],
+    "status": "present",
+    "value": "natural"
+   },
+   "features": {
+    "ink_coating": {
+     "status": "missing"
+    },
+    "liner": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "status": "missing"
+   },
+   "name": "cap",
+   "ram_category": "missing",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "3.5 g"
+     }
+    ],
+    "status": "present",
+    "value": 3.5
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 744,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S902",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2150,
+  "model": "gpt-5-mini",
+  "output_tokens": 2881,
+  "price_model": "gpt-5-mini",
+  "usd": 0.006299
+ },
+ "warnings": []
+}

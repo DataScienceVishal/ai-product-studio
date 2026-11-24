@@ -1,0 +1,181 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "tinplate steel, uncoloured"
+     }
+    ],
+    "status": "present",
+    "value": "natural"
+   },
+   "features": {
+    "barrier_layer": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "barrier layer: none"
+      }
+     ],
+     "status": "present",
+     "value": "no barrier layer"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "print in solvent-based inks"
+      }
+     ],
+     "status": "present",
+     "value": "solvent-based ink"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "polypropylene film label"
+      }
+     ],
+     "status": "present",
+     "value": "PP film label"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "tinplate steel, uncoloured"
+     }
+    ],
+    "status": "present",
+    "value": "steel"
+   },
+   "name": "can",
+   "ram_category": "steel",
+   "weight_g": {
+    "conflict_values": [
+     26.5,
+     29.3
+    ],
+    "refs": [
+     {
+      "page": 1,
+      "quote": "0.0265 kg (1)"
+     },
+     {
+      "page": 1,
+      "quote": "(1) can: unit weight on retest 0.0293 kg."
+     }
+    ],
+    "status": "conflict"
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "flint green"
+     }
+    ],
+    "status": "present",
+    "value": "green"
+   },
+   "features": {
+    "adhesive": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "status": "missing"
+   },
+   "name": "label",
+   "ram_category": "missing",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "1.6 g"
+     }
+    ],
+    "status": "present",
+    "value": 1.6
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PET/PE laminate, carbon black pigmented"
+     }
+    ],
+    "status": "present",
+    "value": "black (carbon black)"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "solvent ink print"
+      }
+     ],
+     "status": "present",
+     "value": "solvent-based ink"
+    },
+    "label": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PET/PE laminate, carbon black pigmented"
+     }
+    ],
+    "status": "present",
+    "value": "PE/PET laminate"
+   },
+   "name": "pouch",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "10700 mg"
+     }
+    ],
+    "status": "present",
+    "value": 10.7
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 0,
+   "input": "image",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S904",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2862,
+  "model": "gpt-5-mini",
+  "output_tokens": 4061,
+  "price_model": "gpt-5-mini",
+  "usd": 0.008838
+ },
+ "warnings": []
+}

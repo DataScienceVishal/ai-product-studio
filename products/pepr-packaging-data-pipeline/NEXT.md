@@ -98,3 +98,7 @@ Commands (env: `AZURE_OPENAI_ENDPOINT`, key, `AZURE_OPENAI_DEPLOYMENT_MINI=gpt-5
 2. Record the chosen effort and max output tokens in `state/DECISIONS.md` and here, from tuning2 only.
 3. Test, once: `T56_SPEND_APPROVED=1 T56_REASONING_EFFORT=<chosen> [T56_MAX_OUTPUT_TOKENS=<chosen>] /usr/bin/python3 -m extractor.run --set test --provider azure --out results/test1` (pre-flight exit 4 if the budget is short).
 4. Supplement afterwards only: `... --set supplement --provider azure --out results/supplement`. Then validator re-score.
+
+### Run bb8d tuning2 result and test settings (recorded BEFORE the test run)
+tuning2 (gpt-5-mini, effort medium, max_output_tokens 6000, results/tuning2 + tuning2.log): field accuracy 100% (94/94), untraced 0/54, missing handled 100%, fabricated 0, conflicts flagged 100%, no incomplete answers. Cost of this run USD 0.0342 for 5 sheets (S901 0.0029, S902 0.0063, S903 0.0082, S904 0.0088, S905 0.0080; mean 0.0068). The scorer's mark 5 line on tuning reads FAIL (mean 0.625) because it averages every ledger row for the tuning sheet ids, including tuning1's gpt-5.4-pro rows; the test sheets have no earlier rows, so the test-set mark is unaffected. Scorer left unchanged (frozen).
+Chosen for the single test run (Studio Lead, run bb8d): T56_REASONING_EFFORT=medium, T56_MAX_OUTPUT_TOKENS=6000, deployment gpt-5-mini.

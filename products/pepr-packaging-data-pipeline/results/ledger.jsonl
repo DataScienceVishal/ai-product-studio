@@ -3,3 +3,8 @@
 {"sheet_id": "S903", "input_tokens": 1918, "output_tokens": 2153, "usd": 0.28713, "model": "gpt-5.4-pro", "estimated": false, "note": ""}
 {"sheet_id": "S904", "input_tokens": 2671, "output_tokens": 5543, "usd": 0.705225, "model": "gpt-5.4-pro", "estimated": false, "note": ""}
 {"sheet_id": "S905", "input_tokens": 2011, "output_tokens": 4820, "usd": 0.608565, "model": "gpt-5.4-pro", "estimated": false, "note": ""}
+{"sheet_id": "S901", "input_tokens": 1988, "output_tokens": 1214, "usd": 0.002925, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "deployment": "gpt-5-mini", "served_model": "gpt-5-mini", "estimated": false, "note": ""}
+{"sheet_id": "S902", "input_tokens": 2150, "output_tokens": 2881, "usd": 0.006299, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "deployment": "gpt-5-mini", "served_model": "gpt-5-mini", "estimated": false, "note": ""}
+{"sheet_id": "S903", "input_tokens": 2109, "output_tokens": 3830, "usd": 0.008187, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "deployment": "gpt-5-mini", "served_model": "gpt-5-mini", "estimated": false, "note": ""}
+{"sheet_id": "S904", "input_tokens": 2862, "output_tokens": 4061, "usd": 0.008838, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "deployment": "gpt-5-mini", "served_model": "gpt-5-mini", "estimated": false, "note": ""}
+{"sheet_id": "S905", "input_tokens": 2202, "output_tokens": 3748, "usd": 0.008046, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "deployment": "gpt-5-mini", "served_model": "gpt-5-mini", "estimated": false, "note": ""}

@@ -1,0 +1,10 @@
+{
+ "deployment": "gpt-5-mini",
+ "max_output_tokens": 6000,
+ "price_model": "gpt-5-mini",
+ "provider": "azure",
+ "reasoning_effort": "medium",
+ "set": "tuning",
+ "usd_per_m_in": 0.25,
+ "usd_per_m_out": 2.0
+}
