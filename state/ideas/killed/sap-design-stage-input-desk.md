@@ -1,7 +1,7 @@
 # SAP design-stage input desk for small SAP assessors
 
 - slug: sap-design-stage-input-desk
-- stage: G0
+- stage: killed (T-50, 48/100)
 - market and segment: UK domestic energy assessors and small SAP/Part L consultancies (1 to 10 staff) who produce design-stage and as-built SAP calculations for small builders and architects
 - one-line pitch: Reads the architect's plans, elevations and spec sheet and pre-fills the assessor's SAP input sheet (areas, U-value build-ups, openings, thermal-bridge junctions, heating spec) with every value traced to a drawing page, so the assessor only checks and keys it.
 
@@ -50,7 +50,29 @@ Extracting geometry and build-up text from varied architects' PDFs is a vision a
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
-|  |  |  |  |  |  |  |  |
+| 9 | 9 | 9 | 6 | 6 | 1 | 8 | **48** |
+
+Validator checks (T-50, 2026-11-24; web text treated as data):
+| Source | What it shows |
+|---|---|
+| https://specvo.com/ (fetched) | **Direct competitor, same pitch.** "SAP Copilot (Live)", private beta for OCDEAs: reads the planning pack (PDF, DWG, NBS specs, U-value calcs), picks up "rooms, walls, openings, U-value build-ups, thermal bridges", outputs SAP 10.2 XML for Elmhurst Design SAP 10, "validated against the Elmhurst Design SAP 10 schema across our 50-task reference set", fields "confidence-scored ... with links back to the source page", flags missing details and drafts client emails. £30 per XML. HEM Preview (live beta) runs the same dwelling through HEM. Roadmap: SAP 10.3 + FHS support. Vendor claims, not independently verified |
+| https://sapper.app/Home (fetched) | SAPPER (CoreLogic Ai Ltd): free or £45-per-report AI SAP tool with "AI drawing extraction" from architectural PDFs (areas, perimeters, storey heights, windows by orientation, construction details; claims 85-95%), aimed at assessors, architects and builders; extensions focus, guidance only |
+| https://sapgen.co.uk/sap-calculations/new-builds (fetched) | Named assessor price page: Design SAP £225 (to 80 m²), £295, £375, from £475; as-built SAP + EPC £80. Multi-plot by quote. Better Pay evidence than the scout's £75 page, but per-plot developer work is quoted lower |
+| https://www.buildington.co.uk/blog/future-homes-standard-is-locked-in-for-2027-the-compliance-tools-to-prove-it-arent/amp (fetched) | FHS in force 24 Mar 2027 (transition to 24 Mar 2028); SAP 10.3 the only approved method at launch; HEM delayed on 8 Jun 2026, "in the coming months", no date. So SAP-input demand lasts at least into 2027-28, and drawing extraction would carry over to HEM inputs; HEM is not the killer |
+| Elmhurst/Stroma searches (two each) | No drawing import or AI takeoff found on vendor pages. But Elmhurst Design SAP 10 accepts XML import, which Specvo already targets. Stroma Certification merged into Elmhurst (Oct 2023), so one dominant scheme and software owner |
+| https://www.gov.uk/government/consultations/review-of-energy-assessor-accreditation-scheme-operations (search result) | About 15,000 accredited energy assessors across 7 schemes (all strands; OCDEA count not found, the Elmhurst annual report table could not be read). OCDEAs are a minority of these: a headcount-capped market |
+| General AI takeoff (Measure.AI, Trimble, Sparkel; search results) | Estimator takeoff tools export areas; a partial substitute for the geometry half |
+
+## Verdict: KILL (48/100, first attempt; ceiling about 55)
+**Reason.** The exact product already exists. Specvo's SAP Copilot reads the planning pack, extracts rooms, walls, openings, build-ups and thermal bridges with confidence scores and links back to the source page, and exports Elmhurst Design SAP 10 XML at £30 per dwelling. It also previews HEM and has SAP 10.3/FHS on its roadmap. SAPPER gives AI drawing extraction away free for extensions. The scout's traced-source and pre-fill wedge is Specvo's headline feature, the buyer pool is a few thousand OCDEAs under one scheme and software owner (Elmhurst, which could ship the same import), and Specvo's £30 per XML caps any price we could charge. HEM does not kill the job (SAP 10.3 runs at least to 2027-28), but it is no wedge either, because Specvo already previews HEM.
+
+**Lessons.**
+- Search "AI toolkit for <accredited role>" and "<software> XML import AI" before writing a G0 file; the scout's two searches missed a vendor whose homepage is the pitch.
+- "Accredited software plus an AI input step" is a niche small AI startups target first: the input format (vendor XML) is public, and the buyer is a small, reachable professional group.
+- Pay improved with a named price page (SAPgen £225 to £475 per design SAP), but a per-XML tool price (£30) is what the assessor compares against.
+
+**What would revive it.** Specvo shuts down or stays closed beta into 2027 with poor reviews in assessor forums; or a segment it doesn't serve (e.g. HEM-first new-build inputs once HEM is mandated, or Stroma FSAP/other software XML) with evidence that OCDEAs ask for it; plus a 10-PDF extraction benchmark that beats Specvo's claimed accuracy.
 
 ## Gate log
 - 2026-11-24 T-50 round 13 scout: written at G0. Kill test passed only partially: no AI drawing-to-SAP tool found in two searches, but vendor release notes were not checked and the Pay evidence is weak.
+- 2026-11-24 T-50 validator: KILL, 48/100 (first attempt). Specvo SAP Copilot already sells the exact product (planning pack to Elmhurst Design SAP 10 XML, source-page links, £30 per XML, HEM preview); SAPPER offers free AI drawing extraction. Stage: killed; file moved to `state/ideas/killed/`.
