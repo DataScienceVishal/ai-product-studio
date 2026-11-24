@@ -417,7 +417,7 @@ def test_argon2_work_is_bounded_to_four_at_a_time(monkeypatch):
 
 # --- review I1: CSRF and authentication over the whole route table ----------------------------------
 
-PUBLIC = {("GET", "/healthz"), ("GET", "/livez"), ("GET", "/api/billing/plans"), ("POST", "/api/auth/signup"),
+PUBLIC = {("GET", "/api/config"), ("GET", "/healthz"), ("GET", "/livez"), ("GET", "/api/billing/plans"), ("POST", "/api/auth/signup"),
           ("POST", "/api/auth/login"), ("POST", "/api/auth/logout"), ("POST", "/api/auth/password-reset/request"),
           ("POST", "/api/auth/password-reset/confirm"), ("POST", "/api/invitations/accept"),
           ("POST", "/api/billing/webhook")}

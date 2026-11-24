@@ -255,14 +255,17 @@ class AzureOpenAI:
     def __init__(self, endpoint: str, deployment: str, api_key: str, timeout: float = 20.0, deadline: float = 25.0,
                  retries: int = 1, client: httpx.Client | None = None, sleep=time.sleep, clock=time.monotonic,
                  token_provider: ManagedIdentityToken | None = None, api: str = "auto",
-                 reasoning_headroom: int = 0):
+                 reasoning_headroom: int = 0, reasoning_effort: str = ""):
         if not endpoint:
             raise ValueError("AZURE_OPENAI_ENDPOINT is not set")
         if api not in ("auto", "chat", "responses"):
             raise ValueError("AZURE_OPENAI_API must be auto, chat or responses")
         if api == "auto":
             api = "responses" if endpoint.strip().rstrip("/").lower().endswith("/openai/v1/responses") else "chat"
+        if reasoning_effort not in ("", "low", "medium", "high"):
+            raise ValueError("AZURE_OPENAI_REASONING_EFFORT must be low, medium or high")
         self.api = api
+        self.reasoning_effort = reasoning_effort  # sent on the responses path only; empty means not sent
         # Responses reasoning tokens count inside max_output_tokens: add headroom so reasoning can't eat the answer.
         self.output_headroom = max(int(reasoning_headroom), 0) if api == "responses" else 0
         path = "/openai/v1/responses" if api == "responses" else "/openai/v1/chat/completions"
@@ -280,6 +283,8 @@ class AzureOpenAI:
             payload = {"model": self.deployment, "instructions": system, "max_output_tokens": max_output_tokens,
                        "store": False,  # Azure keeps no copy of the prompt or answer (DATA.md)
                        "input": [{"role": "user", "content": user}]}
+            if self.reasoning_effort:
+                payload["reasoning"] = {"effort": self.reasoning_effort}
         else:
             payload = {"model": self.deployment, "max_completion_tokens": max_output_tokens,
                        "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
@@ -400,7 +405,8 @@ def build_provider(settings) -> AIProvider:
                            settings.azure_openai_api_key, timeout=settings.ai_timeout_seconds,
                            deadline=settings.ai_deadline_seconds, retries=settings.ai_retries,
                            token_provider=token, api=settings.azure_openai_api,
-                           reasoning_headroom=settings.ai_reasoning_headroom)
+                           reasoning_headroom=settings.ai_reasoning_headroom,
+                           reasoning_effort=settings.azure_openai_reasoning_effort)
     return FakeAI()
 
 

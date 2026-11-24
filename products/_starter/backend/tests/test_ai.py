@@ -516,7 +516,7 @@ def test_token_and_identity_header_never_reach_logs_or_errors(caplog):
 def test_build_provider_picks_the_auth_mode(monkeypatch):
     from types import SimpleNamespace
     base = dict(ai_provider="azure", azure_openai_endpoint="https://r.openai.azure.com", azure_openai_deployment="d",
-                azure_openai_api_key="", ai_timeout_seconds=5, ai_deadline_seconds=9, ai_retries=1, ai_reasoning_headroom=0, azure_client_id="cid", azure_openai_api="auto")
+                azure_openai_api_key="", ai_timeout_seconds=5, ai_deadline_seconds=9, ai_retries=1, ai_reasoning_headroom=0, azure_openai_reasoning_effort="", azure_client_id="cid", azure_openai_api="auto")
     assert build_provider(SimpleNamespace(**base, azure_openai_auth="key")).token_provider is None
     built = build_provider(SimpleNamespace(**base, azure_openai_auth="managed_identity"))
     assert built.token_provider.client_id == "cid"
@@ -661,9 +661,19 @@ def test_build_provider_passes_the_api_setting():
     base = dict(ai_provider="azure", azure_openai_endpoint=ROOT + "/openai/v1/responses", azure_openai_deployment="d",
                 azure_openai_api_key="k", ai_timeout_seconds=20.0, ai_deadline_seconds=25.0, ai_retries=1, ai_reasoning_headroom=700,
                 azure_openai_auth="key", azure_client_id="")
+    base = {**base, "azure_openai_reasoning_effort": ""}
     assert build_provider(SimpleNamespace(**base, azure_openai_api="auto")).api == "responses"
     assert build_provider(SimpleNamespace(**base, azure_openai_api="chat")).api == "chat"
     assert build_provider(SimpleNamespace(**base, azure_openai_api="chat")).url.endswith("/openai/v1/chat/completions")
+
+
+def test_build_provider_passes_the_reasoning_effort_setting():
+    from types import SimpleNamespace
+    cfg = SimpleNamespace(ai_provider="azure", azure_openai_endpoint=ROOT + "/openai/v1/responses", azure_openai_deployment="d",
+                          azure_openai_api_key="k", ai_timeout_seconds=20.0, ai_deadline_seconds=25.0, ai_retries=1,
+                          ai_reasoning_headroom=700, azure_openai_auth="key", azure_client_id="", azure_openai_api="auto",
+                          azure_openai_reasoning_effort="high")
+    assert build_provider(cfg).reasoning_effort == "high"
 
 
 def test_settings_accept_only_known_api_modes():
@@ -829,3 +839,92 @@ def test_unreadable_200_bills_the_whole_budget(content):
 def test_reservation_estimate_needs_the_headroom_attribute():
     with pytest.raises(AttributeError):
         reservation_estimate(object(), "a", "b", 10)
+
+
+def _effort_payload(api, **kw):
+    seen = {}
+
+    def handler(request):
+        seen.update(json.loads(request.content))
+        return _responses_ok()
+
+    AzureOpenAI(ROOT, "d", "k", api=api, client=httpx.Client(transport=httpx.MockTransport(handler)), **kw).complete("s", "u")
+    return seen
+
+
+def test_reasoning_effort_is_sent_on_responses_when_set():
+    assert _effort_payload("responses", reasoning_effort="high")["reasoning"] == {"effort": "high"}
+
+
+def test_reasoning_effort_is_absent_when_unset():
+    assert "reasoning" not in _effort_payload("responses")
+    assert "reasoning" not in _effort_payload("responses", reasoning_effort="")
+
+
+def test_reasoning_effort_is_not_sent_on_chat_completions():
+    seen = {}
+
+    def handler(request):
+        seen.update(json.loads(request.content))
+        return httpx.Response(200, json={"choices": [{"message": {"content": "x"}, "finish_reason": "stop"}],
+                                         "usage": {"prompt_tokens": 1, "completion_tokens": 1}})
+
+    AzureOpenAI(ROOT, "d", "k", api="chat", reasoning_effort="high",
+                client=httpx.Client(transport=httpx.MockTransport(handler))).complete("s", "u")
+    assert "reasoning" not in seen
+
+
+def test_invalid_reasoning_effort_is_rejected_by_provider_and_settings():
+    import pytest
+    from app.config import Settings
+    with pytest.raises(ValueError, match="REASONING_EFFORT"):
+        AzureOpenAI(ROOT, "d", "k", api="responses", reasoning_effort="extreme")
+    with pytest.raises(ValueError, match="AZURE_OPENAI_REASONING_EFFORT"):
+        Settings(azure_openai_reasoning_effort="extreme")
+    assert Settings(azure_openai_reasoning_effort=" High ").azure_openai_reasoning_effort == "high"
+    assert Settings().azure_openai_reasoning_effort == ""
+
+
+def test_deadline_must_sit_below_the_frontend_timeout():
+    import pytest
+    from app.config import Settings
+    Settings(ai_deadline_seconds=28, frontend_timeout_seconds=30)  # exactly the margin: fine
+    with pytest.raises(ValueError, match="FRONTEND_TIMEOUT_SECONDS"):
+        Settings(ai_deadline_seconds=29)
+    with pytest.raises(ValueError, match="FRONTEND_TIMEOUT_SECONDS"):
+        Settings(ai_deadline_seconds=30, frontend_timeout_seconds=30)
+    Settings(ai_deadline_seconds=50, frontend_timeout_seconds=60)
+
+
+@pytest.mark.parametrize("name", ["ai_deadline_seconds", "ai_timeout_seconds", "frontend_timeout_seconds"])
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf"), 0, -1, 601])
+def test_timeouts_reject_non_finite_non_positive_and_huge_values(name, bad):
+    from app.config import Settings
+    with pytest.raises(ValueError):
+        Settings(**{name: bad})
+
+
+def test_timeouts_accept_the_upper_bound():
+    from app.config import Settings
+    Settings(ai_deadline_seconds=500, ai_timeout_seconds=600, frontend_timeout_seconds=600)
+
+
+def test_timeouts_from_the_environment_reject_nan(monkeypatch):
+    from app.config import Settings
+    monkeypatch.setenv("AI_DEADLINE_SECONDS", "nan")
+    with pytest.raises(ValueError):
+        Settings()
+
+
+def test_config_endpoint_serves_the_configured_frontend_timeout(settings, ai, outbox):
+    from fastapi.testclient import TestClient
+    from app.billing import MockBilling
+    from app.main import create_app
+    custom = settings.model_copy(update={"frontend_timeout_seconds": 60.0, "ai_deadline_seconds": 55.0})
+    application = create_app(custom, ai=ai, email=outbox,
+                             billing_provider=MockBilling(custom.billing_webhook_secret, custom.app_base_url))
+    try:
+        with TestClient(application, base_url="https://testserver") as client:
+            assert client.get("/api/config").json() == {"api_timeout_seconds": 60.0}
+    finally:
+        application.state.db.dispose()

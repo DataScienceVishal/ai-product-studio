@@ -91,6 +91,8 @@ AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
 | `RATE_LIMIT_REDIS_THREADS` | 8 by default (>= 1): size of the limiter's own thread pool for Redis checks, kept apart from the shared worker threads. Only matters with `RATE_LIMIT_REDIS_URL` (the in-memory limiter has no pool) |
 | `RATE_LIMIT_REDIS_QUEUE_TIMEOUT` | 1.0 by default (seconds, > 0, <= 30): longest a login-style gate waits for a free Redis pool thread. On timeout the in-memory check answers at once and it counts as a Redis failure (breaker trips). Only matters with `RATE_LIMIT_REDIS_URL` |
 | `AI_PROVIDER` | `fake` (default) or `azure` |
+| `AZURE_OPENAI_REASONING_EFFORT` | empty (not sent) | optional `low`, `medium` or `high` (see Azure OpenAI API) |
+| `FRONTEND_TIMEOUT_SECONDS` | `30` | how long the browser waits before aborting; served at `/api/config`, max 600 |
 | `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_KEY` | the key is a placeholder in cloud runs; the network secret injects the real one |
 | `BILLING_PROVIDER` | `mock` (default) or `stripe` (test keys only; live keys are refused) |
 | `BILLING_WEBHOOK_SECRET`, `STRIPE_SECRET_KEY` | leave the secret unset with mock billing (a random one is made); with Stripe, its `whsec_` value and a test key |
@@ -123,8 +125,25 @@ See `NEXT.md`. The Azure deploy is designed in `ADR/0002-azure-deploy.md` (Bicep
 The studio's reasoning deployment refuses chat (HTTP 400), so set `responses` or give that endpoint form. The
 endpoint may be the resource root or end in `/openai/v1`, `/openai/v1/responses` or `/openai/v1/chat/completions`.
 Reasoning tokens count inside the output budget, and an `incomplete` answer with no text is billed and shown as
-a friendly error. A reasoning model can take about 8 s for one word; the 25 s `AI_DEADLINE_SECONDS` still holds
-but is tight for long summaries (raise it together with the frontend's 30 s abort if needed).
+a friendly error. A reasoning model can take about 8 s for one word.
+
+**Reasoning effort.** `AZURE_OPENAI_REASONING_EFFORT` (`low`, `medium` or `high`; empty by default; `minimal`, `none` and `xhigh` are left out
+on purpose, since only some models accept them: add them to `REASONING_EFFORTS` when a deployment needs one) is sent as
+`reasoning: {"effort": ...}` on the Responses path only. A bad value stops the app at startup. Pro models
+(gpt-5.4-pro) may accept only `high` and reject `low`, so leave it unset unless you have tested the value
+against the deployment.
+
+**Latency versus the browser's abort.** The browser aborts after `FRONTEND_TIMEOUT_SECONDS` (default 30). The
+backend serves that number at `GET /api/config` and the SPA reads it once at startup (falling back to 30 s if the
+call fails), so there is one source and no build variable. We chose this over a Docker build argument because an
+image then needs no rebuild to change it, and the startup check guards the value the browser really uses. The server
+refuses to start if `AI_DEADLINE_SECONDS` (default 25) is not at least 2 s below it. We refuse rather than warn
+because a call the browser has abandoned is still billed, and at pro prices a warning in a log nobody reads is too
+easy to miss. `AI_TIMEOUT_SECONDS`, `AI_DEADLINE_SECONDS` and `FRONTEND_TIMEOUT_SECONDS` must be finite, above 0
+and at most 600 (nan and inf are refused). To allow a longer AI call, raise the deadline and the frontend timeout
+together (for example deadline 55, timeout 60). If a pro model's
+latency still exceeds the deadline, the route is the Responses API's background mode with polling (start the
+call, return at once, poll for the result). It is not built here.
 
 ### Sizing the daily AI cap
 
