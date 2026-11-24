@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# Assertions on the compiled templates for ADR 0003 build slices 1 and 2 (identities, Entra auth, admin).
+#
+#   test-bicep-identities.sh shared.json main.json
+#
+# `az bicep build` turns Bicep variables and expressions into ARM expression strings, so the checks resolve
+# "[variables('x')]" one level and then test the expression text. They guard the structure, not Azure's
+# behaviour: only the first real deploy can show that (ADR 0003, decision 6).
+set -euo pipefail
+
+[ "$#" -eq 2 ] || { echo "usage: test-bicep-identities.sh <shared.json> <main.json>" >&2; exit 2; }
+shared=$1
+main=$2
+failed=0
+check() { # description, jq filter (must be true), file
+  if jq -e "$2" "$3" >/dev/null 2>&1; then
+    echo "ok   $1"
+  else
+    echo "::error::test-bicep-identities: FAIL $1"
+    failed=$((failed + 1))
+  fi
+}
+
+# ---- main.bicep, slice 1 ------------------------------------------------------------------------------------------
+# res($r): the value, or the variable it names when it is "[variables('name')]".
+DEFS='. as $t
+  | def res($r): if ($r | type) == "string" and ($r | test("^\\[variables\\(.[A-Za-z0-9]+.\\)\\]$"))
+                 then $t.variables[$r | capture("variables\\(.(?<n>[A-Za-z0-9]+).\\)").n] else $r end;
+  def named($type; $n): [$t.resources[] | select(.type == $type and (.name | contains($n)))];
+  def ids($r): (res($r.identity).userAssignedIdentities | keys);
+  def sets($r): res($r.properties.configuration.identitySettings);'
+
+check "two user-assigned identities, id-<slug>-app and id-<slug>-migrate, API 2023-01-31" \
+  "$DEFS"'
+  ([$t.resources[] | select(.type == "Microsoft.ManagedIdentity/userAssignedIdentities")] as $i
+   | ($i | length == 2) and ($i | all(.apiVersion == "2023-01-31"))
+     and ($i | map(.name) | map(contains("id-{0}-app")) | any)
+     and ($i | map(.name) | map(contains("id-{0}-migrate")) | any))' "$main"
+
+PICK_ca='[$t.resources[] | select(.type == "Microsoft.App/containerApps")][0]'
+PICK_purge='[$t.resources[] | select(.type == "Microsoft.App/jobs" and (.name | contains("purge")))][0]'
+PICK_migrate='[$t.resources[] | select(.type == "Microsoft.App/jobs" and (.name | contains("migrate")))][0]'
+for spec in "ca:app:migrate" "purge:app:migrate" "migrate:migrate:app"; do
+  IFS=: read -r key db other <<<"$spec"
+  eval "pick=\$PICK_$key"
+  check "$key: exactly the pull identity and id-<slug>-$db are attached" \
+    "$DEFS $pick"' as $r
+    | (ids($r) | length == 2)
+      and (ids($r) | map(contains("pullIdentityName")) | any)
+      and (ids($r) | map(contains("id-{0}-'"$db"'")) | any)
+      and (ids($r) | map(contains("id-{0}-'"$other"'")) | any | not)' "$main"
+  check "$key: pull lifecycle None, id-<slug>-$db lifecycle Main, nothing else" \
+    "$DEFS $pick"' as $r
+    | (sets($r) | length == 2)
+      and (sets($r) | map(select(.identity | contains("pullIdentityName"))) | (length == 1) and (.[0].lifecycle == "None"))
+      and (sets($r) | map(select(.identity | contains("id-{0}-'"$db"'"))) | (length == 1) and (.[0].lifecycle == "Main"))' "$main"
+done
+
+check "dbAuth parameter allows password and entra, defaults to password" \
+  '.parameters.dbAuth.defaultValue == "password" and (.parameters.dbAuth.allowedValues | sort) == ["entra","password"]' "$main"
+# Bicep inlines the env arrays into each resource, so look at the container env expression itself.
+ENV_ca='[$t.resources[] | select(.type == "Microsoft.App/containerApps")][0].properties.template.containers[0].env'
+ENV_purge='[$t.resources[] | select(.type == "Microsoft.App/jobs" and (.name | contains("purge")))][0].properties.template.containers[0].env'
+ENV_migrate='[$t.resources[] | select(.type == "Microsoft.App/jobs" and (.name | contains("migrate")))][0].properties.template.containers[0].env'
+check "useEntra is dbAuth == entra" \
+  '.variables.useEntra | contains("parameters('"'"'dbAuth'"'"')") and contains("'"'"'entra'"'"'")' "$main"
+for spec in "ca:app:migrate" "purge:app:migrate" "migrate:migrate:app"; do
+  IFS=: read -r key db other <<<"$spec"
+  eval "envp=\$ENV_$key"
+  check "$key env: DB_AUTH=entra and the id-<slug>-$db client id, only when dbAuth is entra" \
+    ". as \$t | $envp"' | tostring as $e
+     | ($e | contains("if(variables('"'"'useEntra'"'"'), createArray(createObject('"'"'name'"'"', '"'"'DB_AUTH'"'"', '"'"'value'"'"', '"'"'entra'"'"'), createObject('"'"'name'"'"', '"'"'AZURE_CLIENT_ID'"'"'"))
+       and ($e | contains("userAssignedIdentities'"'"', format('"'"'id-{0}-'"$db"''"'"'"))
+       and ($e | contains("id-{0}-'"$other"'") | not)
+       and ($e | contains("), createArray())"))' "$main"
+done
+check "outputs: client ids and principal ids of both identities" \
+  '(.outputs | keys) as $k | ["appIdentityClientId","appIdentityPrincipalId","migrateIdentityClientId","migrateIdentityPrincipalId"] | all(. as $o | $k | index($o))' "$main"
+
+# ---- shared.bicep and modules/postgres.bicep, slice 2 --------------------------------------------------------------
+PG='[.resources[] | select(.type == "Microsoft.Resources/deployments" and .name == "studio-postgres")][0].properties.template'
+check "server authConfig: Entra enabled, tenantId set, passwordAuth from a parameter" \
+  "$PG"' | [.resources[] | select(.type == "Microsoft.DBforPostgreSQL/flexibleServers")][0].properties.authConfig
+   | .activeDirectoryAuth == "Enabled" and .tenantId == "[tenant().tenantId]" and .passwordAuth == "[parameters('"'"'passwordAuth'"'"')]"' "$shared"
+check "passwordAuth defaults to Enabled (phase 1), allows only Enabled or Disabled; shared.bicep default Enabled too" \
+  "$PG"' | (.parameters.passwordAuth.defaultValue == "Enabled") and (.parameters.passwordAuth.allowedValues | sort) == ["Disabled","Enabled"]' "$shared"
+check "shared.bicep passwordAuth parameter defaults to Enabled" \
+  '.parameters.postgresPasswordAuth.defaultValue == "Enabled"' "$shared"
+check "administrators child: the deployer as ServicePrincipal in our tenant, API 2024-08-01" \
+  "$PG"' | [.resources[] | select(.type == "Microsoft.DBforPostgreSQL/flexibleServers/administrators")] as $a
+   | ($a | length == 1)
+     and ($a[0].apiVersion == "2024-08-01")
+     and ($a[0].name | contains("deployer().objectId"))
+     and ($a[0].properties.principalType == "ServicePrincipal")
+     and ($a[0].properties.tenantId == "[tenant().tenantId]")' "$shared"
+check "administrators depend on the server settings and the firewall rule (one change at a time)" \
+  "$PG"' | [.resources[] | select(.type == "Microsoft.DBforPostgreSQL/flexibleServers/administrators")][0].dependsOn
+   | (map(contains("firewallRules")) | any) and (map(contains("serverSettings")) | any)' "$shared"
+
+if [ "$failed" -gt 0 ]; then
+  echo "test-bicep-identities: $failed check(s) failed" >&2
+  exit 1
+fi
+echo "test-bicep-identities: all checks passed"

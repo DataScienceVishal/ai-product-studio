@@ -34,6 +34,17 @@ param postgresAdminPassword string
 
 param postgresAllowAzureServices bool = true
 
+@description('Password sign-in on the server (ADR 0003). Enabled until phase 2 flips it.')
+@allowed([
+  'Enabled'
+  'Disabled'
+])
+#disable-next-line secure-secrets-in-params
+param postgresPasswordAuth string = 'Enabled'
+
+@description('Postgres role name of the Entra admin (the deploy service principal).')
+param postgresEntraAdminName string = 'sp-ai-studio-deployer'
+
 @description('Create the AcrPull role assignment here. Needs Owner, so only Vishal sets it; the Contributor deployer leaves it false.')
 param grantPullRole bool = false
 
@@ -140,6 +151,8 @@ module postgres 'modules/postgres.bicep' = {
     location: location
     adminPassword: postgresAdminPassword
     allowAzureServices: postgresAllowAzureServices
+    passwordAuth: postgresPasswordAuth
+    entraAdminName: postgresEntraAdminName
     tags: tags
   }
 }

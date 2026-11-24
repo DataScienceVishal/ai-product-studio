@@ -35,6 +35,13 @@ param environmentName string = 'cae-studio'
 param registryName string = 'acrstudioznp96r'
 param pullIdentityName string = 'id-studio-acrpull'
 
+@description('How the app and jobs sign in to Postgres (ADR 0003). password: the URLs carry a password and no identity env is set, exactly as before T-18. entra: DB_AUTH=entra and AZURE_CLIENT_ID are set, so each container takes a token from its own identity. The two identities below exist and are attached in both modes ($0); the deploy workflow flips this in ADR 0003 slice 4.')
+@allowed([
+  'password'
+  'entra'
+])
+param dbAuth string = 'password'
+
 @description('fake (no cost) or azure. The workflow only offers these two values.')
 param aiProvider string = 'fake'
 param azureOpenAiEndpoint string = ''
@@ -131,10 +138,36 @@ resource pullIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-
 
 var appUrl = 'https://${webName}.${cae.properties.defaultDomain}'
 
-var identity = {
+// ADR 0003, decision 1: one database identity per database role. id-<slug>-app is for the web app and the purge
+// job (role <db>_app), id-<slug>-migrate for the migration job only (role <db>_migrator). No Azure role
+// assignment is needed for Postgres Entra sign-in, and managed identities cost nothing.
+// https://learn.microsoft.com/azure/templates/microsoft.managedidentity/2023-01-31/userassignedidentities
+resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  name: 'id-${appName}-app'
+  location: location
+  tags: tags
+}
+
+resource migrateIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  name: 'id-${appName}-migrate'
+  location: location
+  tags: tags
+}
+
+// Each resource gets the pull identity plus exactly one database identity.
+var webIdentity = {
   type: 'UserAssigned'
   userAssignedIdentities: {
     '${pullIdentity.id}': {}
+    '${appIdentity.id}': {}
+  }
+}
+
+var migrateJobIdentity = {
+  type: 'UserAssigned'
+  userAssignedIdentities: {
+    '${pullIdentity.id}': {}
+    '${migrateIdentity.id}': {}
   }
 }
 
@@ -145,13 +178,56 @@ var registries = [
   }
 ]
 
-// The pull identity is only for image pulls: code inside the containers can't get tokens for it.
-var identitySettings = [
+// The pull identity is only for image pulls: code inside the containers can't get tokens for it. The database
+// identity is available to the main containers only (lifecycle Main; the default All also covers init containers).
+// identitySettings, lifecycle values All, Init, Main, None:
+// https://learn.microsoft.com/azure/templates/microsoft.app/2025-07-01/containerapps#property-values
+// and https://learn.microsoft.com/azure/container-apps/managed-identity
+var webIdentitySettings = [
   {
     identity: pullIdentity.id
     lifecycle: 'None'
   }
+  {
+    identity: appIdentity.id
+    lifecycle: 'Main'
+  }
 ]
+
+var migrateIdentitySettings = [
+  {
+    identity: pullIdentity.id
+    lifecycle: 'None'
+  }
+  {
+    identity: migrateIdentity.id
+    lifecycle: 'Main'
+  }
+]
+
+// DB_AUTH=entra makes the app fetch a token for its own identity (AZURE_CLIENT_ID picks the user-assigned one).
+// In password mode neither variable is set, so the app uses its default (DB_AUTH=password).
+var useEntra = dbAuth == 'entra'
+var appDbAuthEnv = useEntra ? [
+  {
+    name: 'DB_AUTH'
+    value: 'entra'
+  }
+  {
+    name: 'AZURE_CLIENT_ID'
+    value: appIdentity.properties.clientId
+  }
+] : []
+var migrateDbAuthEnv = useEntra ? [
+  {
+    name: 'DB_AUTH'
+    value: 'entra'
+  }
+  {
+    name: 'AZURE_CLIENT_ID'
+    value: migrateIdentity.properties.clientId
+  }
+] : []
 
 var commonEnv = [
   {
@@ -274,7 +350,7 @@ var stripeEnv = useStripe ? [
   }
 ] : []
 
-var webEnv = concat(commonEnv, webSettings, emailEnv, aiEnv, stripeEnv)
+var webEnv = concat(commonEnv, webSettings, emailEnv, aiEnv, stripeEnv, appDbAuthEnv)
 
 // Every secret is always defined, so no release removes one that an older revision still references
 // (Microsoft: deactivate every revision that uses a secret before deleting it). Unused ones hold a placeholder.
@@ -309,8 +385,8 @@ var jobSettings = [
   }
 ]
 
-var migrateEnv = concat(commonEnv, jobSettings, emailEnv)
-var purgeEnv = concat(commonEnv, jobSettings, purgeEmailEnv)
+var migrateEnv = concat(commonEnv, jobSettings, emailEnv, migrateDbAuthEnv)
+var purgeEnv = concat(commonEnv, jobSettings, purgeEmailEnv, appDbAuthEnv)
 
 var jobResources = {
   cpu: json('0.25')
@@ -339,7 +415,7 @@ resource web 'Microsoft.App/containerApps@2025-07-01' = {
   name: webName
   location: location
   tags: tags
-  identity: identity
+  identity: webIdentity
   properties: {
     environmentId: cae.id
     workloadProfileName: 'Consumption'
@@ -354,7 +430,7 @@ resource web 'Microsoft.App/containerApps@2025-07-01' = {
         traffic: traffic
       }
       registries: registries
-      identitySettings: identitySettings
+      identitySettings: webIdentitySettings
       secrets: webSecrets
     }
     template: {
@@ -426,7 +502,7 @@ resource migrate 'Microsoft.App/jobs@2025-07-01' = {
   name: 'caj-${appName}-migrate'
   location: location
   tags: tags
-  identity: identity
+  identity: migrateJobIdentity
   properties: {
     environmentId: cae.id
     workloadProfileName: 'Consumption'
@@ -439,7 +515,7 @@ resource migrate 'Microsoft.App/jobs@2025-07-01' = {
       replicaTimeout: 600
       replicaRetryLimit: 0 // a failed migration stops the release; it is never retried blindly
       registries: registries
-      identitySettings: identitySettings
+      identitySettings: migrateIdentitySettings
       secrets: [
         {
           name: 'database-url'
@@ -471,7 +547,7 @@ resource purge 'Microsoft.App/jobs@2025-07-01' = {
   name: 'caj-${appName}-purge'
   location: location
   tags: tags
-  identity: identity
+  identity: webIdentity
   properties: {
     environmentId: cae.id
     workloadProfileName: 'Consumption'
@@ -485,7 +561,7 @@ resource purge 'Microsoft.App/jobs@2025-07-01' = {
       replicaTimeout: 300
       replicaRetryLimit: 1
       registries: registries
-      identitySettings: identitySettings
+      identitySettings: webIdentitySettings
       secrets: [
         {
           name: 'database-url'
@@ -520,3 +596,10 @@ output candidateRevision string = candidateRevision
 output migrateJobName string = migrate.name
 output purgeJobName string = purge.name
 output purgeImage string = purgeImageNow
+output dbAuth string = dbAuth
+output appIdentityName string = appIdentity.name
+output appIdentityClientId string = appIdentity.properties.clientId
+output appIdentityPrincipalId string = appIdentity.properties.principalId // the object id Postgres maps to <db>_app
+output migrateIdentityName string = migrateIdentity.name
+output migrateIdentityClientId string = migrateIdentity.properties.clientId
+output migrateIdentityPrincipalId string = migrateIdentity.properties.principalId // maps to <db>_migrator
