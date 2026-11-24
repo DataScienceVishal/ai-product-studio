@@ -15,7 +15,7 @@ benchmark/
   data/truth/, data/tuning_truth/ truth JSON, one per sheet (written by the generator, spot-checked by hand)
   data/manifest.json              tiers, layouts, templates, messiest 10, stats, recorded page text of image-only sheets
   public/               genuinely public spec PDFs (licence noted), reported separately (optional)
-  score.py              scorer (slice 4)
+  score.py              scorer: python3 score.py --set test|tuning --pred DIR [--ledger FILE]; tests in tests/test_score.py
 ```
 
 ## Dataset

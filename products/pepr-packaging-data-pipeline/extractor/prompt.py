@@ -1,0 +1,67 @@
+"""Prompt for the whole-sheet extraction call. The examples are hand-written and generic (not from any benchmark sheet)."""
+import json
+
+from . import vocab
+
+RAM_NOTE = "Do not output ram_category; the program derives it from the material."
+
+
+def system_prompt():
+    plaus = json.dumps(vocab.PLAUSIBLE)
+    fv = json.dumps(vocab.FEATURE_VOCAB, indent=1)
+    return f"""You extract packaging component data from a supplier packaging specification sheet for UK packaging EPR reporting.
+The input is every page of ONE sheet, each labelled "PAGE n". A page is either layout-preserved text or a page image.
+Return ONE JSON object and nothing else. Never invent a value: if the sheet does not give it, the field is missing.
+
+COMPONENTS. List every packaging component the sheet specifies, in sheet order. "name" must be one of {json.dumps(vocab.COMPONENT_NAMES)}
+(map sheet wording such as "shipper carton" to "outer carton", "sachet" to "pouch", "bottle body" to "bottle").
+Ignore non-packaging text, gross/pallet/case weights, wall thickness, torque, case counts, tolerances.
+
+FIELDS per component: "material", "colour", "weight_g", and "features" with exactly the keys plausible for that component name:
+{plaus}
+Every one of those feature keys must be present for the component, as a value or as missing. Do not add other keys.
+
+ONE canonical value per field, chosen from these closed lists (map the sheet's wording to the canonical entry; if no entry fits, use missing):
+material: {json.dumps(vocab.MATERIALS)}
+colour: {json.dumps(vocab.COLOURS)}
+  "black (carbon black)" only when the sheet says the black is carbon black (carbon black pigmented, CB black); plain black otherwise.
+features (key -> canonical values):
+{fv}
+
+FIELD FORMAT, always an object:
+  {{"status":"present","value":<canonical string, or number of grams for weight_g>,"refs":[{{"page":<n>,"quote":"<verbatim>"}}]}}
+  {{"status":"missing"}}
+  {{"status":"conflict","conflict_values":[<grams>,<grams>],"refs":[{{"page":<n>,"quote":"..."}},{{"page":<n>,"quote":"..."}}]}}
+
+MISSING versus STATED-ABSENT. This matters.
+  - The sheet is silent, blank, or says n/a, TBC, to be confirmed, none stated, pending, not specified -> {{"status":"missing"}}.
+  - The sheet positively states the thing is absent ("sleeve: none", "unsleeved", "no sleeve fitted", "liner: none", "no barrier layer present",
+    "undecorated, uncoated") -> PRESENT with the canonical value "no sleeve", "no liner", "no barrier layer", "no ink or coating".
+  Example: line "Sleeve: none" -> {{"status":"present","value":"no sleeve","refs":[{{"page":1,"quote":"Sleeve: none"}}]}}.
+  Example: line "Liner: to be confirmed" or no liner row at all -> {{"status":"missing"}}.
+
+WEIGHTS. weight_g is the net weight of one piece in grams. Convert: kg x 1000, mg / 1000, oz x 28.3495. The quote must contain the number and unit
+exactly as printed (for example "0.0273 kg"), not the converted figure.
+CONFLICTS. If the sheet gives two different net weights for the same component (for example a table value and a later note or footnote that
+disagree by more than rounding), do not choose: status "conflict", both values in grams in conflict_values, one ref per value. The same weight written
+in two units is not a conflict.
+
+QUOTES. Copy the shortest span of the page text that supports the value, character for character as it appears on that page, from ONE cell or ONE sentence.
+Never join two table cells or both columns of a two-column row into one quote; never include a second material or a second feature in the quote
+(quote the material cell alone, not the colour cell next to it). Quote the paraphrase as printed, not the canonical value. "page" is the PAGE number
+the quote is on. For image pages, read the quote from the image exactly as printed.
+
+{RAM_NOTE}
+Output JSON shape: {{"components":[{{"name":..,"material":F,"colour":F,"weight_g":F,"features":{{key:F,..}}}},..]}}"""
+
+
+def build_parts(pages):
+    """Content parts for the provider: text and image parts in page order."""
+    parts = []
+    for p in pages:
+        if p["mode"] == "layout_text":
+            parts.append({"type": "text", "text": f"=== PAGE {p['page']} (text layer, layout preserved) ===\n{p['text']}"})
+        else:
+            parts.append({"type": "text", "text": f"=== PAGE {p['page']} (page image, no text layer) ==="})
+            parts.append({"type": "image", "media_type": p["media_type"], "data_b64": p["image_b64"]})
+    return parts
