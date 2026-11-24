@@ -149,3 +149,27 @@ flexible-server show --query authConfig` showing `passwordAuth: Disabled` and `a
 a `studioadmin` password sign-in refused; a sign-in as `<db>_app` with the *migrator* identity's token refused;
 the administrators list containing only the deploy SP; `rolpassword IS NULL` for both roles on Azure. Decision 5
 condition 1 ends only when these and B1 hold.
+
+## Re-check (ad40007, 2026-11-24): PASS
+
+Re-checked only what this review raised, plus anything the edits introduced.
+
+- **B1 fixed.** Decision 5 now names the deploy SP credential as the biggest residual risk. Condition 1 ends only
+  with phase 2 enforced, the first-deploy evidence, this PASS, **and** either (a) OIDC limited to `main` plus
+  workflow protection or (b) Vishal's written acceptance. It is tied to Q-8, which is open in `state/QUESTIONS.md`
+  on `main`. Until then the server stays demo data only, and the ADR creates no federated credential (ask-first
+  respected). Slice 7 waits for Q-8.
+- **B2 fixed.** The audience is described as shared by every server; tenant, oid and label are what bind a token
+  to us; the replay consequence is stated; the host comes only from `PG_SERVER`, and a slice 4 grep checks this.
+- **B3 fixed.** The phase 1 password stays inside the step (never in `$GITHUB_ENV`/`$GITHUB_OUTPUT`, a file or an
+  argument, and is not transformed). Phase 2 sets `Disabled` in both the bicepparam and the module default, and
+  every release asserts `passwordAuth == Disabled` and `activeDirectoryAuth == Enabled`, tested in slice 6.
+- **N1 to N11:** all folded in (admin drift in both ARM and `pgaadauth_list_principals(true)`, `isadmin = 0`, SP
+  recreation row, NOLOGIN-first order, casing check, purge on `AI_PROVIDER=fake`, alert as a follow-up, flood row,
+  dbauth wording sent to the app review, SHA pin in slice 7, `Aa1!` suffix, token hygiene).
+- **New, non-blocking (R1).** One failure-mode row still says "re-enable [password auth] for one run via the param
+  if truly needed", but the new every-release assertion would then fail every release. Reword it: re-enabling is
+  a deliberate break-glass step that stops releases until it is reverted. Record it in DECISIONS.md, and it is
+  not allowed while real data is on the server.
+
+The architecture gate passes. The first-deploy evidence and Q-8 still gate the end of decision 5 condition 1.
