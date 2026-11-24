@@ -74,3 +74,10 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Options: A) Add a federated credential limited to main on the deploy app registration (about 5 minutes in the portal; the studio writes the exact steps and switches the workflow to OIDC), then delete the client secret (recommended) B) Keep the secret and accept the risk in writing: demo data only stays in force until handover C) Leave it for now and decide before the first real deploy
 - Recommended: A, because it takes the only long-lived database admin credential out of reach of non-main branches
 - If no answer: waits (ask-first list). The studio builds T-18 behind the demo-data condition (behaves as C), and nothing is deployed until Q-5's approval setting is flipped anyway
+
+## Q-9 (status: open)
+- Decision: May the studio sign up for free trials (no card, studio email) of incumbent tools, to test whether their weak spots are real?
+- Context: After 11 rounds and 47 ideas, none has reached 70. A wedge check on the five best near-misses (round11-wedge-summary.md) found no new segment that lifts any of them; the deciding question for the best one (pEPR packaging data, 68) is whether Repackd's spec-sheet extraction is weak on messy real documents, and desk research can't answer that. Creating accounts is on the ask-first list.
+- Options: A) Yes to free, no-card trials of named incumbents (Repackd first, then Jelly for the restaurant idea), test data only, nothing in your name; the studio logs each sign-up in DECISIONS.md (recommended) B) No trials; keep scouting new niches only C) Build the best parked idea anyway (restaurant margin copilot, 66) and let a demo to your friend be the evidence
+- Recommended: A, because it is the only cheap way to turn a 66-68 near-miss into a pass or a clean kill
+- If no answer: waits (ask-first). Meanwhile the studio keeps scouting (behaves as B)
