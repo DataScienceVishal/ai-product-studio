@@ -5,9 +5,10 @@ import re
 from pathlib import Path
 
 import pytest
+from fastapi.testclient import TestClient
+
 from app.main import create_app
 from app.spa import CLIENT_ROUTES, HTML_CSP
-from fastapi.testclient import TestClient
 
 INDEX = ('<!doctype html><html><head><script type="module" crossorigin src="/assets/index-abc123.js"></script>'
          '<link rel="stylesheet" href="/assets/index-abc123.css"></head><body><div id="root"></div></body></html>')
@@ -196,20 +197,26 @@ _ROUTE_MEMBER = re.compile(rf"""\bpath\s*===\s*{_MEMBER}{_END}|(?<![\w$.)\]+]){_
 _LOOKUP = re.compile(r"""(?<![\w$.])([A-Za-z_$][\w$]*)\s*\[\s*path\s*\]""")
 _OBJECT_START = re.compile(r"""\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::(?:[^=;]|=>)+)?=\s*\{""")
 _ROUTE_KEY_ENTRY = re.compile(r"""^\s*(["'`])(/[^"'`$]*)\1\s*:""")
+_ANY_ROUTE_KEY = re.compile(r"""(["'`])/[^"'`$]*\1\s*:""")
 _STR_ENTRY = re.compile(r"""^\s*(?:([A-Za-z_$][\w$]*)|(["'`])([^"'`$]+)\2)\s*:\s*(["'`])([^"'`$]*)\4\s*$""")
 # Other ways to compare the path would hide a route from the sync test: path.startsWith(..), path !== .., /re/.test(path),
 # SET.has(path), or a non-literal the scanner could not resolve to a string above...
-# `PUBLIC.has(path)` is the app's sign-in check, not routing, so it is the one allowed membership test.
+# `PUBLIC.has(path)` (exactly that name) is the app's sign-in check, not routing, so it is the one allowed membership test.
+_PUBLIC_CHECK = re.compile(r"""(?<![\w$.])PUBLIC\s*\.\s*has\s*\(\s*path\s*\)""")
 _OTHER = re.compile(
     r"""\bpath\s*(?:!==?|==(?!=))|\bpath\s*\.\s*\w+\s*\(|\bswitch\s*\(\s*path\s*\)"""
-    r"""|(?<!PUBLIC)\.\s*(?:test|includes|has|indexOf)\s*\(\s*path\s*\)"""
+    r"""|\.\s*(?:test|includes|has|indexOf)\s*\(\s*path\s*\)"""
     r"""|\bpath\s*===\s*[A-Za-z_$"'`]|[A-Za-z_$][\w$.]*\s*\[\s*path\s*\]|(?:!==?|(?<![=!])==(?!=))\s*path\b"""
     r"""|[A-Za-z_$)\]"'`][\w$.]*\s*===\s*path\b""")
 
 
-def _strip_comments(src: str) -> str:
-    """Remove // and /* */ comments (not inside strings; '" strings end at a newline, so JSX text apostrophes can't run on)."""
-    out, i, quote = [], 0, ""
+def _strip_comments(src: str) -> tuple[str, list[str]]:
+    """Remove // and /* */ comments (not inside strings; '" strings end at a newline, so JSX text apostrophes can't run on).
+
+    Also returns what it is unsure about, which the scanner reports as unreadable: an unterminated /* (the rest of the file
+    would vanish), and a comment marker that is not first on its line or after whitespace (`http://x` in JSX text, a regex
+    like /a\\//) when the text it removes contains `path`, since that may be code, not a comment."""
+    out, problems, i, quote = [], [], 0, ""
     while i < len(src):
         c, two = src[i], src[i:i + 2]
         if quote:
@@ -219,21 +226,30 @@ def _strip_comments(src: str) -> str:
                 i += 1
             elif c == quote or (c == "\n" and quote != "`"):
                 quote = ""
-        elif two == "//":
-            while i < len(src) and src[i] != "\n":
-                i += 1
-            continue
-        elif two == "/*":
-            end = src.find("*/", i + 2)
-            i = len(src) if end < 0 else end + 2
-            out.append(" ")
+        elif two in ("//", "/*"):
+            if two == "//":
+                end = src.find("\n", i)
+                end = len(src) if end < 0 else end
+            else:
+                close = src.find("*/", i + 2)
+                if close < 0:
+                    problems.append("unterminated /*")
+                    end = len(src)
+                else:
+                    end = close + 2
+            removed = src[i:end]
+            if i and not src[i - 1].isspace() and re.search(r"\bpath\b", removed):
+                problems.append(f"comment marker inside code: {removed[:30]!r}")
+            if two == "/*":
+                out.append(" ")
+            i = end
             continue
         else:
             out.append(c)
             if c in "\"'`":
                 quote = c
         i += 1
-    return "".join(out)
+    return "".join(out), problems
 
 
 def _split_top_level(text: str) -> list[str]:
@@ -244,7 +260,7 @@ def _split_top_level(text: str) -> list[str]:
         if quote:
             if c == "\\":
                 i += 1
-            elif c == quote:
+            elif c == quote or (c == "\n" and quote != "`"):
                 quote = ""
         elif c in "\"'`":
             quote = c
@@ -260,10 +276,10 @@ def _split_top_level(text: str) -> list[str]:
     return [p for p in parts if p.strip()]
 
 
-def _object_literals(src: str) -> dict[str, list[str]]:
+def _object_literals(src: str) -> dict[str, tuple[list[str], str]]:
     """name -> top-level entries of its `const NAME = { ... }` literal. A name declared twice, or assigned to anywhere
     (`NAME[k] = v`, `NAME.k = v`, `NAME = ..`, Object.assign), is left out: its routes can't be known from one literal."""
-    out: dict[str, list[str]] = {}
+    out: dict[str, tuple[list[str], str]] = {}
     declarations = _OBJECT_START.sub(" ", src)  # the literal's own `NAME = {` is not an assignment
     for m in _OBJECT_START.finditer(src):
         name = m.group(1)
@@ -273,7 +289,7 @@ def _object_literals(src: str) -> dict[str, list[str]]:
             if quote:
                 if c == "\\":
                     i += 1
-                elif c == quote:
+                elif c == quote or (c == "\n" and quote != "`"):
                     quote = ""
             elif c in "\"'`":
                 quote = c
@@ -289,7 +305,8 @@ def _object_literals(src: str) -> dict[str, list[str]]:
         assigned = re.search(rf"(?<![\w$.]){n}\s*(?:\.\s*[\w$]+|\[[^\]]*\])*\s*(?:\*\*|\?\?|\|\||&&|<<|>>>?|[-+*/%&|^])?=(?![=>])", declarations) \
             or re.search(rf"Object\s*\.\s*assign\s*\(\s*{n}\b", src)
         if not twice and not assigned:
-            out[name] = _split_top_level(src[m.end():i - 1])
+            body = src[m.end():i - 1]
+            out[name] = (_split_top_level(body), body)
     return out
 
 
@@ -300,7 +317,7 @@ def scan_routes(src: str) -> tuple[set[str], list[str]]:
     ROUTES and PAGES from a single, never-reassigned `const NAME = { ... }` literal in the same source. A PAGES literal is read
     only if EVERY top-level entry is a quoted "/route": key (no spread, computed key, method or bare key). Whatever it cannot
     resolve is returned as unreadable."""
-    src = _strip_comments(src)
+    src, problems = _strip_comments(src)
     objects = _object_literals(src)
     found: set[str] = set()
 
@@ -314,7 +331,7 @@ def scan_routes(src: str) -> tuple[set[str], list[str]]:
         left = m.group(1) is not None  # `path === NAME.key` fills groups 1-4, `NAME.key === path` groups 5-8
         name, key = (m.group(1), m.group(2) or m.group(4)) if left else (m.group(5), m.group(6) or m.group(8))
         values = {}
-        for entry in objects.get(name, []):
+        for entry in objects.get(name, ([], ""))[0]:
             e = _STR_ENTRY.match(entry)
             if e:
                 values[e.group(1) or e.group(3)] = e.group(5)
@@ -324,9 +341,10 @@ def scan_routes(src: str) -> tuple[set[str], list[str]]:
         return m.group(0)
 
     def lookup(m: re.Match) -> str:
-        entries = objects.get(m.group(1), [])
+        entries, body = objects.get(m.group(1), ([], ""))
         keys = [_ROUTE_KEY_ENTRY.match(e) for e in entries]
-        if keys and all(keys):
+        # every `"/route":` in the object's whole text must be a top-level entry, or entries were merged by a misread string
+        if keys and all(keys) and len(_ANY_ROUTE_KEY.findall(body)) == len(entries):
             found.update(k.group(2) for k in keys)
             return " "
         return m.group(0)
@@ -335,7 +353,8 @@ def scan_routes(src: str) -> tuple[set[str], list[str]]:
     rest = _ROUTE_REVERSED.sub(literal, rest)
     rest = _ROUTE_MEMBER.sub(member, rest)
     rest = _LOOKUP.sub(lookup, rest)
-    return found, [m.group(0) for m in _OTHER.finditer(rest)]
+    rest = _PUBLIC_CHECK.sub(" ", rest)
+    return found, problems + [m.group(0) for m in _OTHER.finditer(rest)]
 
 
 def test_route_scanner_accepts_any_quote_style_and_flags_other_comparisons():
@@ -405,7 +424,8 @@ def test_route_scanner_resolves_object_lookup_routing():
     assert other and not found
     found, other = scan_routes("return PAGES[path];")  # no literal to resolve
     assert other and not found
-    assert scan_routes('const PAGES = { "/a": { "/b": B } };\nreturn PAGES[path];') == ({"/a"}, [])  # nested keys are not routes
+    found, other = scan_routes('const PAGES = { "/a": { "/b": B } };\nreturn PAGES[path];')  # a nested route-keyed object: unsure
+    assert other and not found
 
 
 @pytest.mark.parametrize("literal", [
@@ -434,6 +454,33 @@ def test_route_scanner_flags_an_object_lookup_it_cannot_read_completely(literal)
 ])
 def test_route_scanner_reads_a_lookup_object_with_comments(literal):
     assert scan_routes(literal + "\nreturn PAGES[path];") == ({"/a", "/b"}, [])
+
+
+@pytest.mark.parametrize("source", [
+    'const PAGES = {\n "/a": () => <p>Don\'t</p>,\n "/b": () => <p>It\'s</p>,\n "/c": C };\nreturn PAGES[path];',
+    'if (x) return <p>see http://x</p>; if (path === "/b") go();',
+    'if (/a\\//.test(x) || path === "/b") go();',
+    'const p = s.replace(/\\/*$/, "");\nif (path === "/b") go();',
+])
+def test_route_scanner_flags_quote_and_comment_lookalikes_instead_of_dropping_routes(source):
+    _found, other = scan_routes(source)
+    assert other, source
+
+
+def test_route_scanner_jsx_apostrophe_on_an_entry_line_is_flagged_not_misread():
+    """The apostrophe hides that line's comma from the splitter; the route-key count notices and the lookup is unreadable."""
+    src = 'const PAGES = {\n "/a": () => <p>Don\'t</p>,\n "/b": () => <p>Fine</p> };\nreturn PAGES[path];'
+    found, other = scan_routes(src)
+    assert other and not found
+
+
+@pytest.mark.parametrize("name", ["MY_PUBLIC", "NOTPUBLIC", "x.PUBLIC", "PUBLIC2"])
+def test_route_scanner_only_the_exact_public_set_is_allowed_to_test_the_path(name):
+    assert scan_routes(f"if ({name}.has(path)) go();")[1], name
+    assert scan_routes("if (PUBLIC.has(path)) go();") == (set(), [])
+
+
+# Known limitation: an alias (`const R = ROUTES; R.a = "/z"`) is not tracked, so ROUTES.a still resolves to its literal.
 
 
 def test_route_scanner_comments_do_not_hide_or_invent_routes():
