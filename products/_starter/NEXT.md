@@ -1,3 +1,13 @@
+# T-35 status
+
+Done: `/assets/` with no assets folder is a plain 404 (spa.py registers both spellings; test added, GET and HEAD);
+SPA fallback test loops over all of `CLIENT_ROUTES`; README backend count updated; `_TIMEOUT_MARGIN` constant in
+ai.py; ADR 0002 note (Node 22 EOL April 2027, plan the move by Feb 2027, first Dependabot docker PR must be
+digest-only); Dependabot github-actions PRs grouped into one. Not grouped: npm and pip, because dependabot.yml
+has no entries for them (docker and actions only).
+Left: nothing.
+Verify: `cd backend && python -m pytest` (316 passed, 1 skipped); `cd frontend && npx vitest run`.
+
 # T-34b status
 
 Done (reviews/T-33-review.md, T-34-review.md): S1 an incomplete/failed Responses answer is never saved as a summary;

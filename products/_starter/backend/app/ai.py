@@ -171,7 +171,7 @@ class ManagedIdentityToken:
             if left <= 0:
                 raise AIUnavailable()
             try:
-                self._token, self._expires_on = self._fetch(left, short=left < self._timeout - 0.05)
+                self._token, self._expires_on = self._fetch(left, short=left < self._timeout - _TIMEOUT_MARGIN)
             except _CallerTimeout:
                 raise  # the caller's own deadline, not an endpoint failure: do not cache
             except AIUnavailable as error:
@@ -220,6 +220,8 @@ class ManagedIdentityToken:
             raise AIUnavailable() from None
         return token, expires_on
 
+
+_TIMEOUT_MARGIN = 0.05  # seconds: a budget this much below the full timeout counts as a shortened (caller-limited) call
 
 _ENDPOINT_SUFFIXES = ("/openai/v1/chat/completions", "/openai/v1/responses", "/openai/v1", "/openai")
 

@@ -8,7 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import create_app
-from app.spa import HTML_CSP
+from app.spa import CLIENT_ROUTES, HTML_CSP
 
 INDEX = ('<!doctype html><html><head><script type="module" crossorigin src="/assets/index-abc123.js"></script>'
          '<link rel="stylesheet" href="/assets/index-abc123.css"></head><body><div id="root"></div></body></html>')
@@ -33,8 +33,7 @@ def web(settings, dist):
         yield client
 
 
-@pytest.mark.parametrize("path", ["/", "/login", "/verify-email?token=abc", "/reset-password", "/accept-invite",
-                                  "/billing/done", "/billing/mock-checkout", "/settings", "/team", "/verify-email/"])
+@pytest.mark.parametrize("path", sorted(CLIENT_ROUTES) + ["/verify-email?token=abc", "/verify-email/"])
 def test_client_routes_fall_back_to_index(web, path):
     r = web.get(path)
     assert r.status_code == 200
@@ -207,3 +206,15 @@ def test_client_routes_match_the_frontend_router():
     other = [m.group(0) for m in _OTHER.finditer(src)]
     assert not other, f"App.tsx compares the path in a way this test cannot read ({other}); use path === '/route'"
     assert found == set(CLIENT_ROUTES)
+
+
+@pytest.mark.parametrize("path", ["/assets", "/assets/", "/assets/missing.js"])
+@pytest.mark.parametrize("method", ["get", "head"])
+def test_assets_without_an_assets_folder_is_404_not_a_redirect(settings, tmp_path, path, method):
+    bare = tmp_path / "bare-dist"
+    bare.mkdir()
+    (bare / "index.html").write_text(INDEX)
+    settings.frontend_dist = str(bare)
+    with TestClient(create_app(settings)) as client:
+        r = getattr(client, method)(path, follow_redirects=False)
+    assert r.status_code == 404 and "location" not in r.headers
