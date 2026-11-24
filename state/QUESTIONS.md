@@ -81,3 +81,10 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Options: A) Yes to free, no-card trials of named incumbents (Repackd first, then Jelly for the restaurant idea), test data only, nothing in your name; the studio logs each sign-up in DECISIONS.md (recommended) B) No trials; keep scouting new niches only C) Build the best parked idea anyway (restaurant margin copilot, 66) and let a demo to your friend be the evidence
 - Recommended: A, because it is the only cheap way to turn a 66-68 near-miss into a pass or a clean kill
 - If no answer: waits (ask-first). Meanwhile the studio keeps scouting (behaves as B)
+
+## Q-10 (status: open)
+- Decision: Should the G1 rubric score Competition on the studio's wedge against incumbents (price, fit, segment they don't serve) rather than on whether a rival exists?
+- Context: 17 rounds, 53 ideas scored, 0 passed. The validator re-scored five real, paying UK AI products as launch-day ideas and they land at 57-66 too (Jelly 62, Dext 62, RemitClear 66), so the bar as written rejects products that are succeeding. See state/ideas/META-REVIEW.md.
+- Options: A) Yes: Competition is scored on a nameable, evidenced wedge; the 70 bar stays; parked ideas are re-scored, with pEPR (68) first after its benchmark (recommended) B) Keep the rubric as it is and keep scouting new theses C) Skip the gate for one bet: build pEPR now as a cheaper Repackd alternative and let a demo be the evidence
+- Recommended: A, because it fixes the measured calibration fault without lowering the bar, and the pEPR benchmark (T-56) supplies the evidence either way
+- If no answer: A after 12 hours (reversible; pipeline.md is edited and the change logged)
