@@ -134,3 +134,23 @@ doesn't touch.
   by `|| true` and the check passes. Add `[ -f "$root/SETUP.md" ]`.
 - `$root` goes into the exclusion regex unescaped. That's harmless for today's paths, but a path containing `+`
   or `(` would break it.
+
+## Re-review 2 (7f9dabc)
+
+### Verdict: PASS
+
+- R1 is fixed. Lines 254, 299, 421 and 471 now read as live text. The marker covers only the `STUDIO_DB_SEED`
+  clause or the seed-rotation sentence, so the decision-8 boundary and follow-up 1 for `AZURE_CREDENTIALS` stay
+  visible and current.
+- The other markers are narrowed to the clause that is out of date: line 136 (migrator password), line 150
+  (verifiers match), and line 318 (purge URL refreshed because of rotation). Bullets that are wholly about the
+  seed, verifiers or rotation (lines 146 and 216, condition 3, and the table rows) keep the marker at the start.
+  The banner is still accurate.
+- Nits fixed. `SETUP.md` is in the existence check (`[ -e ]`). Paths are made relative with `sed` before the
+  exclusions run. If `$root` had regex characters, the `sed` would simply fail to strip the prefix, the
+  exclusions wouldn't match, and the check would fail rather than pass silently. That's the safe direction.
+- `bash products/_starter/infra/test-deploy-workflow.sh`: `passed: 66  failed: 0`, exit 0.
+- Mutation: I appended `STUDIO_DB_SEED` to `products/_starter/infra/README.md`. Result: `FAIL STUDIO_DB_SEED still in:
+  products/_starter/infra/README.md`, `passed: 65  failed: 1`, exit 1. Reverted with `git checkout`; the tree is clean.
+
+No open critical issues. Slice 5 can merge once main's tests are green.
