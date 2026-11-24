@@ -186,8 +186,19 @@ def test_assets_do_not_follow_symlinks(web, dist, tmp_path):
 
 
 _ROUTE = re.compile(r"""\bpath\s*===\s*(["'`])(/[^"'`$]*)\1""")
-# Other ways to compare the path would hide a route from the sync test: path.startsWith(..), path !== .., /re/.test(path)...
-_OTHER = re.compile(r"""\bpath\s*(?:!==?|==(?!=))|\bpath\s*\.\s*\w+\s*\(|\bswitch\s*\(\s*path\s*\)|\.\s*(?:test|includes)\s*\(\s*path\s*\)""")
+# "/x" === path (literal first)
+_ROUTE_REVERSED = re.compile(r"""(["'`])(/[^"'`$]*)\1\s*===\s*path\b""")
+# Other ways to compare the path would hide a route from the sync test: path.startsWith(..), path !== .., /re/.test(path),
+# path === ROUTES.x (a non-literal), PAGES[path] (a lookup table)...
+_OTHER = re.compile(
+    r"""\bpath\s*(?:!==?|==(?!=))|\bpath\s*\.\s*\w+\s*\(|\bswitch\s*\(\s*path\s*\)|\.\s*(?:test|includes)\s*\(\s*path\s*\)"""
+    r"""|\bpath\s*===\s*[A-Za-z_$]|[A-Za-z_$][\w$.]*\s*\[\s*path\s*\]|(?:!==?|(?<![=!])==(?!=))\s*path\b|[A-Za-z_$][\w$.]*\s*===\s*path\b""")
+
+
+def scan_routes(src: str) -> tuple[set[str], list[str]]:
+    """Literal routes the source compares `path` with, and the comparisons the scanner cannot read."""
+    found = {m.group(2) for m in _ROUTE.finditer(src)} | {m.group(2) for m in _ROUTE_REVERSED.finditer(src)}
+    return found, [m.group(0) for m in _OTHER.finditer(src)]
 
 
 def test_route_scanner_accepts_any_quote_style_and_flags_other_comparisons():
@@ -197,13 +208,23 @@ def test_route_scanner_accepts_any_quote_style_and_flags_other_comparisons():
     assert not _OTHER.search('PUBLIC.has(path) && path === "/x"')
 
 
+def test_route_scanner_reads_or_flags_the_other_ways_to_write_a_route():
+    assert scan_routes("""if ("/x" === path) a(); if ('/y' === path || path === "/z") b();""") == ({"/x", "/y", "/z"}, [])
+    assert scan_routes("if (path === '/a') a();") == ({"/a"}, [])
+    for unreadable in ("if (path === ROUTES.billing) a();", "if (ROUTES.billing === path) a();", "return PAGES[path];",
+                       "const P = pages.main[path];", "if (x === path) a();", "if (x !== path) a();",
+                       "if (\"/x\" !== path) a();", "if (\"/x\" == path) a();", "if (x != path) a();"):
+        found, other = scan_routes(unreadable)
+        assert other and not found, unreadable
+
+
 def test_client_routes_match_the_frontend_router():
     """A new page in App.tsx must be added to CLIENT_ROUTES (or a refresh on it would 404)."""
     from app.spa import CLIENT_ROUTES
     app_tsx = Path(__file__).resolve().parents[2] / "frontend" / "src" / "App.tsx"
     src = app_tsx.read_text()  # missing file: fail, not skip
-    found = {m.group(2) for m in _ROUTE.finditer(src)} | {"/"}
-    other = [m.group(0) for m in _OTHER.finditer(src)]
+    found, other = scan_routes(src)
+    found |= {"/"}
     assert not other, f"App.tsx compares the path in a way this test cannot read ({other}); use path === '/route'"
     assert found == set(CLIENT_ROUTES)
 

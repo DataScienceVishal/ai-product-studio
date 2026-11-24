@@ -30,7 +30,9 @@ SHARED = os.environ.get("TEST_DATABASE_SHARED") == "1"
 _BASE = make_url(_BASE_URL)
 _BASE_NAME = _BASE.database or "starter_test"
 _STALE_AFTER_SECONDS = 6 * 3600
-_BASE_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,40}$")
+_BASE_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,35}$")
+# `<base>_t<10 digits>_<pid up to 7>_<6 hex>` adds 2+10+1+7+1+6 = 27 bytes; 36 + 27 = 63 = Postgres NAMEDATALEN - 1.
+_MAX_DB_NAME = 63
 # Only databases carrying this comment (set at creation) are ever dropped by the stale cleanup.
 _MARKER = "starter-pytest-ephemeral"
 if SHARED:
@@ -54,7 +56,7 @@ def pytest_configure(config) -> None:
 def _check_base_name(name: str) -> None:
     if not _BASE_NAME_RE.match(name):
         pytest.exit(f"TEST_DATABASE_URL database name {name!r} is not allowed: use letters, digits and underscores "
-                    f"only (max 41 characters, not starting with a digit), or set TEST_DATABASE_SHARED=1.", 2)
+                    f"only (max 36 characters, not starting with a digit), or set TEST_DATABASE_SHARED=1.", 2)
 
 
 def _admin_conn():
@@ -89,12 +91,21 @@ def _drop_stale(conn, base: str, now: float | None = None) -> list[str]:
 
 
 def _create_run_db(conn, name: str) -> None:
+    assert len(name.encode()) <= _MAX_DB_NAME, f"test database name {name!r} exceeds Postgres's 63-byte limit"
     try:
         conn.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
     except psycopg.errors.InsufficientPrivilege:
         pytest.exit("The test database user needs the CREATEDB privilege (ALTER ROLE <user> CREATEDB), "
                     "or set TEST_DATABASE_SHARED=1 to use the shared database.", 2)
-    conn.execute(sql.SQL("COMMENT ON DATABASE {} IS {}").format(sql.Identifier(name), sql.Literal(_MARKER)))
+    try:
+        conn.execute(sql.SQL("COMMENT ON DATABASE {} IS {}").format(sql.Identifier(name), sql.Literal(_MARKER)))
+    except Exception as exc:  # an unmarked DB would never be reclaimed by the stale cleanup: drop it now
+        outcome = "it was dropped"
+        try:
+            conn.execute(sql.SQL("DROP DATABASE IF EXISTS {} WITH (FORCE)").format(sql.Identifier(name)))
+        except psycopg.Error as drop_exc:
+            outcome = f"dropping it failed too ({drop_exc}); drop it by hand"
+        pytest.exit(f"could not mark test database {name} ({exc}); {outcome}.", 2)
 
 
 @pytest.fixture(scope="session")
