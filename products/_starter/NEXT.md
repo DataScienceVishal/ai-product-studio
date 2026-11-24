@@ -1,3 +1,12 @@
+# T-37 status
+
+Done: backend/tests/conftest.py gives each pytest run its own database (`<db>_t<epoch>_<pid>_<rand>`, created via the
+`postgres` maintenance DB, dropped at session end in a finally). `TEST_DATABASE_SHARED=1` keeps the old shared behaviour.
+Stale `<db>_t<epoch>_...` databases older than 6 h are dropped at the next run's start. CI unchanged: its Postgres user
+`studio` is POSTGRES_USER (superuser). e2e.sh does not use conftest. README testing section updated.
+Left: nothing.
+Verify: two `python -m pytest` at once in backend/ (323 passed, 1 skipped each); `cd frontend && npx vitest run` (111 passed).
+
 # T-35 status
 
 Done: `/assets/` with no assets folder is a plain 404 (spa.py registers both spellings; test added, GET and HEAD);
