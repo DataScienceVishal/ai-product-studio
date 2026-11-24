@@ -100,8 +100,8 @@ present "host built from PG_SERVER only" 'host="\$PG_SERVER\.postgres\.database\
 present "DB_AUTH=entra exported for the deploy" 'export DB_AUTH=entra'
 n=$(grep -cE '^[[:space:]]*(export )?DATABASE_URL[A-Z_]*=' "$wf")
 [ "$n" = 2 ] && ok "exactly two writers of DATABASE_URL_* (host pinning)" || bad "exactly two writers of DATABASE_URL_* (host pinning), found $n"
-if grep -qE "readEnvironmentVariable\('DB_AUTH'" "$here/main.bicepparam"; then ok "main.bicepparam reads DB_AUTH, default stays password"; else bad "main.bicepparam reads DB_AUTH"; fi
-grep -qE "readEnvironmentVariable\('DB_AUTH', 'password'\)" "$here/main.bicepparam" && ok "dbAuth default is password" || bad "dbAuth default is password"
+if grep -qE "readEnvironmentVariable\('DB_AUTH'" "$here/main.bicepparam"; then ok "main.bicepparam reads DB_AUTH"; else bad "main.bicepparam reads DB_AUTH"; fi
+grep -qE "readEnvironmentVariable\('DB_AUTH', 'entra'\)" "$here/main.bicepparam" && ok "dbAuth default is entra (password sign-in is off, phase 2)" || bad "dbAuth default is entra (password sign-in is off, phase 2)"
 present "oids come from the main.bicep outputs" 'appIdentityPrincipalId'
 present "migrator oid from the outputs" 'migrateIdentityPrincipalId'
 if grep -q '^output appIdentityPrincipalId' "$here/main.bicep" && grep -q '^output migrateIdentityPrincipalId' "$here/main.bicep"; then ok "main.bicep has both principal id outputs"; else bad "main.bicep has both principal id outputs"; fi
@@ -112,6 +112,33 @@ grep -q 'openssl rand' <<< "$shared" && ok "deploy_shared makes a random admin p
 mask=$(grep -n '::add-mask::\$PG_ADMIN_PASSWORD' <<< "$shared" | head -1 | cut -d: -f1)
 use=$(grep -n 'az deployment group create' <<< "$shared" | head -1 | cut -d: -f1)
 if [ -n "$mask" ] && [ -n "$use" ] && [ "$mask" -lt "$use" ]; then ok "admin password is masked before use"; else bad "admin password is masked before use"; fi
+
+# ---- phase 2: every release asserts authConfig (ADR 0003) -------------------------------------------------------------
+auth="$(awk '/^      - name: Database sign-in is Entra only/{f=1;print;next} f&&/^      - name: /{exit} f{print}' "$wf")"
+[ -n "$auth" ] && ok "the authConfig step exists" || bad "the authConfig step exists"
+grep -qE '^        if:' <<< "$auth" && bad "the authConfig step has no if: condition" || ok "the authConfig step has no if: condition"
+grep -qF 'infra/check-auth-config.sh' <<< "$auth" && ok "the step runs check-auth-config.sh" || bad "the step runs check-auth-config.sh"
+a=$(line "Database sign-in is Entra only"); p=$(line "Push the image"); dp=$(line "Deploy the app and jobs")
+if [ -n "$a" ] && [ -n "$p" ] && [ -n "$dp" ] && [ "$a" -lt "$p" ] && [ "$a" -lt "$dp" ]; then ok "order: authConfig check before the image push and the deploy"; else bad "order: authConfig check before the image push and the deploy"; fi
+# the script against a stub az: only Enabled + Disabled passes; anything else, or no answer, fails closed
+cac="$here/check-auth-config.sh"
+stubdir=$(mktemp -d)
+mkstub() { printf '#!/bin/sh\n%s\n' "$1" > "$stubdir/az"; chmod +x "$stubdir/az"; }
+run_cac() { AZ="$stubdir/az" RESOURCE_GROUP=rg PG_SERVER=psql-x bash "$cac" 2>&1; }
+mkstub 'echo "{\"activeDirectoryAuth\":\"Enabled\",\"passwordAuth\":\"Disabled\",\"tenantId\":\"t\"}"'
+run_cac > /dev/null && ok "authConfig check passes for Entra Enabled + password Disabled" || bad "authConfig check passes for Entra Enabled + password Disabled"
+mkstub 'echo "{\"activeDirectoryAuth\":\"Enabled\",\"passwordAuth\":\"Enabled\"}"'
+run_cac > /dev/null && bad "authConfig check fails when passwordAuth is Enabled" || ok "authConfig check fails when passwordAuth is Enabled"
+mkstub 'echo "{\"activeDirectoryAuth\":\"Disabled\",\"passwordAuth\":\"Disabled\"}"'
+run_cac > /dev/null && bad "authConfig check fails when Entra is Disabled" || ok "authConfig check fails when Entra is Disabled"
+mkstub 'echo "{\"tenantId\":\"t\"}"'
+run_cac > /dev/null && bad "authConfig check fails when the settings are missing" || ok "authConfig check fails when the settings are missing"
+mkstub 'echo null'
+run_cac > /dev/null && bad "authConfig check fails on a null answer" || ok "authConfig check fails on a null answer"
+mkstub 'echo "boom" >&2; exit 1'
+run_cac > /dev/null && bad "authConfig check fails when az fails" || ok "authConfig check fails when az fails"
+rm -rf "$stubdir"
+bash -n "$cac" && ok "bash -n check-auth-config.sh" || bad "bash -n check-auth-config.sh"
 
 # ---- jwt-oid.sh on fake tokens ----------------------------------------------------------------------------------
 b64url() { base64 -w0 | tr '+/' '-_' | tr -d '='; }

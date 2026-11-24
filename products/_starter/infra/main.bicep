@@ -40,7 +40,7 @@ param pullIdentityName string = 'id-studio-acrpull'
   'password'
   'entra'
 ])
-param dbAuth string = 'password'
+param dbAuth string = 'entra'
 
 @description('fake (no cost) or azure. The workflow only offers these two values.')
 param aiProvider string = 'fake'

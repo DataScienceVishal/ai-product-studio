@@ -149,7 +149,7 @@ assignment is a manual step, see `ADR/0002-azure-deploy.md` decision 7.
 
 ## Entra ID database sign-in
 
-`DB_AUTH=password` (default) uses the password in `DATABASE_URL`. `DB_AUTH=entra` signs in to Postgres with the app's
+`DB_AUTH=password` (the app's default, for local development and CI) uses the password in `DATABASE_URL`. Azure deploys use `entra`: the server has password sign-in disabled, and every release checks that. `DB_AUTH=entra` signs in to Postgres with the app's
 managed identity instead, with no password anywhere:
 
 - `DATABASE_URL=postgresql+psycopg://<entra-role-name>@<host>:5432/<db>?sslmode=verify-full`: host, database and the

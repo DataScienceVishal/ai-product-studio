@@ -7,6 +7,8 @@ param registryName = 'acrstudioznp96r'
 param registrySku = 'Basic'
 param postgresServerName = 'psql-studio-znp96r'
 param postgresAllowAzureServices = true
+// Phase 2 of ADR 0003: password sign-in is off. Every release asserts this (infra/check-auth-config.sh).
+param postgresPasswordAuth = 'Disabled'
 
 // Never written here: deploy_shared makes a random one inside its own step (phase 1 only, ADR 0003) and exports it there.
 param postgresAdminPassword = readEnvironmentVariable('PG_ADMIN_PASSWORD', '')

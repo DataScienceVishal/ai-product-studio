@@ -76,8 +76,14 @@ Nothing here costs money until step 4. Do the steps only after approving the cos
    the database and roles as the Entra admin, then migrates. Its only revision takes traffic as soon as it is
    ready, before the roles and migration exist, so for that minute the API answers errors. Harmless before
    anyone uses it; later releases never do this.
-7. **Phase 2 (ADR 0003, decision 2)** is a separate change, not part of this slice: once the first release
-   passes its smoke tests, `postgresPasswordAuth` goes to `Disabled`.
+7. **Phase 2 (ADR 0003, decision 2) is in force:** `postgresPasswordAuth` is `Disabled` in `shared.bicepparam`
+   and as the default in `shared.bicep` and `modules/postgres.bicep`, and `dbAuth` defaults to `entra`. Every
+   release runs `check-auth-config.sh` (before the image is pushed) and stops unless the server shows
+   `activeDirectoryAuth=Enabled` and `passwordAuth=Disabled`. The server is created with passwords off from the first
+   `deploy_shared`. If the Entra admin step fails there, nobody can sign in, but the admin is set through the
+   management plane, so fix the cause and re-run `deploy_shared`. Check with
+   `az postgres flexible-server microsoft-entra-admin list --resource-group rg-ai-studio --server-name <server>`:
+   it must list exactly the deploy service principal.
 
 ## Releasing
 

@@ -1,6 +1,7 @@
 # ADR 0003: Passwordless Postgres sign-in with Microsoft Entra ID
 
-- Status: proposed (2026-11-24, board task T-18). Supersedes the password parts of ADR 0002 decisions 4, 5
+- Status: accepted. Build slices 1 to 6 done (slice 6, phase 2: password sign-in `Disabled` and the every-release
+  `authConfig` check, 2026-11-24); slice 7 (OIDC) waits for Q-8. Proposed 2026-11-24, board task T-18. Supersedes the password parts of ADR 0002 decisions 4, 5
   (condition 1), 6 (`DATABASE_URL`, seed rotation) and 9 (the seed caveats). Everything else in 0002 stands.
   Revised 2026-11-24 after the security gate (`reviews/T-18-adr-security.md`): B1 to B3 fixed, N1 to N11 folded in.
 - Builds on the app side being written in parallel: `DB_AUTH=entra` makes the app and `migrations/env.py`
@@ -8,7 +9,7 @@
   (`ManagedIdentityToken`, `AZURE_CLIENT_ID`) and pass it as the password in SQLAlchemy `do_connect`. The URL
   has no password and keeps `sslmode=verify-full`. `DB_AUTH=password` (default) stays for local and CI.
 - Nothing exists in Azure yet (`state/BUDGET.md`: all "planned"), so there is no live data to migrate. The
-  two phases below happen in the first real deploy session.
+  password sign-in is off from the first deploy (decision 2).
 
 ## The picture
 
@@ -91,15 +92,14 @@ credential is the one that remains (decision 5).
   soon" while the ARM API and Bicep reference already have it.
 - **Deploy shared resources only from the workflow.** `deployer()` would make whoever deploys an admin; a
   run from Cloud Shell would add Vishal as an admin with the wrong `principalType`.
-- **Phase 1 (first shared deploy): both methods on.** The admin is a child of the server, so it can only be
-  added after the server exists; keeping `passwordAuth: Enabled` for that first deploy avoids a server nobody
-  can enter if the admin step fails. Only `studioadmin` has a password, and it is now **random per
-  `deploy_shared` run**, made and used only inside that step (decision 4, "Phase 1 password"). An Owner or Contributor can reset
-  it through ARM if ever needed, so nothing is lost by not keeping it. App and migrator roles have no password
-  from the start.
-- **Phase 2 (same session, after the starter's first Entra release passes its smoke tests):**
-  `postgresPasswordAuth=Disabled`, run `deploy_shared` again. Enabling Entra on an existing server restarts
-  it (Microsoft FAQ); on a fresh server that is moot.
+- **Passwords are off from the first deploy (phase 2 is the starting state).** Servers are created with
+  `passwordAuth: Disabled`; there is no interim phase with both methods on. The Entra admin is set through the
+  ARM management plane (the `administrators` child, written by the deploy service principal), which does not
+  need password sign-in, so re-running `deploy_shared` recovers a failed admin step on a server nobody can
+  enter by password. Only `studioadmin` has a password; it is **random per `deploy_shared` run**, made and
+  used only inside that step (decision 4), never kept, and unusable while password sign-in is off. App and
+  migrator roles have no password at all. Enabling Entra on an existing server restarts it (Microsoft FAQ);
+  on a fresh server that is moot.
 - **Phase 2 must stay done.** The phase 2 PR sets `Disabled` both in `shared.bicepparam` and as the module's
   default, and from then on **every release** reads `az postgres flexible-server show --query authConfig` and
   fails unless `passwordAuth == 'Disabled'` and `activeDirectoryAuth == 'Enabled'`. A later default, a
@@ -233,7 +233,7 @@ The admin role itself gets no connection limit (it is used once per release, by 
 | 3 | `db-setup.sql` as in decision 3 | Local PG16 with a non-superuser CREATEROLE admin and a stub schema (`pgaadauth_list_principals` reading a table; the label branch behind `\if :{?entra_stub}` writes to that table). Assert: re-runnable, `rolpassword IS NULL`, limits 12/3, bad oid refused, mismatch raises, app refused DDL and `alembic_version` writes, other products refused CONNECT |
 | 4 | Workflow: phase 1 password kept step-local (B3), step reorder, token with hygiene checks, readback, admin-drift check, oids, password-free URLs with the host from `PG_SERVER` only; remove `setup_database` | `actionlint`, `shellcheck`; the token-oid decode unit-tested on a fake JWT; grep: no `PG_ADMIN_PASSWORD` in `$GITHUB_ENV`, no other writer of `DATABASE_URL` |
 | 5 | Delete `scram_verifier.py` and seed docs; README runbook "Entra sign-in"; one line in ADR 0002 pointing here | tests still green; grep finds no `STUDIO_DB_SEED` |
-| 6 | Phase 2 flip as its own PR: `Disabled` in `shared.bicepparam` **and** as the module default, plus the every-release `authConfig` assertion | `az bicep build`; the assertion tested against stubbed `az` output for both values |
+| 6 (done) | Phase 2 flip as its own PR: `Disabled` in `shared.bicepparam` **and** as the module default, plus the every-release `authConfig` assertion (`infra/check-auth-config.sh`, workflow step before the image push) | `az bicep build`; the assertion tested against stubbed `az` output for both values (`test-deploy-workflow.sh`) |
 | 7 | Only after Q-8: OIDC login (`azure/login` with `client-id`/`tenant-id`/`subscription-id`, `permissions: id-token: write`), `azure/login` pinned by commit SHA (N9) | `actionlint` |
 
 **Only the first real deploy can verify** (record results in the T-18 review): the Contributor SP can create
@@ -242,7 +242,7 @@ the `administrators` child with `deployer()`; the role name for the admin (readb
 on the still-empty roles); Container Apps jobs hand out user-assigned tokens with `lifecycle: Main`; the
 app's `/healthz` says `"db":"ok"`; the `pgaadauth_list_principals` column casing (N4); after phase 2,
 re-deploying with `administratorLoginPassword` still set is accepted and `studioadmin` is refused. Also the
-security review's list: `authConfig` shows `passwordAuth: Disabled` and `activeDirectoryAuth: Enabled`; a
+security review's list: the server was created with `passwordAuth: Disabled` (first deploy, not flipped later); `authConfig` shows `passwordAuth: Disabled` and `activeDirectoryAuth: Enabled`; a
 sign-in as `<db>_app` with the migrator identity's token is refused; the administrators list holds only the
 deploy SP; `rolpassword IS NULL` for both roles on Azure.
 

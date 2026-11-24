@@ -18,13 +18,13 @@ param adminPassword string
 @description('Open the firewall to Azure IP addresses (the 0.0.0.0 rule). ADR 0002, decision 5 explains why.')
 param allowAzureServices bool = true
 
-@description('Password sign-in. Enabled while phase 1 of ADR 0003 runs (the Entra admin is added after the server exists); phase 2 flips this to Disabled, in shared.bicepparam and here, as its own change.')
+@description('Password sign-in. Disabled since phase 2 of ADR 0003: only Entra ID tokens work, and every release asserts it. Set Enabled only for a logged break-glass run (ADR 0003, failure modes).')
 @allowed([
   'Enabled'
   'Disabled'
 ])
 #disable-next-line secure-secrets-in-params
-param passwordAuth string = 'Enabled'
+param passwordAuth string = 'Disabled'
 
 @description('Postgres role name of the Entra admin (the deploy service principal, SETUP.md step 3). The workflow reads the real value back.')
 param entraAdminName string = 'sp-ai-studio-deployer'
