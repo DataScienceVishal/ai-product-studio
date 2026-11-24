@@ -40,14 +40,24 @@ for template in "$@"; do
   # Tokens a day x price per million x 30 must stay within the monthly AI budget (jq does the arithmetic).
   tokens=$(jq -r '.parameters.aiGlobalDailyTokens.defaultValue // empty' "$template")
   price=$(jq -r '.parameters.aiPricePerMillionTokens.defaultValue // empty' "$template")
-  if [ -n "$tokens" ] || [ -n "$price" ]; then
+  has_params=$(jq -r '(.parameters // {}) | if has("aiGlobalDailyTokens") or has("aiPricePerMillionTokens") then "yes" else "no" end' "$template")
+  if [ "$has_params" = yes ]; then
     if [ -z "$tokens" ] || [ -z "$price" ]; then
-      report "$name" "needs both aiGlobalDailyTokens and aiPricePerMillionTokens defaults to check the AI budget"
+      report "$name" "aiGlobalDailyTokens and aiPricePerMillionTokens must both exist with defaults to check the AI budget"
     else
-      over=$(jq -rn --arg t "$tokens" --arg p "$price" --argjson b "$AI_MONTHLY_BUDGET_USD" \
-        '(($t | tonumber) * ($p | tonumber) * 30 / 1000000) as $m | if $m > $b then ($m * 100 | round / 100 | tostring) else empty end' 2>/dev/null) \
-        || { report "$name" "AI cap or price is not a number: tokens=$tokens price=$price"; continue; }
-      [ -z "$over" ] || report "$name" "$tokens tokens a day x \$$price per million x 30 = \$$over a month, over the \$$AI_MONTHLY_BUDGET_USD AI budget"
+      # prints bad, nonpositive, "ok <monthly cost>" or "over <monthly cost>" (cost rounded to 2 decimals)
+      verdict=$(jq -rn --arg t "$tokens" --arg p "$price" --argjson b "$AI_MONTHLY_BUDGET_USD" '
+        (($t | tonumber? // null) as $tk | ($p | tonumber? // null) as $pr
+         | if $tk == null or $pr == null then "bad"
+           elif $tk <= 0 or $pr <= 0 then "nonpositive"
+           else ($tk * $pr * 30 / 1000000) as $m
+             | (if $m > $b then "over " else "ok " end) + ($m | tostring) end)' 2>/dev/null) || verdict=bad
+      case "$verdict" in
+        bad) report "$name" "AI cap or price is not a number: tokens=$tokens price=$price" ;;
+        nonpositive) report "$name" "AI cap and price must both be above 0: tokens=$tokens price=$price" ;;
+        over*) cost=$(printf '%.2f' "${verdict#over }")
+               report "$name" "$tokens tokens a day x \$$price per million x 30 = \$$cost a month, over the \$$(printf '%.2f' "$AI_MONTHLY_BUDGET_USD") AI budget" ;;
+      esac
     fi
   fi
 done
