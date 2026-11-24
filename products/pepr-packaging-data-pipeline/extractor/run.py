@@ -1,7 +1,8 @@
 """CLI: python -m extractor.run --set tuning|test --provider fake|azure --out results/NAME
 
 Writes <out>/<sheet>.json, <out>/ledger.jsonl (or --ledger, shared across runs so the USD 12 / 3M-token caps cover the
-whole proof test), then runs benchmark/score.py on the predictions. Extraction itself (extract.py) never sees truth."""
+whole proof test), then runs benchmark/score.py on the predictions. Extraction itself (extract.py) never sees truth.
+Run tuning and test sequentially, never in parallel: the ledger has no file lock."""
 import argparse
 import json
 import sys
@@ -41,6 +42,12 @@ def main(argv=None):
     ledger = Path(a.ledger) if a.ledger else (DEFAULT_LEDGER if a.provider == "azure" else out / "ledger.jsonl")
     budget = budget_mod.Budget(ledger)
     pdfs = sorted(SETS[a.set].glob("S*.pdf"))
+    if a.set == "test":  # run once only: do not start a run the guard would cut short
+        try:
+            budget_mod.preflight(budget, len(pdfs), a.max_output_tokens)
+        except budget_mod.BudgetExceeded as e:
+            print(f"refused to start the test set: {e}", file=sys.stderr)
+            return 4
     for pdf in pdfs:
         try:
             pred = extract.extract_pdf(pdf, provider, budget, max_output_tokens=a.max_output_tokens)
@@ -49,6 +56,8 @@ def main(argv=None):
             return 3
         except providers.ProviderError as e:
             print(f"{pdf.stem}: provider failed: {e}", file=sys.stderr)
+            if e.fatal:
+                return 5
             continue
         (out / f"{pdf.stem}.json").write_text(json.dumps(pred, indent=1, sort_keys=True))
         print(f"{pdf.stem}: {len(pred['components'])} components, USD {pred['usage']['usd']:.4f}")

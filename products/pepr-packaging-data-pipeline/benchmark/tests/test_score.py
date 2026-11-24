@@ -194,3 +194,24 @@ def test_messy10_threshold_binds(loaded):
             c["weight_g"] = {"status": "missing"}
     r = run(loaded, p)
     assert r["messy10"]["field_accuracy"] < 0.80 and not r["checks"]["2_messy10_field_accuracy>=0.80"]
+
+
+def test_mark_4b_counts_flag_without_both_values(loaded):
+    truths, _, _ = loaded
+    p = {s: perfect(t) for s, t in truths.items()}
+    for sid, t in truths.items():
+        for i, c in enumerate(t["components"]):
+            if c["weight_g"]["status"] == "conflict":
+                p[sid]["components"][i]["weight_g"]["conflict_values"] = [c["weight_g"]["conflict_values"][0]]
+    r = run(loaded, p)
+    o = r["overall"]
+    assert o["conflict_flag"] == 1.0 and o["conflict_both_values"] == 0.0
+    assert r["checks"]["4b_conflict_flagged>=0.80"]
+    assert o["field_accuracy"] < 1.0  # rule (a) still costs field accuracy
+
+
+def test_unknown_feature_key_value_is_untraced(loaded):
+    truths, _, _ = loaded
+    p = {s: perfect(t) for s, t in truths.items()}
+    p["S001"]["components"][0]["features"]["bogus"] = {"status": "present", "value": "x", "refs": [{"page": 1, "quote": "x"}]}
+    assert run(loaded, p)["overall"]["untraced"] == 1

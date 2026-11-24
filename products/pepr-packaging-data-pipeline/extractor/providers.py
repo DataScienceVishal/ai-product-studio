@@ -28,8 +28,9 @@ class Completion:
 class ProviderError(RuntimeError):
     """Call failed. billed_* are tokens that may have been billed anyway; `may_have_run` means charge the worst case."""
 
-    def __init__(self, message, input_tokens=0, output_tokens=0, may_have_run=False):
+    def __init__(self, message, input_tokens=0, output_tokens=0, may_have_run=False, fatal=False):
         super().__init__(message)
+        self.fatal = fatal  # rejected request or credentials: every sheet would fail the same way, stop the run
         self.input_tokens, self.output_tokens, self.may_have_run = input_tokens, output_tokens, may_have_run
 
 
@@ -148,9 +149,9 @@ class AzureResponsesProvider:
                 self._pause(attempt, headers.get("retry-after") or headers.get("Retry-After"))
                 continue
             if status in (401, 403):
-                raise ProviderError(f"credentials rejected (HTTP {status})")
+                raise ProviderError(f"credentials rejected (HTTP {status})", fatal=True)
             if status >= 400:
-                raise ProviderError(f"request rejected (HTTP {status}): {raw[:300].decode('utf-8', 'replace')}")
+                raise ProviderError(f"request rejected (HTTP {status}): {raw[:300].decode('utf-8', 'replace')}", fatal=True)
             return self._parse(raw, worst_in, max_output_tokens)
         raise ProviderError(f"gave up after {self.retries + 1} attempts: {last}")
 

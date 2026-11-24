@@ -14,6 +14,23 @@ MAX_USD = 12.0
 MAX_TOKENS = 3_000_000
 
 
+PER_SHEET_USD = 0.316  # pass mark 5 (GBP 0.25)
+PER_SHEET_TOKENS = 20_000  # typical input + output per sheet, token analogue of the per-sheet allowance
+WORST_INPUT_TOKENS = 20_000  # worst-case input estimate for one sheet (2 images + text), used for the pre-flight
+
+
+def preflight(budget, n_sheets, max_output_tokens):
+    """Refuse a one-shot run that the guard would cut short: remaining budget must cover n_sheets at the per-sheet bar
+    plus one call's worst-case reservation, in USD and in tokens. Raises BudgetExceeded with the shortfall."""
+    need_usd = n_sheets * PER_SHEET_USD + usd(WORST_INPUT_TOKENS, max_output_tokens)
+    need_tok = n_sheets * PER_SHEET_TOKENS + WORST_INPUT_TOKENS + max_output_tokens
+    left_usd, left_tok = budget.max_usd - budget.spent_usd, budget.max_tokens - budget.tokens
+    if left_usd < need_usd:
+        raise BudgetExceeded(f"pre-flight: USD {left_usd:.2f} left, need {need_usd:.2f} (short by {need_usd - left_usd:.2f})")
+    if left_tok < need_tok:
+        raise BudgetExceeded(f"pre-flight: {left_tok} tokens left, need {need_tok} (short by {need_tok - left_tok})")
+
+
 class BudgetExceeded(RuntimeError):
     pass
 

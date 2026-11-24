@@ -10,7 +10,7 @@ from . import budget as budget_mod
 from . import pdfio, prompt, providers, vocab
 
 STATUSES = ("present", "missing", "conflict")
-MAX_OUTPUT_TOKENS = 12000
+MAX_OUTPUT_TOKENS = 6000  # after tuning: ~3x the largest output seen, never below 4000; record the value used
 
 
 def parse_json(text):
@@ -48,7 +48,7 @@ def _clean_field(f, weight, warns, where):
     return out
 
 
-def clean_output(raw, page_modes):
+def clean_output(raw):
     """Shape the model answer like a truth file. Nothing is invented: unreadable fields are dropped (and then score as
     wrong), absent feature keys stay absent. ram_category is derived from the canonical material."""
     warns, comps = [], []
@@ -97,7 +97,7 @@ def extract_pdf(pdf_path, provider, budget, sheet_id=None, max_output_tokens=MAX
     budget.record(sheet_id, res.input_tokens, res.output_tokens, model=res.model)
     modes = [{"page": p["page"], "input": p["mode"], "chars": p["chars"]} for p in pages]
     try:
-        comps, warns = clean_output(parse_json(res.text), modes)
+        comps, warns = clean_output(parse_json(res.text))
     except (ValueError, AttributeError, TypeError):
         comps, warns = [], ["model answer was not valid JSON"]
     return {"sheet_id": sheet_id, "components": comps, "pages": modes, "warnings": warns,

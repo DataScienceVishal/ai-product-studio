@@ -280,7 +280,7 @@ def test_clean_output_drops_junk_and_derives_ram():
          "colour": "blue", "weight_g": {"status": "present", "value": "n/a"},
          "features": {"liner": {"status": "missing"}, "ink_coating": 7}},
         "not a component", {"name": "can", "material": {"status": "missing"}}]}
-    comps, warns = extract.clean_output(raw, [])
+    comps, warns = extract.clean_output(raw)
     assert len(comps) == 2 and warns
     cap = comps[0]
     assert cap["ram_category"] == "plastic" and "colour" not in cap and "weight_g" not in cap
@@ -316,3 +316,47 @@ def test_cli_fake_end_to_end(tmp_path, capsys):
     assert rc == 0 or "OVERALL" in out  # the default fake scores badly; the plumbing is what is tested
     assert len(list((tmp_path / "o").glob("S9*.json"))) == 5 and (tmp_path / "o" / "ledger.jsonl").exists()
     assert (tmp_path / "o" / "score.json").exists() and "OVERALL" in out
+
+
+# ---- review fixes ---------------------------------------------------------------------------------
+
+def test_default_max_output_tokens_is_6000():
+    assert extract.MAX_OUTPUT_TOKENS == 6000
+
+
+def test_preflight_arithmetic(tmp_path):
+    B.preflight(new_budget(tmp_path / "fresh"), 30, 6000)
+    need = 30 * 0.316 + B.usd(B.WORST_INPUT_TOKENS, 6000)
+    b = new_budget(tmp_path / "short")
+    b.record("x", 0, int((12 - need + 0.05) * 1e6 / 120))
+    with pytest.raises(B.BudgetExceeded, match="short by"):
+        B.preflight(b, 30, 6000)
+    b2 = new_budget(tmp_path / "enough")
+    b2.record("x", 0, int((12 - need - 0.05) * 1e6 / 120))
+    B.preflight(b2, 30, 6000)
+
+
+def test_preflight_token_analogue(tmp_path):
+    with pytest.raises(B.BudgetExceeded, match="tokens"):
+        B.preflight(new_budget(tmp_path, max_tokens=500_000), 30, 6000)
+
+
+def test_cli_refuses_to_start_test_set_when_budget_short(tmp_path, capsys):
+    ledger = tmp_path / "ledger.jsonl"
+    B.Budget(ledger).record("tuning", 0, int(5e6 / 120))  # USD 5 spent: 7 left < ~10.3 needed
+    rc = run.main(["--set", "test", "--provider", "fake", "--out", str(tmp_path / "o"), "--ledger", str(ledger)])
+    assert rc == 4 and "short by" in capsys.readouterr().err
+    assert not list((tmp_path / "o").glob("S*.json"))
+
+
+def test_cli_starts_test_set_with_full_budget(tmp_path):
+    assert run.main(["--set", "test", "--provider", "fake", "--out", str(tmp_path / "o"), "--no-score"]) == 0
+    assert len(list((tmp_path / "o").glob("S0*.json"))) == 30
+
+
+def test_http_400_is_fatal_and_stops_the_run(monkeypatch, tmp_path):
+    class P(providers.FakeProvider):
+        def complete(self, s, p, m):
+            raise providers.ProviderError("request rejected (HTTP 400)", fatal=True)
+    monkeypatch.setattr(run, "make_provider", lambda name: P())
+    assert run.main(["--set", "tuning", "--provider", "fake", "--out", str(tmp_path / "o"), "--no-score"]) == 5

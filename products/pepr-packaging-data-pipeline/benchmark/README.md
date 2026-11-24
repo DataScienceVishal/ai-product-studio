@@ -66,7 +66,7 @@ Slots per component: material, colour, weight_g, each plausible feature key, and
 - **(d) Component matching.** Extracted components are matched to truth by normalised name first (`norm_name`: case, whitespace, listed variants such as "shipper carton" = "outer carton"); material is a tie-break only when the truth material is present and two candidates share a name. One-to-one, greedy, in sheet order. An unmatched extracted component scores one wrong field per slot; an unmatched truth component misses all its slots.
 - **Missing.** For a truth `missing` slot the extractor must return `missing`. A value there is a fabrication: wrong, and reported separately.
 
-Pass marks and their definitions stay in the kill test. Granularity: with 22 conflict slots the 80% bar means at least 18 of 22. The public-PDF set is a realism check: it must be run and reported, but never changes the pass mark.
+Pass mark 4b (Studio Lead decision, 2026-11-24, before any run) is the kill test's original wording: the share of conflict cases flagged as a conflict and not silently chosen, at least 80% (18 of 22). The both-values requirement of rule (a) stays in field accuracy; the both-values rate is reported as information only. Pass marks and their definitions stay in the kill test. Granularity: with 22 conflict slots the 80% bar means at least 18 of 22 flagged. The public-PDF set is a realism check: it must be run and reported, but never changes the pass mark.
 
 ## Run budget
 

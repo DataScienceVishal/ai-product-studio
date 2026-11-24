@@ -9,6 +9,8 @@ is present). A slot scores 1 when:
   present  -> prediction present and equal (strings: taxonomy.canonical equality; weight: taxonomy.weight_within)
   missing  -> prediction missing (a value there is a fabrication; an absent key is wrong but not a fabrication)
   conflict -> prediction flags conflict with both truth values (each within tolerance); anything else scores 0
+Pass mark 4b (kill test wording) is the share of conflict cases flagged as a conflict, not silently chosen; the
+both-values rate is shown as information and already counts in field accuracy through this rule.
 Traceability: every non-missing predicted value (conflict: each value) must carry refs, and every ref must pass
 taxonomy.quote_ok against the stated page's text. ram_category is derived, so it has no quote.
 """
@@ -164,11 +166,12 @@ def score_sheet(truth, pred, page_texts):
         if not isinstance(comp, dict):
             continue
         feats = comp.get("features") if isinstance(comp.get("features"), dict) else {}
-        for slot in ["material", "colour", "weight_g"] + [f"features.{k}" for k in feats if k in tx.VOCAB]:
+        for slot in ["material", "colour", "weight_g"] + [f"features.{k}" for k in feats]:
             f = _get(comp, slot)
             if _pred_status(f) in ("present", "conflict"):
                 c["traced_values"] += 1
-                if not _traced(slot, f, page_texts):
+                if _slot_key(slot) not in tx.VOCAB and slot not in ("material", "colour", "weight_g") \
+                        or not _traced(slot, f, page_texts):
                     c["untraced"] += 1
     for j in extra:  # unmatched extracted component: one wrong field per slot it would have
         comp = pcomps[j] if isinstance(pcomps[j], dict) else {}
@@ -197,8 +200,8 @@ def summarise(c):
     return {"slots": c["slots"], "field_accuracy": _pct(c["correct"], c["slots"]), "untraced": c["untraced"],
             "traced_values": c["traced_values"], "fabricated": c["fabricated"],
             "missing_handling": _pct(c["missing_ok"], c["missing_slots"]),
-            "conflict_flag": _pct(c["conflict_ok"], c["conflict_slots"]),
-            "conflict_flagged_any": _pct(c["conflict_flagged"], c["conflict_slots"]),
+            "conflict_flag": _pct(c["conflict_flagged"], c["conflict_slots"]),  # pass mark 4b: flagged, not silently chosen
+            "conflict_both_values": _pct(c["conflict_ok"], c["conflict_slots"]),  # information only (feeds field accuracy via rule a)
             "unflagged_conflicts": c["unflagged_conflicts"], "false_conflicts": c["false_conflicts"],
             "counts": c}
 
@@ -231,7 +234,7 @@ def score_set(truths, preds, page_texts, messy_ids, cost_per_sheet=None, require
         "2_messy10_field_accuracy>=0.80": m10 is not None and (m10["field_accuracy"] or 0) >= 0.80,
         "3_untraced==0": overall["untraced"] == 0,
         "4a_missing_handling>=0.95": (overall["missing_handling"] if overall["missing_handling"] is not None else 1) >= 0.95,
-        "4b_conflict_flag>=0.80": (overall["conflict_flag"] if overall["conflict_flag"] is not None else 1) >= 0.80,
+        "4b_conflict_flagged>=0.80": (overall["conflict_flag"] if overall["conflict_flag"] is not None else 1) >= 0.80,
     }
     cost = None
     if cost_per_sheet is not None:
@@ -267,7 +270,7 @@ def format_report(r):
              f"messy-10 accuracy      {pc(m['field_accuracy']) if m else 'n/a'}",
              f"untraced values        {o['untraced']} of {o['traced_values']}",
              f"missing handled        {pc(o['missing_handling'])}   fabricated {o['fabricated']}",
-             f"conflicts flagged (both values) {pc(o['conflict_flag'])}   flagged at all {pc(o['conflict_flagged_any'])}"
+             f"conflicts flagged {pc(o['conflict_flag'])} (pass mark 4b)   with both values {pc(o['conflict_both_values'])} (info)"
              f"   unflagged {o['unflagged_conflicts']}   false conflicts {o['false_conflicts']}"]
     if r["cost"]:
         lines.append(f"cost USD {r['cost']['total_usd']:.3f} total, {r['cost']['mean_usd_per_sheet']:.3f} mean/sheet, "
