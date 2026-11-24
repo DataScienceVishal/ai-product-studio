@@ -82,11 +82,14 @@ def main():
                        reasoning_tokens=(u.get("output_tokens_details") or {}).get("reasoning_tokens"),
                        status=resp.get("status"))
             try:
+                raw = "".join(c.get("text", "") for o in resp.get("output", []) if o.get("type") == "message"
+                              for c in o.get("content", []) if c.get("type") == "output_text")
+                (RES / f"rawtext_{name}.txt").write_text(raw)  # keep model text even if it fails to parse
                 parsed[name], raw = parse(resp)
                 (RES / f"raw_{name}.json").write_text(json.dumps(parsed[name], indent=1))
             except Exception as e:
                 rec["parse_error"] = str(e)[:200]; parsed[name] = {"lines": []}
-                (RES / f"raw_{name}.txt").write_text(json.dumps(resp)[:20000])
+                pass
         except Exception as e:
             rec.update(error=str(e)[:300], latency_s=round(time.time() - t0, 1)); parsed[name] = {"lines": []}
         runs[name] = rec; print(name, {k: v for k, v in rec.items() if k != "file"}, flush=True)

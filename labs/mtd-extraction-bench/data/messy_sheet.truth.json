@@ -4,227 +4,291 @@
  "lines": [
   {
    "date": "2026-04-07",
-   "description": "CARD PAYMENT TO BRICKWELL TIMBER SUPPLY",
+   "description": "wood for job",
    "amount": -239.19,
    "balance": null,
-   "category": "cost_of_goods"
+   "category": "cost_of_goods",
+   "sheet_description": "wood for job",
+   "bank_description": "CARD PAYMENT TO BRICKWELL TIMBER SUPPLY"
   },
   {
    "date": "2026-04-17",
-   "description": "DD NORTHGATE VAN INSURANCE",
+   "description": "diesel",
    "amount": -48.0,
    "balance": null,
-   "category": "car_van_travel"
+   "category": "car_van_travel",
+   "sheet_description": "diesel",
+   "bank_description": "DD NORTHGATE VAN INSURANCE"
   },
   {
    "date": "2026-04-19",
-   "description": "DD HARLOW FUEL STATION 5270",
+   "description": "van",
    "amount": -46.4,
    "balance": null,
-   "category": "car_van_travel"
+   "category": "car_van_travel",
+   "sheet_description": "van",
+   "bank_description": "DD HARLOW FUEL STATION 5270"
   },
   {
    "date": "2026-04-26",
-   "description": "CARD PAYMENT TO QUICKFIX TYRES",
+   "description": "tyres",
    "amount": -123.96,
    "balance": null,
-   "category": "repairs"
+   "category": "repairs",
+   "sheet_description": "tyres",
+   "bank_description": "CARD PAYMENT TO QUICKFIX TYRES"
   },
   {
    "date": "2026-04-27",
-   "description": "STANDING ORDER TO OWNER PERSONAL A/C",
+   "description": "me",
    "amount": -320.57,
    "balance": null,
-   "category": "drawings_personal"
+   "category": "drawings_personal",
+   "sheet_description": "me",
+   "bank_description": "STANDING ORDER TO OWNER PERSONAL A/C"
   },
   {
    "date": "2026-04-27",
-   "description": "CARD PAYMENT TO MERIDIAN PARKING",
+   "description": "van",
    "amount": -7.22,
    "balance": null,
-   "category": "car_van_travel"
+   "category": "car_van_travel",
+   "sheet_description": "van",
+   "bank_description": "CARD PAYMENT TO MERIDIAN PARKING"
   },
   {
    "date": "2026-04-28",
-   "description": "DD STREAMBOX SUBSCRIPTION",
+   "description": "cinema",
    "amount": -10.0,
    "balance": null,
-   "category": "drawings_personal"
+   "category": "drawings_personal",
+   "sheet_description": "cinema",
+   "bank_description": "DD STREAMBOX SUBSCRIPTION"
   },
   {
    "date": "2026-04-30",
-   "description": "CARD PAYMENT TO STARLIGHT CINEMAS",
+   "description": "food shop",
    "amount": -10.2,
    "balance": null,
-   "category": "drawings_personal"
+   "category": "drawings_personal",
+   "sheet_description": "food shop",
+   "bank_description": "CARD PAYMENT TO STARLIGHT CINEMAS"
   },
   {
    "date": "2026-05-01",
-   "description": "CARD PAYMENT TO PAPERBOX STATIONERY",
+   "description": "phone",
    "amount": -18.6,
    "balance": null,
-   "category": "phone_office"
+   "category": "phone_office",
+   "sheet_description": "phone",
+   "bank_description": "CARD PAYMENT TO PAPERBOX STATIONERY"
   },
   {
    "date": "2026-05-02",
-   "description": "OVERDRAFT INTEREST",
+   "description": "bank fee",
    "amount": -6.91,
    "balance": null,
-   "category": "interest_bank_charges"
+   "category": "interest_bank_charges",
+   "sheet_description": "bank fee",
+   "bank_description": "OVERDRAFT INTEREST"
   },
   {
    "date": "2026-05-02",
-   "description": "DD PENNYWORTH ACCOUNTANTS",
+   "description": "accountant",
    "amount": -45.0,
    "balance": null,
-   "category": "professional_fees"
+   "category": "professional_fees",
+   "sheet_description": "accountant",
+   "bank_description": "DD PENNYWORTH ACCOUNTANTS"
   },
   {
    "date": "2026-05-04",
-   "description": "DD TELLOWAY MOBILE",
+   "description": "phone",
    "amount": -22.0,
    "balance": null,
-   "category": "phone_office"
+   "category": "phone_office",
+   "sheet_description": "phone",
+   "bank_description": "DD TELLOWAY MOBILE"
   },
   {
    "date": "2026-05-05",
-   "description": "DD ELMSTEAD UNITS RENT",
+   "description": "electric",
    "amount": -350.0,
    "balance": null,
-   "category": "premises"
+   "category": "premises",
+   "sheet_description": "electric",
+   "bank_description": "DD ELMSTEAD UNITS RENT"
   },
   {
    "date": "2026-05-05",
-   "description": "DD WESTFIELD POWER",
+   "description": "electric",
    "amount": -103.27,
    "balance": null,
-   "category": "premises"
+   "category": "premises",
+   "sheet_description": "electric",
+   "bank_description": "DD WESTFIELD POWER"
   },
   {
    "date": "2026-05-06",
-   "description": "TRANSFER FROM SAVINGS 8841",
+   "description": "moved to savings",
    "amount": 102.05,
    "balance": null,
-   "category": "transfer"
+   "category": "transfer",
+   "sheet_description": "moved to savings",
+   "bank_description": "TRANSFER FROM SAVINGS 8841"
   },
   {
    "date": "2026-05-14",
-   "description": "FASTER PAYMENT TO J HARGREAVE WAGES",
+   "description": "paid helper",
    "amount": -170.88,
    "balance": null,
-   "category": "wages"
+   "category": "wages",
+   "sheet_description": "paid helper",
+   "bank_description": "FASTER PAYMENT TO J HARGREAVE WAGES"
   },
   {
    "date": "2026-05-15",
-   "description": "CARD PAYMENT TO BRIGHTADS ONLINE",
+   "description": "leaflets",
    "amount": -86.3,
    "balance": null,
-   "category": "advertising"
+   "category": "advertising",
+   "sheet_description": "leaflets",
+   "bank_description": "CARD PAYMENT TO BRIGHTADS ONLINE"
   },
   {
    "date": "2026-05-15",
-   "description": "CARD PAYMENT TO TRADEBODY SUBSCRIPTION",
+   "description": "trade body sub",
    "amount": -53.94,
    "balance": null,
-   "category": "other_expenses"
+   "category": "other_expenses",
+   "sheet_description": "trade body sub",
+   "bank_description": "CARD PAYMENT TO TRADEBODY SUBSCRIPTION"
   },
   {
    "date": "2026-05-15",
-   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "description": "cinema",
    "amount": -51.0,
    "balance": null,
-   "category": "drawings_personal"
+   "category": "drawings_personal",
+   "sheet_description": "cinema",
+   "bank_description": "CARD PAYMENT TO GREENLEAF SUPERMARKET"
   },
   {
    "date": "2026-05-17",
-   "description": "CARD PAYMENT TO OAKHAM TRADE PARTS",
+   "description": "timber",
    "amount": -176.79,
    "balance": null,
-   "category": "cost_of_goods"
+   "category": "cost_of_goods",
+   "sheet_description": "timber",
+   "bank_description": "CARD PAYMENT TO OAKHAM TRADE PARTS"
   },
   {
    "date": "2026-05-18",
-   "description": "BACS FROM ASHBY JOINERY LTD INV8183",
+   "description": "paid by Kestrel Dental",
    "amount": 513.17,
    "balance": null,
-   "category": "turnover"
+   "category": "turnover",
+   "sheet_description": "paid by Kestrel Dental",
+   "bank_description": "BACS FROM ASHBY JOINERY LTD INV8183"
   },
   {
    "date": "2026-05-22",
-   "description": "MONTHLY ACCOUNT FEE NORTHBANK",
+   "description": "bank fee",
    "amount": -7.0,
    "balance": null,
-   "category": "interest_bank_charges"
+   "category": "interest_bank_charges",
+   "sheet_description": "bank fee",
+   "bank_description": "MONTHLY ACCOUNT FEE NORTHBANK"
   },
   {
    "date": "2026-05-24",
-   "description": "FASTER PAYMENT T ABERNETHY REF6331",
+   "description": "paid by Halewood Pta",
    "amount": 101.21,
    "balance": null,
-   "category": "turnover"
+   "category": "turnover",
+   "sheet_description": "paid by Halewood Pta",
+   "bank_description": "FASTER PAYMENT T ABERNETHY REF6331"
   },
   {
    "date": "2026-05-28",
-   "description": "TRANSFER TO SAVINGS 8841",
+   "description": "moved to savings",
    "amount": -107.52,
    "balance": null,
-   "category": "transfer"
+   "category": "transfer",
+   "sheet_description": "moved to savings",
+   "bank_description": "TRANSFER TO SAVINGS 8841"
   },
   {
    "date": "2026-05-28",
-   "description": "DD ELMSTEAD UNITS RENT",
+   "description": "electric",
    "amount": -350.0,
    "balance": null,
-   "category": "premises"
+   "category": "premises",
+   "sheet_description": "electric",
+   "bank_description": "DD ELMSTEAD UNITS RENT"
   },
   {
    "date": "2026-05-30",
-   "description": "CARD PAYMENT TO TRADEBODY SUBSCRIPTION",
+   "description": "trade body sub",
    "amount": -32.25,
    "balance": null,
-   "category": "other_expenses"
+   "category": "other_expenses",
+   "sheet_description": "trade body sub",
+   "bank_description": "CARD PAYMENT TO TRADEBODY SUBSCRIPTION"
   },
   {
    "date": "2026-06-01",
-   "description": "TRANSFER FROM SAVINGS 8841",
+   "description": "moved to savings",
    "amount": 189.22,
    "balance": null,
-   "category": "transfer"
+   "category": "transfer",
+   "sheet_description": "moved to savings",
+   "bank_description": "TRANSFER FROM SAVINGS 8841"
   },
   {
    "date": "2026-06-04",
-   "description": "BACS FROM ASHBY JOINERY LTD INV8023",
+   "description": "customer payment",
    "amount": 1010.19,
    "balance": null,
-   "category": "turnover"
+   "category": "turnover",
+   "sheet_description": "customer payment",
+   "bank_description": "BACS FROM ASHBY JOINERY LTD INV8023"
   },
   {
    "date": "2026-06-09",
-   "description": "CARD PAYMENT TO GREENLEAF SUPERMARKET",
+   "description": "me",
    "amount": -88.06,
    "balance": null,
-   "category": "drawings_personal"
+   "category": "drawings_personal",
+   "sheet_description": "me",
+   "bank_description": "CARD PAYMENT TO GREENLEAF SUPERMARKET"
   },
   {
    "date": "2026-06-15",
-   "description": "OVERDRAFT INTEREST",
+   "description": "bank fee",
    "amount": -4.49,
    "balance": null,
-   "category": "interest_bank_charges"
+   "category": "interest_bank_charges",
+   "sheet_description": "bank fee",
+   "bank_description": "OVERDRAFT INTEREST"
   },
   {
    "date": "2026-06-24",
-   "description": "DD ELMSTEAD UNITS RENT",
+   "description": "electric",
    "amount": -350.0,
    "balance": null,
-   "category": "premises"
+   "category": "premises",
+   "sheet_description": "electric",
+   "bank_description": "DD ELMSTEAD UNITS RENT"
   },
   {
    "date": "2026-06-27",
-   "description": "FASTER PAYMENT S WINTERBOURNE REF9886",
+   "description": "Linden Cafe job money in",
    "amount": 433.15,
    "balance": null,
-   "category": "turnover"
+   "category": "turnover",
+   "sheet_description": "Linden Cafe job money in",
+   "bank_description": "FASTER PAYMENT S WINTERBOURNE REF9886"
   }
  ]
 }

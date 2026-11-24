@@ -1,0 +1,260 @@
+{
+ "lines": [
+  {
+   "date": "2026-04-07",
+   "description": "wood for job",
+   "amount": -239.19,
+   "balance": null,
+   "category": "cost_of_goods",
+   "confidence": 0.96
+  },
+  {
+   "date": "2026-04-17",
+   "description": "diesel",
+   "amount": -48,
+   "balance": null,
+   "category": "car_van_travel",
+   "confidence": 0.96
+  },
+  {
+   "date": "2026-04-19",
+   "description": "van",
+   "amount": -46.4,
+   "balance": null,
+   "category": "car_van_travel",
+   "confidence": 0.72
+  },
+  {
+   "date": "2026-04-26",
+   "description": "tyres",
+   "amount": -123.96,
+   "balance": null,
+   "category": "car_van_travel",
+   "confidence": 0.97
+  },
+  {
+   "date": "2026-04-27",
+   "description": "me",
+   "amount": -320.57,
+   "balance": null,
+   "category": "drawings_personal",
+   "confidence": 0.97
+  },
+  {
+   "date": "2026-04-27",
+   "description": "van",
+   "amount": -7.22,
+   "balance": null,
+   "category": "car_van_travel",
+   "confidence": 0.68
+  },
+  {
+   "date": "2026-04-28",
+   "description": "cinema",
+   "amount": -10,
+   "balance": null,
+   "category": "drawings_personal",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-04-30",
+   "description": "food shop",
+   "amount": -10.2,
+   "balance": null,
+   "category": "drawings_personal",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-05-01",
+   "description": "phone",
+   "amount": -18.6,
+   "balance": null,
+   "category": "phone_office",
+   "confidence": 0.73
+  },
+  {
+   "date": "2026-05-02",
+   "description": "bank fee",
+   "amount": -6.91,
+   "balance": null,
+   "category": "interest_bank_charges",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-05-02",
+   "description": "accountant",
+   "amount": -45,
+   "balance": null,
+   "category": "professional_fees",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-05-04",
+   "description": "phone",
+   "amount": -22,
+   "balance": null,
+   "category": "phone_office",
+   "confidence": 0.73
+  },
+  {
+   "date": "2026-05-05",
+   "description": "electric",
+   "amount": -350,
+   "balance": null,
+   "category": "premises",
+   "confidence": 0.87
+  },
+  {
+   "date": "2026-05-05",
+   "description": "electric",
+   "amount": -103.27,
+   "balance": null,
+   "category": "premises",
+   "confidence": 0.87
+  },
+  {
+   "date": "2026-05-06",
+   "description": "moved to savings",
+   "amount": -102.05,
+   "balance": null,
+   "category": "transfer",
+   "confidence": 0.58
+  },
+  {
+   "date": "2026-05-14",
+   "description": "paid helper",
+   "amount": -170.88,
+   "balance": null,
+   "category": "wages",
+   "confidence": 0.78
+  },
+  {
+   "date": "2026-05-15",
+   "description": "leaflets",
+   "amount": -86.3,
+   "balance": null,
+   "category": "advertising",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-05-15",
+   "description": "trade body sub",
+   "amount": -53.94,
+   "balance": null,
+   "category": "professional_fees",
+   "confidence": 0.72
+  },
+  {
+   "date": "2026-05-15",
+   "description": "cinema",
+   "amount": -51,
+   "balance": null,
+   "category": "drawings_personal",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-05-17",
+   "description": "timber",
+   "amount": -176.79,
+   "balance": null,
+   "category": "cost_of_goods",
+   "confidence": 0.96
+  },
+  {
+   "date": "2026-05-18",
+   "description": "paid by Kestrel Dental",
+   "amount": 513.17,
+   "balance": null,
+   "category": "turnover",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-05-22",
+   "description": "bank fee",
+   "amount": -7,
+   "balance": null,
+   "category": "interest_bank_charges",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-05-24",
+   "description": "paid by Halewood Pta",
+   "amount": 101.21,
+   "balance": null,
+   "category": "turnover",
+   "confidence": 0.98
+  },
+  {
+   "date": "2026-05-28",
+   "description": "moved to savings",
+   "amount": -107.52,
+   "balance": null,
+   "category": "transfer",
+   "confidence": 0.95
+  },
+  {
+   "date": "2026-05-28",
+   "description": "electric",
+   "amount": -350,
+   "balance": null,
+   "category": "premises",
+   "confidence": 0.87
+  },
+  {
+   "date": "2026-05-30",
+   "description": "trade body sub",
+   "amount": -32.25,
+   "balance": null,
+   "category": "professional_fees",
+   "confidence": 0.72
+  },
+  {
+   "date": "2026-06-01",
+   "description": "moved to savings",
+   "amount": -189.22,
+   "balance": null,
+   "category": "transfer",
+   "confidence": 0.58
+  },
+  {
+   "date": "2026-06-04",
+   "description": "customer payment",
+   "amount": 1010.19,
+   "balance": null,
+   "category": "turnover",
+   "confidence": 0.97
+  },
+  {
+   "date": "2026-06-09",
+   "description": "me",
+   "amount": -88.06,
+   "balance": null,
+   "category": "drawings_personal",
+   "confidence": 0.97
+  },
+  {
+   "date": "2026-06-15",
+   "description": "bank fee",
+   "amount": -4.49,
+   "balance": null,
+   "category": "interest_bank_charges",
+   "confidence": 0.99
+  },
+  {
+   "date": "2026-06-24",
+   "description": "electric",
+   "amount": -350,
+   "balance": null,
+   "category": "premises",
+   "confidence": 0.87
+  },
+  {
+   "date": "2026-06-27",
+   "description": "Linden Cafe job money in",
+   "amount": 433.15,
+   "balance": null,
+   "category": "turnover",
+   "confidence": 0.99
+  }
+ ]
+}

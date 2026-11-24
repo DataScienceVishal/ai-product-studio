@@ -132,6 +132,7 @@ def write_messy_csv(path, txns, seed):
         ds = r.choice([d.strftime("%d/%m/%y"), d.strftime("%-d %b"), d.strftime("%d.%m.%Y")])
         txt = r.choice(nice[t["category"]]).format(c=r.choice(CLIENTS).title())
         rows.append([ds, txt, f"{t['amount']:.2f}", r.choice(["", "", "cash?", "check"])])
+        t["sheet_description"] = txt   # what the owner actually typed: used as description truth
     with open(path, "w", newline="") as f:
         w = csv.writer(f); w.writerow(["when", "what", "£", "notes"]); w.writerows(rows)
     return rows
@@ -165,7 +166,7 @@ def build(outdir):
     t5, _ = make_txns(55); rows = write_messy_csv(out / "messy_sheet.csv", t5, 5)
     write_xlsx(out / "messy_sheet.xlsx", rows)
     # messy sheet truth has no balance
-    docs["messy_sheet"] = ([{**x, "balance": None} for x in t5], None)
+    docs["messy_sheet"] = ([{**x, "balance": None, "bank_description": x["description"], "description": x["sheet_description"]} for x in t5], None)
     files = {"clean_pdf": "clean_pdf.pdf", "scan_image": "scan_image.jpg", "phone_photo": "phone_photo.jpg",
              "csv_export": "csv_export.csv", "messy_sheet": "messy_sheet.xlsx"}
     for k, (tx, op) in docs.items():
