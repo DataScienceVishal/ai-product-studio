@@ -30,3 +30,5 @@ One line per blocker:
 - Fix: the Desk prompt (state/SCHEDULED_TASKS.md) should say "push everything to main", as the Studio Run prompt does; or Vishal enables unrestricted branch pushes for the Desk task (SETUP.md step 6).
 
 - 2026-11-24T12:41Z | run 9075 | The auto-mode permission classifier blocked a local Bicep CLI build in a builder subagent. Not retried; CI's infra job compiles Bicep and runs test-bicep-identities.sh on every branch push, so the gate came from CI run 45394078774 (green). Also: subagents that switch branches in the primary checkout collide with state commits, so give each builder its own git worktree.
+
+- 2026-11-24 run e08c | T-56 | gpt-5.4-pro rejects reasoning effort low, so per-sheet cost is $0.08-0.71 (mean $0.40 on tuning); the $12 Q-11 cap can't fit the 30-sheet test plus its safety reservation. Fix: Q-12 (raise to $20) or a mini deployment. Status: waiting on Vishal.

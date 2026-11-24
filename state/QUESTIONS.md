@@ -97,3 +97,10 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Recommended: A, because $12 settles the studio's best near-miss idea either way, and tuning on 5 held-out sheets is what makes a fair score possible
 - If no answer: waits (spending is on the ask-first list); the studio builds and tests the extractor on the fake model meanwhile and makes no Azure call
 - Answer: A (Telegram reply "2A" to the 19:30 digest, 20:10:29Z). T-56 may spend up to $12 on gpt-5.4-pro (tuning + one test run); the extractor's guard enforces the cap.
+
+## Q-12 (status: open, queued 2026-11-24T20:35Z for the next digest)
+- Decision: The pEPR test can't run inside the $12 you approved. Raise the cap to $20?
+- Context: Tuning on 5 sheets went well on accuracy (97.9%, every conflict flagged) and cost $2.01. gpt-5.4-pro refuses the cheapest reasoning setting, so sheets cost $0.08-0.71 (mean $0.40, scanned and contradictory sheets dearest). The 30-sheet test needs about $9-11 and the guard will only start it with $10.50 free; $9.99 is left. A run cut off halfway wastes the money, so nothing more is spent until you answer. Caveat: the pre-written cost pass mark ($0.316 a sheet) may fail on this model even if accuracy passes.
+- Options: A) Raise T-56's cap to $20 total (about $8 more, expected ~$11 used): the full test runs once and is scored exactly as pre-registered (recommended) B) Add a cheap mini deployment (Q-7 A again); the studio writes a dated amendment switching the test to it before running, likely ~$1 for the test C) Stop here: pEPR stays parked at 68 with tuning evidence only
+- Recommended: A, because it settles the studio's best near-miss with the pass marks written before any run, for about $8
+- If no answer: waits (spending is on the ask-first list); the studio fixes the two tuning misses without model calls meanwhile
