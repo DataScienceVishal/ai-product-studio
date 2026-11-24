@@ -203,6 +203,9 @@ jobs:
             exit 1
           fi
 
+      - name: Database sign-in is Entra only (every release; fails if password sign-in is on)
+        run: bash "$PRODUCT_DIR/infra/check-auth-config.sh"
+
       - name: Read the live release (stops on any Azure read error)
         run: bash "$PRODUCT_DIR/infra/live-release.sh" >> "$GITHUB_ENV"
 

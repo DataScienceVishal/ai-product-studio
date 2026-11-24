@@ -34,13 +34,13 @@ param postgresAdminPassword string
 
 param postgresAllowAzureServices bool = true
 
-@description('Password sign-in on the server (ADR 0003). Enabled until phase 2 flips it.')
+@description('Password sign-in on the server (ADR 0003). Disabled since phase 2; every release asserts it.')
 @allowed([
   'Enabled'
   'Disabled'
 ])
 #disable-next-line secure-secrets-in-params
-param postgresPasswordAuth string = 'Enabled'
+param postgresPasswordAuth string = 'Disabled'
 
 @description('Postgres role name of the Entra admin (the deploy service principal).')
 param postgresEntraAdminName string = 'sp-ai-studio-deployer'

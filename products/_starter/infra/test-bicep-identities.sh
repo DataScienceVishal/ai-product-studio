@@ -82,10 +82,22 @@ PG='[.resources[] | select(.type == "Microsoft.Resources/deployments" and .name 
 check "server authConfig: Entra enabled, tenantId set, passwordAuth from a parameter" \
   "$PG"' | [.resources[] | select(.type == "Microsoft.DBforPostgreSQL/flexibleServers")][0].properties.authConfig
    | .activeDirectoryAuth == "Enabled" and .tenantId == "[tenant().tenantId]" and .passwordAuth == "[parameters('"'"'passwordAuth'"'"')]"' "$shared"
-check "passwordAuth defaults to Enabled (phase 1), allows only Enabled or Disabled; shared.bicep default Enabled too" \
-  "$PG"' | (.parameters.passwordAuth.defaultValue == "Enabled") and (.parameters.passwordAuth.allowedValues | sort) == ["Disabled","Enabled"]' "$shared"
-check "shared.bicep passwordAuth parameter defaults to Enabled" \
-  '.parameters.postgresPasswordAuth.defaultValue == "Enabled"' "$shared"
+check "passwordAuth defaults to Disabled (phase 2), allows only Enabled or Disabled" \
+  "$PG"' | (.parameters.passwordAuth.defaultValue == "Disabled") and (.parameters.passwordAuth.allowedValues | sort) == ["Disabled","Enabled"]' "$shared"
+check "shared.bicep passwordAuth parameter defaults to Disabled" \
+  '.parameters.postgresPasswordAuth.defaultValue == "Disabled"' "$shared"
+# the parameter files: shared.bicepparam says Disabled out loud, and nothing in them turns it back on
+bp="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if grep -qE "^param postgresPasswordAuth = 'Disabled'" "$bp/shared.bicepparam" && ! grep -qE "postgresPasswordAuth *= *'Enabled'" "$bp/shared.bicepparam"; then
+  echo "ok   shared.bicepparam sets postgresPasswordAuth to Disabled"
+else
+  failed=$((failed + 1)); echo "::error::test-bicep-identities: FAIL shared.bicepparam sets postgresPasswordAuth to Disabled"
+fi
+if grep -qE "readEnvironmentVariable\('DB_AUTH', 'entra'\)" "$bp/main.bicepparam"; then
+  echo "ok   main.bicepparam defaults dbAuth to entra"
+else
+  failed=$((failed + 1)); echo "::error::test-bicep-identities: FAIL main.bicepparam defaults dbAuth to entra"
+fi
 check "shared.bicep passes passwordAuth, entraAdminName and entraAdminType to the postgres module" \
   '[.resources[] | select(.type == "Microsoft.Resources/deployments" and .name == "studio-postgres")][0].properties.parameters
    | (.passwordAuth.value == "[parameters('"'"'postgresPasswordAuth'"'"')]")
