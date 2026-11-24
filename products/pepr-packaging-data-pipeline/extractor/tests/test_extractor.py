@@ -34,7 +34,8 @@ MINI = "gpt-5-mini"
 
 
 def new_budget(tmp_path, **kw):
-    return B.Budget(tmp_path / "ledger.jsonl", model=PRO, **kw)
+    kw.setdefault("model", PRO)
+    return B.Budget(tmp_path / "ledger.jsonl", **kw)
 
 
 # ---- item 3: isolation ----------------------------------------------------------------------------
@@ -56,7 +57,7 @@ def test_extraction_reads_only_a_temp_copy(monkeypatch, tmp_path):
     real_read = pdfio.read_pages
     monkeypatch.setattr(pdfio, "read_pages", lambda p: (seen_dirs.append(sorted(x.name for x in Path(p).parent.iterdir())),
                                                         real_read(p))[1])
-    pred = extract.extract_pdf(SHEETS / "S001.pdf", providers.FakeProvider(), new_budget(tmp_path))
+    pred = extract.extract_pdf(SHEETS / "S001.pdf", providers.FakeProvider(), new_budget(tmp_path, model=MINI))
     assert pred["sheet_id"] == "S001"
     assert seen_dirs == [["sheet.pdf"]]  # empty temp dir holding only the copy
     pdf_reads = [p for p in opened if p.endswith(".pdf")]
@@ -86,12 +87,12 @@ def test_text_pages_use_layout_mode(monkeypatch):
 
 def test_scanned_sheets_send_images_and_record_it(tmp_path):
     fake = providers.FakeProvider()
-    pred = extract.extract_pdf(SHEETS / "S021.pdf", fake, new_budget(tmp_path))
+    pred = extract.extract_pdf(SHEETS / "S021.pdf", fake, new_budget(tmp_path, model=MINI))
     assert all(p["input"] == "image" for p in pred["pages"])
     assert any(part["type"] == "image" and part["media_type"] == "image/jpeg" and part["data_b64"]
                for part in fake.calls[0])
     assert not any("Oakridge" in part.get("text", "") for part in fake.calls[0])  # no recorded page text leaks in
-    text_pred = extract.extract_pdf(SHEETS / "S011.pdf", providers.FakeProvider(), new_budget(tmp_path))
+    text_pred = extract.extract_pdf(SHEETS / "S011.pdf", providers.FakeProvider(), new_budget(tmp_path, model=MINI))
     assert all(p["input"] == "layout_text" for p in text_pred["pages"])
 
 
@@ -301,7 +302,7 @@ def test_clean_output_drops_junk_and_derives_ram():
 
 def test_invalid_json_gives_empty_prediction_with_warning(tmp_path):
     fake = providers.FakeProvider(responder=lambda s, p: "sorry")
-    pred = extract.extract_pdf(SHEETS / "S001.pdf", fake, new_budget(tmp_path))
+    pred = extract.extract_pdf(SHEETS / "S001.pdf", fake, new_budget(tmp_path, model=MINI))
     assert pred["components"] == [] and pred["warnings"]
 
 
@@ -309,7 +310,7 @@ def test_invalid_json_gives_empty_prediction_with_warning(tmp_path):
 
 def test_oracle_through_pipeline_scores_100_percent_and_passes_on_test_set(tmp_path):
     truths, _, texts, messy = score.load_set("test", "/none")
-    b = new_budget(tmp_path)
+    b = new_budget(tmp_path, model=MINI)
     preds = {}
     for sid, t in truths.items():
         preds[sid] = extract.extract_pdf(SHEETS / f"{sid}.pdf", providers.FakeProvider(oracle_for(t)), b)
@@ -471,7 +472,7 @@ def test_encrypted_supplement_sheet_is_read_by_pdfio():
 
 def test_oracle_through_pipeline_scores_100_percent_on_supplement(tmp_path):
     truths, _, texts, messy = score.load_set("supplement", "/none")
-    b = new_budget(tmp_path)
+    b = new_budget(tmp_path, model=MINI)
     preds = {sid: extract.extract_pdf(SUPP / "data" / "sheets" / f"{sid}.pdf", providers.FakeProvider(oracle_for(t)), b)
              for sid, t in truths.items()}
     assert len(preds) == 12 and all(p["components"] for p in preds.values())
@@ -802,3 +803,57 @@ def test_incomplete_response_is_reported_billed_and_written_as_missing(tmp_path,
     rows = _ledger(tmp_path / "o" / "ledger.jsonl")
     assert len(rows) == 5 and rows[0]["output_tokens"] == 6000 and rows[0]["model"] == MINI
     assert "without an answer" in capsys.readouterr().err
+
+
+# ---- served model must match the price model (review T-56-mini) ----------------------------------------
+
+@pytest.mark.parametrize("served,ok", [
+    ("gpt-5-mini", True), ("gpt-5-mini-2025-08-07", True),
+    ("gpt-5-mini-pro", False), ("gpt-5-mini-2025-08", False), ("gpt-5-mini-2025-08-07-x", False),
+    ("gpt-5.4-pro-2026-03-05", False), ("gpt-5", False), ("", False), (None, False)])
+def test_served_model_matches(served, ok):
+    assert B.served_model_matches(MINI, served) is ok
+
+
+def _served_provider(served, tmp_path):
+    inner = {"status": "completed", "output": [{"type": "message", "content": [{"type": "output_text", "text": '{"components": []}'}]}],
+             "usage": {"input_tokens": 1000, "output_tokens": 500}}
+    if served is not None:
+        inner["model"] = served
+    p = providers.AzureResponsesProvider(env=dict(ENV, T56_DEPLOYMENT=MINI),
+                                         transport=lambda r, t: (200, {}, json.dumps(inner).encode()))
+    return p, B.Budget(tmp_path / "l.jsonl", model=p.price_model, deployment=p.deployment)
+
+
+@pytest.mark.parametrize("served", ["gpt-5-mini", "gpt-5-mini-2025-08-07"])
+def test_served_model_match_is_priced_at_mini(tmp_path, served):
+    p, b = _served_provider(served, tmp_path)
+    extract.extract_pdf(SHEETS / "S001.pdf", p, b)
+    row = _ledger(tmp_path / "l.jsonl")[0]
+    assert row["model"] == MINI and row["usd"] == pytest.approx(1000 * 0.25e-6 + 500 * 2e-6)
+
+
+@pytest.mark.parametrize("served", ["gpt-5.4-pro-2026-03-05", "gpt-5-mini-pro", None])
+def test_served_model_mismatch_charges_most_expensive_and_is_fatal(tmp_path, served):
+    p, b = _served_provider(served, tmp_path)
+    with pytest.raises(providers.ProviderError, match="served model mismatch") as e:
+        extract.extract_pdf(SHEETS / "S001.pdf", p, b)
+    assert e.value.fatal
+    row = _ledger(tmp_path / "l.jsonl")[0]
+    assert row["model"] == PRO and row["usd"] == pytest.approx(1000 * 30e-6 + 500 * 180e-6)
+    assert row["served_model"] == (served or "") and "does not match" in row["note"]
+
+
+def test_served_model_mismatch_stops_the_run_with_exit_5_after_one_sheet(monkeypatch, tmp_path, capsys):
+    p, _ = _served_provider("gpt-5.4-pro-2026-03-05", tmp_path)
+    monkeypatch.setattr(run, "make_provider", lambda name: p)
+    rc = run.main(["--set", "tuning", "--provider", "azure", "--out", str(tmp_path / "o"), "--no-score",
+                   "--ledger", str(tmp_path / "l2.jsonl")])
+    assert rc == 5 and "served model mismatch" in capsys.readouterr().err
+    assert len(_ledger(tmp_path / "l2.jsonl")) == 1
+
+
+def test_low_and_minimal_efforts_accepted_medium_default():
+    for e in ("minimal", "low"):
+        assert providers.AzureResponsesProvider(env=dict(ENV, T56_DEPLOYMENT=MINI), reasoning_effort=e).reasoning_effort == e
+    assert providers.AzureResponsesProvider(env=ENV).reasoning_effort == "medium"

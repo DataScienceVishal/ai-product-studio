@@ -11,6 +11,7 @@ read on start-up; spend is recomputed from each row's billed tokens at the curre
 used the old price and is ignored), so tuning and test runs share one budget when they share a ledger file."""
 import json
 import os
+import re
 from pathlib import Path
 
 # model name -> (USD per 1M input tokens, USD per 1M output tokens incl. reasoning)
@@ -63,6 +64,16 @@ def price_for(model):
     return PRICES[model]
 
 
+def served_model_matches(price_model, served):
+    """True if the model the API reported is the price-table model, optionally with a date suffix (-YYYY-MM-DD).
+    Full match: 'gpt-5-mini' does not match 'gpt-5-mini-pro' or 'gpt-5.4-pro-2026-03-05'; None/empty never match."""
+    return isinstance(served, str) and re.fullmatch(re.escape(price_model) + r"(-\d{4}-\d{2}-\d{2})?", served) is not None
+
+
+def most_expensive_model():
+    return max(PRICES, key=lambda m: (PRICES[m][1], PRICES[m][0]))
+
+
 def price_model_for_deployment(deployment):
     """Price-table model of an Azure deployment name; raises UnknownModel if the deployment is not in the table."""
     if deployment not in DEPLOYMENT_MODELS:
@@ -110,6 +121,8 @@ class Budget:
     def record(self, sheet_id, input_tokens, output_tokens, model=None, estimated=False, note="", served_model=""):
         """`model` defaults to the budget's own; it must be a price-table name. `served_model` is what the API reported."""
         model = model or self.model
+        if model not in PRICES:
+            raise UnknownModel(f"no price for model {model!r}; known: {sorted(PRICES)}")
         p_in, p_out = price_for(model)
         entry = {"sheet_id": sheet_id, "input_tokens": int(input_tokens), "output_tokens": int(output_tokens),
                  "usd": round(usd(input_tokens, output_tokens, model), 6),

@@ -146,6 +146,16 @@ def extract_pdf(pdf_path, provider, budget, sheet_id=None, max_output_tokens=MAX
         elif e.input_tokens or e.output_tokens:
             budget.record(sheet_id, e.input_tokens, e.output_tokens, note=f"failed: {e}")
         raise
+    if not budget_mod.served_model_matches(budget.model, res.model):
+        # the deployment name is free text: the model that answered is not the one we price. Charge the most
+        # expensive price in the table (the cap stays conservative) and stop the run.
+        worst = budget_mod.most_expensive_model()
+        budget.record(sheet_id, res.input_tokens, res.output_tokens, model=worst, served_model=res.model or "",
+                      note=f"served model {res.model!r} does not match price model {budget.model!r}; priced at {worst}")
+        raise providers.ProviderError(
+            f"served model mismatch: deployment {budget.deployment or budget.model!r} answered as {res.model!r} but is priced "
+            f"as {budget.model!r}; the call was charged at {worst} prices and the run is stopped. Fix the deployment "
+            f"(AZURE_OPENAI_DEPLOYMENT_MINI / T56_DEPLOYMENT) before any further call", fatal=True)
     budget.record(sheet_id, res.input_tokens, res.output_tokens, served_model=res.model)
     modes = [{"page": p["page"], "input": p["mode"], "chars": p["chars"]} for p in pages]
     try:

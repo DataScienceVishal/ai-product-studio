@@ -15,7 +15,7 @@ from . import budget as budget_mod
 from . import vocab
 
 IMAGE_TOKENS_WORST = 6000  # conservative upper bound per page image (high detail, tiled)
-REASONING_EFFORTS = ("medium", "high", "xhigh")  # gpt-5.4-pro rejects "low" (HTTP 400, run e08c)
+REASONING_EFFORTS = ("minimal", "low", "medium", "high", "xhigh")  # gpt-5.4-pro rejects "low" (HTTP 400, run e08c); gpt-5-mini accepts minimal and low
 
 
 @dataclass(frozen=True)
@@ -74,7 +74,7 @@ class FakeProvider:
                                   "weight_g": {"status": "missing"},
                                   "features": {k: {"status": "missing"} for k in vocab.PLAUSIBLE[n]}})
             text = json.dumps({"components": comps})
-        return Completion(text, estimate_input_tokens(system, parts) // 4, max(len(text) // 4, 1), "fake")
+        return Completion(text, estimate_input_tokens(system, parts) // 4, max(len(text) // 4, 1), "gpt-5-mini")
 
 
 def _image_url(p):
@@ -199,4 +199,4 @@ class AzureResponsesProvider:
                 raise ProviderError(f"incomplete: output budget exhausted (status 'incomplete'{detail}; "
                                     f"max_output_tokens {max_out}, raise T56_MAX_OUTPUT_TOKENS)", used_in, used_out)
             raise ProviderError(f"no usable answer (status {status!r}{detail})", used_in, used_out)
-        return Completion(text, used_in, used_out, data.get("model", self.deployment))
+        return Completion(text, used_in, used_out, data.get("model") or "")  # no fallback: a missing served model is a mismatch

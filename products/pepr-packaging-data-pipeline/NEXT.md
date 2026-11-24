@@ -94,7 +94,7 @@ Pre-flight change to know about: it used 30 x USD 0.316 as the reservation, whic
 Commands (env: `AZURE_OPENAI_ENDPOINT`, key, `AZURE_OPENAI_DEPLOYMENT_MINI=gpt-5-mini`; `T56_SPEND_APPROVED=1` only once the Studio Lead releases the run; the ledger is the shared default `results/ledger.jsonl`; run sequentially, never in parallel):
 1. Re-tune, five sheets (low effort first if the model accepts it; fall back to medium on HTTP 400):
    `cd products/pepr-packaging-data-pipeline && T56_SPEND_APPROVED=1 T56_REASONING_EFFORT=low /usr/bin/python3 -m extractor.run --set tuning --provider azure --out results/tuning2`
-   Note `REASONING_EFFORTS` in `extractor/providers.py` is ("medium","high","xhigh"): add "low" (and "minimal" if wanted) there before trying low; not done here because the mini model's accepted values are unverified. If sheets come back incomplete, rerun with `T56_MAX_OUTPUT_TOKENS=16000`.
+   `REASONING_EFFORTS` now includes "minimal" and "low" (the reviewer checked gpt-5-mini accepts both); default stays medium. After each response the served model must match the price model (optional -YYYY-MM-DD suffix), else the row is charged at the most expensive price and the run stops with exit 5. If sheets come back incomplete, rerun with `T56_MAX_OUTPUT_TOKENS=16000`.
 2. Record the chosen effort and max output tokens in `state/DECISIONS.md` and here, from tuning2 only.
 3. Test, once: `T56_SPEND_APPROVED=1 T56_REASONING_EFFORT=<chosen> [T56_MAX_OUTPUT_TOKENS=<chosen>] /usr/bin/python3 -m extractor.run --set test --provider azure --out results/test1` (pre-flight exit 4 if the budget is short).
 4. Supplement afterwards only: `... --set supplement --provider azure --out results/supplement`. Then validator re-score.
