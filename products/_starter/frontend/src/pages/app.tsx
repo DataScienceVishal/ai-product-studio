@@ -156,6 +156,8 @@ function TrialBanner({ me }: { me: Me }) {
 function mockPortalPath(url: string): string | null {
   try {
     const target = new URL(url, window.location.origin);
+    // Only http(s): a javascript:/data:/blob: URL must not be mistaken for the portal, so safeRedirect refuses it.
+    if (target.protocol !== "http:" && target.protocol !== "https:") return null;
     return target.pathname === "/billing/mock-portal" ? target.pathname + target.search : null;
   } catch {
     return null;
