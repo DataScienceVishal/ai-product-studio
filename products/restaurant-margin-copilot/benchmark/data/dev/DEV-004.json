@@ -1,0 +1,262 @@
+{
+ "credit_note": false,
+ "date": "2026-09-01",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 1.28,
+   "crumple_amp_px": 3.89,
+   "jpeg_quality": 54,
+   "perspective_jitter": 0.06,
+   "rotation_deg": 2.19,
+   "seed": 1001041,
+   "shadow_strength": 0.149
+  },
+  {
+   "blur_sigma": 0.51,
+   "crumple_amp_px": 3.28,
+   "jpeg_quality": 61,
+   "perspective_jitter": 0.03,
+   "rotation_deg": 5.42,
+   "seed": 1001042,
+   "shadow_strength": 0.127
+  }
+ ],
+ "heldout": false,
+ "id": "DEV-004",
+ "images": [
+  "DEV-004_p1.jpg",
+  "DEV-004_p2.jpg"
+ ],
+ "invoice_no": "38297",
+ "layout": "broadliner_a",
+ "lines": [
+  {
+   "code": "FD91672",
+   "description": "HONEY CLEAR 3KG",
+   "discount_pct": 0,
+   "line_total": 32.32,
+   "pack_size": "3kg",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 16.16,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD85917",
+   "description": "FOIL CATERING 450MMX90M",
+   "discount_pct": 0,
+   "line_total": 22.04,
+   "pack_size": "",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 11.02,
+   "vat_rate": 20
+  },
+  {
+   "code": "FD71719",
+   "description": "GLOVE NITRILE BLU L X100",
+   "discount_pct": 5,
+   "line_total": 31.02,
+   "pack_size": "100",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "box",
+   "unit_price": 6.53,
+   "vat_rate": 20
+  },
+  {
+   "code": "FD56325",
+   "description": "CREAM DBL 6X1L",
+   "discount_pct": 5,
+   "line_total": 16.23,
+   "pack_size": "6x1L",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 17.08,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD36622",
+   "description": "EGGS MED FR RANGE 180",
+   "discount_pct": 0,
+   "line_total": 24.65,
+   "pack_size": "180",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 24.65,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD49400",
+   "description": "CHICKEN BREAST FIL SKLS 2.5KG",
+   "discount_pct": 0,
+   "line_total": 143.68,
+   "pack_size": "2.5kg",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "case",
+   "unit_price": 17.96,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD33845",
+   "description": "MILK SEMI SKIM 6X2L",
+   "discount_pct": 0,
+   "line_total": 58.24,
+   "pack_size": "6x2L",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "case",
+   "unit_price": 7.28,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD32217",
+   "description": "CLNG FLUID MULTI SURF 5L",
+   "discount_pct": 0,
+   "line_total": 6.65,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 6.65,
+   "vat_rate": 20
+  },
+  {
+   "code": "FD98477",
+   "description": "PLASTIC TAKEAWAY CNTR 500CC X250",
+   "discount_pct": 10,
+   "line_total": 55.0,
+   "pack_size": "250",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "case",
+   "unit_price": 20.37,
+   "vat_rate": 20
+  },
+  {
+   "code": "FD62837",
+   "description": "RICE BASMATI 10KG",
+   "discount_pct": 0,
+   "line_total": 130.02,
+   "pack_size": "10kg",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "each",
+   "unit_price": 21.67,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD13902",
+   "description": "SUGAR GRAN 15KG",
+   "discount_pct": 0,
+   "line_total": 61.28,
+   "pack_size": "15kg",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 15.32,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD25610",
+   "description": "PASTA PENNE DRY 3KG",
+   "discount_pct": 0,
+   "line_total": 4.42,
+   "pack_size": "3kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 4.42,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD51881",
+   "description": "TOM CHOPPED IN JUICE 6X400G",
+   "discount_pct": 0,
+   "line_total": 8.28,
+   "pack_size": "6x400g",
+   "page": 2,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 8.28,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD74647",
+   "description": "OIL RAPESEED CATERING 20L",
+   "discount_pct": 0,
+   "line_total": 205.08,
+   "pack_size": "20L",
+   "page": 2,
+   "qty": 6.0,
+   "unit": "each",
+   "unit_price": 34.18,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD54380",
+   "description": "STOCK BEEF PASTE 6X1KG",
+   "discount_pct": 5,
+   "line_total": 137.83,
+   "pack_size": "6x1kg",
+   "page": 2,
+   "qty": 6.0,
+   "unit": "case",
+   "unit_price": 24.18,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD67625",
+   "description": "BUTTER UNSLTD 20X250G",
+   "discount_pct": 0,
+   "line_total": 40.46,
+   "pack_size": "20x250g",
+   "page": 2,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 40.46,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD74249",
+   "description": "BACON SMKD RINDLESS 2KG",
+   "discount_pct": 0,
+   "line_total": 127.2,
+   "pack_size": "2kg",
+   "page": 2,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 15.9,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD93082",
+   "description": "BLK PEPPER GRND 500G",
+   "discount_pct": 0,
+   "line_total": 66.0,
+   "pack_size": "500g",
+   "page": 2,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 8.25,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 2,
+ "supplier": "Fenwick & Dale Foodservice Ltd",
+ "totals": {
+  "gross": 1193.34,
+  "net": 1170.4,
+  "vat": 22.94,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 22.94
+  }
+ }
+}

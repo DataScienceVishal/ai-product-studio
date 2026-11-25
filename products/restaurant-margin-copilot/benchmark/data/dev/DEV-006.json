@@ -1,0 +1,181 @@
+{
+ "credit_note": true,
+ "date": "2026-09-29",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 1.32,
+   "crumple_amp_px": 2.45,
+   "jpeg_quality": 39,
+   "perspective_jitter": 0.035,
+   "rotation_deg": -7.37,
+   "seed": 1001061,
+   "shadow_strength": 0.174
+  }
+ ],
+ "heldout": false,
+ "id": "DEV-006",
+ "images": [
+  "DEV-006_p1.jpg"
+ ],
+ "invoice_no": "CN8383",
+ "layout": "cashcarry",
+ "lines": [
+  {
+   "code": "BB87067",
+   "description": "CHEDDAR MATURE 5KG",
+   "discount_pct": 0,
+   "line_total": -146.9,
+   "pack_size": "5kg",
+   "page": 1,
+   "qty": -5.0,
+   "unit": "each",
+   "unit_price": 29.38,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB35032",
+   "description": "CHKN WHOLE FR 1.8KG",
+   "discount_pct": 0,
+   "line_total": -6.58,
+   "pack_size": "1.8kg",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "each",
+   "unit_price": 6.58,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB48531",
+   "description": "SOFT DRINK LEMON 24X330ML",
+   "discount_pct": 0,
+   "line_total": -9.98,
+   "pack_size": "24x330ml",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "case",
+   "unit_price": 9.98,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB38629",
+   "description": "LPG CYLINDER 13KG",
+   "discount_pct": 0,
+   "line_total": -102.76,
+   "pack_size": "13kg",
+   "page": 1,
+   "qty": -4.0,
+   "unit": "each",
+   "unit_price": 25.69,
+   "vat_rate": 5
+  },
+  {
+   "code": "BB46593",
+   "description": "MINCED BEEF 5% 2KG",
+   "discount_pct": 0,
+   "line_total": -15.13,
+   "pack_size": "2kg",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "each",
+   "unit_price": 15.13,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB81403",
+   "description": "BIN LINERS 200S",
+   "discount_pct": 0,
+   "line_total": -22.2,
+   "pack_size": "200",
+   "page": 1,
+   "qty": -2.0,
+   "unit": "pack",
+   "unit_price": 11.1,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB18846",
+   "description": "BIN BAGS BLACK ROLL 100",
+   "discount_pct": 0,
+   "line_total": -66.88,
+   "pack_size": "100",
+   "page": 1,
+   "qty": -8.0,
+   "unit": "pack",
+   "unit_price": 8.36,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB81817",
+   "description": "KETCHUP SACHET 1000",
+   "discount_pct": 0,
+   "line_total": -80.9,
+   "pack_size": "1000",
+   "page": 1,
+   "qty": -5.0,
+   "unit": "box",
+   "unit_price": 16.18,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB52138",
+   "description": "POTATO BAKING LOOSE",
+   "discount_pct": 0,
+   "line_total": -1.99,
+   "pack_size": "",
+   "page": 1,
+   "qty": -1.73,
+   "unit": "kg",
+   "unit_price": 1.15,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB75102",
+   "description": "FRYING FAT 4X12.5KG",
+   "discount_pct": 0,
+   "line_total": -422.52,
+   "pack_size": "4 x 12.5kg",
+   "page": 1,
+   "qty": -6.0,
+   "unit": "case",
+   "unit_price": 70.42,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB85912",
+   "description": "SALAD CREAM 5L",
+   "discount_pct": 0,
+   "line_total": -38.94,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": -6.0,
+   "unit": "each",
+   "unit_price": 6.49,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB71602",
+   "description": "EGGS LRG FR 30",
+   "discount_pct": 0,
+   "line_total": -5.26,
+   "pack_size": "30",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "each",
+   "unit_price": 5.26,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Bulkbuy Cash & Carry",
+ "totals": {
+  "gross": -944.99,
+  "net": -920.04,
+  "vat": -24.95,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": -19.81,
+   "5": -5.14
+  }
+ }
+}

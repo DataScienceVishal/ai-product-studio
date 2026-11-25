@@ -1,0 +1,6 @@
+reportlab==5.1.1
+Pillow==13.0.0
+numpy==2.4.6
+PyMuPDF==2.1
+httpx==0.28.1
+pytest==9.2.0

@@ -1,0 +1,156 @@
+{
+ "credit_note": false,
+ "date": "2026-09-10",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 0.71,
+   "crumple_amp_px": 3.28,
+   "jpeg_quality": 39,
+   "perspective_jitter": 0.037,
+   "rotation_deg": 9.57,
+   "seed": 1001021,
+   "shadow_strength": 0.15
+  }
+ ],
+ "heldout": false,
+ "id": "DEV-002",
+ "images": [
+  "DEV-002_p1.jpg"
+ ],
+ "invoice_no": "28390",
+ "layout": "broadliner_a",
+ "lines": [
+  {
+   "code": "FD74164",
+   "description": "PLASTIC TAKEAWAY CNTR 500CC X250",
+   "discount_pct": 0,
+   "line_total": 48.84,
+   "pack_size": "250",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 24.42,
+   "vat_rate": 20
+  },
+  {
+   "code": "FD53626",
+   "description": "TOM CHOPPED IN JUICE 6X400G",
+   "discount_pct": 0,
+   "line_total": 27.64,
+   "pack_size": "6x400g",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "case",
+   "unit_price": 6.91,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD26539",
+   "description": "FLOUR PLAIN WHT 16KG",
+   "discount_pct": 0,
+   "line_total": 32.16,
+   "pack_size": "16kg",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 16.08,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD43233",
+   "description": "GLOVE NITRILE BLU L X100",
+   "discount_pct": 0,
+   "line_total": 27.3,
+   "pack_size": "100",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "box",
+   "unit_price": 4.55,
+   "vat_rate": 20
+  },
+  {
+   "code": "FD18220",
+   "description": "NAPKIN 2PLY WHT 2000",
+   "discount_pct": 0,
+   "line_total": 92.46,
+   "pack_size": "2000",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "case",
+   "unit_price": 15.41,
+   "vat_rate": 20
+  },
+  {
+   "code": "FD42500",
+   "description": "MILK SEMI SKIM 6X2L",
+   "discount_pct": 5,
+   "line_total": 6.97,
+   "pack_size": "6x2L",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 7.34,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD79390",
+   "description": "BIN LINER HD BLK 200S",
+   "discount_pct": 0,
+   "line_total": 13.01,
+   "pack_size": "200",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "box",
+   "unit_price": 13.01,
+   "vat_rate": 20
+  },
+  {
+   "code": "FD37522",
+   "description": "BLK PEPPER GRND 500G",
+   "discount_pct": 0,
+   "line_total": 68.0,
+   "pack_size": "500g",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 8.5,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD96709",
+   "description": "CHICKEN BREAST FIL SKLS 2.5KG",
+   "discount_pct": 0,
+   "line_total": 53.73,
+   "pack_size": "2.5kg",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "case",
+   "unit_price": 17.91,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD94975",
+   "description": "PASTA PENNE DRY 3KG",
+   "discount_pct": 0,
+   "line_total": 3.19,
+   "pack_size": "3kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 3.19,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Fenwick & Dale Foodservice Ltd",
+ "totals": {
+  "gross": 409.62,
+  "net": 373.3,
+  "vat": 36.32,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 36.32
+  }
+ }
+}
