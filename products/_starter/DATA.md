@@ -35,8 +35,8 @@ Learn, "Data, privacy, and security for Azure OpenAI"); check its terms before r
 they expire, up to 7 days after the deletion.
 
 **Processors.** Before launch, list them in the privacy notice with each one's terms:
-- Microsoft Azure: hosting and database. While on the Student subscription these are in Azure France Central (EU), not the UK; UK hosting is a handover decision.
-- Azure OpenAI: note text sent for summaries. The deployment type is not recorded in the repo, so prompts may be processed outside the UK and EU depending on the deployment type (a Global Standard deployment can process them in any Azure region worldwide; data at rest stays in the resource's geography).
+- Microsoft Azure: hosting and database, UK region.
+- Azure OpenAI: note text sent for summaries.
 - The payment provider (Stripe test mode until `unlock selling`).
 - An email provider, once one is approved.
 

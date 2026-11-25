@@ -13,7 +13,7 @@ Why it looks like this, with costs and sources: `../ADR/0002-azure-deploy.md`. T
               11 only now: the purge job gets the new image
                     └── fails after step 9? traffic AND the purge job go back to the old revision
 
-   rg-ai-studio (group metadata in uksouth; resources in francecentral)
+   rg-ai-studio, uksouth
      shared.bicep (once)                          main.bicep (every release, per product)
      ├─ cae-studio          Container Apps env    ├─ ca-<slug>             web app, scales 0 to 1
      ├─ acrstudioznp96r     registry (Basic)      ├─ caj-<slug>-migrate    migrations, run by the workflow
