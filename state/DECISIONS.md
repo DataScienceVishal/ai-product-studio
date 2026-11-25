@@ -263,3 +263,5 @@ Reviewer PASS on p/_starter/T-78-mock-portal-scheme (9ca11e6); merged. Two cosme
 - 2026-11-25T14:58Z run e652: T-87 merged (7f0918d) after re-review PASS. A note body that is only whitespace or invisible characters is saved as "" rather than refused (reviewer R1: the form gives no field-level error). Signed-in /login honours a safe ?next=. The blank-page edge case on /login?next=/login is queued as T-88 instead of being fixed without review.
 
 - 2026-11-25T15:26Z run b795 (T-88): fixed S7 inside safeNext() rather than only in the App effect, so every post-sign-in navigate refuses /login and /signup and falls back to "/". Reviewer nits queued as a new low task.
+
+- 2026-11-25T15:34Z run b795 (T-89): App.tsx keeps `path === "/login" || path === "/signup"` rather than `SIGN_IN_PAGES.has(path)`, because test_spa.py's route guard reads === comparisons. Drift is guarded from the frontend side with a test over SIGN_IN_PAGES. Lesson: reviewer briefs for frontend-only changes must still include backend test_spa.py, which parses App.tsx.

@@ -17,3 +17,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - Run e652: T-87 merged. Fixed and merged the 5 small starter issues from the bug hunt: invisible-character-only titles, non-ASCII emails (now refused at sign-up), a trailing-slash redirect, a confusing error label, and the sign-in page and 404 page. Review asked for one change; re-review PASS. 604 backend and 190 frontend tests green. One tiny follow-up queued as T-88.
 
 - T-88 done (run b795): a signed-in user following a crafted ?next=/login link no longer gets a blank page; they land on the dashboard. Reviewer PASS, all tests green (201 frontend, 604 backend), merged to main.
+- T-89 done (run b795): T-88 review nits tidied. The backend route test caught a frontend change the reviewer had passed; it was fixed and re-reviewed (PASS). 203 frontend + 604 backend green, merged.
