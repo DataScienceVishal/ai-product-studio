@@ -70,7 +70,13 @@ def apply_update(db: Session, update: BillingUpdate, provider: str) -> bool:
     if sub is None:  # the tenant deleted their account; keep the event id, change nothing
         db.commit()
         return True
-    if update.occurred_at and sub.last_event_at and update.occurred_at < sub.last_event_at:
+    # Stripe timestamps are whole seconds, so two events can share one. Tie-break: on equal timestamps a
+    # cancellation already applied wins over any later non-cancel event (we can't know their true order, and
+    # wrongly reactivating a cancelled customer costs money while a wrongly kept cancellation is fixed by the
+    # customer's next, strictly newer, event). Cancel arriving after an activation at the same second still applies.
+    tie_after_cancel = (update.occurred_at is not None and update.occurred_at == sub.last_event_at
+                        and sub.status == "canceled" and update.status != "canceled")
+    if update.occurred_at and sub.last_event_at and (update.occurred_at < sub.last_event_at or tie_after_cancel):
         db.commit()  # stale (arrived out of order): keep the event id, ignore its content
         log.info("stale billing event ignored")
         return True
@@ -115,7 +121,15 @@ async def webhook(request: Request, db: Session = Depends(get_db)):
     """Called by the payment provider, not the browser: no cookie, no CSRF header, signature instead."""
     payload = await _read_limited(request, MAX_WEBHOOK_BYTES)
     signature = request.headers.get("stripe-signature") or request.headers.get("x-billing-signature", "")
-    update = request.app.state.billing.parse_webhook(payload, signature)
+    try:
+        update = request.app.state.billing.parse_webhook(payload, signature)
+    except AppError:  # bad signature and the like keep their own answer
+        raise
+    except (ValueError, KeyError, TypeError, AttributeError, OverflowError, OSError):
+        # Correctly signed but malformed (not an object, no id, timestamp out of range): a 400 is a clear, final
+        # answer; a 500 would make the provider retry and fill the error log.
+        log.warning("malformed billing webhook rejected", exc_info=True)
+        raise AppError(400, "bad_event", "The event could not be read.")
     if update is None:
         return {"received": True, "applied": False}
     applied = await run_in_threadpool(apply_update, db, update, request.app.state.billing.name)
