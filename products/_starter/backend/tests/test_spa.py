@@ -95,15 +95,50 @@ def test_html_has_a_csp_without_inline_script(web):
     assert r.headers["x-frame-options"] == "DENY" and r.headers["x-content-type-options"] == "nosniff"
 
 
+def _built_html_checker():
+    import importlib.util
+    path = Path(__file__).resolve().parents[2] / "scripts" / "check_built_html.py"
+    spec = importlib.util.spec_from_file_location("check_built_html", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+@pytest.mark.parametrize("html", [
+    '<!doctype html><html><head><script type="module" crossorigin src="/assets/index-abc.js"></script>'
+    '<link rel="stylesheet" crossorigin href="/assets/index-abc.css"></head><body><div id="root"></div></body></html>',
+    '<script src="/a.js" ></script><SCRIPT SRC="/b.js"></SCRIPT>',
+])
+def test_built_html_checker_passes_a_clean_vite_page(html):
+    assert _built_html_checker().problems(html) == []
+
+
+@pytest.mark.parametrize("html", [
+    "<script>alert(1)</script>",
+    '<script type="module">import "/x.js"</script>',
+    "<SCRIPT>x()</SCRIPT>",
+    '<script data-src="/x.js">x()</script>',
+    "<style>body{}</style>",
+    '<div style="color:red"></div>',
+    "<DIV STYLE='x'></DIV>",
+    '<button onclick="x()">',
+    '<body onload="x()">',
+])
+def test_built_html_checker_catches_csp_blocked_markup(html):
+    assert _built_html_checker().problems(html)
+
+
 def test_the_real_vite_build_has_no_inline_script():
-    import pathlib
-    import re
-    built = pathlib.Path(__file__).resolve().parents[2] / "frontend" / "dist" / "index.html"
+    # CI's frontend job runs scripts/check_built_html.py right after `npm run build` (T-97), so this local
+    # check skipping in the backend job no longer leaves the build unchecked. REQUIRE_FRONTEND_BUILD=1 makes a
+    # missing build a failure instead of a skip.
+    import os
+    built = Path(__file__).resolve().parents[2] / "frontend" / "dist" / "index.html"
     if not built.exists():
-        pytest.skip("frontend not built")
-    html = built.read_text()
-    assert not re.search(r"<script(?![^>]*\ssrc=)", html), "inline script would be blocked by the CSP"
-    assert "<style" not in html and not re.search(r"\sstyle=", html)
+        if os.environ.get("REQUIRE_FRONTEND_BUILD") == "1":
+            pytest.fail(f"{built} missing: run npm run build first")
+        pytest.skip("frontend not built (CI checks the build in the frontend job)")
+    assert _built_html_checker().problems(built.read_text(encoding="utf-8")) == []
 
 
 @pytest.mark.parametrize("path", ["/api/nope", "/api/", "/api", "/api/notes/x/y/z"])
