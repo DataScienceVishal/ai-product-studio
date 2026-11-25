@@ -32,6 +32,7 @@ export function setBillingProviderForTest(value: string): void { billingProvider
 export async function loadClientConfig(): Promise<void> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5_000);
+  billingProvider = ""; // only a successful config with "mock" turns it on
   try {
     const response = await fetch("/api/config", { credentials: "same-origin", signal: controller.signal });
     if (response.ok) {
