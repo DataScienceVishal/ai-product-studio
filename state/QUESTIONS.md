@@ -113,3 +113,10 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Options: A) You have a 15-minute chat with your UK-business friend using state/ideas/BUYER-INTERVIEW.md. Each pain with money attached becomes an idea and gets a cheap proof test (recommended) B) Bring restaurant back as a proof test: free Jelly trial (already allowed by Q-9) plus a synthetic-invoice benchmark, kill test written first, under $5 of model spend C) One more desk round, aimed only at your edges (finance/tax data, RL dynamic pricing, RAG agents)
 - Recommended: A, because your friend is both the buyer's voice and the future seller, and the meta-review found desk-only scouting is the reason nothing passes. It costs you 15 minutes and spends no money.
 - If no answer: C after 12 hours (reversible, no spend). A stays open, because only you can have the chat.
+
+## Q-14 (status: open)
+- Decision: The studio wrote a narrower Azure role for the GitHub deploy identity (it can deploy but can't grant access or delete the database). Only you (Owner) can switch it on. When?
+- Context: today the deploy identity holds Contributor on rg-ai-studio, so a bad workflow change on main could delete anything in the group. The new role is on main (products/_starter/infra/deploy-role.bicep); the 3 Cloud Shell steps and rollback are in products/_starter/infra/README.md, "Least-privilege deploy role (T-65)". About 10 minutes, no cost. A missing action would show as a failed deploy naming it, which the studio then adds.
+- Options: A) Apply it the next time you run a deploy (recommended) B) Wait for T-69 (deploy identity in its own resource group, separate shared-deploy role) and apply both together C) Leave Contributor until handover
+- Recommended: A, because it removes the delete-everything risk now and T-69 builds on it.
+- If no answer: nothing changes (Contributor stays); it waits for you because only an Owner can apply it. The studio carries on with other work.

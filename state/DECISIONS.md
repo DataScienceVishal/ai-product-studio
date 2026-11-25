@@ -191,3 +191,6 @@ Append only. One line per decision:
 
 ## 2026-11-25T03:26Z run 32ff: T-68 action majors merged from our own branch
 - Cherry-picked Dependabot's commit onto a fresh studio branch instead of rebasing Dependabot's branch (we can't push to it), verified pins and breaking changes, merged to main after reviewer PASS and green local checks. If Dependabot's PR #4 doesn't close itself, it can be closed as superseded.
+
+## 2026-11-25T03:36Z run 32ff: T-65 merged as written-not-applied; M1-M3 accepted as residual risks
+- Security gate asked for H1/M4/M5 fixes (done) and flagged M1-M3 (deploy identity can attach itself; shared-only Postgres writes; containerApps/jobs write unavoidable). Accepted for now and queued as T-69, because the role isn't assigned yet and Contributor already allows all of it, so the custom role is strictly narrower. Re-review PASS. Applying needs Vishal (Q-14); no default action.
