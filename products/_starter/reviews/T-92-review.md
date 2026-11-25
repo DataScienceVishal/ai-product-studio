@@ -49,3 +49,20 @@ One small thing to fix: the ADR diagram is now misaligned. Everything else is ac
   was out of scope for T-92.
 - Process: ddc3e46 was pushed to `main` before review. The coordinator says it was reverted in 9e54a63. Merge the
   branch only after this review passes.
+
+## Re-review at 9fbe716: PASS
+
+- ADR diagram fixed. `ADR/0002-azure-deploy.md:22` now reads `rg-ai-studio (francecentral) ▼`. The `▼` arrows are at
+  columns 31/40/50, under the `│` lines on line 21 (31/40/50), and the box corner is back at column 74, as it was
+  before T-92.
+- ADR line 13: the doubled "read" is gone, and the sentence still says that uksouth is only the resource group's
+  region and the resources are in francecentral.
+- `legal.tsx:19` now reads "for now our servers and database are in Microsoft's France Central region, in the EU".
+  This is plain, accurate (it matches both `.bicepparam` files) and makes no promise about UK hosting.
+- Frontend: `npx vitest run` passed 7 of 7 files and 203 of 203 tests. `npx tsc --noEmit` exited 0.
+- Search: no "UK region", "UK South" or "meta uksouth" text is left. The only match is `SECURITY.md:818` ("UK regional
+  deployment"), which is about choosing the Azure OpenAI deployment, not hosting. OK.
+- Deferred, tracked by the coordinator: align the Help FAQ in `app.tsx:454` ("outside the UK") with the privacy page
+  ("outside the UK and EU").
+
+Verdict: **PASS**. The branch can merge to main.
