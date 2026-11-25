@@ -162,7 +162,16 @@ describe("loadClientConfig: billing_provider", () => {
   beforeEach(() => setBillingProviderForTest(""));
   afterEach(() => setBillingProviderForTest(""));
 
-  it("is off before any config is loaded (fails closed)", () => {
+  it("is off before any config is loaded (fails closed)", async () => {
+    vi.resetModules();
+    const fresh = await import("./api");
+    expect(fresh.isMockBilling()).toBe(false);
+  });
+
+  it.each([[500], [404]])("is off when /api/config answers %i, even with billing_provider mock in the body", async (status) => {
+    setBillingProviderForTest("mock");
+    fetchMock.mockResolvedValueOnce(reply(status, { billing_provider: "mock" }));
+    await loadClientConfig();
     expect(isMockBilling()).toBe(false);
   });
 
