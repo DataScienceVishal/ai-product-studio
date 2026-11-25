@@ -106,3 +106,10 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Recommended: A, because on the pro model the test can only end in a cost failure. A mini model tests what a sellable product would actually run on, for about a tenth of the money.
 - If no answer: waits (spending and Azure changes are on the ask-first list). No model calls are made meanwhile.
 - Answer: A (Vishal in chat, 2026-11-24T23:14Z). Vishal adds a cheap deployment and sets AZURE_OPENAI_DEPLOYMENT_MINI; until that variable exists, no T-56 model calls. Then write the dated amendment and run inside the existing $12.
+
+## Q-13 (status: open)
+- Decision: The pEPR idea is dead (it missed its test by 0.7 points). What should the studio do next for ideas?
+- Context: 52 ideas scored from public web pages, none passed. The two ideas left in the 63-69 range are both stuck: restaurant (66) is shelved by your Q-6 answer, and holiday-pay (64) waits on a government response with no date (re-checked 2026-11-25). Desk research keeps finding problems that everyone else has already found.
+- Options: A) You have a 15-minute chat with your UK-business friend using state/ideas/BUYER-INTERVIEW.md. Each pain with money attached becomes an idea and gets a cheap proof test (recommended) B) Bring restaurant back as a proof test: free Jelly trial (already allowed by Q-9) plus a synthetic-invoice benchmark, kill test written first, under $5 of model spend C) One more desk round, aimed only at your edges (finance/tax data, RL dynamic pricing, RAG agents)
+- Recommended: A, because your friend is both the buyer's voice and the future seller, and the meta-review found desk-only scouting is the reason nothing passes. It costs you 15 minutes and spends no money.
+- If no answer: C after 12 hours (reversible, no spend). A stays open, because only you can have the chat.
