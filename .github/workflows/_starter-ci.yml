@@ -190,3 +190,5 @@ jobs:
           for f in *.sh; do bash -n "$f"; done
       - name: Deploy workflow checks (ADR 0003 slice 4)
         run: bash products/_starter/infra/test-deploy-workflow.sh
+      - name: Least-privilege deploy role checks (T-65, static)
+        run: bash products/_starter/infra/test-deploy-role.sh

@@ -1117,3 +1117,17 @@ Same harness as before, with these changes:
 - T24 checks the new `ai_busy` header, and what happens when an account is deleted mid-call.
 
 Gaps are as before: no real Azure, Stripe or ingress; simulated latency; prices from third-party trackers.
+
+## Update T-65: deploy identity permissions (L2) — NOT APPLIED YET
+
+There was no item labelled L2 in this file; this note defines it: **L2, the deploy identity holds Contributor.**
+`id-github-deploy` can do anything on `rg-ai-studio` (delete the database, registry or apps), so anyone who can push a
+workflow change to `main` has that power (ADR 0002, decision 8).
+
+- **Fix written, not applied:** `infra/deploy-role.bicep` is a custom least-privilege role: explicit actions, no role
+  assignment or definition writes, no federated credentials, one delete (the runner's temporary Postgres firewall rule),
+  assignable on `rg-ai-studio` only. `infra/test-deploy-role.sh` checks this statically and runs in CI.
+- **Open until Vishal applies it** with the commands in `infra/README.md` ("Least-privilege deploy role (T-65)") and a
+  deploy has run green under the new role. Status stays: L2 open, Low-Medium.
+- Not covered: the role has not been exercised against Azure, so the action list may miss one (a failed deploy naming
+  the action, not an access hole).
