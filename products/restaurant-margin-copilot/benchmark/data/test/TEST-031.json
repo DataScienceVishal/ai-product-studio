@@ -1,0 +1,156 @@
+{
+ "credit_note": false,
+ "date": "2026-10-15",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 0.64,
+   "crumple_amp_px": 3.73,
+   "jpeg_quality": 43,
+   "perspective_jitter": 0.026,
+   "rotation_deg": 11.39,
+   "seed": 2025311,
+   "shadow_strength": 0.21
+  }
+ ],
+ "heldout": false,
+ "id": "TEST-031",
+ "images": [
+  "TEST-031_p1.jpg"
+ ],
+ "invoice_no": "24958",
+ "layout": "broadliner_a",
+ "lines": [
+  {
+   "code": "FD96126",
+   "description": "CLNG FLUID MULTI SURF 5L",
+   "discount_pct": 0,
+   "line_total": 8.96,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 4.48,
+   "vat_rate": 20
+  },
+  {
+   "code": "FD37944",
+   "description": "PASTA PENNE DRY 3KG",
+   "discount_pct": 0,
+   "line_total": 22.56,
+   "pack_size": "3kg",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "each",
+   "unit_price": 3.76,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD20000",
+   "description": "CHICKEN WINGS 5KG CASE",
+   "discount_pct": 10,
+   "line_total": 117.61,
+   "pack_size": "5kg case",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "case",
+   "unit_price": 21.78,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD83831",
+   "description": "BLK PEPPER GRND 500G",
+   "discount_pct": 0,
+   "line_total": 35.55,
+   "pack_size": "500g",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "each",
+   "unit_price": 7.11,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD76774",
+   "description": "GLOVE NITRILE BLU L X100",
+   "discount_pct": 0,
+   "line_total": 6.46,
+   "pack_size": "100",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "box",
+   "unit_price": 6.46,
+   "vat_rate": 20
+  },
+  {
+   "code": "FD94611",
+   "description": "EGGS MED FR RANGE 180",
+   "discount_pct": 0,
+   "line_total": 87.88,
+   "pack_size": "180",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "case",
+   "unit_price": 21.97,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD80118",
+   "description": "HONEY CLEAR 3KG",
+   "discount_pct": 0,
+   "line_total": 16.46,
+   "pack_size": "3kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 16.46,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD25412",
+   "description": "VINEGAR MALT 5L",
+   "discount_pct": 5,
+   "line_total": 12.96,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 3.41,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD86234",
+   "description": "STOCK BEEF PASTE 6X1KG",
+   "discount_pct": 5,
+   "line_total": 58.9,
+   "pack_size": "6x1kg",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 31.0,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD15177",
+   "description": "FOIL CATERING 450MMX90M",
+   "discount_pct": 0,
+   "line_total": 24.78,
+   "pack_size": "",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 12.39,
+   "vat_rate": 20
+  }
+ ],
+ "pages": 1,
+ "supplier": "Fenwick & Dale Foodservice Ltd",
+ "totals": {
+  "gross": 400.16,
+  "net": 392.12,
+  "vat": 8.04,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 8.04
+  }
+ }
+}

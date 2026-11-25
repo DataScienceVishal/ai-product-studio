@@ -1,0 +1,158 @@
+{
+ "credit_note": true,
+ "date": "2026-09-24",
+ "distorted": false,
+ "distortion": [],
+ "heldout": false,
+ "id": "TEST-028",
+ "images": [
+  "TEST-028_p1.png"
+ ],
+ "invoice_no": "CN4684",
+ "layout": "butcher",
+ "lines": [
+  {
+   "code": "HS73665",
+   "description": "BACON SMKD BACK 2KG",
+   "discount_pct": 0,
+   "line_total": -64.36,
+   "pack_size": "2kg",
+   "page": 1,
+   "qty": -4.0,
+   "unit": "pack",
+   "unit_price": 16.09,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS29683",
+   "description": "CHICKEN THIGH BONE IN 10KG",
+   "discount_pct": 0,
+   "line_total": -28.88,
+   "pack_size": "10kg",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "case",
+   "unit_price": 28.88,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS67565",
+   "description": "PORK SAUS 8S 454G",
+   "discount_pct": 0,
+   "line_total": -7.82,
+   "pack_size": "454g",
+   "page": 1,
+   "qty": -2.0,
+   "unit": "pack",
+   "unit_price": 3.91,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS38560",
+   "description": "LAMB RACK FRENCH TRIM",
+   "discount_pct": 0,
+   "line_total": -191.92,
+   "pack_size": "",
+   "page": 1,
+   "qty": -7.68,
+   "unit": "kg",
+   "unit_price": 24.99,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS38172",
+   "description": "BLACK PUDDING 1KG",
+   "discount_pct": 0,
+   "line_total": -31.44,
+   "pack_size": "1kg",
+   "page": 1,
+   "qty": -4.0,
+   "unit": "each",
+   "unit_price": 7.86,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS75433",
+   "description": "PORK SHOULDER DICED",
+   "discount_pct": 0,
+   "line_total": -29.43,
+   "pack_size": "",
+   "page": 1,
+   "qty": -4.48,
+   "unit": "kg",
+   "unit_price": 6.57,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS20322",
+   "description": "LAMB SHOULDER BONE IN",
+   "discount_pct": 0,
+   "line_total": -81.75,
+   "pack_size": "",
+   "page": 1,
+   "qty": -6.87,
+   "unit": "kg",
+   "unit_price": 11.9,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS18340",
+   "description": "SIRLOIN 28D HUNG",
+   "discount_pct": 0,
+   "line_total": -224.75,
+   "pack_size": "",
+   "page": 1,
+   "qty": -9.14,
+   "unit": "kg",
+   "unit_price": 24.59,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS58238",
+   "description": "BEEF MARROW BONES",
+   "discount_pct": 0,
+   "line_total": -3.19,
+   "pack_size": "",
+   "page": 1,
+   "qty": -1.54,
+   "unit": "kg",
+   "unit_price": 2.07,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS44358",
+   "description": "PORK SAUSAGE DOZEN",
+   "discount_pct": 0,
+   "line_total": -21.05,
+   "pack_size": "dozen",
+   "page": 1,
+   "qty": -5.0,
+   "unit": "each",
+   "unit_price": 4.21,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS78521",
+   "description": "BUTCHERS STRING 500G",
+   "discount_pct": 0,
+   "line_total": -15.16,
+   "pack_size": "500g",
+   "page": 1,
+   "qty": -4.0,
+   "unit": "each",
+   "unit_price": 3.79,
+   "vat_rate": 20
+  }
+ ],
+ "pages": 1,
+ "supplier": "Harker & Sons Family Butchers",
+ "totals": {
+  "gross": -702.78,
+  "net": -699.75,
+  "vat": -3.03,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": -3.03
+  }
+ }
+}

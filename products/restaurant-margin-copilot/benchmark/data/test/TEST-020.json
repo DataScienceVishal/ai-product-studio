@@ -1,0 +1,147 @@
+{
+ "credit_note": false,
+ "date": "2026-10-09",
+ "distorted": false,
+ "distortion": [],
+ "heldout": true,
+ "id": "TEST-020",
+ "images": [
+  "TEST-020_p1.png"
+ ],
+ "invoice_no": "61932",
+ "layout": "broadliner_b",
+ "lines": [
+  {
+   "code": "CV73593",
+   "description": "MILK WHOLE 12X1L",
+   "discount_pct": 0,
+   "line_total": 9.77,
+   "pack_size": "12x1L",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 9.77,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV92579",
+   "description": "YOG GREEK STYLE 10KG",
+   "discount_pct": 0,
+   "line_total": 58.08,
+   "pack_size": "10kg",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "each",
+   "unit_price": 19.36,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV52389",
+   "description": "GLOVES VINYL CLR M 100",
+   "discount_pct": 0,
+   "line_total": 15.32,
+   "pack_size": "100",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "box",
+   "unit_price": 3.83,
+   "vat_rate": 20
+  },
+  {
+   "code": "CV11961",
+   "description": "HONEY SQUEEZY 12X340G",
+   "discount_pct": 0,
+   "line_total": 101.0,
+   "pack_size": "12x340g",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "case",
+   "unit_price": 25.25,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV59100",
+   "description": "LPG PROPANE CYL 19KG REFILL",
+   "discount_pct": 0,
+   "line_total": 40.46,
+   "pack_size": "19kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 40.46,
+   "vat_rate": 5
+  },
+  {
+   "code": "CV71340",
+   "description": "TABLE ROLL WHT 40CM X 100M",
+   "discount_pct": 0,
+   "line_total": 15.8,
+   "pack_size": "",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 7.9,
+   "vat_rate": 20
+  },
+  {
+   "code": "CV37549",
+   "description": "CHEESE CHEDDAR MED 5KG",
+   "discount_pct": 0,
+   "line_total": 124.32,
+   "pack_size": "5kg",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 31.08,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV49511",
+   "description": "OIL SUNFLWR 20 LTR JERRY",
+   "discount_pct": 0,
+   "line_total": 31.78,
+   "pack_size": "20L",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 31.78,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV82748",
+   "description": "EGGS LARGE FR 15 DOZEN",
+   "discount_pct": 0,
+   "line_total": 91.2,
+   "pack_size": "180",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "case",
+   "unit_price": 22.8,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV11293",
+   "description": "HAM COOKED SLCD 1KG",
+   "discount_pct": 0,
+   "line_total": 17.68,
+   "pack_size": "1kg",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 8.84,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Calder Valley Catering Supplies plc",
+ "totals": {
+  "gross": 513.65,
+  "net": 505.41,
+  "vat": 8.24,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 6.22,
+   "5": 2.02
+  }
+ }
+}

@@ -1,0 +1,146 @@
+{
+ "credit_note": false,
+ "date": "2026-10-18",
+ "distorted": false,
+ "distortion": [],
+ "heldout": false,
+ "id": "TEST-040",
+ "images": [
+  "TEST-040_p1.png"
+ ],
+ "invoice_no": "36368",
+ "layout": "butcher",
+ "lines": [
+  {
+   "code": "HS83810",
+   "description": "PORK SAUS 8S 454G",
+   "discount_pct": 0,
+   "line_total": 3.29,
+   "pack_size": "454g",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "pack",
+   "unit_price": 3.29,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS34429",
+   "description": "BEEF DICED CHUCK",
+   "discount_pct": 0,
+   "line_total": 17.47,
+   "pack_size": "",
+   "page": 1,
+   "qty": 2.09,
+   "unit": "kg",
+   "unit_price": 8.36,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS30062",
+   "description": "BACON SMKD BACK 2KG",
+   "discount_pct": 0,
+   "line_total": 16.44,
+   "pack_size": "2kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "pack",
+   "unit_price": 16.44,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS43408",
+   "description": "LAMB SHOULDER BONE IN",
+   "discount_pct": 0,
+   "line_total": 72.4,
+   "pack_size": "",
+   "page": 1,
+   "qty": 6.12,
+   "unit": "kg",
+   "unit_price": 11.83,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS60479",
+   "description": "BUTCHERS STRING 500G",
+   "discount_pct": 0,
+   "line_total": 20.7,
+   "pack_size": "500g",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "each",
+   "unit_price": 4.14,
+   "vat_rate": 20
+  },
+  {
+   "code": "HS43842",
+   "description": "BLACK PUDDING 1KG",
+   "discount_pct": 0,
+   "line_total": 11.06,
+   "pack_size": "1kg",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 5.53,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS15209",
+   "description": "SIRLOIN 28D HUNG",
+   "discount_pct": 0,
+   "line_total": 115.54,
+   "pack_size": "",
+   "page": 1,
+   "qty": 5.05,
+   "unit": "kg",
+   "unit_price": 22.88,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS14374",
+   "description": "CHICKEN THIGH BONE IN 10KG",
+   "discount_pct": 0,
+   "line_total": 129.1,
+   "pack_size": "10kg",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "case",
+   "unit_price": 25.82,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS74609",
+   "description": "PORK BELLY RIND ON",
+   "discount_pct": 0,
+   "line_total": 20.9,
+   "pack_size": "",
+   "page": 1,
+   "qty": 3.42,
+   "unit": "kg",
+   "unit_price": 6.11,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS94135",
+   "description": "PORK SAUSAGE DOZEN",
+   "discount_pct": 0,
+   "line_total": 8.76,
+   "pack_size": "dozen",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 4.38,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Harker & Sons Family Butchers",
+ "totals": {
+  "gross": 419.8,
+  "net": 415.66,
+  "vat": 4.14,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 4.14
+  }
+ }
+}

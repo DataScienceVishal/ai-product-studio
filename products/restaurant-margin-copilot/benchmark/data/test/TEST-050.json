@@ -1,0 +1,183 @@
+{
+ "credit_note": false,
+ "date": "2026-10-31",
+ "distorted": false,
+ "distortion": [],
+ "heldout": true,
+ "id": "TEST-050",
+ "images": [
+  "TEST-050_p1.png",
+  "TEST-050_p2.png"
+ ],
+ "invoice_no": "28884",
+ "layout": "broadliner_b",
+ "lines": [
+  {
+   "code": "CV44082",
+   "description": "CLING FILM 450MM X 300M",
+   "discount_pct": 0,
+   "line_total": 9.91,
+   "pack_size": "",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 9.91,
+   "vat_rate": 20
+  },
+  {
+   "code": "CV45469",
+   "description": "VINEGAR BREWED 5 LTR",
+   "discount_pct": 0,
+   "line_total": 7.18,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 3.59,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV87199",
+   "description": "MAYONNAISE LT 10 LTR",
+   "discount_pct": 0,
+   "line_total": 32.88,
+   "pack_size": "10L",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 16.44,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV68216",
+   "description": "DEGREASER HD SPRAY 750ML",
+   "discount_pct": 0,
+   "line_total": 3.01,
+   "pack_size": "750ml",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 3.01,
+   "vat_rate": 20
+  },
+  {
+   "code": "CV95839",
+   "description": "CREAM SNGL 12X500ML",
+   "discount_pct": 0,
+   "line_total": 70.72,
+   "pack_size": "12x500ml",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "case",
+   "unit_price": 17.68,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV41933",
+   "description": "TOMATO PLUM WHL 6X2.5KG",
+   "discount_pct": 0,
+   "line_total": 102.78,
+   "pack_size": "6x2.5kg",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "case",
+   "unit_price": 17.13,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV87378",
+   "description": "CONTAINER FOIL 1/2 GN X50",
+   "discount_pct": 0,
+   "line_total": 85.8,
+   "pack_size": "50",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "box",
+   "unit_price": 21.45,
+   "vat_rate": 20
+  },
+  {
+   "code": "CV99918",
+   "description": "FLR STRONG WHT BREAD 16KG",
+   "discount_pct": 0,
+   "line_total": 27.3,
+   "pack_size": "16kg",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 13.65,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV72535",
+   "description": "MARGARINE CATERING 10KG",
+   "discount_pct": 0,
+   "line_total": 158.0,
+   "pack_size": "10kg",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 19.75,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV64338",
+   "description": "SEA SALT COARSE 1.5KG",
+   "discount_pct": 0,
+   "line_total": 1.95,
+   "pack_size": "1.5kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 1.95,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV47357",
+   "description": "RICE LONG GRAIN 20KG",
+   "discount_pct": 0,
+   "line_total": 20.04,
+   "pack_size": "20kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 20.04,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV51550",
+   "description": "HONEY SQUEEZY 12X340G",
+   "discount_pct": 0,
+   "line_total": 118.9,
+   "pack_size": "12x340g",
+   "page": 2,
+   "qty": 5.0,
+   "unit": "case",
+   "unit_price": 23.78,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV68548",
+   "description": "SPAGHETTI DRY 6X500G",
+   "discount_pct": 0,
+   "line_total": 32.3,
+   "pack_size": "6x500g",
+   "page": 2,
+   "qty": 5.0,
+   "unit": "case",
+   "unit_price": 6.46,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 2,
+ "supplier": "Calder Valley Catering Supplies plc",
+ "totals": {
+  "gross": 690.51,
+  "net": 670.77,
+  "vat": 19.74,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 19.74
+  }
+ }
+}

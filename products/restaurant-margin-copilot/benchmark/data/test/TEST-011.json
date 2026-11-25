@@ -1,0 +1,262 @@
+{
+ "credit_note": false,
+ "date": "2026-09-09",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 0.63,
+   "crumple_amp_px": 4.34,
+   "jpeg_quality": 50,
+   "perspective_jitter": 0.045,
+   "rotation_deg": -8.33,
+   "seed": 2025111,
+   "shadow_strength": 0.282
+  },
+  {
+   "blur_sigma": 0.83,
+   "crumple_amp_px": 3.86,
+   "jpeg_quality": 65,
+   "perspective_jitter": 0.035,
+   "rotation_deg": 10.37,
+   "seed": 2025112,
+   "shadow_strength": 0.308
+  }
+ ],
+ "heldout": true,
+ "id": "TEST-011",
+ "images": [
+  "TEST-011_p1.jpg",
+  "TEST-011_p2.jpg"
+ ],
+ "invoice_no": "55903",
+ "layout": "greengrocer",
+ "lines": [
+  {
+   "code": "ML38145",
+   "description": "CELERY HEAD",
+   "discount_pct": 0,
+   "line_total": 4.14,
+   "pack_size": "",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "each",
+   "unit_price": 1.38,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML23681",
+   "description": "AVOCADO RIPE 12S",
+   "discount_pct": 0,
+   "line_total": 13.61,
+   "pack_size": "12",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "box",
+   "unit_price": 13.61,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML89259",
+   "description": "BROCCOLI",
+   "discount_pct": 0,
+   "line_total": 19.85,
+   "pack_size": "",
+   "page": 1,
+   "qty": 7.91,
+   "unit": "kg",
+   "unit_price": 2.51,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML67524",
+   "description": "PEPPERS RED MIXED 5KG",
+   "discount_pct": 0,
+   "line_total": 39.6,
+   "pack_size": "5kg",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "case",
+   "unit_price": 13.2,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML58784",
+   "description": "LETTUCE COS",
+   "discount_pct": 0,
+   "line_total": 11.04,
+   "pack_size": "",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 1.38,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML29649",
+   "description": "RASPBERRIES 12X125G",
+   "discount_pct": 0,
+   "line_total": 16.05,
+   "pack_size": "12x125g",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 16.05,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML45359",
+   "description": "EGGS FREE RANGE DOZEN",
+   "discount_pct": 0,
+   "line_total": 27.44,
+   "pack_size": "dozen",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 3.43,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML17234",
+   "description": "POTATO MARIS PIPER 25KG",
+   "discount_pct": 0,
+   "line_total": 61.36,
+   "pack_size": "25kg",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 15.34,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML68381",
+   "description": "MUSHROOM CHESTNUT 3KG",
+   "discount_pct": 0,
+   "line_total": 9.86,
+   "pack_size": "3kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "box",
+   "unit_price": 9.86,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML54759",
+   "description": "CARROT LOOSE 20KG",
+   "discount_pct": 0,
+   "line_total": 49.28,
+   "pack_size": "20kg",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 12.32,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML66211",
+   "description": "PARSLEY FLAT BUNCH",
+   "discount_pct": 0,
+   "line_total": 0.9,
+   "pack_size": "",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 0.9,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML62369",
+   "description": "SPINACH BABY 500G",
+   "discount_pct": 0,
+   "line_total": 3.15,
+   "pack_size": "500g",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 3.15,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML14663",
+   "description": "GARLIC WHITE",
+   "discount_pct": 0,
+   "line_total": 6.17,
+   "pack_size": "",
+   "page": 1,
+   "qty": 0.95,
+   "unit": "kg",
+   "unit_price": 6.49,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML90992",
+   "description": "BASIL POT LIVING",
+   "discount_pct": 0,
+   "line_total": 8.2,
+   "pack_size": "",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "each",
+   "unit_price": 1.64,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML49150",
+   "description": "CARRIER BAGS 100",
+   "discount_pct": 0,
+   "line_total": 3.29,
+   "pack_size": "100",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "pack",
+   "unit_price": 3.29,
+   "vat_rate": 20
+  },
+  {
+   "code": "ML98307",
+   "description": "TOMATOES VINE 6KG BOX",
+   "discount_pct": 0,
+   "line_total": 13.8,
+   "pack_size": "6kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "box",
+   "unit_price": 13.8,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML19407",
+   "description": "ONION BROWN 10KG",
+   "discount_pct": 0,
+   "line_total": 17.0,
+   "pack_size": "10kg",
+   "page": 2,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 8.5,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML17234",
+   "description": "CR POTATO MARIS PIPER 25KG DAMAGED",
+   "discount_pct": 0,
+   "line_total": -15.34,
+   "pack_size": "25kg",
+   "page": 2,
+   "qty": -1.0,
+   "unit": "each",
+   "unit_price": 15.34,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 2,
+ "supplier": "Marrow Lane Greengrocers",
+ "totals": {
+  "gross": 290.06,
+  "net": 289.4,
+  "vat": 0.66,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 0.66
+  }
+ }
+}

@@ -1,0 +1,251 @@
+{
+ "credit_note": false,
+ "date": "2026-10-17",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 0.95,
+   "crumple_amp_px": 2.37,
+   "jpeg_quality": 38,
+   "perspective_jitter": 0.052,
+   "rotation_deg": -11.66,
+   "seed": 2025321,
+   "shadow_strength": 0.266
+  },
+  {
+   "blur_sigma": 0.66,
+   "crumple_amp_px": 2.78,
+   "jpeg_quality": 69,
+   "perspective_jitter": 0.033,
+   "rotation_deg": -7.75,
+   "seed": 2025322,
+   "shadow_strength": 0.285
+  }
+ ],
+ "heldout": true,
+ "id": "TEST-032",
+ "images": [
+  "TEST-032_p1.jpg",
+  "TEST-032_p2.jpg"
+ ],
+ "invoice_no": "12569",
+ "layout": "broadliner_b",
+ "lines": [
+  {
+   "code": "CV63473",
+   "description": "PEPPER WHITE GRND 1KG",
+   "discount_pct": 0,
+   "line_total": 116.64,
+   "pack_size": "1kg",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "each",
+   "unit_price": 19.44,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV80033",
+   "description": "SYRUP GOLDEN 6X680G",
+   "discount_pct": 0,
+   "line_total": 28.56,
+   "pack_size": "6x680g",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 14.28,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV69902",
+   "description": "CHEESE CHEDDAR MED 5KG",
+   "discount_pct": 0,
+   "line_total": 89.22,
+   "pack_size": "5kg",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "each",
+   "unit_price": 29.74,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV98335",
+   "description": "COOKING CHOC 2X2.5KG",
+   "discount_pct": 0,
+   "line_total": 126.24,
+   "pack_size": "2x2.5kg",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "case",
+   "unit_price": 31.56,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV15131",
+   "description": "VINEGAR BREWED 5 LTR",
+   "discount_pct": 0,
+   "line_total": 36.16,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 4.52,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV51553",
+   "description": "OIL SUNFLWR 20 LTR JERRY",
+   "discount_pct": 0,
+   "line_total": 189.72,
+   "pack_size": "20L",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "each",
+   "unit_price": 31.62,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV69075",
+   "description": "EGG LIQUID PAST 5X1L",
+   "discount_pct": 0,
+   "line_total": 96.6,
+   "pack_size": "5x1L",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "case",
+   "unit_price": 16.1,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV61816",
+   "description": "CREAM SNGL 12X500ML",
+   "discount_pct": 0,
+   "line_total": 49.17,
+   "pack_size": "12x500ml",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "case",
+   "unit_price": 16.39,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV95752",
+   "description": "FRIES 9MM FRZN 4X2.5KG",
+   "discount_pct": 0,
+   "line_total": 31.32,
+   "pack_size": "4x2.5kg",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "case",
+   "unit_price": 10.44,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV94082",
+   "description": "TABLE ROLL WHT 40CM X 100M",
+   "discount_pct": 0,
+   "line_total": 9.4,
+   "pack_size": "",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 9.4,
+   "vat_rate": 20
+  },
+  {
+   "code": "CV74957",
+   "description": "CHKN FILLET MINI 2KG PK",
+   "discount_pct": 0,
+   "line_total": 31.7,
+   "pack_size": "2kg",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "pack",
+   "unit_price": 15.85,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV37369",
+   "description": "CLING FILM 450MM X 300M",
+   "discount_pct": 0,
+   "line_total": 75.6,
+   "pack_size": "",
+   "page": 2,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 9.45,
+   "vat_rate": 20
+  },
+  {
+   "code": "CV99715",
+   "description": "SEA SALT COARSE 1.5KG",
+   "discount_pct": 0,
+   "line_total": 2.52,
+   "pack_size": "1.5kg",
+   "page": 2,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 1.26,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV63569",
+   "description": "TOMATO PLUM WHL 6X2.5KG",
+   "discount_pct": 0,
+   "line_total": 17.73,
+   "pack_size": "6x2.5kg",
+   "page": 2,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 17.73,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV15610",
+   "description": "SPAGHETTI DRY 6X500G",
+   "discount_pct": 0,
+   "line_total": 5.74,
+   "pack_size": "6x500g",
+   "page": 2,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 5.74,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV98606",
+   "description": "LPG PROPANE CYL 19KG REFILL",
+   "discount_pct": 0,
+   "line_total": 246.6,
+   "pack_size": "19kg",
+   "page": 2,
+   "qty": 6.0,
+   "unit": "each",
+   "unit_price": 41.1,
+   "vat_rate": 5
+  },
+  {
+   "code": "CV40929",
+   "description": "EGGS LARGE FR 15 DOZEN",
+   "discount_pct": 0,
+   "line_total": 92.16,
+   "pack_size": "180",
+   "page": 2,
+   "qty": 4.0,
+   "unit": "case",
+   "unit_price": 23.04,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 2,
+ "supplier": "Calder Valley Catering Supplies plc",
+ "totals": {
+  "gross": 1274.41,
+  "net": 1245.08,
+  "vat": 29.33,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 17.0,
+   "5": 12.33
+  }
+ }
+}

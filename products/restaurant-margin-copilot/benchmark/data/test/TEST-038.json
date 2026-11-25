@@ -1,0 +1,146 @@
+{
+ "credit_note": true,
+ "date": "2026-09-03",
+ "distorted": false,
+ "distortion": [],
+ "heldout": true,
+ "id": "TEST-038",
+ "images": [
+  "TEST-038_p1.png"
+ ],
+ "invoice_no": "CN3274",
+ "layout": "broadliner_b",
+ "lines": [
+  {
+   "code": "CV17391",
+   "description": "COOKING CHOC 2X2.5KG",
+   "discount_pct": 0,
+   "line_total": -104.64,
+   "pack_size": "2x2.5kg",
+   "page": 1,
+   "qty": -3.0,
+   "unit": "case",
+   "unit_price": 34.88,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV23021",
+   "description": "CONTAINER FOIL 1/2 GN X50",
+   "discount_pct": 0,
+   "line_total": -21.5,
+   "pack_size": "50",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "box",
+   "unit_price": 21.5,
+   "vat_rate": 20
+  },
+  {
+   "code": "CV31111",
+   "description": "MAYONNAISE LT 10 LTR",
+   "discount_pct": 0,
+   "line_total": -18.25,
+   "pack_size": "10L",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "each",
+   "unit_price": 18.25,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV21209",
+   "description": "PEPPER WHITE GRND 1KG",
+   "discount_pct": 0,
+   "line_total": -46.77,
+   "pack_size": "1kg",
+   "page": 1,
+   "qty": -3.0,
+   "unit": "each",
+   "unit_price": 15.59,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV36095",
+   "description": "SUGAR CASTER 3KG",
+   "discount_pct": 0,
+   "line_total": -4.64,
+   "pack_size": "3kg",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "each",
+   "unit_price": 4.64,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV70183",
+   "description": "CREAM SNGL 12X500ML",
+   "discount_pct": 0,
+   "line_total": -35.52,
+   "pack_size": "12x500ml",
+   "page": 1,
+   "qty": -2.0,
+   "unit": "case",
+   "unit_price": 17.76,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV42825",
+   "description": "HONEY SQUEEZY 12X340G",
+   "discount_pct": 0,
+   "line_total": -103.2,
+   "pack_size": "12x340g",
+   "page": 1,
+   "qty": -4.0,
+   "unit": "case",
+   "unit_price": 25.8,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV68309",
+   "description": "GRAVY GRANULES BEEF 2KG",
+   "discount_pct": 0,
+   "line_total": -65.22,
+   "pack_size": "2kg",
+   "page": 1,
+   "qty": -6.0,
+   "unit": "each",
+   "unit_price": 10.87,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV17839",
+   "description": "SYRUP GOLDEN 6X680G",
+   "discount_pct": 0,
+   "line_total": -32.52,
+   "pack_size": "6x680g",
+   "page": 1,
+   "qty": -2.0,
+   "unit": "case",
+   "unit_price": 16.26,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV84401",
+   "description": "HAM COOKED SLCD 1KG",
+   "discount_pct": 0,
+   "line_total": -19.14,
+   "pack_size": "1kg",
+   "page": 1,
+   "qty": -2.0,
+   "unit": "each",
+   "unit_price": 9.57,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Calder Valley Catering Supplies plc",
+ "totals": {
+  "gross": -455.7,
+  "net": -451.4,
+  "vat": -4.3,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": -4.3
+  }
+ }
+}

@@ -1,0 +1,168 @@
+{
+ "credit_note": false,
+ "date": "2026-10-27",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 1.09,
+   "crumple_amp_px": 4.83,
+   "jpeg_quality": 63,
+   "perspective_jitter": 0.03,
+   "rotation_deg": 3.54,
+   "seed": 2025341,
+   "shadow_strength": 0.157
+  }
+ ],
+ "heldout": false,
+ "id": "TEST-034",
+ "images": [
+  "TEST-034_p1.jpg"
+ ],
+ "invoice_no": "72115",
+ "layout": "butcher",
+ "lines": [
+  {
+   "code": "HS40836",
+   "description": "BEEF DICED CHUCK",
+   "discount_pct": 0,
+   "line_total": 38.37,
+   "pack_size": "",
+   "page": 1,
+   "qty": 4.79,
+   "unit": "kg",
+   "unit_price": 8.01,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS44802",
+   "description": "CHICKEN THIGH BONE IN 10KG",
+   "discount_pct": 0,
+   "line_total": 197.44,
+   "pack_size": "10kg",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "case",
+   "unit_price": 24.68,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS25606",
+   "description": "BUTCHERS STRING 500G",
+   "discount_pct": 0,
+   "line_total": 13.24,
+   "pack_size": "500g",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 3.31,
+   "vat_rate": 20
+  },
+  {
+   "code": "HS17945",
+   "description": "DUCK BREAST X2 400G",
+   "discount_pct": 0,
+   "line_total": 37.55,
+   "pack_size": "400g",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "pack",
+   "unit_price": 7.51,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS98173",
+   "description": "CHICKEN WHOLE FR 1.8KG",
+   "discount_pct": 0,
+   "line_total": 71.84,
+   "pack_size": "1.8kg",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 8.98,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS30262",
+   "description": "DISPOSABLE GLOVES BLU X100",
+   "discount_pct": 0,
+   "line_total": 4.74,
+   "pack_size": "100",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "box",
+   "unit_price": 4.74,
+   "vat_rate": 20
+  },
+  {
+   "code": "HS39915",
+   "description": "PORK SAUS 8S 454G",
+   "discount_pct": 0,
+   "line_total": 32.56,
+   "pack_size": "454g",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "pack",
+   "unit_price": 4.07,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS76029",
+   "description": "PORK BELLY RIND ON",
+   "discount_pct": 0,
+   "line_total": 22.57,
+   "pack_size": "",
+   "page": 1,
+   "qty": 2.85,
+   "unit": "kg",
+   "unit_price": 7.92,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS76897",
+   "description": "PORK SHOULDER DICED",
+   "discount_pct": 0,
+   "line_total": 62.22,
+   "pack_size": "",
+   "page": 1,
+   "qty": 7.21,
+   "unit": "kg",
+   "unit_price": 8.63,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS28929",
+   "description": "BEEF MINCE 20% 5KG",
+   "discount_pct": 0,
+   "line_total": 38.55,
+   "pack_size": "5kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "pack",
+   "unit_price": 38.55,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS17351",
+   "description": "OX CHEEK",
+   "discount_pct": 0,
+   "line_total": 70.51,
+   "pack_size": "",
+   "page": 1,
+   "qty": 6.78,
+   "unit": "kg",
+   "unit_price": 10.4,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Harker & Sons Family Butchers",
+ "totals": {
+  "gross": 593.19,
+  "net": 589.59,
+  "vat": 3.6,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 3.6
+  }
+ }
+}

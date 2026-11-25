@@ -1,0 +1,156 @@
+{
+ "credit_note": false,
+ "date": "2026-09-06",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 1.48,
+   "crumple_amp_px": 2.17,
+   "jpeg_quality": 62,
+   "perspective_jitter": 0.021,
+   "rotation_deg": 6.43,
+   "seed": 2025261,
+   "shadow_strength": 0.35
+  }
+ ],
+ "heldout": true,
+ "id": "TEST-026",
+ "images": [
+  "TEST-026_p1.jpg"
+ ],
+ "invoice_no": "98199",
+ "layout": "broadliner_b",
+ "lines": [
+  {
+   "code": "CV68244",
+   "description": "MAYONNAISE LT 10 LTR",
+   "discount_pct": 0,
+   "line_total": 116.48,
+   "pack_size": "10L",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 14.56,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV28311",
+   "description": "HAM COOKED SLCD 1KG",
+   "discount_pct": 0,
+   "line_total": 42.75,
+   "pack_size": "1kg",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "each",
+   "unit_price": 8.55,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV29637",
+   "description": "EGG LIQUID PAST 5X1L",
+   "discount_pct": 0,
+   "line_total": 13.59,
+   "pack_size": "5x1L",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 13.59,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV74273",
+   "description": "SEA SALT COARSE 1.5KG",
+   "discount_pct": 0,
+   "line_total": 11.28,
+   "pack_size": "1.5kg",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "each",
+   "unit_price": 1.88,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV85804",
+   "description": "FLR STRONG WHT BREAD 16KG",
+   "discount_pct": 0,
+   "line_total": 16.52,
+   "pack_size": "16kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 16.52,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV88350",
+   "description": "DEGREASER HD SPRAY 750ML",
+   "discount_pct": 0,
+   "line_total": 12.12,
+   "pack_size": "750ml",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "each",
+   "unit_price": 4.04,
+   "vat_rate": 20
+  },
+  {
+   "code": "CV34801",
+   "description": "HONEY SQUEEZY 12X340G",
+   "discount_pct": 0,
+   "line_total": 47.44,
+   "pack_size": "12x340g",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 23.72,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV70726",
+   "description": "GRAVY GRANULES BEEF 2KG",
+   "discount_pct": 0,
+   "line_total": 33.84,
+   "pack_size": "2kg",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 8.46,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV83381",
+   "description": "CHEESE CHEDDAR MED 5KG",
+   "discount_pct": 0,
+   "line_total": 125.16,
+   "pack_size": "5kg",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 31.29,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV28812",
+   "description": "YOG GREEK STYLE 10KG",
+   "discount_pct": 0,
+   "line_total": 14.15,
+   "pack_size": "10kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 14.15,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Calder Valley Catering Supplies plc",
+ "totals": {
+  "gross": 435.75,
+  "net": 433.33,
+  "vat": 2.42,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 2.42
+  }
+ }
+}

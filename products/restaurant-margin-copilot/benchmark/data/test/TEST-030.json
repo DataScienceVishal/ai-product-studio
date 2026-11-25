@@ -1,0 +1,146 @@
+{
+ "credit_note": false,
+ "date": "2026-09-13",
+ "distorted": false,
+ "distortion": [],
+ "heldout": true,
+ "id": "TEST-030",
+ "images": [
+  "TEST-030_p1.png"
+ ],
+ "invoice_no": "74308",
+ "layout": "dairy_drinks",
+ "lines": [
+  {
+   "code": "TW38318",
+   "description": "WINE WHITE PINOT 6X75CL",
+   "discount_pct": 0,
+   "line_total": 46.0,
+   "pack_size": "6x75cl",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 46.0,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW98171",
+   "description": "TONIC SLIM 24X200ML",
+   "discount_pct": 0,
+   "line_total": 42.15,
+   "pack_size": "24x200ml",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "case",
+   "unit_price": 14.05,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW30660",
+   "description": "CIDER KEG 50L",
+   "discount_pct": 0,
+   "line_total": 453.8,
+   "pack_size": "50L",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 113.45,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW17183",
+   "description": "MILK SEMI 12X1L",
+   "discount_pct": 0,
+   "line_total": 17.56,
+   "pack_size": "12x1L",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 8.78,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW54312",
+   "description": "GINGER BEER 12X200ML",
+   "discount_pct": 0,
+   "line_total": 9.11,
+   "pack_size": "12x200ml",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 9.11,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW84385",
+   "description": "TEA BAGS BREAKFAST 1100",
+   "discount_pct": 0,
+   "line_total": 99.68,
+   "pack_size": "1100",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "box",
+   "unit_price": 12.46,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW86443",
+   "description": "WATER SPARKLING 12X75CL",
+   "discount_pct": 0,
+   "line_total": 9.37,
+   "pack_size": "12x75cl",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 9.37,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW10552",
+   "description": "COLA CLASSIC 24X330ML",
+   "discount_pct": 0,
+   "line_total": 44.16,
+   "pack_size": "24x330ml",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "case",
+   "unit_price": 14.72,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW28848",
+   "description": "VODKA 6X70CL",
+   "discount_pct": 0,
+   "line_total": 550.8,
+   "pack_size": "6x70cl",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "case",
+   "unit_price": 91.8,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW70728",
+   "description": "JUICE ORANGE 12X1L",
+   "discount_pct": 0,
+   "line_total": 63.0,
+   "pack_size": "12x1L",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "case",
+   "unit_price": 15.75,
+   "vat_rate": 20
+  }
+ ],
+ "pages": 1,
+ "supplier": "Tidewater Dairy & Drinks Ltd",
+ "totals": {
+  "gross": 1579.31,
+  "net": 1335.63,
+  "vat": 243.68,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 243.68
+  }
+ }
+}

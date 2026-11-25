@@ -1,0 +1,183 @@
+{
+ "credit_note": false,
+ "date": "2026-09-05",
+ "distorted": false,
+ "distortion": [],
+ "heldout": false,
+ "id": "TEST-045",
+ "images": [
+  "TEST-045_p1.png"
+ ],
+ "invoice_no": "80311",
+ "layout": "cashcarry",
+ "lines": [
+  {
+   "code": "BB92275",
+   "description": "SOFT DRINK LEMON 24X330ML",
+   "discount_pct": 0,
+   "line_total": 74.34,
+   "pack_size": "24x330ml",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "case",
+   "unit_price": 12.39,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB27088",
+   "description": "ONION BROWN LOOSE",
+   "discount_pct": 0,
+   "line_total": 4.44,
+   "pack_size": "",
+   "page": 1,
+   "qty": 3.76,
+   "unit": "kg",
+   "unit_price": 1.18,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB44774",
+   "description": "POTATO BAKING LOOSE",
+   "discount_pct": 0,
+   "line_total": 3.06,
+   "pack_size": "",
+   "page": 1,
+   "qty": 2.78,
+   "unit": "kg",
+   "unit_price": 1.1,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB35870",
+   "description": "LPG CYLINDER 13KG",
+   "discount_pct": 0,
+   "line_total": 114.52,
+   "pack_size": "13kg",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 28.63,
+   "vat_rate": 5
+  },
+  {
+   "code": "BB41307",
+   "description": "KETCHUP SACHET 1000",
+   "discount_pct": 0,
+   "line_total": 15.18,
+   "pack_size": "1000",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "box",
+   "unit_price": 15.18,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB62455",
+   "description": "MILK WHL 4PT",
+   "discount_pct": 0,
+   "line_total": 1.66,
+   "pack_size": "",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 1.66,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB54509",
+   "description": "EGGS LRG FR 30",
+   "discount_pct": 0,
+   "line_total": 4.56,
+   "pack_size": "30",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 4.56,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB63394",
+   "description": "CHKN WHOLE FR 1.8KG",
+   "discount_pct": 0,
+   "line_total": 26.28,
+   "pack_size": "1.8kg",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 6.57,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB52928",
+   "description": "SPONGE SCOURER 10PK",
+   "discount_pct": 0,
+   "line_total": 20.72,
+   "pack_size": "10",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "pack",
+   "unit_price": 2.59,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB51746",
+   "description": "BIN BAGS BLACK ROLL 100",
+   "discount_pct": 0,
+   "line_total": 6.27,
+   "pack_size": "100",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "pack",
+   "unit_price": 6.27,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB13230",
+   "description": "SUNFLWR OIL 5L",
+   "discount_pct": 0,
+   "line_total": 55.08,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "each",
+   "unit_price": 9.18,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB13001",
+   "description": "SALAD CREAM 5L",
+   "discount_pct": 0,
+   "line_total": 7.38,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 7.38,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB99720",
+   "description": "BANANAS LOOSE",
+   "discount_pct": 0,
+   "line_total": 6.05,
+   "pack_size": "",
+   "page": 1,
+   "qty": 4.88,
+   "unit": "kg",
+   "unit_price": 1.24,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Bulkbuy Cash & Carry",
+ "totals": {
+  "gross": 365.54,
+  "net": 339.54,
+  "vat": 26.0,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 20.27,
+   "5": 5.73
+  }
+ }
+}

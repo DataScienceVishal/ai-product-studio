@@ -1,0 +1,226 @@
+{
+ "credit_note": false,
+ "date": "2026-10-15",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 1.12,
+   "crumple_amp_px": 2.2,
+   "jpeg_quality": 68,
+   "perspective_jitter": 0.055,
+   "rotation_deg": 9.66,
+   "seed": 2025041,
+   "shadow_strength": 0.139
+  },
+  {
+   "blur_sigma": 0.86,
+   "crumple_amp_px": 4.33,
+   "jpeg_quality": 53,
+   "perspective_jitter": 0.042,
+   "rotation_deg": -10.18,
+   "seed": 2025042,
+   "shadow_strength": 0.138
+  }
+ ],
+ "heldout": false,
+ "id": "TEST-004",
+ "images": [
+  "TEST-004_p1.jpg",
+  "TEST-004_p2.jpg"
+ ],
+ "invoice_no": "11271",
+ "layout": "butcher",
+ "lines": [
+  {
+   "code": "HS27905",
+   "description": "BLACK PUDDING 1KG",
+   "discount_pct": 0,
+   "line_total": 20.82,
+   "pack_size": "1kg",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "each",
+   "unit_price": 6.94,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS44734",
+   "description": "RUMP STEAK TRIMMED",
+   "discount_pct": 0,
+   "line_total": 36.76,
+   "pack_size": "",
+   "page": 1,
+   "qty": 2.13,
+   "unit": "kg",
+   "unit_price": 17.26,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS72447",
+   "description": "BEEF MINCE 20% 5KG",
+   "discount_pct": 0,
+   "line_total": 38.59,
+   "pack_size": "5kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "pack",
+   "unit_price": 38.59,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS41048",
+   "description": "OX CHEEK",
+   "discount_pct": 0,
+   "line_total": 46.7,
+   "pack_size": "",
+   "page": 1,
+   "qty": 4.89,
+   "unit": "kg",
+   "unit_price": 9.55,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS24276",
+   "description": "CHICKEN WHOLE FR 1.8KG",
+   "discount_pct": 0,
+   "line_total": 66.96,
+   "pack_size": "1.8kg",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 8.37,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS29316",
+   "description": "LAMB SHOULDER BONE IN",
+   "discount_pct": 0,
+   "line_total": 55.79,
+   "pack_size": "",
+   "page": 1,
+   "qty": 4.41,
+   "unit": "kg",
+   "unit_price": 12.65,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS45497",
+   "description": "LAMB RACK FRENCH TRIM",
+   "discount_pct": 0,
+   "line_total": 48.24,
+   "pack_size": "",
+   "page": 1,
+   "qty": 1.84,
+   "unit": "kg",
+   "unit_price": 26.22,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS79517",
+   "description": "SIRLOIN 28D HUNG",
+   "discount_pct": 0,
+   "line_total": 71.8,
+   "pack_size": "",
+   "page": 1,
+   "qty": 2.88,
+   "unit": "kg",
+   "unit_price": 24.93,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS92251",
+   "description": "BEEF DICED CHUCK",
+   "discount_pct": 0,
+   "line_total": 51.31,
+   "pack_size": "",
+   "page": 1,
+   "qty": 5.62,
+   "unit": "kg",
+   "unit_price": 9.13,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS77517",
+   "description": "DISPOSABLE GLOVES BLU X100",
+   "discount_pct": 0,
+   "line_total": 6.84,
+   "pack_size": "100",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "box",
+   "unit_price": 3.42,
+   "vat_rate": 20
+  },
+  {
+   "code": "HS74237",
+   "description": "PORK BELLY RIND ON",
+   "discount_pct": 0,
+   "line_total": 46.45,
+   "pack_size": "",
+   "page": 1,
+   "qty": 8.65,
+   "unit": "kg",
+   "unit_price": 5.37,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS16718",
+   "description": "BACON SMKD BACK 2KG",
+   "discount_pct": 0,
+   "line_total": 31.92,
+   "pack_size": "2kg",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "pack",
+   "unit_price": 15.96,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS36770",
+   "description": "DUCK BREAST X2 400G",
+   "discount_pct": 0,
+   "line_total": 14.82,
+   "pack_size": "400g",
+   "page": 2,
+   "qty": 2.0,
+   "unit": "pack",
+   "unit_price": 7.41,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS47729",
+   "description": "PORK SHOULDER DICED",
+   "discount_pct": 0,
+   "line_total": 24.86,
+   "pack_size": "",
+   "page": 2,
+   "qty": 3.86,
+   "unit": "kg",
+   "unit_price": 6.44,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS19619",
+   "description": "BUTCHERS STRING 500G",
+   "discount_pct": 0,
+   "line_total": 3.25,
+   "pack_size": "500g",
+   "page": 2,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 3.25,
+   "vat_rate": 20
+  }
+ ],
+ "pages": 2,
+ "supplier": "Harker & Sons Family Butchers",
+ "totals": {
+  "gross": 567.13,
+  "net": 565.11,
+  "vat": 2.02,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 2.02
+  }
+ }
+}

@@ -1,0 +1,146 @@
+{
+ "credit_note": false,
+ "date": "2026-10-30",
+ "distorted": false,
+ "distortion": [],
+ "heldout": true,
+ "id": "TEST-035",
+ "images": [
+  "TEST-035_p1.png"
+ ],
+ "invoice_no": "14252",
+ "layout": "greengrocer",
+ "lines": [
+  {
+   "code": "ML46054",
+   "description": "EGGS FREE RANGE DOZEN",
+   "discount_pct": 0,
+   "line_total": 14.7,
+   "pack_size": "dozen",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "each",
+   "unit_price": 2.45,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML16016",
+   "description": "SPINACH BABY 500G",
+   "discount_pct": 0,
+   "line_total": 3.52,
+   "pack_size": "500g",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 3.52,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML49680",
+   "description": "CELERY HEAD",
+   "discount_pct": 0,
+   "line_total": 7.25,
+   "pack_size": "",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "each",
+   "unit_price": 1.45,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML69061",
+   "description": "PARSLEY FLAT BUNCH",
+   "discount_pct": 0,
+   "line_total": 1.88,
+   "pack_size": "",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 0.94,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML90589",
+   "description": "CARRIER BAGS 100",
+   "discount_pct": 0,
+   "line_total": 16.65,
+   "pack_size": "100",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "pack",
+   "unit_price": 3.33,
+   "vat_rate": 20
+  },
+  {
+   "code": "ML54903",
+   "description": "RASPBERRIES 12X125G",
+   "discount_pct": 0,
+   "line_total": 38.46,
+   "pack_size": "12x125g",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 19.23,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML68789",
+   "description": "BROCCOLI",
+   "discount_pct": 0,
+   "line_total": 19.38,
+   "pack_size": "",
+   "page": 1,
+   "qty": 7.02,
+   "unit": "kg",
+   "unit_price": 2.76,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML25822",
+   "description": "LETTUCE COS",
+   "discount_pct": 0,
+   "line_total": 1.18,
+   "pack_size": "",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 1.18,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML12994",
+   "description": "CAULIFLOWER",
+   "discount_pct": 0,
+   "line_total": 1.36,
+   "pack_size": "",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 1.36,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML17729",
+   "description": "PEPPERS RED MIXED 5KG",
+   "discount_pct": 0,
+   "line_total": 82.85,
+   "pack_size": "5kg",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "case",
+   "unit_price": 16.57,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Marrow Lane Greengrocers",
+ "totals": {
+  "gross": 190.56,
+  "net": 187.23,
+  "vat": 3.33,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 3.33
+  }
+ }
+}

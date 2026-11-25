@@ -1,0 +1,168 @@
+{
+ "credit_note": false,
+ "date": "2026-10-06",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 1.36,
+   "crumple_amp_px": 4.0,
+   "jpeg_quality": 50,
+   "perspective_jitter": 0.051,
+   "rotation_deg": 11.46,
+   "seed": 2025161,
+   "shadow_strength": 0.331
+  }
+ ],
+ "heldout": false,
+ "id": "TEST-016",
+ "images": [
+  "TEST-016_p1.jpg"
+ ],
+ "invoice_no": "75658",
+ "layout": "butcher",
+ "lines": [
+  {
+   "code": "HS56745",
+   "description": "PORK SHOULDER DICED",
+   "discount_pct": 0,
+   "line_total": 26.89,
+   "pack_size": "",
+   "page": 1,
+   "qty": 3.19,
+   "unit": "kg",
+   "unit_price": 8.43,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS17336",
+   "description": "PORK SAUS 8S 454G",
+   "discount_pct": 0,
+   "line_total": 3.11,
+   "pack_size": "454g",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "pack",
+   "unit_price": 3.11,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS47236",
+   "description": "BUTCHERS STRING 500G",
+   "discount_pct": 0,
+   "line_total": 32.24,
+   "pack_size": "500g",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 4.03,
+   "vat_rate": 20
+  },
+  {
+   "code": "HS44677",
+   "description": "CHICKEN THIGH BONE IN 10KG",
+   "discount_pct": 0,
+   "line_total": 28.23,
+   "pack_size": "10kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 28.23,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS43610",
+   "description": "RUMP STEAK TRIMMED",
+   "discount_pct": 0,
+   "line_total": 99.88,
+   "pack_size": "",
+   "page": 1,
+   "qty": 5.97,
+   "unit": "kg",
+   "unit_price": 16.73,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS99072",
+   "description": "LAMB RACK FRENCH TRIM",
+   "discount_pct": 0,
+   "line_total": 217.83,
+   "pack_size": "",
+   "page": 1,
+   "qty": 6.82,
+   "unit": "kg",
+   "unit_price": 31.94,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS15383",
+   "description": "DISPOSABLE GLOVES BLU X100",
+   "discount_pct": 0,
+   "line_total": 7.46,
+   "pack_size": "100",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "box",
+   "unit_price": 3.73,
+   "vat_rate": 20
+  },
+  {
+   "code": "HS63431",
+   "description": "PORK BELLY RIND ON",
+   "discount_pct": 0,
+   "line_total": 63.89,
+   "pack_size": "",
+   "page": 1,
+   "qty": 8.53,
+   "unit": "kg",
+   "unit_price": 7.49,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS35662",
+   "description": "LAMB SHOULDER BONE IN",
+   "discount_pct": 0,
+   "line_total": 23.2,
+   "pack_size": "",
+   "page": 1,
+   "qty": 1.81,
+   "unit": "kg",
+   "unit_price": 12.82,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS80924",
+   "description": "BLACK PUDDING 1KG",
+   "discount_pct": 0,
+   "line_total": 27.08,
+   "pack_size": "1kg",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 6.77,
+   "vat_rate": 0
+  },
+  {
+   "code": "HS56436",
+   "description": "CHICKEN WHOLE FR 1.8KG",
+   "discount_pct": 0,
+   "line_total": 15.7,
+   "pack_size": "1.8kg",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 7.85,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Harker & Sons Family Butchers",
+ "totals": {
+  "gross": 553.45,
+  "net": 545.51,
+  "vat": 7.94,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 7.94
+  }
+ }
+}

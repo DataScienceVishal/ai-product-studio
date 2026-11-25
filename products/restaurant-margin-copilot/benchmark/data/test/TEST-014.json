@@ -1,0 +1,157 @@
+{
+ "credit_note": false,
+ "date": "2026-09-13",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 0.78,
+   "crumple_amp_px": 3.63,
+   "jpeg_quality": 43,
+   "perspective_jitter": 0.04,
+   "rotation_deg": -2.92,
+   "seed": 2025141,
+   "shadow_strength": 0.229
+  }
+ ],
+ "heldout": true,
+ "id": "TEST-014",
+ "images": [
+  "TEST-014_p1.jpg"
+ ],
+ "invoice_no": "25161",
+ "layout": "broadliner_b",
+ "lines": [
+  {
+   "code": "CV37759",
+   "description": "CHEESE CHEDDAR MED 5KG",
+   "discount_pct": 0,
+   "line_total": 26.13,
+   "pack_size": "5kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 26.13,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV32564",
+   "description": "GLOVES VINYL CLR M 100",
+   "discount_pct": 0,
+   "line_total": 30.56,
+   "pack_size": "100",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "box",
+   "unit_price": 3.82,
+   "vat_rate": 20
+  },
+  {
+   "code": "CV15769",
+   "description": "CONTAINER FOIL 1/2 GN X50",
+   "discount_pct": 0,
+   "line_total": 79.76,
+   "pack_size": "50",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "box",
+   "unit_price": 19.94,
+   "vat_rate": 20
+  },
+  {
+   "code": "CV84330",
+   "description": "MARGARINE CATERING 10KG",
+   "discount_pct": 0,
+   "line_total": 17.76,
+   "pack_size": "10kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 17.76,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV93566",
+   "description": "MAYONNAISE LT 10 LTR",
+   "discount_pct": 0,
+   "line_total": 71.2,
+   "pack_size": "10L",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "each",
+   "unit_price": 14.24,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV25947",
+   "description": "PEPPER WHITE GRND 1KG",
+   "discount_pct": 0,
+   "line_total": 34.18,
+   "pack_size": "1kg",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 17.09,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV35324",
+   "description": "LPG PROPANE CYL 19KG REFILL",
+   "discount_pct": 0,
+   "line_total": 72.06,
+   "pack_size": "19kg",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 36.03,
+   "vat_rate": 5
+  },
+  {
+   "code": "CV26622",
+   "description": "CLING FILM 450MM X 300M",
+   "discount_pct": 0,
+   "line_total": 7.86,
+   "pack_size": "",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 7.86,
+   "vat_rate": 20
+  },
+  {
+   "code": "CV37639",
+   "description": "EGG LIQUID PAST 5X1L",
+   "discount_pct": 0,
+   "line_total": 75.78,
+   "pack_size": "5x1L",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "case",
+   "unit_price": 12.63,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV72582",
+   "description": "FLR STRONG WHT BREAD 16KG",
+   "discount_pct": 0,
+   "line_total": 55.2,
+   "pack_size": "16kg",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 13.8,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Calder Valley Catering Supplies plc",
+ "totals": {
+  "gross": 497.73,
+  "net": 470.49,
+  "vat": 27.24,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 23.64,
+   "5": 3.6
+  }
+ }
+}

@@ -1,0 +1,192 @@
+{
+ "credit_note": false,
+ "date": "2026-09-22",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 0.54,
+   "crumple_amp_px": 3.02,
+   "jpeg_quality": 58,
+   "perspective_jitter": 0.056,
+   "rotation_deg": -5.01,
+   "seed": 2025241,
+   "shadow_strength": 0.17
+  }
+ ],
+ "heldout": true,
+ "id": "TEST-024",
+ "images": [
+  "TEST-024_p1.jpg"
+ ],
+ "invoice_no": "93861",
+ "layout": "dairy_drinks",
+ "lines": [
+  {
+   "code": "TW75126",
+   "description": "COFFEE BEANS ESPRESSO 1KG",
+   "discount_pct": 0,
+   "line_total": 45.32,
+   "pack_size": "1kg",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 11.33,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW68824",
+   "description": "GIN LONDON DRY 6X70CL",
+   "discount_pct": 0,
+   "line_total": 202.48,
+   "pack_size": "6x70cl",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 101.24,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW36819",
+   "description": "GINGER BEER 12X200ML",
+   "discount_pct": 0,
+   "line_total": 11.83,
+   "pack_size": "12x200ml",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 11.83,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW25111",
+   "description": "PROSECCO DOC 6X75CL",
+   "discount_pct": 0,
+   "line_total": 243.8,
+   "pack_size": "6x75cl",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "case",
+   "unit_price": 48.76,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW10934",
+   "description": "MILK SEMI 12X1L",
+   "discount_pct": 0,
+   "line_total": 20.56,
+   "pack_size": "12x1L",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 10.28,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW71236",
+   "description": "COLA CLASSIC 24X330ML",
+   "discount_pct": 0,
+   "line_total": 108.56,
+   "pack_size": "24x330ml",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "case",
+   "unit_price": 13.57,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW85674",
+   "description": "EGGS FREE RANGE 15 DOZEN",
+   "discount_pct": 0,
+   "line_total": 106.72,
+   "pack_size": "180",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "case",
+   "unit_price": 26.68,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW84758",
+   "description": "VODKA 6X70CL",
+   "discount_pct": 0,
+   "line_total": 93.32,
+   "pack_size": "6x70cl",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 93.32,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW46616",
+   "description": "LAGER PREMIUM 4.2% 24X500ML",
+   "discount_pct": 0,
+   "line_total": 56.98,
+   "pack_size": "24x500ml",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 28.49,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW65591",
+   "description": "ICE CREAM VANILLA 4L",
+   "discount_pct": 0,
+   "line_total": 9.33,
+   "pack_size": "4L",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 9.33,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW23360",
+   "description": "CREAM DOUBLE 6X1L",
+   "discount_pct": 0,
+   "line_total": 15.54,
+   "pack_size": "6x1L",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 15.54,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW50434",
+   "description": "DELIVERY CHARGE",
+   "discount_pct": 0,
+   "line_total": 49.64,
+   "pack_size": "",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 12.41,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW74748",
+   "description": "WATER SPARKLING 12X75CL",
+   "discount_pct": 0,
+   "line_total": 50.85,
+   "pack_size": "12x75cl",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "case",
+   "unit_price": 10.17,
+   "vat_rate": 20
+  }
+ ],
+ "pages": 1,
+ "supplier": "Tidewater Dairy & Drinks Ltd",
+ "totals": {
+  "gross": 1178.42,
+  "net": 1014.93,
+  "vat": 163.49,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 163.49
+  }
+ }
+}

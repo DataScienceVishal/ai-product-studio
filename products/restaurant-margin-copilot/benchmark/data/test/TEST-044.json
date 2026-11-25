@@ -1,0 +1,156 @@
+{
+ "credit_note": false,
+ "date": "2026-09-16",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 1.29,
+   "crumple_amp_px": 4.99,
+   "jpeg_quality": 54,
+   "perspective_jitter": 0.047,
+   "rotation_deg": -11.3,
+   "seed": 2025441,
+   "shadow_strength": 0.255
+  }
+ ],
+ "heldout": true,
+ "id": "TEST-044",
+ "images": [
+  "TEST-044_p1.jpg"
+ ],
+ "invoice_no": "13307",
+ "layout": "broadliner_b",
+ "lines": [
+  {
+   "code": "CV99704",
+   "description": "FLR STRONG WHT BREAD 16KG",
+   "discount_pct": 0,
+   "line_total": 66.08,
+   "pack_size": "16kg",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 16.52,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV17332",
+   "description": "TOMATO PLUM WHL 6X2.5KG",
+   "discount_pct": 0,
+   "line_total": 17.64,
+   "pack_size": "6x2.5kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 17.64,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV77091",
+   "description": "YOG GREEK STYLE 10KG",
+   "discount_pct": 0,
+   "line_total": 34.24,
+   "pack_size": "10kg",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 17.12,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV67503",
+   "description": "HAM COOKED SLCD 1KG",
+   "discount_pct": 0,
+   "line_total": 51.8,
+   "pack_size": "1kg",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "each",
+   "unit_price": 10.36,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV67477",
+   "description": "PEPPER WHITE GRND 1KG",
+   "discount_pct": 0,
+   "line_total": 127.76,
+   "pack_size": "1kg",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 15.97,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV38151",
+   "description": "GLOVES VINYL CLR M 100",
+   "discount_pct": 0,
+   "line_total": 3.28,
+   "pack_size": "100",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "box",
+   "unit_price": 3.28,
+   "vat_rate": 20
+  },
+  {
+   "code": "CV71400",
+   "description": "SYRUP GOLDEN 6X680G",
+   "discount_pct": 0,
+   "line_total": 55.16,
+   "pack_size": "6x680g",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "case",
+   "unit_price": 13.79,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV87167",
+   "description": "GRAVY GRANULES BEEF 2KG",
+   "discount_pct": 0,
+   "line_total": 62.7,
+   "pack_size": "2kg",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "each",
+   "unit_price": 10.45,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV65174",
+   "description": "VINEGAR BREWED 5 LTR",
+   "discount_pct": 0,
+   "line_total": 5.47,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 5.47,
+   "vat_rate": 0
+  },
+  {
+   "code": "CV49684",
+   "description": "MILK WHOLE 12X1L",
+   "discount_pct": 0,
+   "line_total": 44.85,
+   "pack_size": "12x1L",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "case",
+   "unit_price": 8.97,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Calder Valley Catering Supplies plc",
+ "totals": {
+  "gross": 469.64,
+  "net": 468.98,
+  "vat": 0.66,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 0.66
+  }
+ }
+}

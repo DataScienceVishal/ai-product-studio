@@ -1,0 +1,192 @@
+{
+ "credit_note": false,
+ "date": "2026-09-27",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 1.0,
+   "crumple_amp_px": 4.23,
+   "jpeg_quality": 67,
+   "perspective_jitter": 0.035,
+   "rotation_deg": 5.55,
+   "seed": 2025211,
+   "shadow_strength": 0.201
+  }
+ ],
+ "heldout": false,
+ "id": "TEST-021",
+ "images": [
+  "TEST-021_p1.jpg"
+ ],
+ "invoice_no": "23096",
+ "layout": "cashcarry",
+ "lines": [
+  {
+   "code": "BB21480",
+   "description": "ONION BROWN LOOSE",
+   "discount_pct": 0,
+   "line_total": 6.25,
+   "pack_size": "",
+   "page": 1,
+   "qty": 5.84,
+   "unit": "kg",
+   "unit_price": 1.07,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB22439",
+   "description": "FRYING FAT 4X12.5KG",
+   "discount_pct": 0,
+   "line_total": 168.92,
+   "pack_size": "4 x 12.5kg",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 84.46,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB90457",
+   "description": "BREAD ROLL WHT 12PK",
+   "discount_pct": 0,
+   "line_total": 2.37,
+   "pack_size": "12",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "pack",
+   "unit_price": 2.37,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB68497",
+   "description": "PAPER TOWEL ROLL 6PK",
+   "discount_pct": 0,
+   "line_total": 33.85,
+   "pack_size": "6",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "pack",
+   "unit_price": 6.77,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB81943",
+   "description": "MILK WHL 4PT",
+   "discount_pct": 0,
+   "line_total": 1.77,
+   "pack_size": "",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 1.77,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB64655",
+   "description": "SUNFLWR OIL 5L",
+   "discount_pct": 0,
+   "line_total": 80.96,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 10.12,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB20817",
+   "description": "CHILLI SAUCE 6X1L",
+   "discount_pct": 0,
+   "line_total": 84.15,
+   "pack_size": "6x1L",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "case",
+   "unit_price": 16.83,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB29576",
+   "description": "SPONGE SCOURER 10PK",
+   "discount_pct": 0,
+   "line_total": 7.02,
+   "pack_size": "10",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "pack",
+   "unit_price": 2.34,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB30769",
+   "description": "BIN LINERS 200S",
+   "discount_pct": 0,
+   "line_total": 41.46,
+   "pack_size": "200",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "pack",
+   "unit_price": 13.82,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB69129",
+   "description": "SMKD SALMON SLICED 1KG",
+   "discount_pct": 0,
+   "line_total": 135.66,
+   "pack_size": "1kg",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "each",
+   "unit_price": 22.61,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB89135",
+   "description": "TOMATO PASSATA 6X700G",
+   "discount_pct": 0,
+   "line_total": 55.36,
+   "pack_size": "6x700g",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "case",
+   "unit_price": 6.92,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB95990",
+   "description": "COOKING OIL VEG 20L",
+   "discount_pct": 0,
+   "line_total": 130.48,
+   "pack_size": "20L",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 32.62,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB66999",
+   "description": "BIN BAGS BLACK ROLL 100",
+   "discount_pct": 0,
+   "line_total": 68.16,
+   "pack_size": "100",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "pack",
+   "unit_price": 8.52,
+   "vat_rate": 20
+  }
+ ],
+ "pages": 1,
+ "supplier": "Bulkbuy Cash & Carry",
+ "totals": {
+  "gross": 846.51,
+  "net": 816.41,
+  "vat": 30.1,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 30.1
+  }
+ }
+}

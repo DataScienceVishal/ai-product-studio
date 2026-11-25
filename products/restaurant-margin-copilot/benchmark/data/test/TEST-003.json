@@ -1,0 +1,146 @@
+{
+ "credit_note": true,
+ "date": "2026-10-17",
+ "distorted": false,
+ "distortion": [],
+ "heldout": false,
+ "id": "TEST-003",
+ "images": [
+  "TEST-003_p1.png"
+ ],
+ "invoice_no": "CN6187",
+ "layout": "cashcarry",
+ "lines": [
+  {
+   "code": "BB64745",
+   "description": "BIN BAGS BLACK ROLL 100",
+   "discount_pct": 0,
+   "line_total": -35.36,
+   "pack_size": "100",
+   "page": 1,
+   "qty": -4.0,
+   "unit": "pack",
+   "unit_price": 8.84,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB47733",
+   "description": "PAPER TOWEL ROLL 6PK",
+   "discount_pct": 0,
+   "line_total": -8.82,
+   "pack_size": "6",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "pack",
+   "unit_price": 8.82,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB78785",
+   "description": "SOFT DRINK LEMON 24X330ML",
+   "discount_pct": 0,
+   "line_total": -12.24,
+   "pack_size": "24x330ml",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "case",
+   "unit_price": 12.24,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB58491",
+   "description": "SOFT DRINK COLA 24X330ML",
+   "discount_pct": 0,
+   "line_total": -43.88,
+   "pack_size": "24x330ml",
+   "page": 1,
+   "qty": -4.0,
+   "unit": "case",
+   "unit_price": 10.97,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB54122",
+   "description": "EGGS LRG FR 30",
+   "discount_pct": 0,
+   "line_total": -4.51,
+   "pack_size": "30",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "each",
+   "unit_price": 4.51,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB77992",
+   "description": "POTATO BAKING LOOSE",
+   "discount_pct": 0,
+   "line_total": -10.21,
+   "pack_size": "",
+   "page": 1,
+   "qty": -7.04,
+   "unit": "kg",
+   "unit_price": 1.45,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB27018",
+   "description": "SUNFLWR OIL 5L",
+   "discount_pct": 0,
+   "line_total": -11.28,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "each",
+   "unit_price": 11.28,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB50278",
+   "description": "SALAD CREAM 5L",
+   "discount_pct": 0,
+   "line_total": -48.54,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": -6.0,
+   "unit": "each",
+   "unit_price": 8.09,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB44011",
+   "description": "CHIPS 2.5KG X4",
+   "discount_pct": 0,
+   "line_total": -11.72,
+   "pack_size": "4x2.5kg",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "case",
+   "unit_price": 11.72,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB10151",
+   "description": "COOKING OIL VEG 20L",
+   "discount_pct": 0,
+   "line_total": -31.39,
+   "pack_size": "20L",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "each",
+   "unit_price": 31.39,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Bulkbuy Cash & Carry",
+ "totals": {
+  "gross": -238.01,
+  "net": -217.95,
+  "vat": -20.06,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": -20.06
+  }
+ }
+}

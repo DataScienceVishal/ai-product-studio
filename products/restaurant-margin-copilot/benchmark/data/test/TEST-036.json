@@ -1,0 +1,262 @@
+{
+ "credit_note": false,
+ "date": "2026-09-16",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 0.72,
+   "crumple_amp_px": 3.44,
+   "jpeg_quality": 44,
+   "perspective_jitter": 0.023,
+   "rotation_deg": -5.37,
+   "seed": 2025361,
+   "shadow_strength": 0.321
+  },
+  {
+   "blur_sigma": 1.18,
+   "crumple_amp_px": 2.59,
+   "jpeg_quality": 43,
+   "perspective_jitter": 0.046,
+   "rotation_deg": 5.86,
+   "seed": 2025362,
+   "shadow_strength": 0.331
+  }
+ ],
+ "heldout": true,
+ "id": "TEST-036",
+ "images": [
+  "TEST-036_p1.jpg",
+  "TEST-036_p2.jpg"
+ ],
+ "invoice_no": "22882",
+ "layout": "dairy_drinks",
+ "lines": [
+  {
+   "code": "TW60232",
+   "description": "CIDER KEG 50L",
+   "discount_pct": 0,
+   "line_total": 99.06,
+   "pack_size": "50L",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 99.06,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW63351",
+   "description": "ICE CREAM VANILLA 4L",
+   "discount_pct": 0,
+   "line_total": 41.68,
+   "pack_size": "4L",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 10.42,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW34704",
+   "description": "GIN LONDON DRY 6X70CL",
+   "discount_pct": 0,
+   "line_total": 117.59,
+   "pack_size": "6x70cl",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 117.59,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW46801",
+   "description": "JUICE APPLE 12X1L",
+   "discount_pct": 0,
+   "line_total": 79.2,
+   "pack_size": "12x1L",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "case",
+   "unit_price": 13.2,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW56012",
+   "description": "EGGS FREE RANGE 15 DOZEN",
+   "discount_pct": 0,
+   "line_total": 48.24,
+   "pack_size": "180",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 24.12,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW27591",
+   "description": "BUTTER SALTED 40X250G",
+   "discount_pct": 0,
+   "line_total": 356.52,
+   "pack_size": "40x250g",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "case",
+   "unit_price": 89.13,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW47927",
+   "description": "PROSECCO DOC 6X75CL",
+   "discount_pct": 0,
+   "line_total": 238.0,
+   "pack_size": "6x75cl",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "case",
+   "unit_price": 47.6,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW27411",
+   "description": "MILK SEMI 12X1L",
+   "discount_pct": 0,
+   "line_total": 8.47,
+   "pack_size": "12x1L",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 8.47,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW37223",
+   "description": "TEA BAGS BREAKFAST 1100",
+   "discount_pct": 0,
+   "line_total": 16.95,
+   "pack_size": "1100",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "box",
+   "unit_price": 16.95,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW83049",
+   "description": "WINE WHITE PINOT 6X75CL",
+   "discount_pct": 0,
+   "line_total": 73.72,
+   "pack_size": "6x75cl",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 36.86,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW79884",
+   "description": "JUICE ORANGE 12X1L",
+   "discount_pct": 0,
+   "line_total": 107.36,
+   "pack_size": "12x1L",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "case",
+   "unit_price": 13.42,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW92247",
+   "description": "WINE RED MERLOT 6X75CL",
+   "discount_pct": 0,
+   "line_total": 87.06,
+   "pack_size": "6x75cl",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 43.53,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW18959",
+   "description": "MILK FULL FAT 6X2L",
+   "discount_pct": 0,
+   "line_total": 39.65,
+   "pack_size": "6x2L",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "case",
+   "unit_price": 7.93,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW59391",
+   "description": "TONIC SLIM 24X200ML",
+   "discount_pct": 0,
+   "line_total": 41.55,
+   "pack_size": "24x200ml",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "case",
+   "unit_price": 13.85,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW40374",
+   "description": "VODKA 6X70CL",
+   "discount_pct": 0,
+   "line_total": 422.56,
+   "pack_size": "6x70cl",
+   "page": 2,
+   "qty": 4.0,
+   "unit": "case",
+   "unit_price": 105.64,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW75554",
+   "description": "CHEESE CHEDDAR 5KG BLOCK",
+   "discount_pct": 0,
+   "line_total": 29.66,
+   "pack_size": "5kg",
+   "page": 2,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 29.66,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW42384",
+   "description": "COFFEE BEANS ESPRESSO 1KG",
+   "discount_pct": 0,
+   "line_total": 90.18,
+   "pack_size": "1kg",
+   "page": 2,
+   "qty": 6.0,
+   "unit": "each",
+   "unit_price": 15.03,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW11843",
+   "description": "WATER SPARKLING 12X75CL",
+   "discount_pct": 0,
+   "line_total": 9.9,
+   "pack_size": "12x75cl",
+   "page": 2,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 9.9,
+   "vat_rate": 20
+  }
+ ],
+ "pages": 2,
+ "supplier": "Tidewater Dairy & Drinks Ltd",
+ "totals": {
+  "gross": 2162.55,
+  "net": 1907.35,
+  "vat": 255.2,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 255.2
+  }
+ }
+}

@@ -1,0 +1,180 @@
+{
+ "credit_note": false,
+ "date": "2026-09-28",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 1.45,
+   "crumple_amp_px": 3.45,
+   "jpeg_quality": 68,
+   "perspective_jitter": 0.024,
+   "rotation_deg": 4.65,
+   "seed": 2025271,
+   "shadow_strength": 0.158
+  }
+ ],
+ "heldout": false,
+ "id": "TEST-027",
+ "images": [
+  "TEST-027_p1.jpg"
+ ],
+ "invoice_no": "52912",
+ "layout": "cashcarry",
+ "lines": [
+  {
+   "code": "BB93754",
+   "description": "TOMATO PASSATA 6X700G",
+   "discount_pct": 0,
+   "line_total": 28.56,
+   "pack_size": "6x700g",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "case",
+   "unit_price": 7.14,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB70126",
+   "description": "BREAD ROLL WHT 12PK",
+   "discount_pct": 0,
+   "line_total": 4.71,
+   "pack_size": "12",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "pack",
+   "unit_price": 1.57,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB79956",
+   "description": "COOKING OIL VEG 20L",
+   "discount_pct": 0,
+   "line_total": 55.84,
+   "pack_size": "20L",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 27.92,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB20621",
+   "description": "EGGS LRG FR 30",
+   "discount_pct": 0,
+   "line_total": 27.06,
+   "pack_size": "30",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "each",
+   "unit_price": 4.51,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB76811",
+   "description": "SALAD CREAM 5L",
+   "discount_pct": 0,
+   "line_total": 65.52,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 8.19,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB20854",
+   "description": "BIN BAGS BLACK ROLL 100",
+   "discount_pct": 0,
+   "line_total": 6.15,
+   "pack_size": "100",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "pack",
+   "unit_price": 6.15,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB27971",
+   "description": "BIN LINERS 200S",
+   "discount_pct": 0,
+   "line_total": 61.75,
+   "pack_size": "200",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "pack",
+   "unit_price": 12.35,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB53212",
+   "description": "WASHING UP LIQ 5L",
+   "discount_pct": 0,
+   "line_total": 38.56,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 4.82,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB75711",
+   "description": "FRYING FAT 4X12.5KG",
+   "discount_pct": 0,
+   "line_total": 443.82,
+   "pack_size": "4 x 12.5kg",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "case",
+   "unit_price": 73.97,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB34932",
+   "description": "PAPER TOWEL ROLL 6PK",
+   "discount_pct": 0,
+   "line_total": 7.81,
+   "pack_size": "6",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "pack",
+   "unit_price": 7.81,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB70465",
+   "description": "KETCHUP SACHET 1000",
+   "discount_pct": 0,
+   "line_total": 25.42,
+   "pack_size": "1000",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "box",
+   "unit_price": 12.71,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB67056",
+   "description": "CHKN WHOLE FR 1.8KG",
+   "discount_pct": 0,
+   "line_total": 6.81,
+   "pack_size": "1.8kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 6.81,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Bulkbuy Cash & Carry",
+ "totals": {
+  "gross": 794.86,
+  "net": 772.01,
+  "vat": 22.85,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 22.85
+  }
+ }
+}

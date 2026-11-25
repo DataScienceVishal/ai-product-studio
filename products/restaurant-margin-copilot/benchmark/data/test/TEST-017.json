@@ -1,0 +1,180 @@
+{
+ "credit_note": false,
+ "date": "2026-09-26",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 0.64,
+   "crumple_amp_px": 2.57,
+   "jpeg_quality": 43,
+   "perspective_jitter": 0.024,
+   "rotation_deg": -5.54,
+   "seed": 2025171,
+   "shadow_strength": 0.157
+  }
+ ],
+ "heldout": true,
+ "id": "TEST-017",
+ "images": [
+  "TEST-017_p1.jpg"
+ ],
+ "invoice_no": "30079",
+ "layout": "greengrocer",
+ "lines": [
+  {
+   "code": "ML10575",
+   "description": "BASIL POT LIVING",
+   "discount_pct": 0,
+   "line_total": 7.2,
+   "pack_size": "",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "each",
+   "unit_price": 1.44,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML99686",
+   "description": "APPLE BRAMLEY 12KG",
+   "discount_pct": 0,
+   "line_total": 19.77,
+   "pack_size": "12kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "box",
+   "unit_price": 19.77,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML97031",
+   "description": "ONION BROWN 10KG",
+   "discount_pct": 0,
+   "line_total": 8.16,
+   "pack_size": "10kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 8.16,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML48948",
+   "description": "TOMATOES VINE 6KG BOX",
+   "discount_pct": 0,
+   "line_total": 82.02,
+   "pack_size": "6kg",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "box",
+   "unit_price": 13.67,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML79946",
+   "description": "PEPPERS RED MIXED 5KG",
+   "discount_pct": 0,
+   "line_total": 127.92,
+   "pack_size": "5kg",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "case",
+   "unit_price": 15.99,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML55067",
+   "description": "CARROT LOOSE 20KG",
+   "discount_pct": 0,
+   "line_total": 90.72,
+   "pack_size": "20kg",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 11.34,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML41298",
+   "description": "AVOCADO RIPE 12S",
+   "discount_pct": 0,
+   "line_total": 100.32,
+   "pack_size": "12",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "box",
+   "unit_price": 16.72,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML13169",
+   "description": "EGGS FREE RANGE DOZEN",
+   "discount_pct": 0,
+   "line_total": 6.34,
+   "pack_size": "dozen",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 3.17,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML36771",
+   "description": "CARRIER BAGS 100",
+   "discount_pct": 0,
+   "line_total": 31.2,
+   "pack_size": "100",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "pack",
+   "unit_price": 3.9,
+   "vat_rate": 20
+  },
+  {
+   "code": "ML52320",
+   "description": "LETTUCE COS",
+   "discount_pct": 0,
+   "line_total": 5.1,
+   "pack_size": "",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "each",
+   "unit_price": 1.02,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML73489",
+   "description": "COURGETTE",
+   "discount_pct": 0,
+   "line_total": 9.12,
+   "pack_size": "",
+   "page": 1,
+   "qty": 4.07,
+   "unit": "kg",
+   "unit_price": 2.24,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML24809",
+   "description": "GARLIC WHITE",
+   "discount_pct": 0,
+   "line_total": 50.11,
+   "pack_size": "",
+   "page": 1,
+   "qty": 6.4,
+   "unit": "kg",
+   "unit_price": 7.83,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Marrow Lane Greengrocers",
+ "totals": {
+  "gross": 544.22,
+  "net": 537.98,
+  "vat": 6.24,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 6.24
+  }
+ }
+}

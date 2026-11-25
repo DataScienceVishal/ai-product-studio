@@ -1,0 +1,158 @@
+{
+ "credit_note": true,
+ "date": "2026-09-29",
+ "distorted": false,
+ "distortion": [],
+ "heldout": true,
+ "id": "TEST-048",
+ "images": [
+  "TEST-048_p1.png"
+ ],
+ "invoice_no": "CN7993",
+ "layout": "dairy_drinks",
+ "lines": [
+  {
+   "code": "TW34317",
+   "description": "TONIC SLIM 24X200ML",
+   "discount_pct": 0,
+   "line_total": -118.0,
+   "pack_size": "24x200ml",
+   "page": 1,
+   "qty": -8.0,
+   "unit": "case",
+   "unit_price": 14.75,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW95457",
+   "description": "DELIVERY CHARGE",
+   "discount_pct": 0,
+   "line_total": -57.05,
+   "pack_size": "",
+   "page": 1,
+   "qty": -5.0,
+   "unit": "each",
+   "unit_price": 11.41,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW58637",
+   "description": "TEA BAGS BREAKFAST 1100",
+   "discount_pct": 0,
+   "line_total": -12.57,
+   "pack_size": "1100",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "box",
+   "unit_price": 12.57,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW48060",
+   "description": "GINGER BEER 12X200ML",
+   "discount_pct": 0,
+   "line_total": -36.72,
+   "pack_size": "12x200ml",
+   "page": 1,
+   "qty": -4.0,
+   "unit": "case",
+   "unit_price": 9.18,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW73471",
+   "description": "LAGER PREMIUM 4.2% 24X500ML",
+   "discount_pct": 0,
+   "line_total": -67.42,
+   "pack_size": "24x500ml",
+   "page": 1,
+   "qty": -2.0,
+   "unit": "case",
+   "unit_price": 33.71,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW51449",
+   "description": "ICE CREAM VANILLA 4L",
+   "discount_pct": 0,
+   "line_total": -27.06,
+   "pack_size": "4L",
+   "page": 1,
+   "qty": -3.0,
+   "unit": "each",
+   "unit_price": 9.02,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW29320",
+   "description": "GIN LONDON DRY 6X70CL",
+   "discount_pct": 0,
+   "line_total": -124.91,
+   "pack_size": "6x70cl",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "case",
+   "unit_price": 124.91,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW69754",
+   "description": "JUICE ORANGE 12X1L",
+   "discount_pct": 0,
+   "line_total": -13.5,
+   "pack_size": "12x1L",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "case",
+   "unit_price": 13.5,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW55124",
+   "description": "PROSECCO DOC 6X75CL",
+   "discount_pct": 0,
+   "line_total": -57.24,
+   "pack_size": "6x75cl",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "case",
+   "unit_price": 57.24,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW67332",
+   "description": "COLA CLASSIC 24X330ML",
+   "discount_pct": 0,
+   "line_total": -39.42,
+   "pack_size": "24x330ml",
+   "page": 1,
+   "qty": -3.0,
+   "unit": "case",
+   "unit_price": 13.14,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW75255",
+   "description": "CIDER KEG 50L",
+   "discount_pct": 0,
+   "line_total": -877.44,
+   "pack_size": "50L",
+   "page": 1,
+   "qty": -8.0,
+   "unit": "each",
+   "unit_price": 109.68,
+   "vat_rate": 20
+  }
+ ],
+ "pages": 1,
+ "supplier": "Tidewater Dairy & Drinks Ltd",
+ "totals": {
+  "gross": -1709.67,
+  "net": -1431.33,
+  "vat": -278.34,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": -278.34
+  }
+ }
+}

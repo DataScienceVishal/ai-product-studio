@@ -1,0 +1,182 @@
+{
+ "credit_note": true,
+ "date": "2026-10-31",
+ "distorted": false,
+ "distortion": [],
+ "heldout": false,
+ "id": "TEST-033",
+ "images": [
+  "TEST-033_p1.png"
+ ],
+ "invoice_no": "CN4875",
+ "layout": "cashcarry",
+ "lines": [
+  {
+   "code": "BB80317",
+   "description": "BANANAS LOOSE",
+   "discount_pct": 0,
+   "line_total": -6.7,
+   "pack_size": "",
+   "page": 1,
+   "qty": -5.83,
+   "unit": "kg",
+   "unit_price": 1.15,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB51957",
+   "description": "BIN BAGS BLACK ROLL 100",
+   "discount_pct": 0,
+   "line_total": -31.1,
+   "pack_size": "100",
+   "page": 1,
+   "qty": -5.0,
+   "unit": "pack",
+   "unit_price": 6.22,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB40202",
+   "description": "BIN LINERS 200S",
+   "discount_pct": 0,
+   "line_total": -13.55,
+   "pack_size": "200",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "pack",
+   "unit_price": 13.55,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB93900",
+   "description": "TISSUE CENTREFEED 6RL",
+   "discount_pct": 0,
+   "line_total": -65.28,
+   "pack_size": "6",
+   "page": 1,
+   "qty": -6.0,
+   "unit": "pack",
+   "unit_price": 10.88,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB35872",
+   "description": "EGGS LRG FR 30",
+   "discount_pct": 0,
+   "line_total": -4.26,
+   "pack_size": "30",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "each",
+   "unit_price": 4.26,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB49806",
+   "description": "ONION BROWN LOOSE",
+   "discount_pct": 0,
+   "line_total": -1.14,
+   "pack_size": "",
+   "page": 1,
+   "qty": -1.34,
+   "unit": "kg",
+   "unit_price": 0.85,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB22915",
+   "description": "KETCHUP SACHET 1000",
+   "discount_pct": 0,
+   "line_total": -16.48,
+   "pack_size": "1000",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "box",
+   "unit_price": 16.48,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB89611",
+   "description": "WASHING UP LIQ 5L",
+   "discount_pct": 0,
+   "line_total": -21.96,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": -4.0,
+   "unit": "each",
+   "unit_price": 5.49,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB17420",
+   "description": "PAPER TOWEL ROLL 6PK",
+   "discount_pct": 0,
+   "line_total": -14.14,
+   "pack_size": "6",
+   "page": 1,
+   "qty": -2.0,
+   "unit": "pack",
+   "unit_price": 7.07,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB87437",
+   "description": "MINCED BEEF 5% 2KG",
+   "discount_pct": 0,
+   "line_total": -89.46,
+   "pack_size": "2kg",
+   "page": 1,
+   "qty": -6.0,
+   "unit": "each",
+   "unit_price": 14.91,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB32034",
+   "description": "COFFEE JAR INST 750G",
+   "discount_pct": 0,
+   "line_total": -46.38,
+   "pack_size": "750g",
+   "page": 1,
+   "qty": -3.0,
+   "unit": "each",
+   "unit_price": 15.46,
+   "vat_rate": 0
+  },
+  {
+   "code": "BB52430",
+   "description": "SOFT DRINK COLA 24X330ML",
+   "discount_pct": 0,
+   "line_total": -97.68,
+   "pack_size": "24x330ml",
+   "page": 1,
+   "qty": -8.0,
+   "unit": "case",
+   "unit_price": 12.21,
+   "vat_rate": 20
+  },
+  {
+   "code": "BB51886",
+   "description": "MILK WHL 4PT",
+   "discount_pct": 0,
+   "line_total": -4.08,
+   "pack_size": "",
+   "page": 1,
+   "qty": -2.0,
+   "unit": "each",
+   "unit_price": 2.04,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Bulkbuy Cash & Carry",
+ "totals": {
+  "gross": -460.95,
+  "net": -412.21,
+  "vat": -48.74,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": -48.74
+  }
+ }
+}

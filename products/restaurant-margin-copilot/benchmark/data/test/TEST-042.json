@@ -1,0 +1,180 @@
+{
+ "credit_note": false,
+ "date": "2026-10-12",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 0.85,
+   "crumple_amp_px": 2.83,
+   "jpeg_quality": 69,
+   "perspective_jitter": 0.057,
+   "rotation_deg": -10.37,
+   "seed": 2025421,
+   "shadow_strength": 0.138
+  }
+ ],
+ "heldout": true,
+ "id": "TEST-042",
+ "images": [
+  "TEST-042_p1.jpg"
+ ],
+ "invoice_no": "20571",
+ "layout": "dairy_drinks",
+ "lines": [
+  {
+   "code": "TW10517",
+   "description": "VODKA 6X70CL",
+   "discount_pct": 0,
+   "line_total": 185.14,
+   "pack_size": "6x70cl",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 92.57,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW31452",
+   "description": "WINE RED MERLOT 6X75CL",
+   "discount_pct": 0,
+   "line_total": 47.07,
+   "pack_size": "6x75cl",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 47.07,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW81715",
+   "description": "DELIVERY CHARGE",
+   "discount_pct": 0,
+   "line_total": 37.24,
+   "pack_size": "",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "each",
+   "unit_price": 9.31,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW36887",
+   "description": "WINE WHITE PINOT 6X75CL",
+   "discount_pct": 0,
+   "line_total": 78.86,
+   "pack_size": "6x75cl",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 39.43,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW32518",
+   "description": "PROSECCO DOC 6X75CL",
+   "discount_pct": 0,
+   "line_total": 44.06,
+   "pack_size": "6x75cl",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 44.06,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW23116",
+   "description": "JUICE APPLE 12X1L",
+   "discount_pct": 0,
+   "line_total": 12.33,
+   "pack_size": "12x1L",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 12.33,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW63083",
+   "description": "GINGER BEER 12X200ML",
+   "discount_pct": 0,
+   "line_total": 23.42,
+   "pack_size": "12x200ml",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 11.71,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW87201",
+   "description": "CREAM DOUBLE 6X1L",
+   "discount_pct": 0,
+   "line_total": 36.0,
+   "pack_size": "6x1L",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 18.0,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW32735",
+   "description": "GIN LONDON DRY 6X70CL",
+   "discount_pct": 0,
+   "line_total": 560.5,
+   "pack_size": "6x70cl",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "case",
+   "unit_price": 112.1,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW82814",
+   "description": "CIDER KEG 50L",
+   "discount_pct": 0,
+   "line_total": 326.88,
+   "pack_size": "50L",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "each",
+   "unit_price": 108.96,
+   "vat_rate": 20
+  },
+  {
+   "code": "TW45395",
+   "description": "YOGHURT NATURAL 6X1KG",
+   "discount_pct": 0,
+   "line_total": 31.18,
+   "pack_size": "6x1kg",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 15.59,
+   "vat_rate": 0
+  },
+  {
+   "code": "TW27880",
+   "description": "BUTTER SALTED 40X250G",
+   "discount_pct": 0,
+   "line_total": 89.84,
+   "pack_size": "40x250g",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 89.84,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Tidewater Dairy & Drinks Ltd",
+ "totals": {
+  "gross": 1735.62,
+  "net": 1472.52,
+  "vat": 263.1,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 263.1
+  }
+ }
+}

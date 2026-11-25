@@ -1,0 +1,146 @@
+{
+ "credit_note": true,
+ "date": "2026-09-10",
+ "distorted": false,
+ "distortion": [],
+ "heldout": false,
+ "id": "TEST-013",
+ "images": [
+  "TEST-013_p1.png"
+ ],
+ "invoice_no": "CN9032",
+ "layout": "broadliner_a",
+ "lines": [
+  {
+   "code": "FD58715",
+   "description": "YOGHURT NAT 5KG",
+   "discount_pct": 0,
+   "line_total": -58.32,
+   "pack_size": "5kg",
+   "page": 1,
+   "qty": -8.0,
+   "unit": "each",
+   "unit_price": 7.29,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD47998",
+   "description": "BIN LINER HD BLK 200S",
+   "discount_pct": 0,
+   "line_total": -16.42,
+   "pack_size": "200",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "box",
+   "unit_price": 16.42,
+   "vat_rate": 20
+  },
+  {
+   "code": "FD11416",
+   "description": "TOM CHOPPED IN JUICE 6X400G",
+   "discount_pct": 0,
+   "line_total": -66.88,
+   "pack_size": "6x400g",
+   "page": 1,
+   "qty": -8.0,
+   "unit": "case",
+   "unit_price": 8.36,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD31155",
+   "description": "CLNG FLUID MULTI SURF 5L",
+   "discount_pct": 0,
+   "line_total": -6.33,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "each",
+   "unit_price": 6.33,
+   "vat_rate": 20
+  },
+  {
+   "code": "FD43118",
+   "description": "CHOC DARK CHIPS 2.5KG",
+   "discount_pct": 0,
+   "line_total": -88.85,
+   "pack_size": "2.5kg",
+   "page": 1,
+   "qty": -5.0,
+   "unit": "each",
+   "unit_price": 17.77,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD94071",
+   "description": "MILK SEMI SKIM 6X2L",
+   "discount_pct": 0,
+   "line_total": -8.88,
+   "pack_size": "6x2L",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "case",
+   "unit_price": 8.88,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD20643",
+   "description": "GLOVE NITRILE BLU L X100",
+   "discount_pct": 0,
+   "line_total": -10.76,
+   "pack_size": "100",
+   "page": 1,
+   "qty": -2.0,
+   "unit": "box",
+   "unit_price": 5.38,
+   "vat_rate": 20
+  },
+  {
+   "code": "FD39479",
+   "description": "EGGS FREE RANGE DOZEN",
+   "discount_pct": 0,
+   "line_total": -5.04,
+   "pack_size": "dozen",
+   "page": 1,
+   "qty": -2.0,
+   "unit": "each",
+   "unit_price": 2.52,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD83339",
+   "description": "BUTTER UNSLTD 20X250G",
+   "discount_pct": 0,
+   "line_total": -49.86,
+   "pack_size": "20x250g",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "case",
+   "unit_price": 49.86,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD61820",
+   "description": "EGGS MED FR RANGE 180",
+   "discount_pct": 10,
+   "line_total": -57.4,
+   "pack_size": "180",
+   "page": 1,
+   "qty": -3.0,
+   "unit": "case",
+   "unit_price": 21.26,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Fenwick & Dale Foodservice Ltd",
+ "totals": {
+  "gross": -375.44,
+  "net": -368.74,
+  "vat": -6.7,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": -6.7
+  }
+ }
+}

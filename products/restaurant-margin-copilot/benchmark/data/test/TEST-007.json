@@ -1,0 +1,156 @@
+{
+ "credit_note": false,
+ "date": "2026-10-24",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 0.68,
+   "crumple_amp_px": 4.3,
+   "jpeg_quality": 40,
+   "perspective_jitter": 0.024,
+   "rotation_deg": -5.65,
+   "seed": 2025071,
+   "shadow_strength": 0.217
+  }
+ ],
+ "heldout": false,
+ "id": "TEST-007",
+ "images": [
+  "TEST-007_p1.jpg"
+ ],
+ "invoice_no": "68272",
+ "layout": "broadliner_a",
+ "lines": [
+  {
+   "code": "FD33971",
+   "description": "EGGS FREE RANGE DOZEN",
+   "discount_pct": 0,
+   "line_total": 3.24,
+   "pack_size": "dozen",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 3.24,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD73541",
+   "description": "MAYO CATERING 5L",
+   "discount_pct": 0,
+   "line_total": 58.38,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": 6.0,
+   "unit": "each",
+   "unit_price": 9.73,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD34632",
+   "description": "CREAM DBL 6X1L",
+   "discount_pct": 0,
+   "line_total": 15.41,
+   "pack_size": "6x1L",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 15.41,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD94578",
+   "description": "POTATO CHIP FRZN 4X2.5KG",
+   "discount_pct": 0,
+   "line_total": 11.96,
+   "pack_size": "4x2.5kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 11.96,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD26916",
+   "description": "OIL RAPESEED CATERING 20L",
+   "discount_pct": 0,
+   "line_total": 31.49,
+   "pack_size": "20L",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 31.49,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD87741",
+   "description": "PLASTIC TAKEAWAY CNTR 500CC X250",
+   "discount_pct": 10,
+   "line_total": 34.45,
+   "pack_size": "250",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "case",
+   "unit_price": 19.14,
+   "vat_rate": 20
+  },
+  {
+   "code": "FD48608",
+   "description": "MILK SEMI SKIM 6X2L",
+   "discount_pct": 10,
+   "line_total": 30.35,
+   "pack_size": "6x2L",
+   "page": 1,
+   "qty": 4.0,
+   "unit": "case",
+   "unit_price": 8.43,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD98828",
+   "description": "FOIL CATERING 450MMX90M",
+   "discount_pct": 0,
+   "line_total": 13.8,
+   "pack_size": "",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 13.8,
+   "vat_rate": 20
+  },
+  {
+   "code": "FD41810",
+   "description": "VINEGAR MALT 5L",
+   "discount_pct": 10,
+   "line_total": 32.98,
+   "pack_size": "5L",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "each",
+   "unit_price": 4.58,
+   "vat_rate": 0
+  },
+  {
+   "code": "FD40433",
+   "description": "TOM CHOPPED IN JUICE 6X400G",
+   "discount_pct": 0,
+   "line_total": 36.6,
+   "pack_size": "6x400g",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "case",
+   "unit_price": 7.32,
+   "vat_rate": 0
+  }
+ ],
+ "pages": 1,
+ "supplier": "Fenwick & Dale Foodservice Ltd",
+ "totals": {
+  "gross": 278.31,
+  "net": 268.66,
+  "vat": 9.65,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 9.65
+  }
+ }
+}

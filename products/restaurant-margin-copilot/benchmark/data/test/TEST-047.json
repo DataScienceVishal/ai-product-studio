@@ -1,0 +1,204 @@
+{
+ "credit_note": false,
+ "date": "2026-09-01",
+ "distorted": true,
+ "distortion": [
+  {
+   "blur_sigma": 1.13,
+   "crumple_amp_px": 4.12,
+   "jpeg_quality": 43,
+   "perspective_jitter": 0.027,
+   "rotation_deg": -7.14,
+   "seed": 2025471,
+   "shadow_strength": 0.318
+  }
+ ],
+ "heldout": true,
+ "id": "TEST-047",
+ "images": [
+  "TEST-047_p1.jpg"
+ ],
+ "invoice_no": "69706",
+ "layout": "greengrocer",
+ "lines": [
+  {
+   "code": "ML83498",
+   "description": "CELERY HEAD",
+   "discount_pct": 0,
+   "line_total": 1.17,
+   "pack_size": "",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "each",
+   "unit_price": 1.17,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML22626",
+   "description": "AVOCADO RIPE 12S",
+   "discount_pct": 0,
+   "line_total": 94.08,
+   "pack_size": "12",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "box",
+   "unit_price": 11.76,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML89007",
+   "description": "LETTUCE COS",
+   "discount_pct": 0,
+   "line_total": 2.76,
+   "pack_size": "",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "each",
+   "unit_price": 1.38,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML33564",
+   "description": "CARRIER BAGS 100",
+   "discount_pct": 0,
+   "line_total": 30.88,
+   "pack_size": "100",
+   "page": 1,
+   "qty": 8.0,
+   "unit": "pack",
+   "unit_price": 3.86,
+   "vat_rate": 20
+  },
+  {
+   "code": "ML76746",
+   "description": "MUSHROOM CHESTNUT 3KG",
+   "discount_pct": 0,
+   "line_total": 31.62,
+   "pack_size": "3kg",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "box",
+   "unit_price": 10.54,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML68208",
+   "description": "APPLE BRAMLEY 12KG",
+   "discount_pct": 0,
+   "line_total": 19.27,
+   "pack_size": "12kg",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "box",
+   "unit_price": 19.27,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML50534",
+   "description": "CAULIFLOWER",
+   "discount_pct": 0,
+   "line_total": 9.0,
+   "pack_size": "",
+   "page": 1,
+   "qty": 5.0,
+   "unit": "each",
+   "unit_price": 1.8,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML95631",
+   "description": "TOMATOES VINE 6KG BOX",
+   "discount_pct": 0,
+   "line_total": 31.46,
+   "pack_size": "6kg",
+   "page": 1,
+   "qty": 2.0,
+   "unit": "box",
+   "unit_price": 15.73,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML51258",
+   "description": "GARLIC WHITE",
+   "discount_pct": 0,
+   "line_total": 6.11,
+   "pack_size": "",
+   "page": 1,
+   "qty": 0.91,
+   "unit": "kg",
+   "unit_price": 6.71,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML62960",
+   "description": "PARSLEY FLAT BUNCH",
+   "discount_pct": 0,
+   "line_total": 3.09,
+   "pack_size": "",
+   "page": 1,
+   "qty": 3.0,
+   "unit": "each",
+   "unit_price": 1.03,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML22674",
+   "description": "RASPBERRIES 12X125G",
+   "discount_pct": 0,
+   "line_total": 21.53,
+   "pack_size": "12x125g",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "case",
+   "unit_price": 21.53,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML85106",
+   "description": "LEMONS 15CT BOX",
+   "discount_pct": 0,
+   "line_total": 5.06,
+   "pack_size": "15",
+   "page": 1,
+   "qty": 1.0,
+   "unit": "box",
+   "unit_price": 5.06,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML90265",
+   "description": "BROCCOLI",
+   "discount_pct": 0,
+   "line_total": 6.49,
+   "pack_size": "",
+   "page": 1,
+   "qty": 2.68,
+   "unit": "kg",
+   "unit_price": 2.42,
+   "vat_rate": 0
+  },
+  {
+   "code": "ML33564",
+   "description": "CR CARRIER BAGS 100 DAMAGED",
+   "discount_pct": 0,
+   "line_total": -3.86,
+   "pack_size": "100",
+   "page": 1,
+   "qty": -1.0,
+   "unit": "pack",
+   "unit_price": 3.86,
+   "vat_rate": 20
+  }
+ ],
+ "pages": 1,
+ "supplier": "Marrow Lane Greengrocers",
+ "totals": {
+  "gross": 264.06,
+  "net": 258.66,
+  "vat": 5.4,
+  "vat_by_rate": {
+   "0": 0.0,
+   "20": 5.4
+  }
+ }
+}

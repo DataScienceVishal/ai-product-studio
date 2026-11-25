@@ -25,6 +25,10 @@ from reportlab.pdfgen import canvas as rl_canvas
 
 import distort
 
+if __name__ == "__main__":  # layouts_heldout does `import generate`: make that the same module, not a second copy
+    import sys
+    sys.modules.setdefault("generate", sys.modules["__main__"])
+
 TEST_SEED, DEV_SEED = 2025, 1001  # KILL-TEST.md: test 2025 (rerun 2026), dev 1001
 RENDER_DPI = 200
 CENT = Decimal("0.01")
