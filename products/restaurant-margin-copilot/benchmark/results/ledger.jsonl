@@ -101,3 +101,4 @@
 {"label": "TEST-019_p1", "input_tokens": 2243, "output_tokens": 5646, "usd": 0.011853, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "estimated": false, "note": ""}
 {"label": "TEST-023_p1", "input_tokens": 2301, "output_tokens": 3668, "usd": 0.007911, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "estimated": false, "note": ""}
 {"label": "TEST-022_p2", "input_tokens": 2243, "output_tokens": 5882, "usd": 0.012325, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "estimated": false, "note": ""}
+{"label": "TEST-022_p1", "input_tokens": 2214, "output_tokens": 7304, "usd": 0.015161, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "estimated": false, "note": ""}

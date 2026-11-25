@@ -1,0 +1,163 @@
+{
+ "page_id": "TEST-022_p1",
+ "invoice_id": "TEST-022",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2214,
+   "output_tokens": 7304,
+   "latency_s": 60.04,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 60.04,
+ "input_tokens": 2214,
+ "output_tokens": 7304,
+ "cost_usd": 0.015161,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "ITEM",
+   "WEIGHT / QTY",
+   "PRICE",
+   "V",
+   "AMOUNT"
+  ],
+  "supplier_name": "HARKER & SONS",
+  "invoice_number": "39283",
+  "invoice_date": "2026-09-26",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "OX CHEEK      5.13 kg      9.41/kg      Z      48.27",
+    "description": "OX CHEEK",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 5.13,
+    "unit_price": 9.41,
+    "line_total": 48.27,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "LAMB RACK FRENCH TRIM      9.12 kg      29.36/kg      Z      267.76",
+    "description": "LAMB RACK FRENCH TRIM",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 9.12,
+    "unit_price": 29.36,
+    "line_total": 267.76,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BEEF DICED CHUCK      8.91 kg      9.78/kg      Z      87.14",
+    "description": "BEEF DICED CHUCK",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 8.91,
+    "unit_price": 9.78,
+    "line_total": 87.14,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BACON SMKD BACK 2KG      2 x      16.79 ea      Z      33.58",
+    "description": "BACON SMKD BACK 2KG",
+    "pack_size": "2kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 16.79,
+    "line_total": 33.58,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CHICKEN WHOLE FR 1.8KG      2 x      8.53 ea      Z      17.06",
+    "description": "CHICKEN WHOLE FR 1.8KG",
+    "pack_size": "1.8kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 8.53,
+    "line_total": 17.06,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BEEF MINCE 20% 5KG      1 x      36.00 ea      Z      36.00",
+    "description": "BEEF MINCE 20% 5KG",
+    "pack_size": "5kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 36.0,
+    "line_total": 36.0,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "DUCK BREAST X2 400G      2 x      4.54 ea      Z      9.08",
+    "description": "DUCK BREAST X2 400G",
+    "pack_size": "2x400g",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 4.54,
+    "line_total": 9.08,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BUTCHERS STRING 500G      1 x      39.84 ea      Z      39.84",
+    "description": "BUTCHERS STRING 500G",
+    "pack_size": "500g",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 39.84,
+    "line_total": 39.84,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "DISPOSABLE GLOVES BLU X100      1 x      4.98 ea      S      8.28",
+    "description": "DISPOSABLE GLOVES BLU X100",
+    "pack_size": "100",
+    "unit": "pack",
+    "qty": 1,
+    "unit_price": 4.98,
+    "line_total": 8.28,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "CHICKEN THIGH BONE IN 10KG      2 x      14.79 ea      Z      29.59",
+    "description": "CHICKEN THIGH BONE IN 10KG",
+    "pack_size": "10kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 14.79,
+    "line_total": 29.59,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SIRLOIN 28D HUNG      1 x      28.18 ea      Z      28.18",
+    "description": "SIRLOIN 28D HUNG",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 28.18,
+    "line_total": 28.18,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BLACK PUDDING 1KG      1 x      38.50      Z      38.50",
+    "description": "BLACK PUDDING 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 38.5,
+    "line_total": 38.5,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": null,
+   "vat": null,
+   "gross": null
+  }
+ },
+ "retries": 0
+}
