@@ -279,3 +279,7 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 ## 2026-11-25T19:33Z, desk fca6: 19:30 digest
 - No question defaults were due: Q-15's default (B) falls due 2026-11-26T02:58Z, 12 hours after the 15:00 send; Q-8 is ask-first and waits. The next run after 02:58Z applies Q-15 B if Vishal hasn't answered.
 - Re-sent Q-15 as 1 (same numbering as 15:00), because it is the studio's main open decision and its default lands overnight. The problem slot asked Vishal to add the push-to-main line to both Desk routines, after the 15:00 Desk pushed to a session branch (merged into main this run, see HURDLES).
+
+## 2026-11-25T20:59Z run eb50 (T-100, T-101)
+- Picked Always-On 4 (security pass on the 53 starter commits since T-83) over another scout round: round 18 and the meta-review both say more desk-only rounds are unlikely to help, and Q-15 is still open.
+- T-101 rules (reviewer agreed): if Azure reports a dearer model than the one priced, the AI switches off until restart, even if an explicit price is set; an unknown model is accepted only when AI_PRICE_PER_MILLION_TOKENS is set explicitly; the call that trips the guard is still billed and recorded. The optional deploy-time 'az deployment show' check was not added, because the deployment sits outside rg-ai-studio.
