@@ -26,11 +26,20 @@ cost control, logs and health checks. It must run within $80 of Azure credit in 
 6. **AI behind a provider interface.** `FakeAI` is used in dev and tests (no cost). `AzureOpenAI` uses the v1
    chat completions API with retries and friendly errors. Every call is recorded per tenant, and a monthly
    token cap per plan is checked before each call.
+   *Update 2026-11-25:* `AzureOpenAI` now uses the v1 Responses API (`/openai/v1/responses`) for the studio's
+   reasoning deployment, which refuses chat completions. Chat completions is still supported (`AZURE_OPENAI_API`
+   is `auto`, `responses` or `chat`). Caps are now layered: a monthly token cap per plan, a daily cap for trials,
+   a shared daily pool for all trials, and a studio-wide daily cap on all tenants. At most a few calls per tenant
+   can be in flight at once (`ai_calls_per_tenant_at_once`). Free trials and the `mock` and `stripe` billing
+   providers are all treated as limited (`LIMITED_PROVIDERS` in `routes/notes.py`).
 7. **Billing behind a provider interface.** `MockBilling` is the default and signs its webhooks the same way
    Stripe does. `StripeBilling` refuses any key that isn't a test-mode key. Webhooks are idempotent (event ids
    are stored). Live payments stay locked until `unlock selling`.
 8. **Rate limiting is in-process** (sliding window). With more than one replica, the real limit multiplies.
    Move it to Redis before scaling out.
+   *Update 2026-11-25:* the Redis limiter is built (`RATE_LIMIT_REDIS_URL`, `app/ratelimit.py`). With the variable
+   empty the limits stay in memory, so one replica is still the rule until Azure Cache for Redis is provisioned
+   (it costs money, so it needs approval). If Redis is down the app falls back to in-memory limits, not a 500.
 9. **Email is an adapter.** Real sending is a paid service and needs approval. The in-memory outbox never logs
    addresses or bodies, because reset links are secrets.
 10. **Logs are JSON lines with request ids and tenant ids.** They never contain emails, names or content.
@@ -46,6 +55,7 @@ cost control, logs and health checks. It must run within $80 of Azure credit in 
 
 - One small Postgres server can host every product (one database each), which keeps Azure costs down.
 - A product copying the starter replaces `Note` with its own core objects and keeps the scoped-query pattern.
-- Known gaps, tracked in NEXT.md: Redis rate limiting before scaling out, a real email adapter (needs approval).
+- Known gaps, tracked in NEXT.md: a real email adapter (needs approval) and the Azure Cache for Redis resource before
+  scaling out (*update 2026-11-25:* the Redis limiter code is built; only the paid resource is missing).
 - The sign-up and invitation forms reveal whether an email already has an account. That is accepted for a B2B
   sign-up form and is rate-limited; the password-reset form does not reveal it.

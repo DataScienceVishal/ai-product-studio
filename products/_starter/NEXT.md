@@ -15,7 +15,7 @@ Done (T-75 review suggestions 1-3): `MockPortal` page at `/billing/mock-portal` 
 `frontend/src/redirect.ts` `safeRedirect()` used for both checkout and portal (https: or same-origin only, else a visible error and no
 navigation; vitest incl. javascript:, http://evil, //evil; mutation-checked by removing the guard: 6 tests failed);
 "Manage billing" disabled with "Verify your email to manage billing" for unverified owners (uses `me.user.email_verified`, already in /api/auth/me).
-Not done: review suggestion 4 (tests/dbutil.py). Checkout "Choose" buttons are not disabled for unverified owners (server still returns 403).
+Not done: review suggestion 4 (tests/dbutil.py). Update 2026-11-25: the checkout "Choose" buttons are now also disabled for unverified owners (T-77, `disabled={!isOwner || blocked}` in `frontend/src/pages/app.tsx`); the server still returns 403 as a backstop.
 
 # T-75 billing follow-ups status (branch p/_starter/T-75-billing-followups, on top of T-74)
 
