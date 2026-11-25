@@ -271,12 +271,18 @@ class StripeBilling:
         # Decision (T-15): only offers the app validated exist. The offer is applied here, server-side, as a coupon;
         # allow_promotion_codes is NOT sent (Stripe rejects it together with discounts, and it would let customers
         # type codes the app never checked or recorded).
+        coupon_id = None
         if offer:
-            form["discounts[0][coupon]"] = self.ensure_coupon(offer)
+            coupon_id = form["discounts[0][coupon]"] = self.ensure_coupon(offer)
         for key, value in meta.items():  # on the session (read at checkout.session.completed) and the subscription
             form[f"metadata[{key}]"] = value
             form[f"subscription_data[metadata][{key}]"] = value
-        body = self._call("POST", "/checkout/sessions", form, idempotency_key=f"checkout-{uuid.uuid4().hex}")
+        try:
+            body = self._call("POST", "/checkout/sessions", form, idempotency_key=f"checkout-{uuid.uuid4().hex}")
+        except AppError:
+            if coupon_id:  # the coupon may have been deleted or archived since it was cached: re-check it next time
+                self._coupons.discard(coupon_id)
+            raise
         if not body.get("id") or not body.get("url"):
             raise AppError(502, "billing_rejected", "The payment provider sent an incomplete reply.")
         return Checkout(body["id"], body["url"])

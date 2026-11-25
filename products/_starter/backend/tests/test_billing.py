@@ -1,16 +1,16 @@
 """Billing: API behaviour plus a contract every provider (mock and Stripe test mode) must meet."""
 import json
 import time
-from urllib.parse import parse_qs
 import uuid
 from datetime import datetime, timedelta, timezone
+from urllib.parse import parse_qs
 
 import httpx
 import pytest
 
-from app.errors import AppError
 from app.billing import (OFFERS, Offer, PLANS, InvalidSignature, MockBilling, StripeBilling, has_access, sign,
                          verify)
+from app.errors import AppError
 
 SECRET = "whsec_test_contract"
 
@@ -276,3 +276,51 @@ def test_coupon_id_changes_with_the_offer_terms():
     assert len(ids) == 4
     assert base.coupon_id == Offer("EARLY50", 50, 3, "other text").coupon_id  # wording does not matter
     assert OFFERS["EARLY50"].coupon_id == "studio-early50-50pc-3m-v1"
+
+
+def test_failed_checkout_drops_the_cached_coupon_so_the_next_one_rechecks_it():
+    """A coupon deleted in Stripe after it was cached: the checkout 400s, the id is forgotten, the next call re-ensures it."""
+    state = {"fail": False}
+    calls = []
+
+    def handler(request: httpx.Request):
+        calls.append((request.method, request.url.path))
+        if request.url.path.startswith("/v1/coupons"):
+            return httpx.Response(200, json={"id": "c"})
+        if state["fail"]:
+            return httpx.Response(400, json={"error": {"code": "resource_missing", "param": "discounts[0][coupon]"}})
+        return httpx.Response(200, json={"id": "cs_test_1", "url": "https://checkout.stripe.com/c/cs_test_1"})
+
+    stripe = StripeBilling("sk_test_x", SECRET, client=httpx.Client(transport=httpx.MockTransport(handler)))
+    args = (uuid.uuid4(), PLANS["pro"], OFFERS["EARLY50"], "https://a/ok", "https://a/no")
+    stripe.create_checkout(*args)
+    stripe.create_checkout(*args)  # success keeps the cache
+    assert calls.count(("POST", "/v1/coupons")) == 1
+    state["fail"] = True
+    with pytest.raises(AppError) as failed:
+        stripe.create_checkout(*args)
+    assert failed.value.code == "billing_rejected"
+    assert OFFERS["EARLY50"].coupon_id not in stripe._coupons
+    state["fail"] = False
+    stripe.create_checkout(*args)
+    assert calls.count(("POST", "/v1/coupons")) == 2  # ensure_coupon ran again
+    assert OFFERS["EARLY50"].coupon_id in stripe._coupons
+
+
+def test_failed_checkout_without_offer_leaves_the_coupon_cache_alone():
+    stripe, _ = coupon_stripe()
+    stripe.create_checkout(uuid.uuid4(), PLANS["pro"], OFFERS["EARLY50"], "https://a/ok", "https://a/no")
+    stripe.client = httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(400, json={})))
+    with pytest.raises(AppError):
+        stripe.create_checkout(uuid.uuid4(), PLANS["pro"], None, "https://a/ok", "https://a/no")
+    assert OFFERS["EARLY50"].coupon_id in stripe._coupons
+
+
+def test_coupon_name_is_capped_at_stripes_40_characters():
+    long_offer = Offer("A-VERY-LONG-EARLY-CUSTOMER-OFFER-CODE", 50, 3, "d")
+    assert len(f"{long_offer.code} {long_offer.percent_off}% off for {long_offer.months} months") > 40
+    stripe, calls = coupon_stripe()
+    stripe.create_checkout(uuid.uuid4(), PLANS["pro"], long_offer, "https://a/ok", "https://a/no")
+    name = calls[0][2]["name"]
+    assert calls[0][:2] == ("POST", "/v1/coupons") and len(name) == 40
+    assert name == "A-VERY-LONG-EARLY-CUSTOMER-OFFER-CODE 50% off for 3 months"[:40]
