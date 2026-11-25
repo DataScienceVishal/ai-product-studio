@@ -16,10 +16,10 @@ export function Privacy() {
         <p><strong>What we keep.</strong> Your company name, the email addresses and roles of your team, a scrambled
           (hashed) form of each password, the notes you write and their AI summaries, your plan, and how many AI tokens you use.</p>
         <p><strong>Why.</strong> To run the service you signed up for, to secure your account, and to bill you.</p>
-        <p><strong>Who processes it.</strong> Our hosting provider (Microsoft Azure, UK region), Microsoft's Azure OpenAI
+        <p><strong>Who processes it.</strong> Our hosting provider (Microsoft Azure; for now hosting and the database are in France Central, in the EU, and UK hosting is a decision for later), Microsoft's Azure OpenAI
           service for AI summaries, and our payment provider once payments are switched on. Each processes data under its own
           data-protection terms. Microsoft may store AI prompts and answers for abuse monitoring, as described on its Azure OpenAI
-          data-privacy page, and some deployment types process data outside the UK; each product states which one it uses.</p>
+          data-privacy page, and prompts may be processed outside the UK and EU depending on the deployment type; each product states which one it uses.</p>
         <p><strong>How long.</strong> Until you delete your account. Expired sign-in sessions and used links are removed
           within days; usage records after 13 months.</p>
         <p><strong>Your rights.</strong> Download your data or delete it at any time from Settings. Account owners can
