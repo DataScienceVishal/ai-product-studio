@@ -87,3 +87,11 @@ def test_gate_can_be_switched_off_where_no_real_email_is_sent(app, new_client):
     sign_up(client)
     assert client.post("/api/billing/checkout", json={"plan": "pro"}).status_code == 200
 
+
+
+def test_me_exposes_the_verification_gate(app, new_client):
+    client = new_client()
+    sign_up(client)
+    assert client.get("/api/auth/me").json()["user"]["email_verification_required"] is True
+    app.state.settings.require_email_verification = False
+    assert client.get("/api/auth/me").json()["user"]["email_verification_required"] is False

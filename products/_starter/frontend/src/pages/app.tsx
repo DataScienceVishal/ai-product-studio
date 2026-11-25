@@ -152,6 +152,16 @@ function TrialBanner({ me }: { me: Me }) {
   );
 }
 
+/** The mock provider's portal page is part of the SPA: return its path + query when the URL points there, else null. */
+function mockPortalPath(url: string): string | null {
+  try {
+    const target = new URL(url, window.location.origin);
+    return target.pathname === "/billing/mock-portal" ? target.pathname + target.search : null;
+  } catch {
+    return null;
+  }
+}
+
 export function Billing({ me, refresh }: { me: Me; refresh: () => Promise<void> }) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [offer, setOffer] = useState("");
@@ -181,13 +191,18 @@ export function Billing({ me, refresh }: { me: Me; refresh: () => Promise<void> 
     }
   };
 
-  const verified = me.user.email_verified;
+  // Same rule as the server's verified_owner gate: only blocked when verification is required AND the owner is unverified.
+  const blocked = me.user.email_verification_required && !me.user.email_verified;
   const openPortal = async () => {
     setPortalBusy(true);
     setError(null);
     try {
       const portal = await api<{ url: string }>("/api/billing/portal", { method: "POST" });
-      if (!safeRedirect(portal.url)) {
+      const inApp = mockPortalPath(portal.url);
+      if (inApp) {
+        navigate(inApp);  // like mock checkout: stay in the SPA, whatever origin it is served from
+        setPortalBusy(false);
+      } else if (!safeRedirect(portal.url)) {
         setError(BAD_REDIRECT);
         setPortalBusy(false);
       }
@@ -208,9 +223,9 @@ export function Billing({ me, refresh }: { me: Me; refresh: () => Promise<void> 
         )}
         <div className="mt-3 flex flex-wrap gap-2">
           <Button variant="secondary" onClick={() => void refresh()}>Refresh</Button>
-          {isOwner && <Button variant="secondary" busy={portalBusy} disabled={!verified}
+          {isOwner && <Button variant="secondary" busy={portalBusy} disabled={blocked}
             onClick={() => void openPortal()}>Manage billing</Button>}
-          {isOwner && !verified && <span className="self-center text-sm text-slate-600">Verify your email to manage billing</span>}
+          {isOwner && blocked && <span className="self-center text-sm text-slate-600">Verify your email to manage billing</span>}
         </div>
       </Card>
       {error && <Alert>{error}</Alert>}
@@ -225,7 +240,7 @@ export function Billing({ me, refresh }: { me: Me; refresh: () => Promise<void> 
               <p className="text-2xl font-bold">{formatPrice(plan.price_pence, plan.currency)}<span className="text-sm font-normal"> / {plan.interval}</span></p>
               <p className="text-sm text-slate-600">{plan.ai_monthly_tokens.toLocaleString("en-GB")} AI tokens a month</p>
               <Button className="mt-3" busy={busy === plan.id} onClick={() => choose(plan.id)}
-                disabled={me.user.role !== "owner"}>Choose {plan.name}</Button>
+                disabled={!isOwner || blocked}>Choose {plan.name}</Button>
             </div>
           ))}
         </div>
