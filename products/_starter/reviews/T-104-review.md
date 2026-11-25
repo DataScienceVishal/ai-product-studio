@@ -86,3 +86,48 @@ None. The workflow change is correct and safe.
 - **S4. Wording.** The deploy header says "set without the other two", and azure-spend.yml says "without
   AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID". The check actually fails when *either* is missing. "without both of"
   or "missing AZURE_TENANT_ID or AZURE_SUBSCRIPTION_ID" would be exact.
+
+## Re-review at `27b55d9`
+
+Reviewer: `reviewer` agent, 2026-11-25. Diff `b23f0c6..27b55d9`: 4 files. It addresses S1-S4 above.
+
+### Verdict: PASS
+
+- **S1 done.** The truth table now tests the approval values `yes`, `""`, `no`, `Yes` and `"yes "`, which makes 40
+  rows. The value is passed in quotes all the way through, and the oracle approves only an exact `yes`.
+- **S2 done.** The env grep now also covers `APPROVED: ${{ vars.STUDIO_AZURE_APPROVED }}`. Two new checks pin the
+  job output `go: ${{ steps.gate.outputs.go }}` and require both `if:` lines (`deploy` and `rollback`) to start
+  with `needs.check.outputs.go == 'true' && inputs.rollback_to`.
+- **S3 done.** The README troubleshooting table has a row for the new error, and its wording matches the
+  `::error::` text exactly.
+- **S4 done.** Both header comments now say "or ... is missing" ("while either of the other two is missing" in the
+  deploy workflow).
+
+| Check | Result |
+|---|---|
+| `bash products/_starter/infra/test-deploy-workflow.sh` | passed: 118, failed: 0, rc 0 (115 plus the `APPROVED` grep, the output check and the `if:` check) |
+| `python3 -m unittest discover -s scripts/tests` | Ran 43 tests, OK |
+| `actionlint` on both workflows | clean, rc 0 |
+
+**The mutations that survived before.** Each was re-applied in a detached worktree and reverted afterwards.
+
+| Mutation | Before | Now |
+|---|---|---|
+| `[ "$APPROVED" != "yes" ]` changed to `= "no"` | survived | caught: 3 rows wrong |
+| `APPROVED: ... \|\| 'yes'` | survived | caught: env grep |
+| Job output `go:` hardwired to `true` | survived | caught: output check |
+| `deploy` `if:` drops the go condition | survived | caught: `if:` check |
+| `rollback` `if:` drops the go condition | survived | caught: `if:` check |
+| Approval made case-insensitive (`${APPROVED,,}`) | (new) | caught: 1 row wrong (`Yes`) |
+| `if: false` added to the gate step | (new) | caught: actionlint |
+| `\|\| true` appended to the `deploy` `if:` | (new) | **survives** |
+
+### Suggestion (non-blocking)
+
+- **R1.** The `if:` check matches only the start of each line (`grep -cF` on the prefix), so anything appended
+  after it gets through. For example, `... == '' || true` turns the gate off and the test still passes. Use
+  `grep -cxF` with the two full lines: `    if: needs.check.outputs.go == 'true' && inputs.rollback_to == ''`
+  and `... != ''`. It's a small hardening and can go in the next starter task. It doesn't block this merge,
+  because changing the `if:` by hand like that would also have to get past review.
+- **R2 (wording).** The `APPROVED` check's label says "built from the right secrets", but it reads a repository
+  variable. Cosmetic.
