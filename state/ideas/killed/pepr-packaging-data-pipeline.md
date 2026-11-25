@@ -1,7 +1,7 @@
 # Packaging EPR data pipeline for mid-size UK producers
 
 - slug: pepr-packaging-data-pipeline
-- stage: G0
+- stage: killed (second G1 failure, 2026-11-25, T-66, after the T-56 proof test failed)
 - market and segment: UK brands, manufacturers and importers that are "obligated" under packaging EPR (pEPR), mainly large producers (turnover over £2m and over 50 tonnes) and upper-band small producers. Typically 20 to 250 staff, hundreds to thousands of SKUs, no sustainability team.
 - one-line pitch: Turns a producer's SKU, bill-of-materials and supplier spec exports into a validated Report Packaging Data (RPD) upload and a fee forecast, and flags errors before the producer pays a resubmission fee.
 - forcing function: Packaging EPR is live. Large producers file H2 2026 data (1 July to 31 December) by **1 April 2027**, and small producers file full-year 2026 data by **1 April 2027**. H1 data is due 1 October each year. Source: https://www.gov.uk/guidance/packaging-data-check-reporting-periods-and-submission-deadlines (accessed 2026-11-23). Changing data after submission can cost a resubmission fee of £807 (direct) or £512 (through a compliance scheme). Source: same page. Regulator: PackUK and the four UK environment agencies. Legislation: The Producer Responsibility Obligations (Packaging and Packaging Waste) Regulations 2024, https://legislation.gov.uk/uksi/2024/1332/schedules/made (appeared in search results 2026-11-23; schedule text not read).
@@ -302,6 +302,77 @@ Truth decisions made while building the supplement:
 
 5. **Run order and budget.** The supplement runs only after the test-set run, never before it, so it cannot use budget the `--set test` preflight needs. `extractor.run --set supplement` exits 6 unless the ledger already holds test-set (S001-S030) entries. It spends against the same USD 12 / 3M-token caps.
 
+### Amendments 5 and 6 (record copied here at the kill, 2026-11-25)
+
+These two were written on the product branch, not in this file. The branch will not be merged, so they are summarised here so the record is complete.
+- **Amendment 5** (`benchmark/KILL_TEST_AMENDMENT_5.md`): a proposal from tuning run e08c to accept whole-word sub-span quotes in `quote_ok`. It is marked "NOT applied". It was never used, and the scorer that produced the result is the scorer reviewed before any run.
+- **Amendment 6** (`benchmark/KILL_TEST_AMENDMENT_6.md`, dated 2026-11-24, before any test-set call; also in `state/DECISIONS.md` at 23:30Z, run bb8d): moved the re-tune and the test run from gpt-5.4-pro to gpt-5-mini (USD 0.25 / 2.00 per 1M). After one re-tune on the five tuning sheets, effort and max output tokens could be chosen, provided the choice was recorded before the test run. Prompt changes were not allowed. Pass marks 1 to 5, the test set, the truth, the scorer, the cost mark (USD 0.316 a sheet, which is GBP 0.25 at 0.79) and the USD 12 cap were all unchanged.
+
+## Kill (T-66, 2026-11-25)
+
+Validator, run 20261125T001943Z-run-cf06. Evidence: the pre-registered kill test above; the result file `products/pepr-packaging-data-pipeline/results/test1/score.json` and `NEXT.md` ("Run bb8d test1 result") on branch `p/pepr-packaging-data-pipeline/T-56`; `state/DECISIONS.md` (lines for runs bb8d and 4500); `state/BUDGET.md`. This run had no shell, so I read the branch files through their public raw URLs. `results/test1/score.json` is the scorer's own output and was not retyped by anyone.
+
+**Verdict: KILL.** Final score 68 (unchanged; the proof test gives no lift because it failed). This is the second failed G1 attempt.
+
+**Result against the pass marks.** One test run on 30 sheets: gpt-5-mini, reasoning effort medium, max output 6000 tokens. It was resumed once after a connection reset at S017, and no finished sheet was re-run.
+
+| Mark (written before any run) | Needed | Got | |
+|---|---|---|---|
+| 1. Overall field accuracy | >= 90% | 89.3% (408/457) | **FAIL** |
+| 2. Messy-10 field accuracy | >= 80% | 88.8% (174/196) | pass |
+| 3. Untraced values | 0 | 0 | pass |
+| 4a. Missing fields returned as missing | >= 95% | 90.6% (116/128); 1 fabricated (S026) | **FAIL** |
+| 4b. Conflicts flagged | >= 80% (18 of 22) | 90.9% (20/22); 0 false conflicts | pass |
+| 5. Cost | <= USD 0.316 a sheet mean | USD 0.0074 a sheet (USD 0.223 for 30; max USD 0.026) | pass |
+
+**Is this a Fail under the Fail line? Yes.** The pass mark says "all must hold", and two marks (1 and 4a) do not hold. The Fail line says a fail "counts as a failed G1 attempt", and the first attempt was REVISE 68 on 2026-11-23, so the two-attempt rule in `playbooks/pipeline.md` kills the idea.
+
+**Did any pass mark change after results? No.** I checked four things:
+- The thresholds in `score.json` (90 / 80 / 0 / 95 / 80 / 0.316) match the original text and Amendments 1 to 4, which were all written before any model call.
+- Amendment 6 changed the model, not the marks, and it is dated before the test call.
+- Amendment 5 was never applied.
+- The resume after the crash re-ran no finished sheet. S016, which was incomplete before the crash, was not retried (DECISIONS, run bb8d).
+
+**One process gap, which doesn't change the verdict.** The test text says amendments go "here". Amendment 6 was recorded on the branch and in `state/DECISIONS.md`, not in this file, before the run. It touched no mark, so the result stands.
+
+**Why the run missed.** Two sheets, S016 and S021, used up the 6000-token output budget (mostly on reasoning) and returned nothing. Under the rules they scored 0 on all 41 of their slots, including 11 missing slots and both of the unflagged conflicts.
+- Without those two sheets, the other 28 score 98.1% accuracy (408/416) and 99.1% missing handling (116/117).
+- Completing S021 alone would probably have passed both marks. Completing S016 alone would still miss mark 4a (at most 121/128, 94.5%).
+- So the failure is a truncation failure, not a reading failure. This is the honest reading, but it does not change the result: the rules written before the run score an incomplete answer as missing, and the single-run rule forbids a re-run on these sheets.
+
+**Lessons**
+1. **The output budget decided the test, and this is the second time.** T-12 (mtd-quarterly-prep) lost its image runs when reasoning used all 8,000 output tokens. Here two of 30 sheets ran out at 6000.
+   - Amendment 6 allowed a larger cap. The plan was to repeat with 16000 only if tuning showed incomplete sheets.
+   - Five tuning sheets can't reveal a failure that happens on about 1 sheet in 15: with that rate, 5 clean tuning sheets happen about 70% of the time.
+   - Rule for future proof tests: on a cheap model, set the output cap generously before the run (16000 on gpt-5-mini costs about 3 cents a sheet at worst). Alternatively, pre-register how truncation is handled, for example one retry at a larger cap or chunking by component, decided before the run.
+   - Also log output tokens per sheet in tuning so the headroom is visible.
+2. **Cost is not the problem.** gpt-5-mini cost 0.74 cents a sheet, about 2% of the USD 0.316 mark, and the whole proof test used USD 3.35 of USD 12. The expensive model was the cost trap: gpt-5.4-pro tuning averaged USD 0.62 a sheet, about twice the mark. For extraction, start with the mini model and move up only if accuracy needs it.
+3. **Even a pass needed a wedge.** Repackd already sells spec-sheet extraction, RAM scoring, fee simulation and a DEFRA CSV (Growth £799 a month; Evidence pass T-13).
+   - A pass would have given about AI 10 and Build 11, which is about 70 at best with Competition at 3. It could have been 69 if Competition fell to 2.
+   - The test could prove capability, not market room.
+   - Rule: before spending runs on a proof test, write down the score a pass would produce. If a pass can't clear 70 on its own, get the wedge evidence first (here, a Repackd trial; Q-9 A now allows free, no-card trials with test data).
+4. **What pre-registration taught the studio.**
+   - It worked as intended. Marks, data, truth and scorer were fixed before any model call, every amendment was dated, and the studio held the line on a 0.7-point miss instead of rationalising a re-run.
+   - It also showed the cost. About eight runs went into benchmark engineering (generator, scorer, quote rules, supplement, spend guard) for one pass-or-fail number.
+   - The fixed parts of a kill test should cover run configuration (output cap, truncation handling, model) as well as marks. Configuration chosen informally ("6000 was the default") is where this test was lost.
+   - Keep every amendment in the idea file, not only on a branch.
+5. **The benchmark kit is reusable.** The synthetic sheet generator with truth from the same data model, the page-quote traceability check, the conflict and missing-field scoring and the ledger spend guard all live on branch `p/pepr-packaging-data-pipeline/T-56`. Reuse them for any future "documents into structured fields" proof test, but don't merge them as a product.
+
+**What would revive it (all three are needed)**
+1. **A wedge against Repackd, with evidence.** Use a Repackd free trial (allowed under Q-9 A: no card, test data only, nothing in Vishal's name, the sign-up logged) on the 12 realism-supplement sheets and a few licence-cleared public spec PDFs.
+   - The trial must show that its extraction is weak on messy sheets: field accuracy under about 80%, no source trace, or invented values for missing fields, documented with screenshots of test data.
+   - Or a priced segment Repackd doesn't serve must be shown, for example smaller compliance schemes licensing a tool, sized from the gov.uk scheme register.
+2. **A new kill test, written and committed before any run.**
+   - Same pass marks.
+   - A **fresh held-out set**: a new seed, at least 30 sheets, including the realism-style forms from Amendments 3 and 4 (gm and oz, unit only in the label, gsm-only films, blends, catalogues).
+   - Run configuration fixed in the text: an output cap of at least 16000 or per-component chunking, and a written truncation rule.
+   - The new test must pass. **A re-run on the 30 T-56 test sheets cannot count.** Their results are known, and any change to the budget or prompt would be tuned on them.
+3. **A validator re-score of 70 or more** under the wedge-scored Competition row (Q-10), with Competition backed by the evidence in item 1.
+
+**Realism supplement (about USD 0.1): recommend yes, for lessons only.** Run the 12 sheets once at the same settings (gpt-5-mini, medium, 6000) and log output tokens per sheet. It costs about USD 0.1 of the USD 8.65 left in the cap. It shows whether the truncation rate and mini-model accuracy hold on real-sheet weight forms and wording, which any future extraction idea (including a revival) needs to know. It cannot change this verdict.
+
 ## Gate log
 - 2026-11-23 scout round 2: G0 file written. Competitor own-page check done for Valpak (via BRC release) only; PackTotal own page not reachable (403 on aggregator). Open items listed above.
 - 2026-11-23 | validator | G0→G1 | REVISE 68 | Scored as the merged pEPR and PPT data layer: the studio's strongest official pain so far (automatic red for missing evidence, red factor rising to 2.0 by 2028-29), but Clarity already sells bulk RAM ratings, missing-data flags and fee modelling from £4,995 a year and gov.uk gives the RPD file generator away, so only an unverified upstream extraction gap is left.
+- 2026-11-24 | studio lead | proof test T-56 run (bb8d) | FAIL | field accuracy 89.3% (needs 90%) and missing handling 90.6% (needs 95%); the other four marks passed; S016 and S021 ran out of the 6000-token output budget and scored 0.
+- 2026-11-25 | validator | G0→G1 (second attempt, T-56 proof test) | KILL 68 | Second failure. The pre-registered test failed 2 of 6 marks with no mark changed after results, and two sheets that hit the output cap decided the miss. Cost (USD 0.007 a sheet) was never the issue, and even a pass would only have proved what Repackd already sells. Lessons and revive conditions are in "Kill (T-66, 2026-11-25)".

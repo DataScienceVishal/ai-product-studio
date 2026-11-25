@@ -37,6 +37,13 @@ Record each gate decision in the idea or product file's Gate log and in `state/D
 
 An idea scoring 63 to 69 with no red flag may run one time-boxed benchmark before its G1 attempt counts. Write the numeric kill test first (metric, dataset, pass mark) in the idea file and commit it before running anything. Use public or synthetic data only. If it passes, the validator re-scores with the result as evidence; if it fails, that counts as a failed gate attempt. The 70 bar does not change.
 
+Lessons from T-56 (added 2026-11-25, T-66), required in every kill test:
+- **Score a pass first.** Write the score a pass would give. If a pass can't reach 70 alone (for example Competition stays low), collect the wedge evidence first and don't spend on the benchmark yet.
+- **Fix the run configuration too:** model, reasoning effort, output-token cap and how a truncated or incomplete answer is handled (one retry at a larger cap, or chunking). Be generous with the cap on cheap models. Log output tokens per item during tuning.
+- **Start extraction tests on the cheap model.** Move up only if accuracy needs it.
+- **Keep every amendment in the idea file**, dated, not only on a branch.
+- **Reuse the T-56 kit** (generator, quote-trace scorer, ledger spend guard on branch `p/pepr-packaging-data-pipeline/T-56`) for any "documents into fields" test.
+
 ## Kill rules
 
 - An idea that fails a gate twice is killed. Write the reason, the lessons and what would revive it in its file, then move the file to `state/ideas/killed/`.

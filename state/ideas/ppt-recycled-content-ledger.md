@@ -122,3 +122,4 @@ Evidence that many converters relied on pre-consumer scrap to pass 30% (for exam
 ## Gate log
 - 2026-11-23 scout round 2: G0 file written. Weakest of the five on Competition; included so the validator can decide whether to merge it with pepr-packaging-data-pipeline. Price points are thin: tax rate and one quote-only vendor.
 - 2026-11-23 | validator | G0→G1 | REVISE 51 (merged into pepr-packaging-data-pipeline) | The 1 April 2027 change is confirmed, but alone it is a one-off re-test for a subset of 5,142 registrants that Valpak, ERP and PackTotal already serve, so it continues only as a module of the pEPR data layer.
+- 2026-11-25 | validator | T-66 | parent killed | pepr-packaging-data-pipeline was killed after its T-56 proof test failed (`state/ideas/killed/pepr-packaging-data-pipeline.md`). This module goes with it and is not to be revived alone at 51.
