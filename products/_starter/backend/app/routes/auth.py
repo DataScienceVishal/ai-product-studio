@@ -19,19 +19,18 @@ from ..errors import AppError
 from ..logs import bind
 from ..models import AuthSession, EmailVerification, PasswordReset, Subscription, Tenant, User
 from ..ratelimit import client_ip, email_key, off_loop
-from ..textsafe import StrippedLine
+from ..textsafe import LINE_BAD, StrippedLine
 from ..security import (hash_capacity_after, hash_password, needs_rehash, new_token, password_problem, token_hash,
                         verify_password)
 
 log = logging.getLogger("app.auth")
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 EMAIL = re.compile(r"^[^@\s]{1,64}@[^@\s]+\.[^@\s]{2,}$")
-_CONTROL = re.compile(r"[\x00-\x1f\x7f]")  # NUL would make the Postgres insert fail with a 500
 
 
 def _email(value: str) -> str:
     value = value.strip().lower()
-    if len(value) > 254 or not EMAIL.match(value) or _CONTROL.search(value):
+    if len(value) > 254 or not EMAIL.match(value) or LINE_BAD.search(value):
         raise ValueError("Enter a valid email address.")
     return value
 
@@ -47,7 +46,7 @@ class SignUp(BaseModel):
     @field_validator("company_name")
     @classmethod
     def _company(cls, value: str) -> str:
-        value = " ".join(re.sub(r"[\x00-\x1f\x7f]", " ", value).split())  # no control characters or newlines
+        value = " ".join(LINE_BAD.sub(" ", value).split())  # no control characters or newlines
         if not value:
             raise ValueError("Enter your company name.")
         return value

@@ -29,9 +29,18 @@ def test_blank_note_title_is_422(owner, title):
     assert client.put(f"/api/notes/{made['id']}", json={"title": title}).status_code == 422
 
 
-def test_note_title_is_stripped(owner):
+def test_empty_note_title_is_422(owner):
     client, _ = owner
-    assert client.post("/api/notes", json={"title": "  hi  "}).json()["title"] == "hi"
+    assert client.post("/api/notes", json={"title": ""}).status_code == 422
+
+
+def test_note_title_is_stripped_and_never_stored_blank(owner):
+    client, _ = owner
+    made = client.post("/api/notes", json={"title": "\t hi\xa0 "}).json()
+    assert made["title"] == "hi"
+    edited = client.put(f"/api/notes/{made['id']}", json={"title": "  bye  "}).json()
+    assert edited["title"] == "bye"
+    assert [n["title"] for n in client.get("/api/notes").json()["items"]] == ["bye"]
 
 
 @pytest.mark.parametrize("path", ["/api/auth/login", "/api/auth/password-reset/request", "/api/auth/signup"])
@@ -55,7 +64,9 @@ def test_nul_in_invite_email_is_422(owner):
 def test_company_name_control_chars_are_normalised(new_client):
     client = new_client()
     body = sign_up(client, email="nul@acme.test", company="Ac\u0000me")
-    assert "\x00" not in body["tenant"]["name"]
+    assert body["tenant"]["name"] == "Ac me"  # each control character becomes a space; runs of spaces collapse
+    other = sign_up(new_client(), email="nl@acme.test", company="Foo\n\tBar\x07  Baz")
+    assert other["tenant"]["name"] == "Foo Bar Baz"
 
 
 @pytest.mark.parametrize("suffix", ["\n", "\t", " \r\n"])

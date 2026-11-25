@@ -9,6 +9,7 @@ Rules (also in DATA.md):
   - billing events (idempotency records): after 400 days
   - AI usage rows: after 400 days (13 months covers a full year of billing questions). They outlive deleted
     tenants (unlinked), because the studio-wide daily AI budget must count them.
+  - AI reservations still "pending" after 15 minutes (the process died mid-call): zeroed, so they stop counting
   - accounts whose owner never verified their email, never signed in for 30 days, and has no payment-provider
     customer: after 30 days, only when verification is required AND real email is sent (with the outbox nobody
     can verify, so nothing is purged)
@@ -22,6 +23,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
 
+from .ai import release_stale_reservations
 from .config import Settings
 from .db import Database
 from .models import (AIUsage, AuthSession, BillingEvent, EmailVerification, Invitation, PasswordReset, Subscription,
@@ -51,6 +53,7 @@ def purge(db: Session, now: datetime | None = None, unverified_after_days: int |
             or_(User.last_sign_in_at.is_(None), User.last_sign_in_at < cutoff))
         statements["unverified_accounts"] = delete(Tenant).where(Tenant.id.in_(abandoned), Tenant.id.not_in(paying))
     counts = {name: db.execute(statement).rowcount for name, statement in statements.items()}
+    counts["abandoned_ai_reservations"] = release_stale_reservations(db)  # killed calls: stop counting their estimate
     db.commit()
     return counts
 
