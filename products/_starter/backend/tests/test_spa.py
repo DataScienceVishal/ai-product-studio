@@ -594,7 +594,10 @@ def test_one_line_pages_object_with_paired_apostrophes_is_unreadable():
     src = '''const PAGES = { "/a": () => <p>Don't</p>, ...MORE, [X]: () => <p>It's</p>, "/c": C };
     return PAGES[path];'''
     found, other = scan_routes(src)
-    assert other and not found
+    assert other and not found, (
+        "PAGES was read as complete, or its routes were found. It should be unreadable here. If this fails on a different "
+        "source, a possible cause is a comma inside a quoted string in a PAGES entry (e.g. title=\"Hi, there\"), which "
+        "the quote-ignoring comma count also reports as unreadable.")
     # the same object without the apostrophes is read normally
     ok = 'const PAGES = { "/a": A, "/c": C };\nreturn PAGES[path];'
     assert scan_routes(ok) == ({"/a", "/c"}, [])

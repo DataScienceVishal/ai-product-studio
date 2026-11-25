@@ -381,6 +381,7 @@ def test_queue_wait_is_bounded_and_late_waiters_use_the_memory_check(server, cap
     limiter = _slow_gate_limiter(server, calls, delay=0.5, timeout=0.2)
     n = 6
     finished: dict[int, float] = {}
+    leaked: list[bool] = []
 
     async def go():
         t0 = time.monotonic()
@@ -388,6 +389,7 @@ def test_queue_wait_is_bounded_and_late_waiters_use_the_memory_check(server, cap
         async def one(i):
             await ratelimit.off_loop(_req(limiter), lambda: limiter.check(f"k{i}", 5))
             finished[i] = time.monotonic() - t0
+            leaked.append(ratelimit._skip_redis.get())  # in the waiter's own context, after the fallback ran
 
         await asyncio.gather(*[one(i) for i in range(n)])
 
@@ -397,6 +399,7 @@ def test_queue_wait_is_bounded_and_late_waiters_use_the_memory_check(server, cap
     assert max(late) < 0.2 + 0.25, finished  # bound plus scheduling slack, far below 6 * 0.5 s
     assert limiter._redis_down_until > time.monotonic()  # breaker tripped on "slow"
     assert any("queue timeout" in r.getMessage() for r in caplog.records)
+    assert leaked == [False] * n  # the fallback ran in a copied context; no caller's context is marked
     time.sleep(0.7)  # let the running job end; withdrawn ones must not run later
     assert calls == ["k0"] or len(calls) == 1, calls  # only the job that was already running touched Redis
     limiter.shutdown()
@@ -444,6 +447,12 @@ def test_cancelled_waiter_is_withdrawn(server):
 def test_open_breaker_skips_the_pool(server):
     limiter = RateLimiter(redis_client=fakeredis.FakeRedis(server=server))
     limiter._redis_down_until = time.monotonic() + 60
-    seen = []
-    asyncio.run(limiter.run_blocking(lambda: seen.append(threading.current_thread())))
+    seen, leaked = [], []
+
+    async def go():
+        await limiter.run_blocking(lambda: seen.append(threading.current_thread()))
+        leaked.append(ratelimit._skip_redis.get())  # read in the caller's own context, after run_blocking
+
+    asyncio.run(go())
     assert seen == [threading.main_thread()] and limiter._executor is None
+    assert leaked == [False]  # the caller's context is not left marked as "Redis is down"
