@@ -188,3 +188,6 @@ Append only. One line per decision:
 ## 2026-11-25T02:35Z run b5f8: T-30 pins stay on current majors
 - Pinned each action to the latest tag in its current major (no major bumps in the same change), so behaviour is unchanged; Dependabot's grouped weekly PRs propose majors (node24) separately and now get actionlint CI. postgres:16 is pinned by multi-arch index digest and refreshed by hand, as Dependabot doesn't track workflow service images.
 - The T-30 branch was merged to main ~2 min before its re-review PASS (mislabelled commit e22a16e, see HURDLES); the re-review then passed with no code change, so it was kept and completed rather than reverted.
+
+## 2026-11-25T03:26Z run 32ff: T-68 action majors merged from our own branch
+- Cherry-picked Dependabot's commit onto a fresh studio branch instead of rebasing Dependabot's branch (we can't push to it), verified pins and breaking changes, merged to main after reviewer PASS and green local checks. If Dependabot's PR #4 doesn't close itself, it can be closed as superseded.
