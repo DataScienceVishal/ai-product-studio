@@ -1,3 +1,13 @@
+# T-74 billing follow-ups status (branch p/_starter/T-74-billing-followups)
+
+Done: T-73 review S1 (past_due refusal only for this provider's own ref), S2 (message names the portal; `POST /api/billing/portal`
+and `portal_session()` on the provider interface, mock and Stripe), S3 tests, partial index `ix_ai_usage_pending`
+(migration 0007, model `Index` with `postgresql_where`), Stripe dunning note (README "Billing"; must be "cancel", not "mark unpaid").
+Not done: frontend "Manage billing" button (no node_modules in this run, so it could not be tested). Add it to `Billing` in
+`frontend/src/pages/app.tsx`: owner-only button that POSTs `/api/billing/portal` and does `window.location.assign(url)`,
+plus a test in `billing.test.tsx`. The mock portal URL (`/billing/mock-portal`) has no page; it only matters for demos.
+This branch also contains the T-73 branch (merged in), because T-73 was not on main yet.
+
 # T-15 coupon slice status (branch p/_starter/T-15-coupon)
 
 Done: the early-customer offer is a server-side Stripe coupon (`StripeBilling.ensure_coupon`, `Offer.coupon_id`);

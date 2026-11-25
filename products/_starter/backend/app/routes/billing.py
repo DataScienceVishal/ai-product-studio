@@ -42,11 +42,11 @@ def checkout(data: CheckoutIn, request: Request, me: Current = Depends(verified_
     db.commit()  # don't hold a transaction while the payment provider is called
     if sub.status == "active" and sub.provider_ref and sub.provider == request.app.state.billing.name:
         raise AppError(409, "already_subscribed", "You already have an active plan. To change it, contact support.")
-    if sub.status == "past_due":
+    if sub.status == "past_due" and sub.provider_ref and sub.provider == request.app.state.billing.name:
         # A second checkout would start a new subscription next to the unpaid one: the customer pays twice.
         raise AppError(409, "subscription_past_due",
-                       "Your last payment failed. Update your payment method to keep your current plan; "
-                       "a new checkout would start a second subscription. Contact support if you need help.")
+                       "Your last payment failed, so a new checkout would charge you twice. "
+                       "Update your card in the billing portal or contact support.")
     plan = PLANS.get(data.plan)
     if plan is None or plan.id == "trial":
         raise AppError(422, "unknown_plan", "Choose one of the listed plans.")
@@ -59,6 +59,19 @@ def checkout(data: CheckoutIn, request: Request, me: Current = Depends(verified_
     session = request.app.state.billing.create_checkout(me.tenant.id, plan, offer,
                                                         f"{base}/billing/done", f"{base}/billing")
     return {"checkout_id": session.id, "url": session.url}
+
+
+@router.post("/portal")
+def portal(request: Request, me: Current = Depends(verified_owner), db: Session = Depends(get_db)):
+    """A provider-hosted page where the customer updates their card or manages the subscription."""
+    request.app.state.limiter.check(f"portal:{me.tenant.id}", 10)
+    sub = subscription_of(db, me.tenant.id)
+    db.commit()  # don't hold a transaction while the payment provider is called
+    billing = request.app.state.billing
+    if not sub.provider_customer or sub.provider != billing.name:
+        raise AppError(409, "no_billing_customer", "There is no payment account to manage yet. Choose a plan first.")
+    base = request.app.state.settings.app_base_url.rstrip("/")
+    return {"url": billing.portal_session(sub.provider_customer, f"{base}/billing")}
 
 
 def apply_update(db: Session, update: BillingUpdate, provider: str) -> bool:

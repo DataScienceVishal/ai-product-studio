@@ -118,6 +118,14 @@ AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
   let customers type promotion codes the app never validated or recorded. Only app-validated offers exist. If you ever want
   promotion codes, add them as a deliberate feature.
 
+- **Billing portal:** `POST /api/billing/portal` (owner only) returns a Stripe Customer Portal URL for the tenant's customer
+  (409 `no_billing_customer` if there is none for the current provider). The return URL comes from `APP_BASE_URL`, never
+  from request headers. A past_due tenant is refused a new checkout and pointed at the portal.
+- **Stripe dunning setting:** in the Stripe dashboard (Billing, Subscriptions and emails, "Manage failed payments") set the
+  action after the last retry to **cancel the subscription**, not "mark the subscription as unpaid". Stripe `unpaid` maps to
+  `past_due` here and never sends `customer.subscription.deleted`, so a tenant would stay blocked from checkout until
+  someone acts. With "cancel", the deleted event moves them to `canceled` and they can buy again by themselves.
+
 ## Making a product from it
 
 1. Copy the folder to `products/<slug>/` and the workflow to `.github/workflows/<slug>-ci.yml`, replacing
