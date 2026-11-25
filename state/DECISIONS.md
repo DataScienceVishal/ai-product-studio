@@ -219,5 +219,5 @@ Reviewer PASS on p/_starter/T-76-portal-followups; merged to main. Allowing any 
 - S2 (host allowlist) declined: keep any-https-or-same-origin; Stripe custom domains would break an allowlist and the URL only comes from our own authenticated endpoint. S4: mock portal path navigates in-app regardless of origin.
 Reviewer PASS on p/_starter/T-77-redirect-review (c09fbca); merged to main. me_payload now carries email_verification_required so the UI gate matches the server.
 
-## 2026-11-25T07:50Z, run b5ff: T-78 merged
+## 2026-11-25T07:41Z, run b5ff: T-78 merged
 Reviewer PASS on p/_starter/T-78-mock-portal-scheme (9ca11e6); merged. Two cosmetic test nits left unqueued (not worth a task).
