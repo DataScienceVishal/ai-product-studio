@@ -76,3 +76,30 @@ app default (the same regex approach as for Bicep). That way this file can't dri
 
 No new endpoints, inputs or secrets. The cost guard still never prints the deployment name (`test_pro_deployment_from_env_fails_at_default_cap_without_printing_it`
 now expects $546.84 and still asserts the name is absent). No performance impact.
+
+---
+
+# Re-review: delta 10fa14a..89f55b3
+
+Reviewer, 2026-11-25. Diff: `git diff 10fa14a 89f55b3` (.env.example, ADR 0002, NEXT.md, test_aicost.py; the commit also adds this review file).
+
+**Verdict: PASS** on content. C1 is fixed, and suggestions 2, 3 and 4 were taken.
+
+**Merge precondition (git, not code):** `89f55b3` is **not on the branch**. It was committed on a detached HEAD: the reflog shows
+`checkout: moving from p/_starter/T-95-ai-budget to 10fa14a` and then the fix commit. Both `p/_starter/T-95-ai-budget` and
+`origin/p/_starter/T-95-ai-budget` still point at `10fa14a` (`git rev-parse`, `git ls-remote`). The detached checkout came from
+the reviewer's first pass. Before merging, fast-forward the branch to 89f55b3 and push it: `git branch -f p/_starter/T-95-ai-budget 89f55b3`
+while on another branch, or `git checkout p/_starter/T-95-ai-budget && git merge --ff-only 89f55b3`. Then merge the branch, not 10fa14a.
+
+## Evidence (run on 89f55b3, the current working tree)
+
+| Check | Result |
+|---|---|
+| `.env.example` | lines 35-37 and 41 now read 98000 / 6.10 / 6.10 / 6.10 |
+| Leftover grep (`6\.20`, `AI_GLOBAL_DAILY_TOKENS=100000`, outside reviews/, SECURITY.md, lockfiles, and the deliberate over-budget inputs in test_aicost.py) | no hits |
+| Backend `pytest -p no:warnings` | 647 passed, 1 skipped (648) |
+| Infra scripts | 102/0, 67/0, 33/0 |
+| Mutation of the extended test, in a scratch copy | fails for each of: `.env.example` cap back to 100000; `.env.example` `# AI_MONTHLY_BUDGET_USD` to 6.20; Bicep `azureOpenAiDeployment` default to gpt-5.4-pro. Passes unmutated |
+| ADR line 229 / NEXT.md line 10 | $0.196 and 1,093, both correct |
+
+Still open, not blocking: `state/BUDGET.md` line 20 (100,000 cap), which the coordinator will update on main at merge.
