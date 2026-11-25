@@ -56,3 +56,15 @@ def test_company_name_control_chars_are_normalised(new_client):
     client = new_client()
     body = sign_up(client, email="nul@acme.test", company="Ac\u0000me")
     assert "\x00" not in body["tenant"]["name"]
+
+
+@pytest.mark.parametrize("suffix", ["\n", "\t", " \r\n"])
+def test_login_and_reset_accept_email_with_trailing_whitespace(new_client, suffix):
+    """Strip before the control-character check, as signup does (T-71 review): a pasted trailing newline still signs in."""
+    client = new_client()
+    sign_up(client, email="trail@acme.test")
+    other = new_client()
+    login = other.post("/api/auth/login", json={"email": "trail@acme.test" + suffix, "password": PASSWORD})
+    assert login.status_code == 200, login.text
+    reset = new_client().post("/api/auth/password-reset/request", json={"email": "trail@acme.test" + suffix})
+    assert reset.status_code != 422, reset.text

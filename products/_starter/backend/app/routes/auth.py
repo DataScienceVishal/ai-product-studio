@@ -19,7 +19,7 @@ from ..errors import AppError
 from ..logs import bind
 from ..models import AuthSession, EmailVerification, PasswordReset, Subscription, Tenant, User
 from ..ratelimit import client_ip, email_key, off_loop
-from ..textsafe import SafeLine
+from ..textsafe import StrippedLine
 from ..security import (hash_capacity_after, hash_password, needs_rehash, new_token, password_problem, token_hash,
                         verify_password)
 
@@ -54,12 +54,12 @@ class SignUp(BaseModel):
 
 
 class SignIn(BaseModel):
-    email: SafeLine = Field(max_length=254)
+    email: StrippedLine = Field(max_length=254)
     password: str = Field(max_length=256)
 
 
 class ResetRequest(BaseModel):
-    email: SafeLine = Field(max_length=254)
+    email: StrippedLine = Field(max_length=254)
 
 
 class VerifyIn(BaseModel):
