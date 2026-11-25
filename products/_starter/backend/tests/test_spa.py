@@ -108,6 +108,10 @@ def _built_html_checker():
     '<!doctype html><html><head><script type="module" crossorigin src="/assets/index-abc.js"></script>'
     '<link rel="stylesheet" crossorigin href="/assets/index-abc.css"></head><body><div id="root"></div></body></html>',
     '<script src="/a.js" ></script><SCRIPT SRC="/b.js"></SCRIPT>',
+    # text inside attribute values is not an attribute (T-98)
+    '<meta name="description" content="loads once = fast, style = plain"><title>a onclick=b</title>',
+    '<script type="application/ld+json">{"@type": "Organization"}</script>',
+    '<a href="/javascript:notes">x</a>',
 ])
 def test_built_html_checker_passes_a_clean_vite_page(html):
     assert _built_html_checker().problems(html) == []
@@ -123,6 +127,14 @@ def test_built_html_checker_passes_a_clean_vite_page(html):
     "<DIV STYLE='x'></DIV>",
     '<button onclick="x()">',
     '<body onload="x()">',
+    '<script type="importmap">{"imports": {}}</script>',
+    '<a href="javascript:alert(1)">x</a>',
+    '<a HREF=" JavaScript:alert(1)">x</a>',
+    '<a href="java\tscript:alert(1)">x</a>',
+    '<img src="x" ONERROR="x()" />',
+    '<form action="javascript:x()"></form>',
+    '<script type="module" type="application/json">x()</script>',  # the first duplicate attribute wins
+    '<a href="\x01javascript:x()">x</a>',
 ])
 def test_built_html_checker_catches_csp_blocked_markup(html):
     assert _built_html_checker().problems(html)
