@@ -19,7 +19,7 @@ from ..errors import AppError
 from ..logs import bind
 from ..models import AuthSession, EmailVerification, PasswordReset, Subscription, Tenant, User
 from ..ratelimit import client_ip, email_key, off_loop
-from ..textsafe import LINE_BAD, StrippedLine
+from ..textsafe import LINE_BAD, StrippedLine, _invisible
 from ..security import (hash_capacity_after, hash_password, needs_rehash, new_token, password_problem, token_hash,
                         verify_password)
 
@@ -30,6 +30,8 @@ EMAIL = re.compile(r"^[^@\s]{1,64}@[^@\s]+\.[^@\s]{2,}$")
 
 def _email(value: str) -> str:
     value = value.strip().lower()
+    if not value.isascii():  # policy: ASCII-only addresses (no IDN or lookalike forms; Unicode variants would be separate accounts)
+        raise ValueError("Use an email address with only standard (ASCII) characters.")
     if len(value) > 254 or not EMAIL.match(value) or LINE_BAD.search(value):
         raise ValueError("Enter a valid email address.")
     return value
@@ -47,7 +49,7 @@ class SignUp(BaseModel):
     @classmethod
     def _company(cls, value: str) -> str:
         value = " ".join(LINE_BAD.sub(" ", value).split())  # no control characters or newlines
-        if not value:
+        if not value or _invisible(value):
             raise ValueError("Enter your company name.")
         return value
 

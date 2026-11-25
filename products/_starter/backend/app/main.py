@@ -170,7 +170,7 @@ def create_app(settings: Settings | None = None, *, ai: AIProvider | None = None
         app.state.db.dispose()
 
     docs = None if settings.env == "prod" else "/api/docs"
-    app = FastAPI(title=settings.app_name, version=__version__, lifespan=lifespan, docs_url=docs,
+    app = FastAPI(title=settings.app_name, version=__version__, lifespan=lifespan, docs_url=docs, redirect_slashes=False,
                   redoc_url=None, openapi_url=None if settings.env == "prod" else "/api/openapi.json")
     app.state.settings = settings
     app.state.db = Database(settings.database_url, settings.db_statement_timeout_ms,

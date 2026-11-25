@@ -23,6 +23,15 @@ describe("App routing when signed out", () => {
     expect(await screen.findByRole("heading", { name: "Sign in" })).toBeTruthy();
   });
 
+  it("redirects to /login with replaceState, not pushState", async () => {
+    window.history.replaceState({}, "", "/billing");
+    signedOut();
+    const push = vi.spyOn(window.history, "pushState");
+    render(<App />);
+    await waitFor(() => expect(window.location.pathname).toBe("/login"));
+    expect(push).not.toHaveBeenCalled();
+  });
+
   it.each([
     ["/signup", "Start your free trial"],
     ["/forgot-password", "Reset your password"],
@@ -90,5 +99,61 @@ describe("App when signed in", () => {
     (await screen.findByRole("button", { name: "Sign out" })).click();
     expect((await screen.findByRole("alert")).textContent).toMatch(/couldn't sign you out/i);
     expect(window.location.pathname).toBe("/billing");
+  });
+});
+
+describe("App routing when signed in (T-87)", () => {
+  const signedInWithNotes = () => fetchMock.mockImplementation(async (path: string) =>
+    path === "/api/auth/me" ? reply(200, ME) : reply(200, { items: [], total: 0 }));
+
+  it.each(["/login", "/signup"])("sends %s to the dashboard", async (path) => {
+    window.history.replaceState({}, "", path);
+    signedInWithNotes();
+    render(<App />);
+    await waitFor(() => expect(window.location.pathname).toBe("/"));
+    expect(screen.queryByRole("heading", { name: "Sign in" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: /start your free trial/i })).toBeNull();
+  });
+
+  it("redirects /login and /signup with replaceState, not pushState (no Back bounce)", async () => {
+    window.history.replaceState({}, "", "/login");
+    signedInWithNotes();
+    const push = vi.spyOn(window.history, "pushState");
+    const replace = vi.spyOn(window.history, "replaceState");
+    render(<App />);
+    await waitFor(() => expect(window.location.pathname).toBe("/"));
+    expect(replace).toHaveBeenCalledWith({}, "", "/");
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("sends a signed-in user on /login?next=/billing to /billing", async () => {
+    window.history.replaceState({}, "", "/login?next=/billing");
+    signedIn(); // the Billing page needs plans in its replies
+    render(<App />);
+    await waitFor(() => expect(window.location.pathname).toBe("/billing"));
+  });
+
+  it("ignores an unsafe ?next= when signed in", async () => {
+    window.history.replaceState({}, "", "/login?next=//evil.com");
+    signedInWithNotes();
+    render(<App />);
+    await waitFor(() => expect(window.location.pathname).toBe("/"));
+  });
+
+  it("shows Page not found with a link home for an unknown path, and keeps the URL", async () => {
+    window.history.replaceState({}, "", "/does-not-exist");
+    signedInWithNotes();
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Page not found" })).toBeTruthy();
+    expect(window.location.pathname).toBe("/does-not-exist");
+    expect(screen.getByRole("link", { name: /go to your notes/i }).getAttribute("href")).toBe("/");
+  });
+
+  it("still shows the dashboard at /", async () => {
+    window.history.replaceState({}, "", "/");
+    signedInWithNotes();
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: /notes/i })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Page not found" })).toBeNull();
   });
 });

@@ -255,3 +255,8 @@ Reviewer PASS on p/_starter/T-78-mock-portal-scheme (9ca11e6); merged. Two cosme
 - Board had only blocked or Vishal-dependent tasks, so I took T-85 (tiny) and opened T-86 (Always-On 2 bug hunt on the starter), since no G3/G4 product exists to hunt in.
 - T-86: the starter notes list now pages ("Show more notes"), retries a failed load, and wraps long text; the notes API sorts by created_at DESC, id DESC so paging is stable. A reload during load-more collapses the list back to the first page (accepted for now). Reviewer PASS on re-review.
 - The five low leftovers (zero-width titles, IDN emails, absolute-URL slash redirect, 422 field "1", /login when signed in and no 404 page) are queued as T-87, not fixed unreviewed.
+
+## 2026-11-25T14:25Z, run e652: T-87 starter leftovers
+- Picked T-87 (only unblocked task finishable in one run; Q-15 open, no G3/G4 product).
+- IDN email policy (T-86 bug 5): the starter accepts ASCII-only email addresses at signup and invitations, with a clear 422. Reason: deliverability, and no NFC/NFD duplicate accounts. Reversible: a product with non-ASCII buyers can relax it with normalisation.
+- Trailing-slash URLs: redirect_slashes off, so `/api/notes/` gives 404 rather than a 307 to an absolute http URL. Signed-in /login redirects to the dashboard; unknown paths get a 404 page.

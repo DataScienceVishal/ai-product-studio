@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { api, ApiError, SESSION_ENDED, type Me } from "./api";
 import { Billing, BillingDone, Dashboard, Help, MockCheckout, MockPortal, Settings } from "./pages/app";
 import { Privacy, Terms } from "./pages/legal";
-import { ForgotPassword, ResetPassword, SignIn, SignUp, VerifyEmail } from "./pages/auth";
+import { ForgotPassword, ResetPassword, safeNext, SignIn, SignUp, VerifyEmail } from "./pages/auth";
 import { AcceptInvite, Team } from "./pages/team";
 import { Alert, Link, navigate, usePath } from "./ui";
 
@@ -30,10 +30,16 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (me === null && !PUBLIC.has(path)) navigate("/login");
+    if (me === null && !PUBLIC.has(path)) navigate("/login", true);
   }, [me, path]);
 
+  const signInPage = path === "/login" || path === "/signup";
+  useEffect(() => {
+    if (me && signInPage) navigate(safeNext(), true); // (honours ?next=) already signed in: the sign-in and sign-up forms have nothing to offer
+  }, [me, signInPage]);
+
   if (me === undefined) return <p className="p-8 text-slate-600">Loading…</p>;
+  if (me && signInPage) return null;
 
   if (path === "/signup") return <SignUp onSignedIn={setMe} />;
   if (path === "/login") return <SignIn onSignedIn={setMe} />;
@@ -66,8 +72,19 @@ export default function App() {
         : path === "/settings" ? <Settings me={me} onDeleted={() => setMe(null)} />
         : path === "/team" ? <Team me={me} />
         : path === "/help" ? <Help />
-        : <Dashboard me={me} />}
+        : path === "/" ? <Dashboard me={me} />
+        : <NotFound />}
     </Shell>
+  );
+}
+
+function NotFound() {
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-slate-900">Page not found</h1>
+      <p className="mt-2 text-slate-600">There is nothing at this address.</p>
+      <p className="mt-4"><Link to="/">Go to your notes</Link></p>
+    </div>
   );
 }
 

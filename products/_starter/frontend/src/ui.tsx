@@ -2,8 +2,10 @@ import { useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from "
 
 // --- tiny history router (no dependency) ---------------------------------------------------
 
-export function navigate(to: string) {
-  window.history.pushState({}, "", to);
+/** Go to a client-side route. `replace` swaps the current history entry (for redirects, so Back does not bounce). */
+export function navigate(to: string, replace = false) {
+  if (replace) window.history.replaceState({}, "", to);
+  else window.history.pushState({}, "", to);
   window.dispatchEvent(new PopStateEvent("popstate"));
 }
 
