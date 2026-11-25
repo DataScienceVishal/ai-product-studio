@@ -178,6 +178,7 @@ jobs:
           az bicep version
           az bicep build --file shared.bicep --outdir "$out"
           az bicep build --file main.bicep --outdir "$out"
+          az bicep build --file deploy-role.bicep --outdir "$out"
           az bicep build-params --file shared.bicepparam --outfile "$out/shared.parameters.json"
           az bicep build-params --file main.bicepparam --outfile "$out/main.parameters.json"
       - name: Identity and Entra assertions on the compiled templates (ADR 0003 slices 1 and 2)
