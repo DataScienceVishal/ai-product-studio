@@ -283,3 +283,7 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 ## 2026-11-25T20:59Z run eb50 (T-100, T-101)
 - Picked Always-On 4 (security pass on the 53 starter commits since T-83) over another scout round: round 18 and the meta-review both say more desk-only rounds are unlikely to help, and Q-15 is still open.
 - T-101 rules (reviewer agreed): if Azure reports a dearer model than the one priced, the AI switches off until restart, even if an explicit price is set; an unknown model is accepted only when AI_PRICE_PER_MILLION_TOKENS is set explicitly; the call that trips the guard is still billed and recorded. The optional deploy-time 'az deployment show' check was not added, because the deployment sits outside rg-ai-studio.
+
+## 2026-11-25T21:27Z run fcce (T-63, T-102)
+- Board had only Vishal-blocked tasks and desk scouting is paused (round 18, meta-review), so took T-63 prep: a read-only spend identity `id-github-spend` (Reader + Cost Management Reader on rg-ai-studio). Kept the AZURE_COST_CREDENTIALS and deploy-identity fallbacks for now, because Q-8 is unconfirmed and they may be the only working sign-in; removal follows one green spend run.
+- T-102: a half-set spend identity (client id without tenant/subscription) now fails the run loudly instead of quietly reporting "no credentials" and leaving BUDGET.md stale. The workflow test now runs the real sign-in script over a 32-row truth table instead of grepping its text.
