@@ -92,3 +92,34 @@ describe("App when signed in", () => {
     expect(window.location.pathname).toBe("/billing");
   });
 });
+
+describe("App routing when signed in (T-87)", () => {
+  const signedInWithNotes = () => fetchMock.mockImplementation(async (path: string) =>
+    path === "/api/auth/me" ? reply(200, ME) : reply(200, { items: [], total: 0 }));
+
+  it.each(["/login", "/signup"])("sends %s to the dashboard", async (path) => {
+    window.history.replaceState({}, "", path);
+    signedInWithNotes();
+    render(<App />);
+    await waitFor(() => expect(window.location.pathname).toBe("/"));
+    expect(screen.queryByRole("heading", { name: "Sign in" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: /start your free trial/i })).toBeNull();
+  });
+
+  it("shows Page not found with a link home for an unknown path, and keeps the URL", async () => {
+    window.history.replaceState({}, "", "/does-not-exist");
+    signedInWithNotes();
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Page not found" })).toBeTruthy();
+    expect(window.location.pathname).toBe("/does-not-exist");
+    expect(screen.getByRole("link", { name: /go to your notes/i }).getAttribute("href")).toBe("/");
+  });
+
+  it("still shows the dashboard at /", async () => {
+    window.history.replaceState({}, "", "/");
+    signedInWithNotes();
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: /notes/i })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Page not found" })).toBeNull();
+  });
+});

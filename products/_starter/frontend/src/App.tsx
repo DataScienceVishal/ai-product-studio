@@ -33,7 +33,13 @@ export default function App() {
     if (me === null && !PUBLIC.has(path)) navigate("/login");
   }, [me, path]);
 
+  const signInPage = path === "/login" || path === "/signup";
+  useEffect(() => {
+    if (me && signInPage) navigate("/"); // already signed in: the sign-in and sign-up forms have nothing to offer
+  }, [me, signInPage]);
+
   if (me === undefined) return <p className="p-8 text-slate-600">Loading…</p>;
+  if (me && signInPage) return null;
 
   if (path === "/signup") return <SignUp onSignedIn={setMe} />;
   if (path === "/login") return <SignIn onSignedIn={setMe} />;
@@ -66,8 +72,19 @@ export default function App() {
         : path === "/settings" ? <Settings me={me} onDeleted={() => setMe(null)} />
         : path === "/team" ? <Team me={me} />
         : path === "/help" ? <Help />
-        : <Dashboard me={me} />}
+        : path === "/" ? <Dashboard me={me} />
+        : <NotFound />}
     </Shell>
+  );
+}
+
+function NotFound() {
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-slate-900">Page not found</h1>
+      <p className="mt-2 text-slate-600">There is nothing at this address.</p>
+      <p className="mt-4"><Link to="/">Go to your notes</Link></p>
+    </div>
   );
 }
 
