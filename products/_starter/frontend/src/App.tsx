@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { api, ApiError, SESSION_ENDED, type Me } from "./api";
 import { Billing, BillingDone, Dashboard, Help, MockCheckout, MockPortal, Settings } from "./pages/app";
 import { Privacy, Terms } from "./pages/legal";
-import { ForgotPassword, ResetPassword, safeNext, SIGN_IN_PAGES, SignIn, SignUp, VerifyEmail } from "./pages/auth";
+import { ForgotPassword, ResetPassword, safeNext, SignIn, SignUp, VerifyEmail } from "./pages/auth";
 import { AcceptInvite, Team } from "./pages/team";
 import { Alert, Link, navigate, usePath } from "./ui";
 
@@ -33,7 +33,8 @@ export default function App() {
     if (me === null && !PUBLIC.has(path)) navigate("/login", true);
   }, [me, path]);
 
-  const signInPage = SIGN_IN_PAGES.has(path); // path is already normalised by usePath
+  // Keep in step with SIGN_IN_PAGES in pages/auth.tsx (App.test.tsx checks it). Written as === so test_spa.py can read the routes.
+  const signInPage = path === "/login" || path === "/signup";
   useEffect(() => {
     if (me && signInPage) navigate(safeNext(), true); // (honours ?next=) already signed in: the sign-in and sign-up forms have nothing to offer
   }, [me, signInPage]);

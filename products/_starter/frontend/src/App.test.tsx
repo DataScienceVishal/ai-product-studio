@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { reply, stubFetch, ME } from "./test-utils";
 import App from "./App";
 import { SESSION_ENDED } from "./api";
+import { SIGN_IN_PAGES } from "./pages/auth";
 
 let fetchMock: ReturnType<typeof vi.fn>;
 const signedOut = () => fetchMock.mockImplementation(async () => reply(401, { error: "not_signed_in", message: "Sign in." }));
@@ -138,6 +139,14 @@ describe("App routing when signed in (T-87)", () => {
     signedInWithNotes();
     render(<App />);
     await waitFor(() => expect(window.location.pathname).toBe("/"));
+  });
+
+  it.each([...SIGN_IN_PAGES])("sends a signed-in user away from %s (App.tsx signInPage matches SIGN_IN_PAGES)", async (page) => {
+    window.history.replaceState({}, "", page);
+    signedInWithNotes();
+    render(<App />);
+    await waitFor(() => expect(window.location.pathname).toBe("/"));
+    expect(await screen.findByRole("heading", { name: "Your notes" })).toBeTruthy();
   });
 
   it.each(["/login?next=/login", "/login?next=/signup", "/signup?next=/login/", "/login?next=%2Flogin%3Fnext%3D%2F%2Fevil.com"])(
