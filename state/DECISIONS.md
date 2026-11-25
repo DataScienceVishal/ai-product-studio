@@ -226,3 +226,7 @@ Reviewer PASS on p/_starter/T-78-mock-portal-scheme (9ca11e6); merged. Two cosme
 - G0→G1 KILL: inbound-order-entry-desk 57 (merge of merchant-whatsapp-order-desk 56 and wholesale-email-order-entry-sage 55; second G1 failure for both). Zestcode (Sage 200) and Airdev (BisTrack) already sell AI order entry; Sage 50 write-back is only CSV import, which Parseur plus PostTrans/Adept gives; a benchmark pass would reach ~60, so no proof test. All three files moved to state/ideas/killed/. Validator gate log in the file.
 - Ireland BER watch-list dropped: 0 pain signals, 0 tool prices, DEAP 4 has no import route for a pre-fill (round17-summary.md T-79 follow-up).
 - Picked a targeted Always-On 6 re-check rather than a broad desk round, because Q-13's default (C) only applies from ~20:00Z and the meta-review says broad desk scouting is why nothing passes.
+
+## 2026-11-25T09:25Z, run d8d4: Q-13 B and Q-14 A
+- Q-13 → B (Telegram "1B"): restaurant-margin-copilot returns as a proof test, not a build. T-80: kill test written and committed before any benchmark run; ~50 synthetic invoices; extraction on AZURE_OPENAI_DEPLOYMENT_MINI; hard cap $5 model spend. T-81 Jelly trial blocked until a studio email exists (no account created in Vishal's name). T-40 stays shelved unless the proof test passes.
+- Q-14 → A (Telegram "2A"): the least-privilege deploy role is applied by Vishal at his next deploy. T-65 stays blocked on that.

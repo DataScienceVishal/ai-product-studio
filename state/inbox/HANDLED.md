@@ -18,3 +18,5 @@
 271771343 | "2B" = Q-7 answered B (pro model only, MTD benchmark max 20 docs ~$15); T-12 unblocked with $15 cap; QUESTIONS, DECISIONS, BOARD, BUDGET updated | 20261124T101920Z-run-cf1a
 271771346 | "1A" = Q-10 answered A (wedge-scored Competition); pipeline.md, QUESTIONS, DECISIONS updated; T-57 re-score queued | 20261124T201957Z-run-e08c
 271771347 | "2A" = Q-11 answered A ($12 for T-56); QUESTIONS, DECISIONS updated; T-56 slice 4 unblocked and claimed | 20261124T201957Z-run-e08c
+271771349 | "1B" = Q-13 answered B (restaurant proof test); T-80 claimed, T-81 blocked on studio email; QUESTIONS, DECISIONS, BOARD, HURDLES updated | 20261125T091934Z-run-d8d4
+271771350 | "2A" = Q-14 answered A (Vishal applies deploy role at next deploy); T-65 note, QUESTIONS, DECISIONS updated | 20261125T091934Z-run-d8d4

@@ -107,16 +107,18 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - If no answer: waits (spending and Azure changes are on the ask-first list). No model calls are made meanwhile.
 - Answer: A (Vishal in chat, 2026-11-24T23:14Z). Vishal adds a cheap deployment and sets AZURE_OPENAI_DEPLOYMENT_MINI; until that variable exists, no T-56 model calls. Then write the dated amendment and run inside the existing $12.
 
-## Q-13 (status: sent 2026-11-25T08:00Z as 1; default C after 12 h)
+## Q-13 (status: answered 2026-11-25T09:04:22Z)
 - Decision: The pEPR idea is dead (it missed its test by 0.7 points). What should the studio do next for ideas?
 - Context: 52 ideas scored from public web pages, none passed. The two ideas left in the 63-69 range are both stuck: restaurant (66) is shelved by your Q-6 answer, and holiday-pay (64) waits on a government response with no date (re-checked 2026-11-25). Desk research keeps finding problems that everyone else has already found.
 - Options: A) You have a 15-minute chat with your UK-business friend using state/ideas/BUYER-INTERVIEW.md. Each pain with money attached becomes an idea and gets a cheap proof test (recommended) B) Bring restaurant back as a proof test: free Jelly trial (already allowed by Q-9) plus a synthetic-invoice benchmark, kill test written first, under $5 of model spend C) One more desk round, aimed only at your edges (finance/tax data, RL dynamic pricing, RAG agents)
 - Recommended: A, because your friend is both the buyer's voice and the future seller, and the meta-review found desk-only scouting is the reason nothing passes. It costs you 15 minutes and spends no money.
 - If no answer: C after 12 hours (reversible, no spend). A stays open, because only you can have the chat.
+- Answer: B (Telegram "1B", 2026-11-25T09:04:22Z). Restaurant comes back as a proof test: kill test written first, synthetic-invoice benchmark, free Jelly trial if a studio email exists, under $5 model spend. T-80 and T-81.
 
-## Q-14 (status: sent 2026-11-25T08:00Z as 2)
+## Q-14 (status: answered 2026-11-25T09:04:24Z)
 - Decision: The studio wrote a narrower Azure role for the GitHub deploy identity (it can deploy but can't grant access or delete the database). Only you (Owner) can switch it on. When?
 - Context: today the deploy identity holds Contributor on rg-ai-studio, so a bad workflow change on main could delete anything in the group. The new role is on main (products/_starter/infra/deploy-role.bicep); the 3 Cloud Shell steps and rollback are in products/_starter/infra/README.md, "Least-privilege deploy role (T-65)". About 10 minutes, no cost. A missing action would show as a failed deploy naming it, which the studio then adds.
 - Options: A) Apply it the next time you run a deploy (recommended) B) Wait for T-69 (deploy identity in its own resource group, separate shared-deploy role) and apply both together C) Leave Contributor until handover
 - Recommended: A, because it removes the delete-everything risk now and T-69 builds on it.
 - If no answer: nothing changes (Contributor stays); it waits for you because only an Owner can apply it. The studio carries on with other work.
+- Answer: A (Telegram "2A", 2026-11-25T09:04:24Z). Vishal applies the deploy role at his next deploy; T-65 waits on that, then the studio watches the next deploy for a missing action.

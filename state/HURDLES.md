@@ -47,3 +47,8 @@ One line per blocker:
 - What: T-73 was marked done on the board with reviewer PASS, but origin/p/_starter/T-73-past-due-checkout was not on main. It was found by chance and merged with T-74.
 - Risk: other tasks marked done may have the same gap. 35 old p/* branches are not ancestors of main. Most look superseded (merged via rebase or cherry-pick), but content diffs can't show that because main has moved on.
 - Recommended fix: when marking a product task done, record the merge commit SHA on the board line. Have a QA pass spot-check the done tasks since T-60 for their key change on main (as done here for T-73). Delete superseded remote branches only with Vishal's OK (deletion is on the ask-first list).
+
+## 2026-11-25T09:25Z, run d8d4: no studio email for free trials (T-81)
+- Q-9 allows free no-card trials "with the studio email", but no studio mailbox exists in env or docs. Creating one is itself an account (ask-first).
+- Did: ran the benchmark half of the proof test (T-80) first, which needs no account.
+- Recommended fix: Vishal creates a throwaway mailbox (or says which address to use) and sets it as an env var STUDIO_EMAIL; the next run then starts the Jelly trial.
