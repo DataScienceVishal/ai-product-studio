@@ -248,6 +248,13 @@ needs Vishal's approval.
   with `client-id`, `tenant-id` and `subscription-id` from the secrets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   `AZURE_SUBSCRIPTION_ID`), so there is no stored password to leak or rotate. Jobs that sign in hold
   `permissions: id-token: write` at job level only. Cloud runs never hold Azure credentials.
+- **Update (T-65, not applied yet): least-privilege role instead of Contributor.** `infra/deploy-role.bicep` defines
+  the custom role "Studio Deployer (rg-ai-studio)": an explicit action list for what the workflows deploy and run, no
+  role assignment or definition writes, no federated credentials, one delete (the runner's temporary Postgres firewall
+  rule), assignable on `rg-ai-studio` only. A compromised `main` workflow can then no longer grant itself access or
+  delete the registry or database. It is a file for Vishal to deploy once and swap for Contributor
+  (`infra/README.md`, "Least-privilege deploy role (T-65)"). Until he does, this section's "Contributor" is still true.
+  The registry decision above (`LegacyRegistryPermissions`) is why the role lists `registries/push/write` and `pull/read`.
 - **Subject format (found on the first live run, 2026-11-24):** GitHub sends the immutable-ID subject `repo:<owner>@<owner-id>/<repo>@<repo-id>:...`, so the readable `repo:DataScienceVishal/ai-product-studio:...` form never matches (AADSTS700213). The credential must use the IDs shown in azure/login's "Federated token details" log line.
 - **The federated credential trusts one subject:** `repo:DataScienceVishal@102427114/ai-product-studio@1468636475:ref:refs/heads/main`
   (issuer `https://token.actions.githubusercontent.com`, audience `api://AzureADTokenExchange`). So the sign-in

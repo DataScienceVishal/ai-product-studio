@@ -31,6 +31,7 @@ Why it looks like this, with costs and sources: `../ADR/0002-azure-deploy.md`. T
 | `main.bicep`, `main.bicepparam` | one product: web app, migration job, purge job. Deployed on every release |
 | `db-setup.sql`, `db-grants.sql` | create a product's database and its two passwordless roles, mapped to the product's identities (run by the workflow; keep the two files side by side) |
 | `jwt-oid.sh` | prints the object id inside an Entra token (stdin), so the workflow can find its own Entra admin entry |
+| `deploy-role.bicep`, `test-deploy-role.sh` | the least-privilege custom role for the deploy identity (T-65, not applied yet) and its static check |
 | `test-db-setup.sh`, `test-deploy-workflow.sh`, `test-bicep-identities.sh` | checks that run without Azure (CI) |
 | `live-release.sh` | reads what a release starts from; any Azure read error stops the release |
 | `purge-job.sh` | keeps the purge job on the image and email settings of the revision that serves traffic |
@@ -110,6 +111,83 @@ Nothing here costs money until step 4. Do the steps only after approving the cos
 first and drop them in a later release. A rollback moves traffic and the purge job; it never changes the
 database. If a migration fails, Alembic rolls back all of that release's migrations together, so the schema
 stays as it was.
+
+## Least-privilege deploy role (T-65)
+
+> **Status: written, NOT APPLIED.** `id-github-deploy` still holds the built-in Contributor role on `rg-ai-studio`.
+> Nothing here has run against Azure. Until Vishal does the steps below, nothing changes.
+
+`deploy-role.bicep` defines a custom role, "Studio Deployer (rg-ai-studio)", assignable on `rg-ai-studio` only. It
+lists the exact actions the deploy and spend workflows use, each commented with the step that needs it. It can't
+grant access (read-only on role assignments and definitions, `Microsoft.Authorization/*/write` in `notActions`), can't touch
+federated credentials, can't register providers or delete the group, and has one delete: the runner's temporary
+Postgres firewall rule. `bash infra/test-deploy-role.sh` checks all this without Azure (it runs in CI).
+
+### Vishal's one-time steps (Cloud Shell, you are Owner)
+
+1. Create the role and give it to the identity (the role is created first, so the identity briefly has both):
+   ```bash
+   cd products/_starter/infra   # or paste the file into Cloud Shell
+   PRINCIPAL=$(az identity show -g rg-ai-studio -n id-github-deploy --query principalId -o tsv)
+   az deployment group create -g rg-ai-studio --name studio-deploy-role -f deploy-role.bicep \
+     -p assign=true deployPrincipalId="$PRINCIPAL"
+   ```
+2. Prove the new role works before removing the old one: remove Contributor, then run the deploy workflow once
+   from `main` (with `deploy_shared` ticked once, since that touches the most resource types), see "Risks" below
+   for what a failure looks like. Don't test with both roles assigned: Contributor hides every missing action, so that run proves nothing.
+   ```bash
+   SCOPE=$(az group show -n rg-ai-studio --query id -o tsv)
+   az role assignment delete --assignee "$PRINCIPAL" --role Contributor --scope "$SCOPE"
+   az role assignment list --assignee "$PRINCIPAL" --all --include-inherited -o table   # only "Studio Deployer ..." should remain (also checks Contributor given higher up)
+   ```
+3. Tell the studio it is applied, so ADR 0002, SECURITY.md and this section can drop "not applied".
+
+### Residual risks (security review T-65, accepted for now)
+
+- `containerApps/write` and `jobs/write` let the deployer run any image with the app's identities. That is what a
+  deploy role is for; the control is who can change workflows on `main` (T-62: `production` environment with a
+  required reviewer, ruleset on `.github/workflows/**`).
+- `userAssignedIdentities/assign/action` also covers `id-github-deploy` itself, because it lives in `rg-ai-studio`:
+  a malicious workflow could attach it to an app and keep deploy rights after the federated credential is removed.
+  Contributor allows the same today. Fix later (T-69): move `id-github-deploy` to its own resource group.
+- `flexibleServers/write`, `administrators/write` and firewall rules are only needed for the shared deploy
+  (`deploy_shared`). T-69 splits them into a separate shared role behind the reviewed environment.
+- The spend report's `AZURE_COST_CREDENTIALS` fallback identity is not covered by this role (T-63 removes it).
+
+### Rolling back
+
+```bash
+az role assignment create --assignee-object-id "$PRINCIPAL" --assignee-principal-type ServicePrincipal \
+  --role Contributor --scope "$SCOPE"
+```
+Contributor is back at once (allow a few minutes for Azure to pick it up). Leave the custom role in place; it does
+nothing unassigned. To remove it too: `az role assignment delete` the "Studio Deployer" assignment, then
+`az role definition delete --name "Studio Deployer (rg-ai-studio)"`.
+
+### Adding a missing action
+
+A failed step says `AuthorizationFailed ... does not have authorization to perform action '<X>'`. Add exactly `<X>`
+to `actions` in `deploy-role.bicep`, with a comment naming the step, rerun `test-deploy-role.sh` and step 1's
+deployment (it updates the same role, because the name is a fixed guid). Never add a wildcard.
+A new resource type in the templates fails `test-deploy-role.sh` until its actions are added.
+
+### Risks (written from the templates and `az` commands, not seen running)
+
+- **Unsure, likely fine:** the `Microsoft.App/locations/*OperationResults|OperationStatuses/read` and
+  `Microsoft.DBforPostgreSQL/locations/*` and `Microsoft.ContainerRegistry/locations/operationResults/read` entries
+  (async polling) are listed from Azure's provider operation list; if one is not needed it is harmless, and if a
+  different one is needed the error names it.
+- **Unsure:** `Microsoft.CostManagement/query/action` and `/read`. The spend report posts a query at resource group scope;
+  Azure documents the `query/action` form, so both are kept. If `azure-spend.yml` uses the separate
+  `AZURE_COST_CREDENTIALS` fallback, that identity is not covered by this role.
+- **Unsure:** Postgres `administrators/write` may also ask for an action on the identity (the Entra admin is the deploy
+  identity itself); the error would say so. The first Entra admin creation is the likeliest place.
+- **Not included on purpose:** `listSecrets`, `listCredentials`, `sharedKeys`, `federatedIdentityCredentials`, `databases/*`,
+  `roleAssignments/write` (shared.bicep `pullRole` stays off, `grantPullRole=false`: AcrPull is still Vishal's one-time
+  step), deployment deletes, resource group writes. If `GRANT_PULL_ROLE=true` is ever used the deploy will fail on purpose.
+- Contributor also allowed things the templates don't use (for example deleting resources). Anything a future
+  feature needs shows up as one named `AuthorizationFailed`, a failed deploy rather than a security hole.
+- Azure caches role changes for up to about 10 minutes per token: after step 2 sign in again (a new run does).
 
 ## Rolling back
 
