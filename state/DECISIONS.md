@@ -184,3 +184,7 @@ Append only. One line per decision:
 2026-11-25T00:29:07Z | 20261125T001943Z-run-cf06 | T-67 supplement ran (USD 0.05, inside the Q-11 cap): no truncation on realistic sheets; catalogue sheets need a target-item step. pEPR stays killed | lessons only | yes | T-67
 
 - 2026-11-25T01:30Z run 00fb (T-15): picked starter follow-ups over a desk scouting round, since Q-13's default (C, desk round) only applies 12 h after it was sent (~12:45Z) and the meta-review says desk-only scouting is why nothing passes. Coupon cache is dropped on any checkout failure with an offer attached (reviewer: harmless on 503; narrowing to billing_rejected left as a suggestion).
+
+## 2026-11-25T02:35Z run b5f8: T-30 pins stay on current majors
+- Pinned each action to the latest tag in its current major (no major bumps in the same change), so behaviour is unchanged; Dependabot's grouped weekly PRs propose majors (node24) separately and now get actionlint CI. postgres:16 is pinned by multi-arch index digest and refreshed by hand, as Dependabot doesn't track workflow service images.
+- The T-30 branch was merged to main ~2 min before its re-review PASS (mislabelled commit e22a16e, see HURDLES); the re-review then passed with no code change, so it was kept and completed rather than reverted.
