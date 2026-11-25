@@ -15,7 +15,7 @@ Terms are defined the first time they appear. Paths are under `products/_starter
  +-----------+  HTTPS: page + JS    +-----------------------------------------------------+
  |  Browser  |--------------------->|  ca-starter  (one container, FastAPI + built React)  |
  |  React    |<---------------------|                                                     |
- |  SPA      |  JSON replies        |   CsrfGuard -> CORS -> BodyLimit -> RequestContext   |
+ |  SPA      |  JSON replies        |   RequestContext -> CORS -> CsrfGuard -> BodyLimit   |
  +-----------+  /api/... + cookie   |   routes: auth notes billing account team health     |
    (SPA = single-page app:          +---+------------+------------+------------+----------+
     one HTML page, JS swaps views)      |            |            |            |
@@ -56,7 +56,7 @@ Status today (`state/BUDGET.md`): only `id-github-deploy` is live. Every other r
 
 Every product we sell needs the same ten things before its first real feature: sign-up and sign-in, one customer unable to see another's data, a trial and a payment page, AI calls that cannot run up a bill, logs that do not leak personal data, health checks, a database that migrates safely, and a deploy that cannot break the live site. These are easy to get subtly wrong and expensive to get wrong in front of a customer.
 
-The starter builds them once. A new product copies the folder, swaps `Note` for its own object (a rota, an interview, a menu), sets its plans and prices, and writes its one core flow. Everything else is inherited and already tested: the README says 561 backend tests passed, and the security gate re-test 3 passed 8 of 8 sections on 2026-11-23 (`SECURITY.md` top, `README.md` tests table). I re-read the code, I did not re-run the tests.
+The starter builds them once. A new product copies the folder, swaps `Note` for its own object (a rota, an interview, a menu), sets its plans and prices, and writes its one core flow. Everything else is inherited and already tested: the README's tests table says 561 backend tests passed (stale: the board's latest merge note, T-86, records 566 backend and 182 frontend vitest tests passing), and the security gate re-test 3 passed 8 of 8 sections on 2026-11-23 (`SECURITY.md` top, `README.md` tests table). I re-read the code, I did not re-run the tests.
 
 The risk we take on in exchange: a flaw in the starter is a flaw in every product. That is why it has its own reviews folder (`reviews/`) and security file.
 
@@ -68,7 +68,7 @@ Key terms:
 
 ## 3. One small example, end to end
 
-Story: Priya runs "Priya's Bakery Ltd". She signs up, creates a note, asks for an AI summary, her trial runs out, she upgrades. This is the same path the browser test walks (`tests/e2e/core_flow.cjs`).
+Story: Priya runs "Priya's Bakery Ltd". She signs up, creates a note, asks for an AI summary, her trial runs out, she upgrades. Steps 1, 3, 4, 6 and 7 are the path the browser test walks (`tests/e2e/core_flow.cjs`); it runs with verification off and does not simulate the trial ending (steps 2 and 5).
 
 Assume local or demo settings: `AI_PROVIDER=fake`, `BILLING_PROVIDER=mock`, `MOCK_CHECKOUT_ENABLED=true`. Whether email verification is on is called out at step 2.
 
@@ -104,7 +104,7 @@ Two things in this example surprise people:
 
 - **What it does.** Shared tables, `tenant_id` on every customer-owned row (ADR 0001 decision 4). In `routes/notes.py`, `_scoped(me)` is `select(Note).where(Note.tenant_id == me.tenant.id)`, and every read, update and delete goes through it. Another tenant's note id returns the same 404 as a missing one, so ids cannot be probed.
 - **Deleting a tenant** cascades to its users, sessions, notes, invitations (`ondelete="CASCADE"` in `models.py`). `ai_usage` is the exception: `tenant_id` is set to NULL so the studio-wide daily AI budget still counts the tokens, and the rows hold no personal data.
-- **Proof.** The tests check every private route needs sign-in, every write needs the CSRF header, and cross-tenant reads fail (README "Tests"; SECURITY.md section 2: 29 of 29 live cross-tenant checks passed).
+- **Proof.** The tests check every private route needs sign-in, every write needs the CSRF header, and cross-tenant reads fail (README "Tests"; SECURITY.md section 2: 29 of 29 live cross-tenant and role checks in the first gate, 48 of 48 at re-test 3).
 - **Trade-off.** Postgres row-level security (the database itself refusing cross-tenant reads) would be a second layer. It is **not used** (ADR 0001 decision 4). So isolation depends on every query using `_scoped`. When a product adds objects, copy the tenancy tests for each one (README "Making a product from it", step 2).
 - **Failure and what the user sees.** A forgotten filter is a data leak, not an error message. That is the main reason review exists for each product.
 
@@ -115,7 +115,7 @@ Two things in this example surprise people:
 - **Mock signs like Stripe.** `sign()` and `verify()` use the Stripe header format `t=<unix>,v1=<hmac-sha256>`, with a 300 s tolerance, so the mock exercises the real webhook path.
 - **Webhook rules** (`routes/billing.py` `apply_update`): each event id is stored in `billing_events`, so a repeat is a no-op; an event older than the last applied one is recorded but ignored; a cancellation wins a same-second tie; an event for a different subscription id cannot replace the current one; the subscription row is locked while updating. Body limit 256,000 bytes.
 - **Early-customer coupon with Stripe.** The code you type is checked against `OFFERS` in `billing.py`. With Stripe the app creates a coupon with a deterministic id (`studio-early50-50pc-3m-v1`, built by `Offer.coupon_id`) and sends it with the Checkout Session, so the customer does not re-type anything. `allow_promotion_codes` is deliberately not sent: Stripe rejects it alongside discounts and it would let people type codes the app never validated (README "Billing and the early-customer offer", T-15 decision).
-- **Other routes.** `GET /api/billing/plans`, `POST /api/billing/portal` (owner; a Stripe-hosted page to change card or cancel), `POST /api/billing/checkout`. Past-due tenants cannot start a second checkout (409 `subscription_past_due`) so they are not charged twice.
+- **Other routes.** `GET /api/billing/plans`, `POST /api/billing/portal` (owner, with a verified email when verification is on; a Stripe-hosted page to change card or cancel), `POST /api/billing/checkout`. Past-due tenants cannot start a second checkout (409 `subscription_past_due`) so they are not charged twice.
 - **Access rule.** `has_access`: `active` needs the period end plus a 3-day grace (`GRACE`) to be in the future; `trialing` needs `trial_ends_at` in the future.
 - **Failure and what the user sees.** Stripe unreachable or refusing: 502 `billing_rejected` or a friendly 503. Account deletion calls the provider first and deletes nothing if that fails (503 `billing_unavailable`, `routes/account.py`).
 - **Not proven.** The README and board (T-15) say the Stripe path has **never been run against real Stripe test keys**. Everything about Stripe is tested against recorded or faked responses. Stripe needs two dashboard settings that live outside the code: a saved Customer Portal configuration, and "cancel the subscription" after the last failed retry (README "Billing").
@@ -171,7 +171,7 @@ Two things in this example surprise people:
 
 - **What it does.** The `Dockerfile` builds the React app and copies it into the Python image. FastAPI serves it, so the browser sees the app and `/api` on one origin (`spa.py`). Known client routes (`CLIENT_ROUTES`, 16 of them) return `index.html`; any other unknown path returns the same HTML with status 404.
 - **Gotcha.** Every new frontend page must be added to `CLIENT_ROUTES` in `backend/app/spa.py`, or opening it directly or refreshing returns 404. A test compares the two lists (README "One image, one origin").
-- **Headers.** Every response gets `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `X-Robots-Tag: noindex, nofollow` (private demos), `Cache-Control: no-store` (`main.py`). With `COOKIE_SECURE=true`, HSTS (one year). In prod, JSON gets `default-src 'none'`; HTML gets a policy with `script-src 'self'` (no inline script). API docs are hidden in prod.
+- **Headers.** Every response gets `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `X-Robots-Tag: noindex, nofollow` (private demos) (`main.py`). API responses also get `Cache-Control: no-store`; the SPA's `index.html` gets `no-cache` and `/assets` files are cached for a year (`spa.py`). With `COOKIE_SECURE=true`, HSTS (one year). In prod, JSON gets `default-src 'none'`; HTML gets a policy with `script-src 'self'` (no inline script). API docs are hidden in prod.
 
 ### 4.9 Deploy: GitHub Actions with OIDC, Bicep
 
@@ -195,9 +195,9 @@ Two things in this example surprise people:
 ## 5. Questions a buyer (or his friend) might ask about any product built on this
 
 1. **Is our data safe from other customers?** Every row carries a tenant id and every query is filtered by it; another customer's record looks like "not found". Tests and a security pass checked this. We do not use database-level row security, so a coding slip in a new product is the real risk, and each product gets its own review.
-2. **Where does our data live?** Azure Postgres in `francecentral` (France), per `infra/main.bicepparam`. Not the UK. `DATA.md` says "UK region" as a goal but the Student subscription only allows five regions (ADR 0002 "Region (T-61)"). Say this plainly. A paying customer's hosting is a handover decision (ADR 0002 failure table: "No customer may depend on this subscription").
+2. **Where does our data live?** Azure Postgres in `francecentral` (France), per `infra/main.bicepparam`. Not the UK. `DATA.md` (processors list) and the DRAFT privacy page (`frontend/src/pages/legal.tsx`) still say "UK region", which is out of date: the Student subscription only allows five regions (ADR 0002 "Region (T-61)"). Say this plainly. A paying customer's hosting is a handover decision (ADR 0002 failure table: "No customer may depend on this subscription").
 3. **Is it UK GDPR compliant?** It has the basics: a data inventory (`DATA.md`), export and delete routes, retention purge, no personal data in logs, and DRAFT privacy and terms pages (`frontend/src/pages/legal.tsx`). `DATA.md` says it is not legal advice and needs legal review before launch. Processors to list: Azure, Azure OpenAI, the payment provider, an email provider once approved.
-4. **Does our note text go to OpenAI?** It goes to Azure OpenAI, not OpenAI directly. The call sends `store=false`. Azure's abuse monitoring is separate and may keep flagged content for human review; `DATA.md` tells us to check Microsoft's terms before real customer data.
+4. **Does our note text go to OpenAI?** It goes to Azure OpenAI, not OpenAI directly. On the Responses API the call sends `store=false`. Azure's abuse monitoring is separate and may keep flagged content for human review; `DATA.md` tells us to check Microsoft's terms before real customer data.
 5. **What if the AI is wrong?** Summaries are suggestions saved on the note, never actions. Prompt text tells the model to ignore instructions inside notes. Incomplete or refused answers are not saved. A product with riskier output (money, rotas) needs its own review step; the starter does not judge truth.
 6. **What if the AI is down?** The user gets a friendly 503 "try again in a minute"; everything else (notes, billing, sign-in) still works. Nothing queues or retries in the background.
 7. **What does the AI cost per customer?** The caps bound it. With the default $2.00 per million blended price, one trial tenant is limited to 30,000 tokens a day (about $0.06 at most), and the whole studio to 100,000 tokens a day (about $6 a month). Paid-plan allowances (500,000 and 2,000,000 tokens a month) are placeholders in `billing.py`, and today mock and Stripe-test plans still draw on the trial allowance. A bigger model changes all of this (section 4.4).
@@ -242,7 +242,7 @@ Not done, with where each is tracked:
 - **Real email.** No provider. Deployed demos run with verification off.
 - **Data residency.** France Central while on the Student subscription.
 - **Row-level security, Key Vault, a registry cleanup, a stop/start schedule for Postgres.** Follow-ups in ADR 0001 and 0002.
-- **Frontend tests exist** (vitest files under `frontend/src`); the README "Not done yet" line that still lists them is stale. Also open: checkout "Choose" buttons are not disabled for unverified owners, so they click and get the server's 403 (`NEXT.md`, T-76).
+- **Frontend tests exist** (vitest files under `frontend/src`); the README "Not done yet" line that still lists them is stale. (`NEXT.md` is also stale here: it says checkout "Choose" buttons are not disabled for unverified owners, but T-77 fixed that; `frontend/src/pages/app.tsx` disables them when verification is required and the owner is unverified.)
 - **Legal.** Privacy and terms pages are DRAFT. Legal review before launch.
 
 ## 8. Self-check quiz
@@ -269,4 +269,4 @@ Not done, with where each is tracked:
 7. They reset (in-memory, per replica). Before two replicas: get approval, provision Azure Cache for Redis, put the `rediss://` URL in a secret and set `RATE_LIMIT_REDIS_URL`, then raise `maxReplicas` (ADR 0002 decision 1).
 8. `StripeBilling` raises unless the key starts `sk_test_` or `rk_test_` (`billing.py`). You must send `unlock selling` (confirmed with a button) and a product ADR must then change the code, including removing `"stripe"` from `LIMITED_PROVIDERS`.
 9. France Central, because the Student subscription only allows five regions and the UK is not one of them. Hosting for real customers is decided at handover (ADR 0002 "Region (T-61)").
-10. Any two of: `STUDIO_AZURE_APPROVED` is not `yes`; the run is not on `main`; the OIDC secrets are missing; AcrPull not yet granted; Trivy found a fixable HIGH or CRITICAL vulnerability; the live-revision read failed (the workflow fails closed) (`_starter-deploy.yml`, ADR 0002 decision 9).
+10. Any two of: `STUDIO_AZURE_APPROVED` is not `yes`; the run is not on `main`; the OIDC secrets are missing (these three make the "check" job stop with a notice); or, in the deploy job before Azure sign-in, Trivy found a fixable HIGH or CRITICAL vulnerability (`_starter-deploy.yml`). Later stops, such as AcrPull not yet granted or a failed live-revision read, happen after signing in to Azure but still create nothing (ADR 0002 decision 9).
