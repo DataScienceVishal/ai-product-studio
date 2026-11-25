@@ -229,6 +229,35 @@ describe("Billing: mock portal in-app navigation", () => {
       await waitFor(() => expect(push).toHaveBeenCalledWith({}, "", "/billing/mock-portal?customer=mock_cus_9"));
       expect(assign).not.toHaveBeenCalled();
     });
+
+  it("maps a hostile-origin https url to the in-app path only, dropping origin and hash", async () => {
+    const assign = vi.fn();
+    vi.stubGlobal("location", { origin: "http://localhost:4173", assign });
+    const push = vi.spyOn(window.history, "pushState");
+    fetchMock.mockResolvedValueOnce(reply(200, PLANS));
+    fetchMock.mockResolvedValueOnce(reply(200, { url: "https://evil.example/billing/mock-portal?customer=mock_cus_9#x" }));
+    render(<Billing me={makeMe()} refresh={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Manage billing" }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith({}, "", "/billing/mock-portal?customer=mock_cus_9"));
+    expect(assign).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    "javascript:/billing/mock-portal?customer=mock_cus_9",
+    "data:/billing/mock-portal?customer=mock_cus_9",
+    "blob:/billing/mock-portal?customer=mock_cus_9",
+  ])("does not treat %s as the mock portal: refused, no navigation", async (url) => {
+    const assign = vi.fn();
+    vi.stubGlobal("location", { origin: "http://localhost:4173", assign });
+    const push = vi.spyOn(window.history, "pushState");
+    fetchMock.mockResolvedValueOnce(reply(200, PLANS));
+    fetchMock.mockResolvedValueOnce(reply(200, { url }));
+    render(<Billing me={makeMe()} refresh={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Manage billing" }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/unexpected billing link/i);
+    expect(push).not.toHaveBeenCalled();
+    expect(assign).not.toHaveBeenCalled();
+  });
 });
 
 describe("Billing: email verification gate (REQUIRE_EMAIL_VERIFICATION)", () => {
