@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { api, ApiError, formatPrice, isMockBilling, type Me, type Note, type Plan } from "../api";
 import { Alert, Button, Card, Field, Link, navigate } from "../ui";
 import { BAD_REDIRECT, safeRedirect } from "../redirect";
@@ -19,13 +19,41 @@ export function Dashboard({ me }: { me: Me }) {
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
 
+  const [total, setTotal] = useState(0);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const loadingMoreRef = useRef(false); // own in-flight guard: Summarise/Delete share `busy` and must not re-enable Show more
+  const generation = useRef(0); // bumped by every load(); a load-more that started before it is stale
+
   const load = useCallback(async () => {
+    generation.current += 1;
     try {
-      setNotes((await api<{ items: Note[] }>("/api/notes")).items);
+      const page = await api<{ items: Note[]; total: number }>("/api/notes");
+      setNotes(page.items);
+      setTotal(page.total);
+      setLoadFailed(false);
     } catch (err) {
+      setLoadFailed(true);
       setError(errorText(err));
     }
   }, []);
+  const loadMore = async () => { // the API returns 50 at a time; without this, note 51 onwards is unreachable
+    if (loadingMoreRef.current) return;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    const started = generation.current;
+    try {
+      const page = await api<{ items: Note[]; total: number }>(`/api/notes?offset=${notes?.length ?? 0}`);
+      if (started !== generation.current) return; // the list was reloaded meanwhile: this page's offset is out of date
+      setNotes((current) => [...(current ?? []), ...page.items.filter((n) => !current?.some((c) => c.id === n.id))]);
+      setTotal(page.total);
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+    }
+  };
   useEffect(() => { void load(); }, [load]);
 
   const create = async (event: FormEvent) => {
@@ -75,6 +103,7 @@ export function Dashboard({ me }: { me: Me }) {
     try {
       await api(`/api/notes/${id}`, { method: "DELETE" });
       setNotes((current) => current?.filter((n) => n.id !== id) ?? null);
+      setTotal((t) => Math.max(0, t - 1));
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -96,7 +125,10 @@ export function Dashboard({ me }: { me: Me }) {
       </Card>
       <Card title="Your notes">
         {notes === null ? (
-          <p className="text-slate-600">Loading…</p>
+          loadFailed
+            ? <div className="space-y-3"><p className="text-slate-700">We couldn't load your notes.</p>
+                <Button variant="secondary" onClick={() => { setError(null); void load(); }}>Try again</Button></div>
+            : <p className="text-slate-600">Loading…</p>
         ) : notes.length === 0 ? (
           <div className="space-y-3 text-slate-700">
             <p><strong>No notes yet.</strong> Write your first one above, then press <em>Summarise</em> to see the AI at work.</p>
@@ -106,10 +138,10 @@ export function Dashboard({ me }: { me: Me }) {
           <ul className="divide-y divide-slate-200">
             {notes.map((note) => (
               <li key={note.id} className="py-4">
-                <h3 className="font-semibold">{note.title}</h3>
-                {note.body && <p className="mt-1 whitespace-pre-wrap text-slate-700">{note.body}</p>}
+                <h3 className="break-words font-semibold">{note.title}</h3>
+                {note.body && <p className="mt-1 whitespace-pre-wrap break-words text-slate-700">{note.body}</p>}
                 {note.summary && (
-                  <p className="mt-2 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-950" data-testid="summary">{note.summary}</p>
+                  <p className="mt-2 break-words rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-950" data-testid="summary">{note.summary}</p>
                 )}
                 <div className="mt-3 flex gap-2">
                   <Button variant="secondary" busy={busy === note.id} onClick={() => summarize(note.id)}>Summarise</Button>
@@ -118,6 +150,9 @@ export function Dashboard({ me }: { me: Me }) {
               </li>
             ))}
           </ul>
+        )}
+        {notes !== null && notes.length < total && (
+          <div className="mt-4"><Button variant="secondary" busy={loadingMore} onClick={loadMore}>Show more notes ({notes.length} of {total})</Button></div>
         )}
       </Card>
     </div>

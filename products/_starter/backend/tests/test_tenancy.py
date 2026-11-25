@@ -47,3 +47,19 @@ def test_listing_is_bounded(owner):
     client, _ = owner
     assert client.get("/api/notes?limit=101").status_code == 422
     assert client.get("/api/notes?limit=0").status_code == 422
+
+
+def test_notes_with_the_same_timestamp_page_in_a_stable_order(app, owner):
+    from datetime import datetime, timezone
+    from app.models import Note
+    client, me = owner
+    stamp = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    with app.state.db.sessions() as db:
+        for i in range(7):  # one transaction (like "Add samples"): identical created_at
+            db.add(Note(tenant_id=me["tenant"]["id"], created_by=me["user"]["id"], title=f"n{i}", body="", created_at=stamp))
+        db.commit()
+    seen = []
+    for offset in (0, 3, 6):
+        seen += [n["id"] for n in client.get(f"/api/notes?limit=3&offset={offset}").json()["items"]]
+    assert len(seen) == 7 and len(set(seen)) == 7
+    assert seen == sorted(seen, reverse=True)
