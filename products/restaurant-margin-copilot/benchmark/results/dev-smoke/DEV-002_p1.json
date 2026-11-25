@@ -1,0 +1,126 @@
+{
+ "page_id": "DEV-002_p1",
+ "invoice_id": "DEV-002",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 1792,
+   "output_tokens": 2620,
+   "latency_s": 25.37,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 25.37,
+ "input_tokens": 1792,
+ "output_tokens": 2620,
+ "cost_usd": 0.005688,
+ "model": "gpt-5-mini",
+ "data": {
+  "supplier_name": "Fenwick & Dale Foodservice Ltd",
+  "invoice_number": "28390",
+  "invoice_date": "2026-09-10",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "description": "PLASTIC TAKEAWAY CNTR 500CC X250",
+    "pack_size": "250",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 24.42,
+    "line_total": 48.84,
+    "vat_rate": 20
+   },
+   {
+    "description": "TOM CHOPPED IN JUICE 6X400G",
+    "pack_size": "6x400g",
+    "unit": "case",
+    "qty": 4,
+    "unit_price": 6.91,
+    "line_total": 27.64,
+    "vat_rate": 0
+   },
+   {
+    "description": "FLOUR PLAIN WHT 16KG",
+    "pack_size": "16kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 16.08,
+    "line_total": 32.16,
+    "vat_rate": 20
+   },
+   {
+    "description": "GLOVE NITRILE BLU L X100",
+    "pack_size": "100",
+    "unit": "case",
+    "qty": 6,
+    "unit_price": 4.55,
+    "line_total": 27.3,
+    "vat_rate": 0
+   },
+   {
+    "description": "NAPKIN 2PLY WHT 2000",
+    "pack_size": "2000",
+    "unit": "case",
+    "qty": 6,
+    "unit_price": 15.41,
+    "line_total": 92.46,
+    "vat_rate": 20
+   },
+   {
+    "description": "MILK SEMI SKIM 6X2L",
+    "pack_size": "6x2L",
+    "unit": "box",
+    "qty": 1,
+    "unit_price": 7.34,
+    "line_total": 6.97,
+    "vat_rate": 0
+   },
+   {
+    "description": "BIN LINER HD BLK 200S",
+    "pack_size": "200",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 13.01,
+    "line_total": 13.01,
+    "vat_rate": 20
+   },
+   {
+    "description": "BLK PEPPER GND 500G",
+    "pack_size": "500g",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 8.5,
+    "line_total": 68.0,
+    "vat_rate": 0
+   },
+   {
+    "description": "CHICKEN BREAST FIL SKLS 2.5KG",
+    "pack_size": "2.5kg",
+    "unit": "case",
+    "qty": 3,
+    "unit_price": 17.91,
+    "line_total": 53.73,
+    "vat_rate": 0
+   },
+   {
+    "description": "PASTA PENNE DRY 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 3.19,
+    "line_total": 3.19,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 373.3,
+   "vat": 36.32,
+   "gross": 409.62
+  }
+ },
+ "retries": 0
+}

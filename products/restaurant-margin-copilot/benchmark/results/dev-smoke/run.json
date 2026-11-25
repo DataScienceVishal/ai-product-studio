@@ -1,0 +1,21 @@
+{
+ "set": "dev",
+ "provider": "azure",
+ "deployment": "gpt-5-mini",
+ "config_sha256": "f2a8d767cb5c6efa5e1a1ab4863d6d86fc3311392d4ab6c32e82a4850308751e",
+ "reasoning_effort": "low",
+ "config": {
+  "deployment_env": "AZURE_OPENAI_DEPLOYMENT_MINI",
+  "price_model": "gpt-5-mini",
+  "reasoning_effort": "low",
+  "max_output_tokens": 16000,
+  "retry_max_output_tokens": 32000,
+  "timeout_s": 180,
+  "max_long_edge_px": 2048,
+  "image_detail": "high",
+  "transient_retries": 3,
+  "backoff_base_s": 2.0,
+  "est_image_tokens": 2200
+ },
+ "max_usd": 5.0
+}
