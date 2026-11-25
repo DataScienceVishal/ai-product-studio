@@ -33,10 +33,17 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 
 | What | Command | Where it runs |
 |---|---|---|
-| Backend unit and API tests (561 passed) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
+| Backend unit and API tests (647 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
 | Migrations match the models | `alembic upgrade head && alembic check` | every push |
+| Frontend unit tests (vitest, 203 passed in 7 files) | `cd frontend && npx vitest run` | every push (CI `frontend`) |
 | Frontend type check and build | `cd frontend && npm run build` | every push (CI `frontend`) |
+| Deploy workflow checks (102 passed) | `bash infra/test-deploy-workflow.sh` | every push, no Azure needed |
+| Deploy role checks (67 passed) | `bash infra/test-deploy-role.sh` | every push, no Azure needed |
+| DB setup checks (33 passed, needs Postgres) | `bash infra/test-db-setup.sh` | every push |
+| Bicep identity check | `bash infra/test-bicep-identities.sh <shared.json> <main.json>` (compiled templates) | CI, needs `az bicep` |
 | Browser end-to-end core flow | `./scripts/e2e.sh` | pushes to main and manual runs (CI `e2e`) |
+
+Counts measured on 2026-11-25.
 
 Backend tests use a real Postgres at `TEST_DATABASE_URL` (default `postgresql+psycopg://studio:studio@localhost:5432/starter_test`).
 Each pytest run creates its own database `<db>_t<epoch>_<pid>_<rand>` (through the server's `postgres` database, so the
@@ -141,8 +148,10 @@ AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
 ## Not done yet
 
 See `NEXT.md`. The Azure deploy is designed in `ADR/0002-azure-deploy.md` (Bicep in `infra/`, manual workflow
-`.github/workflows/_starter-deploy.yml`); it creates nothing until Vishal approves the costs (Q-5). Also open: provisioning Azure Cache for Redis (costs money, ask first; the code is ready, see `RATE_LIMIT_REDIS_URL`) before running more than one replica, a real email adapter
-(paid, needs approval), and frontend unit tests.
+`.github/workflows/_starter-deploy.yml`); it creates nothing until Vishal approves the costs (Q-5). Also open:
+provisioning Azure Cache for Redis (costs money, ask first; the code is built and tested, see `RATE_LIMIT_REDIS_URL`)
+before running more than one replica, and a real email adapter (paid, needs approval). Frontend unit tests are done (vitest).
+Rate limiting in Redis is built; only the Azure resource is missing.
 
 ## Azure OpenAI API
 

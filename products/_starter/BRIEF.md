@@ -56,7 +56,7 @@ Status today (`state/BUDGET.md`): only `id-github-deploy` is live. Every other r
 
 Every product we sell needs the same ten things before its first real feature: sign-up and sign-in, one customer unable to see another's data, a trial and a payment page, AI calls that cannot run up a bill, logs that do not leak personal data, health checks, a database that migrates safely, and a deploy that cannot break the live site. These are easy to get subtly wrong and expensive to get wrong in front of a customer.
 
-The starter builds them once. A new product copies the folder, swaps `Note` for its own object (a rota, an interview, a menu), sets its plans and prices, and writes its one core flow. Everything else is inherited and already tested: the README's tests table says 561 backend tests passed (stale: the board's latest merge note, T-86, records 566 backend and 182 frontend vitest tests passing), and the security gate re-test 3 passed 8 of 8 sections on 2026-11-23 (`SECURITY.md` top, `README.md` tests table). I re-read the code, I did not re-run the tests.
+The starter builds them once. A new product copies the folder, swaps `Note` for its own object (a rota, an interview, a menu), sets its plans and prices, and writes its one core flow. Everything else is inherited and already tested: the README's tests table says 647 backend tests passed (1 skipped when the frontend is not built) and 203 frontend vitest tests passed (T-93, 2026-11-25), and the security gate re-test 3 passed 8 of 8 sections on 2026-11-23 (`SECURITY.md` top, `README.md` tests table). I re-read the code, I did not re-run the tests.
 
 The risk we take on in exchange: a flaw in the starter is a flaw in every product. That is why it has its own reviews folder (`reviews/`) and security file.
 
