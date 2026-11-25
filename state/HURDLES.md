@@ -52,3 +52,6 @@ One line per blocker:
 - Q-9 allows free no-card trials "with the studio email", but no studio mailbox exists in env or docs. Creating one is itself an account (ask-first).
 - Did: ran the benchmark half of the proof test (T-80) first, which needs no account.
 - Recommended fix: Vishal creates a throwaway mailbox (or says which address to use) and sets it as an env var STUDIO_EMAIL; the next run then starts the Jelly trial.
+
+## 2026-11-25 run 6df8: parallel builders sharing one checkout
+Two builders working in the same clone switch branches under each other, so commits land on the wrong branch (T-92 landed on main, reverted in 9e54a63). Fix: give each parallel builder its own `git worktree` (or Agent isolation: worktree), and check `git log origin/main..main` before pushing main. Status: workaround in use.
