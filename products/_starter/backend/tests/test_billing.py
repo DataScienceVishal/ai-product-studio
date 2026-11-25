@@ -592,3 +592,29 @@ def test_webhook_refuses_the_trial_plan_on_an_active_event(owner, app):
     client, _ = owner
     r = _sub_event(client, app, "e_trial", "checkout.completed", int(time.time()), "s1", plan="trial")
     assert r.status_code == 400 and r.json()["error"] == "unknown_plan"
+
+
+# --- T-73: no new checkout while the subscription is past_due ---
+
+def test_checkout_refused_while_past_due(owner, app):
+    client, _ = owner
+    now = int(time.time())
+    _sub_event(client, app, "p1", "checkout.completed", now - 100, "s1")
+    _sub_event(client, app, "p2", "subscription.past_due", now, "s1")
+    assert _status(client) == "past_due"
+    r = client.post("/api/billing/checkout", json={"plan": "pro"})
+    assert r.status_code == 409 and r.json()["error"] == "subscription_past_due"
+
+
+def test_checkout_allowed_after_cancel(owner, app):
+    client, _ = owner
+    now = int(time.time())
+    _sub_event(client, app, "c1", "checkout.completed", now - 100, "s1")
+    _sub_event(client, app, "c2", "subscription.canceled", now, "s1")
+    assert _status(client) == "canceled"
+    assert client.post("/api/billing/checkout", json={"plan": "pro"}).status_code == 200
+
+
+def test_checkout_allowed_on_trial(owner):
+    client, _ = owner
+    assert client.post("/api/billing/checkout", json={"plan": "pro"}).status_code == 200
