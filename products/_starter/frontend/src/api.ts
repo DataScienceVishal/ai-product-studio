@@ -40,7 +40,8 @@ export async function loadClientConfig(): Promise<void> {
       billingProvider = typeof config.billing_provider === "string" ? config.billing_provider : "";
     }
   } catch {
-    requestTimeoutMs = DEFAULT_TIMEOUT_MS; // no config: keep the safe default
+    requestTimeoutMs = DEFAULT_TIMEOUT_MS; // no config: keep the safe defaults
+    billingProvider = "";
   } finally {
     clearTimeout(timer);
   }

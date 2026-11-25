@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { reply, stubFetch } from "./test-utils";
-import { api, ApiError, formatPrice, loadClientConfig, SESSION_ENDED, timeoutMs } from "./api";
+import { api, ApiError, formatPrice, isMockBilling, loadClientConfig, SESSION_ENDED, setBillingProviderForTest, timeoutMs } from "./api";
 
 let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
@@ -155,5 +155,44 @@ describe("formatPrice", () => {
   it("formats pence as pounds in en-GB", () => {
     expect(formatPrice(4900, "gbp")).toBe("£49.00");
     expect(formatPrice(5, "GBP")).toBe("£0.05");
+  });
+});
+
+describe("loadClientConfig: billing_provider", () => {
+  beforeEach(() => setBillingProviderForTest(""));
+  afterEach(() => setBillingProviderForTest(""));
+
+  it("is off before any config is loaded (fails closed)", () => {
+    expect(isMockBilling()).toBe(false);
+  });
+
+  it("turns mock billing on only when the server says \"mock\"", async () => {
+    fetchMock.mockResolvedValueOnce(reply(200, { api_timeout_seconds: 30, billing_provider: "mock" }));
+    await loadClientConfig();
+    expect(isMockBilling()).toBe(true);
+  });
+
+  it("leaves mock billing off for a real provider or a missing field", async () => {
+    fetchMock.mockResolvedValueOnce(reply(200, { billing_provider: "stripe" }));
+    await loadClientConfig();
+    expect(isMockBilling()).toBe(false);
+    setBillingProviderForTest("mock");
+    fetchMock.mockResolvedValueOnce(reply(200, { api_timeout_seconds: 30 }));
+    await loadClientConfig();
+    expect(isMockBilling()).toBe(false);
+  });
+
+  it.each([[true], [1], [["mock"]], [{ name: "mock" }], [null]])("treats a non-string billing_provider (%j) as not mock", async (value) => {
+    setBillingProviderForTest("mock");
+    fetchMock.mockResolvedValueOnce(reply(200, { billing_provider: value }));
+    await loadClientConfig();
+    expect(isMockBilling()).toBe(false);
+  });
+
+  it("is off when /api/config cannot be reached", async () => {
+    setBillingProviderForTest("mock");
+    fetchMock.mockRejectedValueOnce(new TypeError("down"));
+    await loadClientConfig();
+    expect(isMockBilling()).toBe(false);
   });
 });
