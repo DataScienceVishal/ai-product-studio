@@ -90,3 +90,27 @@ every reply Azure answered, including ones with no usable text.
   the success path but not B1.
 - Ad-hoc check (no code changed): the no-answer reproduction above, plus `reported_model_price` on `gpt-5-chat-latest`
   -> 10, `gpt-5.4-mini` -> None, `" gpt-5-mini "` -> 2, `gpt-5-mini-2025-08-07-ft-abc` -> 2.
+
+## Re-review (b55c39b)
+
+Reviewer, 2026-11-25. Scope: `git diff 1535665..b55c39b` (ai.py +6/-2, ADR 0002, test_ai.py +79).
+
+**Verdict: PASS**
+
+- **B1 fixed.** `_check_reported_model(data.get("model"))` now runs as soon as the body parses to a dict
+  (app/ai.py:380-381), before `_parse` and the no-answer branch. That covers billed no-answer replies and malformed
+  bodies too. I re-ran my reproduction (deployment `gpt-5-mini`, checked price 2.0, gpt-5-pro replies with
+  `finish_reason: "length"`): call 1 `fail billed 300 1200 disabled= True`, and calls 2 and 3 were refused with
+  `ai_budget_reached` without contacting Azure. Usage is still carried on the failing call, so it settles as before.
+  The check cannot raise on odd input (a non-string `model` resolves to None).
+- **The tests catch a regression.** I ran a mutation on a scratch copy outside the worktree, moving the check back
+  after the no-answer branch: `test_billed_no_answer_reply_from_a_dearer_model_still_trips_the_guard[chat]`,
+  `[responses]` and `test_disabled_message_is_not_the_until_tomorrow_text_but_keeps_the_code` all fail.
+  The new tests also cover the Responses shape (success and incomplete, suggestion 4) and the reservation released
+  after a mid-flight refusal (settles `("unknown", 0, 0)`, no `pending` row; suggestion 2).
+- **Nits.** Suggestion 5: the disabled message now says the AI is off until the config is fixed, and keeps code
+  `ai_budget_reached`. Suggestion 1, prefix siblings: documented in ADR 0002 as a known limitation with a clear
+  operator action. That is acceptable for now.
+- **No regressions.** Temporary Postgres 16, Python 3.12.3, full backend suite at b55c39b: **693 collected, 692
+  passed, 1 skipped** (`test_spa.py:152`, frontend not built), 0 failures, 65.0 s. The run before the fix had 686
+  tests, so this adds 7.
