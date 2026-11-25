@@ -1,5 +1,9 @@
 """Supply-chain pin check: every action is pinned to a full commit SHA with a version comment,
-and every service/container image is pinned by digest. Run with pytest or unittest."""
+and every service/container image is pinned by digest. Run with pytest or unittest.
+
+Known limits (line-based regexes, no YAML parser): string-form `container: <image>` and flow-style
+`- { uses: ... }` are not checked, and neither is used in this repo; keep to block style. The version
+comment is not checked against the SHA (that needs the network)."""
 import re
 import unittest
 from pathlib import Path
