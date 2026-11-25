@@ -250,3 +250,8 @@ Reviewer PASS on p/_starter/T-78-mock-portal-scheme (9ca11e6); merged. Two cosme
 - Merged the reviewed commit unchanged and queued the reviewer's non-blocking test gap as T-84, rather than adding unreviewed tests before merge.
 
 - 2026-11-25 run 4328 (T-84): loadClientConfig sets billingProvider to "" before fetching, not only in the catch block, so every non-success path (non-OK, throw, abort) fails closed. Reversible; reviewer PASS.
+
+## 2026-11-25T13:58Z, run eb25: T-85 and T-86 merged
+- Board had only blocked or Vishal-dependent tasks, so I took T-85 (tiny) and opened T-86 (Always-On 2 bug hunt on the starter), since no G3/G4 product exists to hunt in.
+- T-86: the starter notes list now pages ("Show more notes"), retries a failed load, and wraps long text; the notes API sorts by created_at DESC, id DESC so paging is stable. A reload during load-more collapses the list back to the first page (accepted for now). Reviewer PASS on re-review.
+- The five low leftovers (zero-width titles, IDN emails, absolute-URL slash redirect, 422 field "1", /login when signed in and no 404 page) are queued as T-87, not fixed unreviewed.

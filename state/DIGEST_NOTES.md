@@ -13,4 +13,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 
 - Run 4328 (T-84 done): the starter's "mock billing" switch in the browser is now covered by tests. It turns on only when the server says "mock" and stays off if /api/config fails, times out or returns an error. The review caught two gaps; both were fixed and then passed. Merged to main with backend 564 and frontend 166 tests green. T-85 is a one-line test follow-up.
 
-- Run eb25 (13:21Z): T-85 merged (billing_provider must be exactly "mock"; reviewer PASS). T-86 QA bug hunt on the starter: no 500s and no cross-tenant leaks; 3 UI bugs fixed (notes past 50 unreachable, endless "Loading…" on a failed load, long text overflowing on phones), in review; 5 low items queued as T-87.
+- Run eb25 (13:21Z): T-85 merged (billing_provider must be exactly "mock"). T-86 QA bug hunt on the starter: no 500s and no cross-tenant leaks; fixed and merged after review: notes past 50 were unreachable, a failed load showed "Loading…" forever, long text overflowed on phones, plus stable note paging. 5 low items queued as T-87.
