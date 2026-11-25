@@ -85,3 +85,41 @@ Mutation check (on a scratch copy, scoped to `tests/test_aicost.py` and `tests/t
 | cost-guard ignores the env price | 7 |
 
 All 8 were caught. The tests bite. The gaps are the two behaviours the tests assert on purpose (C1) or step around (C2).
+
+## Re-review at 2bedf39 (fixes only)
+
+**Verdict: PASS**
+
+I diffed f78e579..2bedf39 and reviewed only the fixes and the lines they touched.
+
+- **C1 fixed.** `aicost.py:53-66`: a deployment in the table uses `max(table, explicit)`, and an unknown deployment still needs the explicit price. The same file is used by the app, the CLI and `cost-guard.sh`, so all three follow one rule. I reproduced the original bypass (gpt-5.4-pro, `AI_PRICE_PER_MILLION_TOKENS=0.0001`, cap 100k): startup now fails with "$558.00 a month, over the $6.20". The tests that asserted the bypass now assert that it is refused, including the template-default price path (`test_cost_guard.py:112-117`).
+- **C2 fixed.** `config.py:22-23` sets `hide_input_in_errors=True`. I re-ran my reproduction with the API key, the DB password and the deployment set as environment variables: the message ends `[type=value_error]` and shows none of them. The tests now check the whole message (`test_aicost.py:46-60`).
+- **Suggestions taken.** 31 days. The README now states that the smallest reservation is 1,504 tokens, so gpt-5.4-pro at the default budget means AI is effectively off. `--deployment=` form, with a test for a dash-prefixed name that checks nothing leaks. The Data Zone/Regional caveat is added. ADR 0002 has a note on per-product budgets.
+
+**Mutations on 2bedf39** (scratch copy, `test_aicost.py` and `test_cost_guard.py`; base run 0 failures):
+
+| Mutation | Failed tests |
+|---|---|
+| C1: explicit price always wins again | 3 |
+| C1: `max` changed to `min` | 3 |
+| C2: `hide_input_in_errors` removed | 2 |
+| `--deployment=` changed back to `--deployment "$deployment"` | 1 |
+| `DAYS_PER_MONTH` changed back to 30 | 9 |
+
+**Tests on 2bedf39:**
+
+| Suite | Result |
+|---|---|
+| Backend `pytest` | 645 passed, 1 skipped (`test_spa.py:103`, frontend not built) |
+| Frontend vitest | 203 passed (7 files) |
+| `test-deploy-workflow.sh` | 102 passed, 0 failed |
+| `test-deploy-role.sh` | 67 passed, 0 failed |
+| `test-db-setup.sh` | 33 passed, 0 failed |
+
+**Notes for the lead (not blocking):**
+
+1. **The budget figure went from 6.10 to 6.20.** The cap and the real worst-case spend are unchanged: the old 30-day sum understated a 31-day month. So this corrects the arithmetic; it doesn't raise spend. But the figure Vishal approved was "at most 6.10" (`state/BUDGET.md:20`, Q-5 A), and the code itself says raising the budget needs his approval. A review gate can't approve a budget number.
+   - If 6.20 stays: log it in `state/DECISIONS.md`, update `BUDGET.md:20`, and tell Vishal in the next digest.
+   - Fallback that needs no approval: keep 6.10 and set the default cap to 98,000 (98,000 x 31 x 2 / 1e6 = $6.08).
+2. **The default budget now has zero headroom.** It equals the cost of the default cap exactly (6.20 <= 6.20). That is correct with `<=`, but any rise in the table price fails every gpt-5-mini deploy. That is intended, and worth knowing.
+3. **Stale 6.10 / x30 / "one summary" text** is still in places this diff didn't touch: `products/_starter/BRIEF.md:143,204` and `ADR/0002-azure-deploy.md:437,439` (the Monthly cost table). Update them at merge or as a follow-up; the teacher owns BRIEF.md.
