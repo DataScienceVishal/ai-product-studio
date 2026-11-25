@@ -57,3 +57,33 @@ No route is declared with a trailing slash: every collection route uses `""` und
 - App.tsx routing: there is no redirect loop. Loading shows "Loading…" until `/api/auth/me` resolves. Signed-out unknown paths still go to `/login`. Signed-in unknown paths render NotFound inside the Shell with the URL kept. `/` still renders the Dashboard. Sign-in and sign-up still `navigate` synchronously after `onSignedIn`, so the new effect does not override `safeNext()`.
 - Security: no new endpoint and no authorization change. The 404 replaces a 307 whose Location was built from the Host header, so this branch removes that open-redirect and mixed-content hazard. Nothing user-controlled reaches the new error text.
 - Tests check behaviour (status codes, stored values, URL, rendered headings), not implementation details.
+
+## Re-review (round 2, head eaa9ce0)
+
+Reviewer, 2026-11-25. Diff `cc79394..eaa9ce0`, run in a separate worktree on the exact head.
+
+### Verdict: PASS
+
+R1 is fixed correctly and S1 to S4 are done without regressions. One new minor edge case (S7, below) came in with S2. It is not a security issue and only happens from a crafted link, so it does not block the merge. Fix it in a follow-up.
+
+### Evidence (eaa9ce0)
+
+- Backend: local Postgres 16.15, `python -m pytest -o addopts=""` in `backend/` gives `604 passed, 1 warning in 87.60s` (no skips).
+- Frontend `npm test`: `Test Files 7 passed (7)`, `Tests 190 passed (190)`.
+- `npx tsc --noEmit`: exit 0.
+- `npm run build`: `dist/assets/index-BiEA8UW7.js 252.64 kB │ gzip: 77.73 kB`, `✓ built in 203ms` (same hash as the build report).
+- Temporary probe tests were used for the edge cases below, then deleted. The worktree was clean afterwards.
+
+### Fix by fix
+
+- **R1 (`textsafe.py`, `NoteBody`).** `BeforeValidator(_blank_to_empty)` runs before the `str` schema, so before `max_length=20_000`. Probe on POST `/api/notes` with title `t`: body `" "*20001` gives 201 and `""` (blank text over the limit normalises to empty, which is right). `"x"*20001` gives 422 for "at most 20000 characters". `None` and `5` give 422 "valid string" (the non-str value passes through unchanged). `"\x00 "` gives 422 "Remove control characters." `"a‍"` gives 201 and is stored untouched. `"\t"` gives 201 and `""`. A missing body gives 201 and `""`. PUT normalises the same way (test). `_invisible` short-circuits on the first visible character, and BodyLimit caps requests at 1 MB, so the cost is bounded.
+- **S1 (`ui.tsx` `navigate(to, replace)`).** Both redirects use `replaceState`, and the tests assert that `pushState` is not called. Links, sign-out and SESSION_ENDED still push. That is fine, because those are user actions.
+- **S2 (`App.tsx:38`, `navigate(safeNext(), true)`).** Open-redirect safety holds: `safeNext` refuses anything that is not `/`-prefixed, `//`, a backslash, a cross-origin result after URL resolution, and dot-segment tricks that resolve to `//`. It returns only `pathname + search`. Probes: `/login?next=/billing` goes to `/billing`. `//evil.com` goes to `/` (test). `/login?next=/login?next=//evil.com` stays on the same origin (see S7).
+- **S3 (`_FILLERS` and company name).** Titles made only of U+115F, U+1160, U+3164, U+FFA0 or U+2800 now strip to `""` and fail `min_length` (422, tested). A company name of only U+200B or U+3164 gives 422 "Enter your company name." (tested). `_company` is a field validator in after mode, so `max_length=120` still applies to the raw value first, as before. Real names containing those characters are untouched, because only text made entirely of blank characters counts.
+- **S4 (`errors.py:43`).** Detection uses `type == "json_invalid"` only. Probes on `/api/notes`: a truncated object, a trailing comma and invalid UTF-8 `\xff\xfe` all still give `field: ""` with "The request body is not valid JSON." `[1,2]` and `"str"` give the pydantic "valid dictionary" message. An empty body gives "Field required". The new list-body test confirms that an item error keeps field `1.n`.
+
+### New suggestion (not blocking)
+
+- **S7, blank page when `?next=` points at a sign-in page. `App.tsx:36-42`.** The effect depends on `[me, signInPage]`. If `safeNext()` returns `/login` or `/signup`, the path changes but `signInPage` stays true, so the effect never runs again, and `if (me && signInPage) return null` leaves the page blank. Probe as a signed-in user: `/login?next=/login` ends on `/login`, `/login?next=/signup` ends on `/signup`, and `/login?next=/login?next=//evil.com` ends on `/login?next=//evil.com`. All three render nothing (innerHTML length 0). A reload recovers each one, and none leaves the origin. The app never builds such a link itself (only `VerifyEmail` sets `next`, to `/verify-email?...`). Fix: in the effect, compute `const to = safeNext();` and `navigate(["/login", "/signup"].includes(to.split("?")[0]) ? "/" : to, true)`. Alternatively, make `safeNext` refuse the sign-in pages, which also protects `SignIn`'s post-submit navigate. Add a test for `/login?next=/login` that lands on `/`.
+- **Nit.** `auth.py` imports the private `_invisible` from `textsafe`. Rename it to a public `is_blank` when someone next touches the file.
+- **S5 still applies.** The branch carries a `state/DECISIONS.md` append. Keep both sides when merging.
