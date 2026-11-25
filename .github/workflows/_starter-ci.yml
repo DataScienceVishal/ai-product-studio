@@ -98,6 +98,8 @@ jobs:
       - name: Unit tests (vitest, jsdom, fetch mocked)
         run: npm test
       - run: npm run build
+      - name: The built index.html has nothing the CSP would block (T-97)
+        run: python3 ../scripts/check_built_html.py dist/index.html
       - name: Known vulnerabilities in shipped dependencies
         run: npm audit --omit=dev --audit-level=high
 
