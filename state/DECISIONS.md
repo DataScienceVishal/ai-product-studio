@@ -273,3 +273,5 @@ Reviewer PASS on p/_starter/T-78-mock-portal-scheme (9ca11e6); merged. Two cosme
 
 ## 2026-11-25T18:40Z run 6df8: T-92 commit reached main before review, reverted
 The T-92 builder committed on local main instead of its branch (two builders shared one checkout), and the run pushed main without noticing. Fixed with a normal revert (9e54a63, no history rewrite), and the commit was moved to p/_starter/T-92-region for review. Lesson: parallel builders each get their own git worktree, and the lead checks `git log origin/main..main` before every push to main.
+
+- 2026-11-25T19:31Z run c3fc (T-97): check the built frontend for CSP-blocked markup in the CI frontend job (stdlib script after npm run build) rather than building the frontend inside the backend job: cheaper, and the backend test still uses the same checker when a build exists. Reviewer PASS.
