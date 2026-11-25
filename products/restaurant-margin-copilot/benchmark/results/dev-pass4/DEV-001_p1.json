@@ -1,0 +1,167 @@
+{
+ "page_id": "DEV-001_p1",
+ "invoice_id": "DEV-001",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2210,
+   "output_tokens": 2266,
+   "latency_s": 17.72,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 17.72,
+ "input_tokens": 2210,
+ "output_tokens": 2266,
+ "cost_usd": 0.005084,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "Code",
+   "Description",
+   "Pack",
+   "Qty",
+   "UoM",
+   "Price",
+   "Disc%",
+   "VAT",
+   "Net"
+  ],
+  "supplier_name": "Fenwick & Dale Foodservice Ltd",
+  "invoice_number": "73597",
+  "invoice_date": "2026-09-08",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "FD95953 RICE BASMATI 10KG 10kg 2 EA 20.25 10 0% 36.45",
+    "description": "RICE BASMATI 10KG",
+    "pack_size": "10kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 20.25,
+    "line_total": 36.45,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD75795 BIN LINER HD BLK 200S 200 8 BX 15.69 15 20% 125.52",
+    "description": "BIN LINER HD BLK 200S",
+    "pack_size": "200",
+    "unit": "box",
+    "qty": 8,
+    "unit_price": 15.69,
+    "line_total": 125.52,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD93400 FLOUR PLAIN WHT 16KG 16kg 8 EA 16.63 5 0% 126.39",
+    "description": "FLOUR PLAIN WHT 16KG",
+    "pack_size": "16kg",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 16.63,
+    "line_total": 126.39,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD66958 BACON SMKD RINDLESS 2KG 2kg 4 EA 16.43 10 0% 59.15",
+    "description": "BACON SMKD RINDLESS 2KG",
+    "pack_size": "2kg",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 16.43,
+    "line_total": 59.15,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD61382 CHICKEN WINGS 5KG CASE 5kg case 8 CS 21.48 0% 171.84",
+    "description": "CHICKEN WINGS 5KG CASE",
+    "pack_size": "5kg case",
+    "unit": "case",
+    "qty": 8,
+    "unit_price": 21.48,
+    "line_total": 171.84,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD29541 HONEY CLEAR 3KG 3kg 1 EA 15.84 5 0% 15.05",
+    "description": "HONEY CLEAR 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 15.84,
+    "line_total": 15.05,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD36290 CREAM DBL 6X1L 6x1L 1 CS 17.04 10 0% 15.34",
+    "description": "CREAM DBL 6X1L",
+    "pack_size": "6x1L",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 17.04,
+    "line_total": 15.34,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD38577 STOCK BEEF PASTE 6X1KG 6x1kg 1 CS 28.85 0% 28.85",
+    "description": "STOCK BEEF PASTE 6X1KG",
+    "pack_size": "6x1kg",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 28.85,
+    "line_total": 28.85,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD33884 PLASTIC TAKEAWAY CNTR 500CC X250 250 8 CS 18.31 20% 146.48",
+    "description": "PLASTIC TAKEAWAY CNTR 500CC X250",
+    "pack_size": "250",
+    "unit": "case",
+    "qty": 8,
+    "unit_price": 18.31,
+    "line_total": 146.48,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD38488 SUGAR GRAN 15KG 15kg 1 EA 17.44 0% 17.44",
+    "description": "SUGAR GRAN 15KG",
+    "pack_size": "15kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 17.44,
+    "line_total": 17.44,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD87451 POTATO CHIP FRZN 4X2.5KG 4x2.5kg 1 CS 14.07 0% 14.07",
+    "description": "POTATO CHIP FRZN 4X2.5KG",
+    "pack_size": "4x2.5kg",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 14.07,
+    "line_total": 14.07,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD69248 VINEGAR MALT 5L 5L 3 EA 4.41 0% 13.23",
+    "description": "VINEGAR MALT 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 3,
+    "unit_price": 4.41,
+    "line_total": 13.23,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": null,
+   "vat": null,
+   "gross": null
+  }
+ },
+ "retries": 0
+}

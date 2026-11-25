@@ -1,0 +1,177 @@
+{
+ "page_id": "DEV-005_p1",
+ "invoice_id": "DEV-005",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2843,
+   "output_tokens": 4520,
+   "latency_s": 37.06,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 37.06,
+ "input_tokens": 2843,
+ "output_tokens": 4520,
+ "cost_usd": 0.009751,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [],
+  "supplier_name": "BULKBUY CASH & CARRY",
+  "invoice_number": "SALE REF 20459",
+  "invoice_date": "2026-09-09",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "COFFEE JAR INST 750G 1 x 11.88 11.88 B",
+    "description": "COFFEE JAR INST 750G",
+    "pack_size": "750G",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 11.88,
+    "line_total": 11.88,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BANANAS LOOSE 8.970 kg @ 1.07/kg 9.60 B",
+    "description": "BANANAS LOOSE",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 8.97,
+    "unit_price": 1.07,
+    "line_total": 9.6,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BIN BAGS BLACK ROLL 100 4 x 6.22 24.88 A",
+    "description": "BIN BAGS BLACK ROLL 100",
+    "pack_size": "100",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 6.22,
+    "line_total": 24.88,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "SPONGE SCOURER 10PK 5 x 3.45 17.25 A",
+    "description": "SPONGE SCOURER 10PK",
+    "pack_size": "10PK",
+    "unit": "pack",
+    "qty": 5,
+    "unit_price": 3.45,
+    "line_total": 17.25,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "MILK WHL 4PT 1 x 2.19 2.19 B",
+    "description": "MILK WHL 4PT",
+    "pack_size": "4PT",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 2.19,
+    "line_total": 2.19,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "EGGS LRG FR 30 8 x 5.68 45.44 B",
+    "description": "EGGS LRG FR 30",
+    "pack_size": "30",
+    "unit": "pack",
+    "qty": 8,
+    "unit_price": 5.68,
+    "line_total": 45.44,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "POTATO BAKING LOOSE 4.310 kg @ 1.23/kg 5.30 B",
+    "description": "POTATO BAKING LOOSE",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 4.31,
+    "unit_price": 1.23,
+    "line_total": 5.3,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CHIPS 2.5KG X4 5 x 12.06 60.30 B",
+    "description": "CHIPS 2.5KG X4",
+    "pack_size": "2.5KG X4",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 12.06,
+    "line_total": 60.3,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PAPER TOWEL ROLL 6PK 8 x 8.86 70.88 A",
+    "description": "PAPER TOWEL ROLL 6PK",
+    "pack_size": "6PK",
+    "unit": "case",
+    "qty": 8,
+    "unit_price": 8.86,
+    "line_total": 70.88,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "BREAD ROLL WHT 12PK 5 x 1.96 9.80 B",
+    "description": "BREAD ROLL WHT 12PK",
+    "pack_size": "12PK",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 1.96,
+    "line_total": 9.8,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "MINCED BEEF 5% 2KG 2 x 12.14 24.28 B",
+    "description": "MINCED BEEF 5% 2KG",
+    "pack_size": "2KG",
+    "unit": "pack",
+    "qty": 2,
+    "unit_price": 12.14,
+    "line_total": 24.28,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "KETCHUP SACHET 1000 1 x 14.64 14.64 B",
+    "description": "KETCHUP SACHET 1000",
+    "pack_size": "1000",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 14.64,
+    "line_total": 14.64,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SOFT DRINK COLA 24X330ML 5 x 10.79 53.95 A",
+    "description": "SOFT DRINK COLA 24X330ML",
+    "pack_size": "24X330ML",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 10.79,
+    "line_total": 53.95,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "WASHING UP LIQ 5L 2 x 4.65 9.30 A",
+    "description": "WASHING UP LIQ 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 4.65,
+    "line_total": 9.3,
+    "vat_rate": 20
+   }
+  ],
+  "totals": {
+   "net": null,
+   "vat": null,
+   "gross": null
+  }
+ },
+ "retries": 0
+}

@@ -1,0 +1,143 @@
+{
+ "page_id": "DEV-010_p1",
+ "invoice_id": "DEV-010",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2272,
+   "output_tokens": 2397,
+   "latency_s": 22.44,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 22.44,
+ "input_tokens": 2272,
+ "output_tokens": 2397,
+ "cost_usd": 0.005362,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "ITEM",
+   "WEIGHT / QTY",
+   "PRICE",
+   "V",
+   "AMOUNT"
+  ],
+  "supplier_name": "HARKER & SONS",
+  "invoice_number": "93909",
+  "invoice_date": "2026-10-17",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "OX CHEEK 8.91 kg 11.25/kg Z 100.24",
+    "description": "OX CHEEK",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 8.91,
+    "unit_price": 11.25,
+    "line_total": 100.24,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BEEF MINCE 20% 5KG 2 x 39.25 ea Z 78.50",
+    "description": "BEEF MINCE 20% 5KG",
+    "pack_size": "5kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 39.25,
+    "line_total": 78.5,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BUTCHERS STRING 500G 6 x 3.55 ea S 21.30",
+    "description": "BUTCHERS STRING 500G",
+    "pack_size": "500g",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 3.55,
+    "line_total": 21.3,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "LAMB RACK FRENCH TRIM 1.05 kg 26.20/kg Z 27.51",
+    "description": "LAMB RACK FRENCH TRIM",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 1.05,
+    "unit_price": 26.2,
+    "line_total": 27.51,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BEEF MARROW BONES 7.84 kg 2.26/kg Z 17.72",
+    "description": "BEEF MARROW BONES",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 7.84,
+    "unit_price": 2.26,
+    "line_total": 17.72,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "LAMB SHOULDER BONE IN 2.70 kg 10.20/kg Z 27.54",
+    "description": "LAMB SHOULDER BONE IN",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 2.7,
+    "unit_price": 10.2,
+    "line_total": 27.54,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "RUMP STEAK TRIMMED 4.76 kg 16.86/kg Z 80.25",
+    "description": "RUMP STEAK TRIMMED",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 4.76,
+    "unit_price": 16.86,
+    "line_total": 80.25,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BLACK PUDDING 1KG 5 x 7.16 ea Z 35.80",
+    "description": "BLACK PUDDING 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 7.16,
+    "line_total": 35.8,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SIRLOIN 28D HUNG 4.21 kg 23.96/kg Z 100.87",
+    "description": "SIRLOIN 28D HUNG",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 4.21,
+    "unit_price": 23.96,
+    "line_total": 100.87,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BACON SMKD BACK 2KG 2 x 14.59 ea Z 29.18",
+    "description": "BACON SMKD BACK 2KG",
+    "pack_size": "2kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 14.59,
+    "line_total": 29.18,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 518.91,
+   "vat": 4.26,
+   "gross": 523.17
+  }
+ },
+ "retries": 0
+}

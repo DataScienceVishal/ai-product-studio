@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from pathlib import Path
 
 # model name -> (USD per 1M input tokens, USD per 1M output tokens including reasoning tokens).
@@ -45,6 +46,7 @@ class Budget:
         self.model, self.max_usd = model, max_usd
         self.ledger = Path(ledger)
         self.spent_usd = 0.0
+        self._lock = threading.Lock()
         if self.ledger.exists():
             for line in self.ledger.read_text().splitlines():
                 if line.strip():
@@ -54,7 +56,9 @@ class Budget:
     def check(self, est_input_tokens: int, max_output_tokens: int, label: str = "") -> float:
         """Raise BudgetExceeded unless this call's worst case still fits under the cap. Returns the worst case in USD."""
         worst = usd(est_input_tokens, max_output_tokens, self.model)
-        if self.spent_usd + worst > self.max_usd:
+        with self._lock:
+            spent = self.spent_usd
+        if spent + worst > self.max_usd:
             raise BudgetExceeded(f"{label}: worst case USD {worst:.4f} on top of USD {self.spent_usd:.4f} spent could pass "
                                  f"the USD {self.max_usd:.2f} cap; call refused")
         return worst
@@ -65,9 +69,10 @@ class Budget:
                  "usd": round(usd(input_tokens, output_tokens, self.model), 6), "price_in": p_in, "price_out": p_out,
                  "model": self.model, "estimated": estimated, "note": note}
         self.ledger.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.ledger, "a") as f:
-            f.write(json.dumps(entry) + "\n")
-            f.flush()
-            os.fsync(f.fileno())
-        self.spent_usd += entry["usd"]
+        with self._lock:
+            with open(self.ledger, "a") as f:
+                f.write(json.dumps(entry) + "\n")
+                f.flush()
+                os.fsync(f.fileno())
+            self.spent_usd += entry["usd"]
         return entry

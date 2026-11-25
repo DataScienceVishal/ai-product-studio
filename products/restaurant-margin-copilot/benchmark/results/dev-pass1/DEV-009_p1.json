@@ -1,0 +1,144 @@
+{
+ "page_id": "DEV-009_p1",
+ "invoice_id": "DEV-009",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 1792,
+   "output_tokens": 2963,
+   "latency_s": 23.72,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 23.72,
+ "input_tokens": 1792,
+ "output_tokens": 2963,
+ "cost_usd": 0.006374,
+ "model": "gpt-5-mini",
+ "data": {
+  "supplier_name": "HARKER & SONS",
+  "invoice_number": "24823",
+  "invoice_date": "2026-09-16",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "description": "PORK SAUSAGE DOZEN",
+    "pack_size": "dozen",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 4.86,
+    "line_total": 4.86,
+    "vat_rate": 0
+   },
+   {
+    "description": "CHICKEN THIGH BONE IN 10KG",
+    "pack_size": "10KG",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 24.56,
+    "line_total": 24.56,
+    "vat_rate": 0
+   },
+   {
+    "description": "SIRLOIN 28D HUNG",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 4.63,
+    "unit_price": 22.94,
+    "line_total": 106.21,
+    "vat_rate": 0
+   },
+   {
+    "description": "CHICKEN WHOLE FR 1.8KG",
+    "pack_size": "1.8KG",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 7.26,
+    "line_total": 58.08,
+    "vat_rate": 0
+   },
+   {
+    "description": "BLACK PUDDING 1KG",
+    "pack_size": "1KG",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 6.91,
+    "line_total": 34.55,
+    "vat_rate": 0
+   },
+   {
+    "description": "OX CHEEK",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 1.17,
+    "unit_price": 11.97,
+    "line_total": 14.0,
+    "vat_rate": 0
+   },
+   {
+    "description": "LAMB RACK FRENCH TRIM",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 3.61,
+    "unit_price": 31.64,
+    "line_total": 114.22,
+    "vat_rate": 0
+   },
+   {
+    "description": "BEEF MINCE 20% 5KG",
+    "pack_size": "5KG",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 40.51,
+    "line_total": 243.06,
+    "vat_rate": 0
+   },
+   {
+    "description": "BEEF MARROW BONES",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 8.71,
+    "unit_price": 3.34,
+    "line_total": 29.09,
+    "vat_rate": 0
+   },
+   {
+    "description": "BUTCHERS STRING 500G",
+    "pack_size": "500G",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 4.53,
+    "line_total": 4.53,
+    "vat_rate": 20
+   },
+   {
+    "description": "LAMB SHOULDER BONE IN",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 3.05,
+    "unit_price": 10.86,
+    "line_total": 33.12,
+    "vat_rate": 0
+   },
+   {
+    "description": "BACON SMKD BACK 2KG",
+    "pack_size": "2KG",
+    "unit": "each",
+    "qty": 3,
+    "unit_price": 16.95,
+    "line_total": 50.85,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": null,
+   "vat": null,
+   "gross": null
+  }
+ },
+ "retries": 0
+}

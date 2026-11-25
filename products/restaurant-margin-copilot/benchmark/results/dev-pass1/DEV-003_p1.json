@@ -1,0 +1,126 @@
+{
+ "page_id": "DEV-003_p1",
+ "invoice_id": "DEV-003",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 1781,
+   "output_tokens": 1607,
+   "latency_s": 13.64,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 13.64,
+ "input_tokens": 1781,
+ "output_tokens": 1607,
+ "cost_usd": 0.003659,
+ "model": "gpt-5-mini",
+ "data": {
+  "supplier_name": "Fenwick & Dale Foodservice Ltd",
+  "invoice_number": "CN8319",
+  "invoice_date": "2026-10-17",
+  "is_credit_note": true,
+  "lines": [
+   {
+    "description": "SALT TABLE FINE 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": -2,
+    "unit_price": 2.58,
+    "line_total": -5.16,
+    "vat_rate": 0
+   },
+   {
+    "description": "CLNG FLUID MULTI SURF 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": -1,
+    "unit_price": 6.72,
+    "line_total": -6.72,
+    "vat_rate": 20
+   },
+   {
+    "description": "PLASTIC TAKEAWAY CNTR 500CC X250",
+    "pack_size": "250",
+    "unit": "case",
+    "qty": -5,
+    "unit_price": 22.2,
+    "line_total": -111,
+    "vat_rate": 20
+   },
+   {
+    "description": "GLOVE NITRILE BLU L X100",
+    "pack_size": "100",
+    "unit": "box",
+    "qty": -1,
+    "unit_price": 6.64,
+    "line_total": -6.64,
+    "vat_rate": 20
+   },
+   {
+    "description": "FOIL CATERING 450MMX90M",
+    "pack_size": "",
+    "unit": "each",
+    "qty": -8,
+    "unit_price": 10.83,
+    "line_total": -86.64,
+    "vat_rate": 20
+   },
+   {
+    "description": "PASTA PENNE DRY 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": -6,
+    "unit_price": 4.45,
+    "line_total": -25.37,
+    "vat_rate": 0
+   },
+   {
+    "description": "VINEGAR MALT 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": -6,
+    "unit_price": 3.45,
+    "line_total": -18.63,
+    "vat_rate": 0
+   },
+   {
+    "description": "FLOUR PLAIN WHT 16KG",
+    "pack_size": "16kg",
+    "unit": "each",
+    "qty": -1,
+    "unit_price": 16.43,
+    "line_total": -16.43,
+    "vat_rate": 0
+   },
+   {
+    "description": "BLK PEPPER GRND 500G",
+    "pack_size": "500g",
+    "unit": "each",
+    "qty": -6,
+    "unit_price": 6.81,
+    "line_total": -40.86,
+    "vat_rate": 0
+   },
+   {
+    "description": "TOM CHOPPED IN JUICE 6X400G",
+    "pack_size": "6x400g",
+    "unit": "case",
+    "qty": -3,
+    "unit_price": 6.24,
+    "line_total": -16.85,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": -334.3,
+   "vat": -42.2,
+   "gross": -376.5
+  }
+ },
+ "retries": 0
+}

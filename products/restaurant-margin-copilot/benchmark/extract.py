@@ -21,6 +21,7 @@ import os
 import random
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import httpx
@@ -327,6 +328,7 @@ def main(argv=None) -> int:
     ap.add_argument("--only", nargs="+", help="page ids to run, e.g. DEV-002_p1")
     ap.add_argument("--reasoning-effort", choices=["low", "medium"], help="dev only; test uses the frozen value")
     ap.add_argument("--resume", action="store_true", help="skip pages that already have a result file in --out")
+    ap.add_argument("--workers", type=int, default=1, help="parallel pages; the budget check is per call, so overshoot is at most workers x one worst case")
     ap.add_argument("--max-usd", type=float, default=budget_mod.MAX_USD)
     a = ap.parse_args(argv)
     out = Path(a.out)
@@ -345,27 +347,34 @@ def main(argv=None) -> int:
     run_info = {"set": a.set, "provider": a.provider, "deployment": provider.deployment, "config_sha256": cfg.frozen_hash(),
                 "reasoning_effort": provider.effort, "config": cfg.CONFIG, "max_usd": a.max_usd}
     (out / "run.json").write_text(json.dumps(run_info, indent=1) + "\n")
-    done = 0
+    jobs = []
     for meta, path in page_jobs(DATA / a.set):
         if a.only and meta["page_id"] not in a.only:
             continue
-        target = out / f"{meta['page_id']}.json"
-        if a.resume and target.exists():
+        if a.resume and (out / f"{meta['page_id']}.json").exists():
             continue
-        if a.limit_pages is not None and done >= a.limit_pages:
-            break
-        try:
-            rec = extract_page(path, meta, provider, bud)
-        except budget_mod.BudgetExceeded as e:
-            print(f"STOP: {e}. Unscored pages will count as wrong.", file=sys.stderr)
-            return 3
-        except FatalError as e:
-            print(f"STOP: {e}", file=sys.stderr)
-            return 2
-        target.write_text(json.dumps(rec, indent=1) + "\n")
-        done += 1
+        jobs.append((meta, path))
+    if a.limit_pages is not None:
+        jobs = jobs[: a.limit_pages]
+
+    def work(job):
+        meta, path = job
+        rec = extract_page(path, meta, provider, bud)
+        (out / f"{meta['page_id']}.json").write_text(json.dumps(rec, indent=1) + "\n")
         print(f"{meta['page_id']}: {rec['status']} in {rec['latency_s']}s, {rec['input_tokens']} in / {rec['output_tokens']} out, "
-              f"${rec['cost_usd']:.4f}, retries {rec['retries']}; ledger total ${bud.spent_usd:.4f}")
+              f"${rec['cost_usd']:.4f}, retries {rec['retries']}; ledger total ${bud.spent_usd:.4f}", flush=True)
+
+    done = 0
+    try:
+        with ThreadPoolExecutor(max_workers=max(a.workers, 1)) as pool:
+            for _ in pool.map(work, jobs):
+                done += 1
+    except budget_mod.BudgetExceeded as e:
+        print(f"STOP: {e}. Unscored pages will count as wrong.", file=sys.stderr)
+        return 3
+    except FatalError as e:
+        print(f"STOP: {e}", file=sys.stderr)
+        return 2
     print(f"done: {done} pages; cumulative spend ${bud.spent_usd:.4f} of ${a.max_usd:.2f}")
     return 0
 

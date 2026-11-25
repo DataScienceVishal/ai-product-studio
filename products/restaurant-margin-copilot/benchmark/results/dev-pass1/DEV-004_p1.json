@@ -1,0 +1,144 @@
+{
+ "page_id": "DEV-004_p1",
+ "invoice_id": "DEV-004",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 1752,
+   "output_tokens": 2025,
+   "latency_s": 20.84,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 20.84,
+ "input_tokens": 1752,
+ "output_tokens": 2025,
+ "cost_usd": 0.004488,
+ "model": "gpt-5-mini",
+ "data": {
+  "supplier_name": "Fenwick & Dale Foodservice Ltd",
+  "invoice_number": "38297",
+  "invoice_date": "2026-09-01",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "description": "HONEY CLEAR 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 16.16,
+    "line_total": 32.32,
+    "vat_rate": 0
+   },
+   {
+    "description": "FOIL CATERING 450MMX90M",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 11.02,
+    "line_total": 22.04,
+    "vat_rate": 20
+   },
+   {
+    "description": "GLOVE NITRILE BLU L X100",
+    "pack_size": "100",
+    "unit": "pack",
+    "qty": 5,
+    "unit_price": 6.53,
+    "line_total": 31.02,
+    "vat_rate": 20
+   },
+   {
+    "description": "CREAM DBL 6X1L",
+    "pack_size": "6x1L",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 17.08,
+    "line_total": 16.23,
+    "vat_rate": 0
+   },
+   {
+    "description": "EGGS MED FR RANGE 180",
+    "pack_size": "180",
+    "unit": "case",
+    "qty": 8,
+    "unit_price": 17.96,
+    "line_total": 143.68,
+    "vat_rate": 0
+   },
+   {
+    "description": "CHICKEN BREAST FIL SKLS 2.5KG",
+    "pack_size": "2.5kg",
+    "unit": "case",
+    "qty": 8,
+    "unit_price": 7.28,
+    "line_total": 58.24,
+    "vat_rate": 0
+   },
+   {
+    "description": "MILK SEMI SKIM 6X2L",
+    "pack_size": "6x2L",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 6.65,
+    "line_total": 6.65,
+    "vat_rate": 0
+   },
+   {
+    "description": "CLNG FLUID MULTI SURF 5L",
+    "pack_size": "5L",
+    "unit": "case",
+    "qty": 3,
+    "unit_price": 20.37,
+    "line_total": 55,
+    "vat_rate": 20
+   },
+   {
+    "description": "PLASTIC TAKEAWAY CNTR 500CC X250",
+    "pack_size": "250",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 21.67,
+    "line_total": 130.02,
+    "vat_rate": 0
+   },
+   {
+    "description": "RICE BASMATI 10KG",
+    "pack_size": "10kg",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 15.32,
+    "line_total": 61.28,
+    "vat_rate": 0
+   },
+   {
+    "description": "SUGAR GRAN 15KG",
+    "pack_size": "15kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 4.42,
+    "line_total": 4.42,
+    "vat_rate": 0
+   },
+   {
+    "description": "PASTA PENNE DRY 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 0,
+    "line_total": 0,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": null,
+   "vat": null,
+   "gross": null
+  }
+ },
+ "retries": 0
+}

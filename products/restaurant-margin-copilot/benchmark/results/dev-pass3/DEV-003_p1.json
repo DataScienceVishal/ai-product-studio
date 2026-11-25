@@ -1,0 +1,147 @@
+{
+ "page_id": "DEV-003_p1",
+ "invoice_id": "DEV-003",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2210,
+   "output_tokens": 3022,
+   "latency_s": 26.91,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 26.91,
+ "input_tokens": 2210,
+ "output_tokens": 3022,
+ "cost_usd": 0.006596,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "Code",
+   "Description",
+   "Pack",
+   "Qty",
+   "UoM",
+   "Price",
+   "Disc%",
+   "VAT",
+   "Net"
+  ],
+  "supplier_name": "Fenwick & Dale Foodservice Ltd",
+  "invoice_number": "CN8319",
+  "invoice_date": "2026-10-17",
+  "is_credit_note": true,
+  "lines": [
+   {
+    "row_text": "FD71123 SALT TABLE FINE 3KG 3kg -2 EA 2.58 0% -5.16",
+    "description": "SALT TABLE FINE 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": -2,
+    "unit_price": 2.58,
+    "line_total": -5.16,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD26451 CLNG FLUID MULTI SURF 5L 5L -1 EA 6.72 20% -6.72",
+    "description": "CLNG FLUID MULTI SURF 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": -1,
+    "unit_price": 6.72,
+    "line_total": -6.72,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD37955 PLASTIC TAKEAWAY CNTR 500CC X250 250 -5 CS 22.20 20% -111.00",
+    "description": "PLASTIC TAKEAWAY CNTR 500CC X250",
+    "pack_size": "250",
+    "unit": "case",
+    "qty": -5,
+    "unit_price": 22.2,
+    "line_total": -111.0,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD77528 GLOVE NITRILE BLU L X100 100 -1 BX 6.64 20% -6.64",
+    "description": "GLOVE NITRILE BLU L X100",
+    "pack_size": "100",
+    "unit": "box",
+    "qty": -1,
+    "unit_price": 6.64,
+    "line_total": -6.64,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD81992 FOIL CATERING 450MMX90M  -8 EA 10.83 20% -86.64",
+    "description": "FOIL CATERING 450MMX90M",
+    "pack_size": "",
+    "unit": "each",
+    "qty": -8,
+    "unit_price": 10.83,
+    "line_total": -86.64,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD35363 PASTA PENNE DRY 3KG 3kg -6 EA 4.45 5 0% -25.37",
+    "description": "PASTA PENNE DRY 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": -6,
+    "unit_price": 4.45,
+    "line_total": -25.37,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD61155 VINEGAR MALT 5L 5L -6 EA 3.45 10 0% -18.63",
+    "description": "VINEGAR MALT 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": -6,
+    "unit_price": 3.45,
+    "line_total": -18.63,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD99015 FLOUR PLAIN WHT 16KG 16kg -1 EA 16.43 0% -16.43",
+    "description": "FLOUR PLAIN WHT 16KG",
+    "pack_size": "16kg",
+    "unit": "each",
+    "qty": -1,
+    "unit_price": 16.43,
+    "line_total": -16.43,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD43153 BLK PEPPER GRND 500G 500g -6 EA 6.81 0% -40.86",
+    "description": "BLK PEPPER GRND 500G",
+    "pack_size": "500g",
+    "unit": "each",
+    "qty": -6,
+    "unit_price": 6.81,
+    "line_total": -40.86,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD76109 TOM CHOPPED IN JUICE 6X400G 6x400g -3 CS 6.24 10 0% -16.85",
+    "description": "TOM CHOPPED IN JUICE 6X400G",
+    "pack_size": "6x400g",
+    "unit": "case",
+    "qty": -3,
+    "unit_price": 6.24,
+    "line_total": -16.85,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": -334.3,
+   "vat": -42.2,
+   "gross": -376.5
+  }
+ },
+ "retries": 0
+}

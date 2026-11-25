@@ -1,0 +1,153 @@
+{
+ "page_id": "DEV-008_p1",
+ "invoice_id": "DEV-008",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2210,
+   "output_tokens": 3130,
+   "latency_s": 21.98,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 21.98,
+ "input_tokens": 2210,
+ "output_tokens": 3130,
+ "cost_usd": 0.006812,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "ITEM",
+   "WEIGHT / QTY",
+   "PRICE",
+   "V",
+   "AMOUNT"
+  ],
+  "supplier_name": "HARKER & SONS",
+  "invoice_number": "10172",
+  "invoice_date": "2026-09-21",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "PORK BELLY RIND ON 8.54 kg 7.60/kg Z 64.90",
+    "description": "PORK BELLY RIND ON",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 8.54,
+    "unit_price": 7.6,
+    "line_total": 64.9,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BLACK PUDDING 1KG 8 x 5.61 ea Z 44.88",
+    "description": "BLACK PUDDING 1KG",
+    "pack_size": "1KG",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 5.61,
+    "line_total": 44.88,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "DUCK BREAST X2 400G 2 x 9.29 ea Z 18.58",
+    "description": "DUCK BREAST X2 400G",
+    "pack_size": "X2 400G",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 9.29,
+    "line_total": 18.58,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BACON SMKD BACK 2KG 6 x 18.87 ea Z 113.22",
+    "description": "BACON SMKD BACK 2KG",
+    "pack_size": "2KG",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 18.87,
+    "line_total": 113.22,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "RUMP STEAK TRIMMED 1.44 kg 17.87/kg Z 25.73",
+    "description": "RUMP STEAK TRIMMED",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 1.44,
+    "unit_price": 17.87,
+    "line_total": 25.73,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "OX CHEEK 1.06 kg 10.74/kg Z 11.38",
+    "description": "OX CHEEK",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 1.06,
+    "unit_price": 10.74,
+    "line_total": 11.38,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BEEF DICED CHUCK 4.09 kg 9.86/kg Z 40.33",
+    "description": "BEEF DICED CHUCK",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 4.09,
+    "unit_price": 9.86,
+    "line_total": 40.33,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "LAMB RACK FRENCH TRIM 2.65 kg 27.34/kg Z 72.45",
+    "description": "LAMB RACK FRENCH TRIM",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 2.65,
+    "unit_price": 27.34,
+    "line_total": 72.45,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PORK SAUSAGE DOZEN 2 x 4.70 ea Z 9.40",
+    "description": "PORK SAUSAGE DOZEN",
+    "pack_size": "DOZEN",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 4.7,
+    "line_total": 9.4,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "LAMB SHOULDER BONE IN 7.66 kg 11.64/kg Z 89.16",
+    "description": "LAMB SHOULDER BONE IN",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 7.66,
+    "unit_price": 11.64,
+    "line_total": 89.16,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SIRLOIN 28D HUNG 3.84 kg 26.24/kg Z 100.76",
+    "description": "SIRLOIN 28D HUNG",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 3.84,
+    "unit_price": 26.24,
+    "line_total": 100.76,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 590.79,
+   "vat": 0.0,
+   "gross": 590.79
+  }
+ },
+ "retries": 0
+}

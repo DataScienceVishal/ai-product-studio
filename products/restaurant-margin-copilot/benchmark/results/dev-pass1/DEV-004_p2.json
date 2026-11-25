@@ -1,0 +1,90 @@
+{
+ "page_id": "DEV-004_p2",
+ "invoice_id": "DEV-004",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 1752,
+   "output_tokens": 2230,
+   "latency_s": 18.02,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 18.02,
+ "input_tokens": 1752,
+ "output_tokens": 2230,
+ "cost_usd": 0.004898,
+ "model": "gpt-5-mini",
+ "data": {
+  "supplier_name": "Fenwick & Dale Foodservice Ltd",
+  "invoice_number": "38297",
+  "invoice_date": "2026-09-01",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "description": "TOM CHOPPED IN JUICE 6X400G",
+    "pack_size": "6x400g",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 8.28,
+    "line_total": 8.28,
+    "vat_rate": 0
+   },
+   {
+    "description": "OIL RAPESEED CATERING 20L",
+    "pack_size": "20L",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 34.18,
+    "line_total": 205.08,
+    "vat_rate": 0
+   },
+   {
+    "description": "STOCK BEEF PASTE 6X1KG",
+    "pack_size": "6x1kg",
+    "unit": "case",
+    "qty": 6,
+    "unit_price": 24.18,
+    "line_total": 137.83,
+    "vat_rate": 0
+   },
+   {
+    "description": "BUTTER UNSLTD 20X250G",
+    "pack_size": "20x250g",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 40.46,
+    "line_total": 40.46,
+    "vat_rate": 0
+   },
+   {
+    "description": "BACON SMKD RINDLESS 2KG",
+    "pack_size": "2kg",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 15.9,
+    "line_total": 127.2,
+    "vat_rate": 0
+   },
+   {
+    "description": "BLK PEPPER GRND 500G",
+    "pack_size": "500g",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 8.25,
+    "line_total": 66.0,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 1170.4,
+   "vat": 22.94,
+   "gross": 1193.34
+  }
+ },
+ "retries": 0
+}

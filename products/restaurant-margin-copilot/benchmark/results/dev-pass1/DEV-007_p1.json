@@ -1,0 +1,153 @@
+{
+ "page_id": "DEV-007_p1",
+ "invoice_id": "DEV-007",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2587,
+   "output_tokens": 2173,
+   "latency_s": 16.75,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 16.75,
+ "input_tokens": 2587,
+ "output_tokens": 2173,
+ "cost_usd": 0.004993,
+ "model": "gpt-5-mini",
+ "data": {
+  "supplier_name": "BULKBUY CASH & CARRY",
+  "invoice_number": "SALE REF 26367",
+  "invoice_date": "2026-09-22",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "description": "ONION BROWN LOOSE",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 6.94,
+    "unit_price": 0.98,
+    "line_total": 6.8,
+    "vat_rate": 0
+   },
+   {
+    "description": "SUNFLWR OIL 5L",
+    "pack_size": "5 x 10.51",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 10.51,
+    "line_total": 52.55,
+    "vat_rate": 0
+   },
+   {
+    "description": "COFFEE JAR INST 750G",
+    "pack_size": "2 x 14.13",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 14.13,
+    "line_total": 28.26,
+    "vat_rate": 0
+   },
+   {
+    "description": "TOMATO PASSATA 6X700G",
+    "pack_size": "1 x 6.35",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 6.35,
+    "line_total": 6.35,
+    "vat_rate": 0
+   },
+   {
+    "description": "CHIPS 2.5KG X4",
+    "pack_size": "6 x 11.87",
+    "unit": "case",
+    "qty": 6,
+    "unit_price": 11.87,
+    "line_total": 71.22,
+    "vat_rate": 0
+   },
+   {
+    "description": "CHKN WHOLE FR 1.8KG",
+    "pack_size": "3 x 7.69",
+    "unit": "case",
+    "qty": 3,
+    "unit_price": 7.69,
+    "line_total": 23.07,
+    "vat_rate": 0
+   },
+   {
+    "description": "KETCHUP SACHET 1000",
+    "pack_size": "8 x 16.17",
+    "unit": "case",
+    "qty": 8,
+    "unit_price": 16.17,
+    "line_total": 129.36,
+    "vat_rate": 0
+   },
+   {
+    "description": "COOKING OIL VEG 20L",
+    "pack_size": "1 x 27.07",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 27.07,
+    "line_total": 27.07,
+    "vat_rate": 0
+   },
+   {
+    "description": "CHILLI SAUCE 6X1L",
+    "pack_size": "5 x 16.67",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 16.67,
+    "line_total": 83.35,
+    "vat_rate": 0
+   },
+   {
+    "description": "MILK WHL 4PT",
+    "pack_size": "2 x 1.86",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 1.86,
+    "line_total": 3.72,
+    "vat_rate": 0
+   },
+   {
+    "description": "WASHING UP LIQ 5L",
+    "pack_size": "6 x 3.21",
+    "unit": "case",
+    "qty": 6,
+    "unit_price": 3.21,
+    "line_total": 19.26,
+    "vat_rate": 20
+   },
+   {
+    "description": "SOFT DRINK LEMON 24X330ML",
+    "pack_size": "1 x 9.74",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 9.74,
+    "line_total": 9.74,
+    "vat_rate": 20
+   },
+   {
+    "description": "FRYING FAT 4X12.5KG",
+    "pack_size": "2 x 86.65",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 86.65,
+    "line_total": 173.3,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 634.05,
+   "vat": 5.8,
+   "gross": 639.85
+  }
+ },
+ "retries": 0
+}

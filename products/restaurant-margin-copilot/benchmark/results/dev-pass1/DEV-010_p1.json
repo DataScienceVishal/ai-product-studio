@@ -1,0 +1,126 @@
+{
+ "page_id": "DEV-010_p1",
+ "invoice_id": "DEV-010",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 1781,
+   "output_tokens": 1395,
+   "latency_s": 11.89,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 11.89,
+ "input_tokens": 1781,
+ "output_tokens": 1395,
+ "cost_usd": 0.003235,
+ "model": "gpt-5-mini",
+ "data": {
+  "supplier_name": "HARKER & SONS",
+  "invoice_number": "93909",
+  "invoice_date": "2026-10-17",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "description": "OX CHEEK",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 8.91,
+    "unit_price": 11.25,
+    "line_total": 100.24,
+    "vat_rate": 0
+   },
+   {
+    "description": "BEEF MINCE 20% 5KG",
+    "pack_size": "2 x",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 39.25,
+    "line_total": 78.5,
+    "vat_rate": 0
+   },
+   {
+    "description": "BUTCHERS STRING 500G",
+    "pack_size": "6 x",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 3.55,
+    "line_total": 21.3,
+    "vat_rate": 20
+   },
+   {
+    "description": "LAMB RACK FRENCH TRIM",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 1.05,
+    "unit_price": 26.2,
+    "line_total": 27.51,
+    "vat_rate": 0
+   },
+   {
+    "description": "BEEF MARROW BONES",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 7.84,
+    "unit_price": 2.26,
+    "line_total": 17.72,
+    "vat_rate": 0
+   },
+   {
+    "description": "LAMB SHOULDER BONE IN",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 2.7,
+    "unit_price": 10.2,
+    "line_total": 27.54,
+    "vat_rate": 0
+   },
+   {
+    "description": "RUMP STEAK TRIMMED",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 4.76,
+    "unit_price": 16.86,
+    "line_total": 80.25,
+    "vat_rate": 0
+   },
+   {
+    "description": "BLACK PUDDING 1KG",
+    "pack_size": "5 x",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 7.16,
+    "line_total": 35.8,
+    "vat_rate": 0
+   },
+   {
+    "description": "SIRLOIN 28D HUNG",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 4.21,
+    "unit_price": 23.96,
+    "line_total": 100.87,
+    "vat_rate": 0
+   },
+   {
+    "description": "BACON SMKD BACK 2KG",
+    "pack_size": "2 x",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 14.59,
+    "line_total": 29.18,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 518.91,
+   "vat": 4.26,
+   "gross": 523.17
+  }
+ },
+ "retries": 0
+}

@@ -1,0 +1,54 @@
+{
+ "page_id": "DEV-009_p2",
+ "invoice_id": "DEV-009",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 1752,
+   "output_tokens": 592,
+   "latency_s": 5.56,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 5.56,
+ "input_tokens": 1752,
+ "output_tokens": 592,
+ "cost_usd": 0.001622,
+ "model": "gpt-5-mini",
+ "data": {
+  "supplier_name": "HARKER & SONS",
+  "invoice_number": "24823",
+  "invoice_date": "2026-09-16",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "description": "DUCK BREAST X2 400G",
+    "pack_size": "2 x",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 8.28,
+    "line_total": 16.56,
+    "vat_rate": 0
+   },
+   {
+    "description": "PORK BELLY RIND ON",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 2.86,
+    "unit_price": 5,
+    "line_total": 14.3,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 747.99,
+   "vat": 0.91,
+   "gross": 748.9
+  }
+ },
+ "retries": 0
+}

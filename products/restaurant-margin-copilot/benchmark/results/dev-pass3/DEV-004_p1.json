@@ -1,0 +1,157 @@
+{
+ "page_id": "DEV-004_p1",
+ "invoice_id": "DEV-004",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2181,
+   "output_tokens": 6297,
+   "latency_s": 52.46,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 52.46,
+ "input_tokens": 2181,
+ "output_tokens": 6297,
+ "cost_usd": 0.013139,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "Code",
+   "Description",
+   "Pack",
+   "Qty",
+   "UoM",
+   "Price",
+   "Disc%",
+   "VAT",
+   "Net"
+  ],
+  "supplier_name": "Fenwick & Dale Foodservice Ltd",
+  "invoice_number": "38297",
+  "invoice_date": "2026-09-01",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "FD91672 HONEY CLEAR 3KG 3kg 2 EA 16.16 0% 32.32",
+    "description": "HONEY CLEAR 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 16.16,
+    "line_total": 32.32,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD85917 FOIL CATERING 450MMX90M 2 EA 11.02 20% 22.04",
+    "description": "FOIL CATERING 450MMX90M",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 11.02,
+    "line_total": 22.04,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD71719 GLOVE NITRILE BLU L X100 100 5 BX 6.53 5 20% 31.02",
+    "description": "GLOVE NITRILE BLU L X100",
+    "pack_size": "100",
+    "unit": "box",
+    "qty": 5,
+    "unit_price": 6.53,
+    "line_total": 31.02,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD56325 CREAM DBL 6X1L 6x1L 1 CS 17.08 5 0% 16.23",
+    "description": "CREAM DBL 6X1L",
+    "pack_size": "6x1L",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 17.08,
+    "line_total": 16.23,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD36622 EGGS MED FR RANGE 180 180 8 CS 17.96 0% 143.68",
+    "description": "EGGS MED FR RANGE 180",
+    "pack_size": "180",
+    "unit": "case",
+    "qty": 8,
+    "unit_price": 17.96,
+    "line_total": 143.68,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD49400 CHICKEN BREAST FIL SKLS 2.5KG 2.5kg 8 CS 7.28 0% 58.24",
+    "description": "CHICKEN BREAST FIL SKLS 2.5KG",
+    "pack_size": "2.5kg",
+    "unit": "case",
+    "qty": 8,
+    "unit_price": 7.28,
+    "line_total": 58.24,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD33845 MILK SEMI SKIM 6X2L 6x2L 1 EA 6.65 0% 6.65",
+    "description": "MILK SEMI SKIM 6X2L",
+    "pack_size": "6x2L",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 6.65,
+    "line_total": 6.65,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD32217 CLNG FLUID MULTI SURF 5L 5L 3 CS 20.37 10 20% 55.00",
+    "description": "CLNG FLUID MULTI SURF 5L",
+    "pack_size": "5L",
+    "unit": "case",
+    "qty": 3,
+    "unit_price": 20.37,
+    "line_total": 55.0,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD98477 PLASTIC TAKEAWAY CNTR 500CC X250 250 6 EA 21.67 0% 130.02",
+    "description": "PLASTIC TAKEAWAY CNTR 500CC X250",
+    "pack_size": "250",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 21.67,
+    "line_total": 130.02,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD62837 RICE BASMATI 10KG 10kg 4 EA 15.32 0% 61.28",
+    "description": "RICE BASMATI 10KG",
+    "pack_size": "10kg",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 15.32,
+    "line_total": 61.28,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD13902 SUGAR GRAN 15KG 3kg 1 EA 4.42 0% 4.42",
+    "description": "SUGAR GRAN 15KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 4.42,
+    "line_total": 4.42,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": null,
+   "vat": null,
+   "gross": null
+  }
+ },
+ "retries": 0
+}

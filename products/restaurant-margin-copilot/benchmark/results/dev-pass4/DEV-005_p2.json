@@ -1,0 +1,127 @@
+{
+ "page_id": "DEV-005_p2",
+ "invoice_id": "DEV-005",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2843,
+   "output_tokens": 1781,
+   "latency_s": 12.83,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 12.83,
+ "input_tokens": 2843,
+ "output_tokens": 1781,
+ "cost_usd": 0.004273,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [],
+  "supplier_name": "BULKBUY CASH & CARRY",
+  "invoice_number": "SALE REF 20459",
+  "invoice_date": "2026-09-09",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "BIN LINERS 200S\n 1 x 9.96                                      9.96 A",
+    "description": "BIN LINERS 200S",
+    "pack_size": "200S",
+    "unit": "pack",
+    "qty": 1,
+    "unit_price": 9.96,
+    "line_total": 9.96,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "SOFT DRINK LEMON 24X330ML\n 2 x 11.11                                    22.22 A",
+    "description": "SOFT DRINK LEMON 24X330ML",
+    "pack_size": "24X330ML",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 11.11,
+    "line_total": 22.22,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "LPG CYLINDER 13KG\n 5 x 28.37                                   141.85 C",
+    "description": "LPG CYLINDER 13KG",
+    "pack_size": "13KG",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 28.37,
+    "line_total": 141.85,
+    "vat_rate": 5
+   },
+   {
+    "row_text": "CHILLI SAUCE 6X1L\n 5 x 17.09                                    85.45 B",
+    "description": "CHILLI SAUCE 6X1L",
+    "pack_size": "6X1L",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 17.09,
+    "line_total": 85.45,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SALAD CREAM 5L\n 1 x 8.71                                      8.71 B",
+    "description": "SALAD CREAM 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 8.71,
+    "line_total": 8.71,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FRYING FAT 4X12.5KG\n 6 x 81.68                                   490.08 B",
+    "description": "FRYING FAT 4X12.5KG",
+    "pack_size": "4X12.5KG",
+    "unit": "case",
+    "qty": 6,
+    "unit_price": 81.68,
+    "line_total": 490.08,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "TOMATO PASSATA 6X700G\n 1 x 8.86                                      8.86 B",
+    "description": "TOMATO PASSATA 6X700G",
+    "pack_size": "6X700G",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 8.86,
+    "line_total": 8.86,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CHEDDAR MATURE 5KG\n 2 x 31.88                                    63.76 B",
+    "description": "CHEDDAR MATURE 5KG",
+    "pack_size": "5KG",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 31.88,
+    "line_total": 63.76,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "COOKING OIL VEG 20L\n 1 x 28.54                                    28.54 B",
+    "description": "COOKING OIL VEG 20L",
+    "pack_size": "20L",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 28.54,
+    "line_total": 28.54,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 1219.12,
+   "vat": 48.78,
+   "gross": 1267.9
+  }
+ },
+ "retries": 0
+}

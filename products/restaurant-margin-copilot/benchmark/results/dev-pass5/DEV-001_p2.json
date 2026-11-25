@@ -1,0 +1,67 @@
+{
+ "page_id": "DEV-001_p2",
+ "invoice_id": "DEV-001",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2272,
+   "output_tokens": 1488,
+   "latency_s": 14.29,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 14.29,
+ "input_tokens": 2272,
+ "output_tokens": 1488,
+ "cost_usd": 0.003544,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "Code",
+   "Description",
+   "Pack",
+   "Qty",
+   "UoM",
+   "Price",
+   "Disc%",
+   "VAT",
+   "Net"
+  ],
+  "supplier_name": "Fenwick & Dale Foodservice Ltd",
+  "invoice_number": "73597",
+  "invoice_date": "2026-09-08",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "FD95215 SPICE MIX CAJUN 6 X 2.5KG 6 x 2.5kg 1 CS 46.97 10 0% 42.27",
+    "description": "SPICE MIX CAJUN 6 X 2.5KG",
+    "pack_size": "6x2.5kg",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 46.97,
+    "line_total": 42.27,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD13908 SALT TABLE FINE 3KG 3kg 2 EA 2.52 0% 5.04",
+    "description": "SALT TABLE FINE 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 2.52,
+    "line_total": 5.04,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 817.12,
+   "vat": 54.4,
+   "gross": 871.52
+  }
+ },
+ "retries": 0
+}
