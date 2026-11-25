@@ -75,7 +75,7 @@ def test_webhook_needs_no_csrf_header_but_other_writes_do(new_client, app):
 def stripe_provider() -> StripeBilling:
     def handler(request: httpx.Request):
         if request.url.path == "/v1/coupons":  # the offer's coupon is ensured before the session
-            return httpx.Response(200, json={"id": "studio-coupon"})
+            return httpx.Response(200, json={"id": OFFERS["EARLY50"].coupon_id})
         assert request.url.path == "/v1/checkout/sessions"
         form = dict(x.split("=", 1) for x in request.content.decode().split("&"))
         assert form["mode"] == "subscription" and "client_reference_id" in form
@@ -305,6 +305,33 @@ def test_failed_checkout_drops_the_cached_coupon_so_the_next_one_rechecks_it():
     stripe.create_checkout(*args)
     assert calls.count(("POST", "/v1/coupons")) == 2  # ensure_coupon ran again
     assert OFFERS["EARLY50"].coupon_id in stripe._coupons
+
+
+def test_checkout_outage_keeps_the_cached_coupon(monkeypatch):
+    """A 503 says nothing about the coupon: it stays cached and the next checkout makes no coupon call."""
+    monkeypatch.setattr("app.billing.time.sleep", lambda _s: None)
+    state = {"down": False}
+    calls = []
+
+    def handler(request: httpx.Request):
+        calls.append((request.method, request.url.path))
+        if request.url.path.startswith("/v1/coupons"):
+            return httpx.Response(200, json={"id": "c"})
+        if state["down"]:
+            return httpx.Response(503)
+        return httpx.Response(200, json={"id": "cs_test_1", "url": "https://checkout.stripe.com/c/cs_test_1"})
+
+    stripe = StripeBilling("sk_test_x", SECRET, client=httpx.Client(transport=httpx.MockTransport(handler)))
+    args = (uuid.uuid4(), PLANS["pro"], OFFERS["EARLY50"], "https://a/ok", "https://a/no")
+    stripe.create_checkout(*args)
+    state["down"] = True
+    with pytest.raises(AppError) as failed:
+        stripe.create_checkout(*args)
+    assert failed.value.code == "billing_unavailable"
+    assert OFFERS["EARLY50"].coupon_id in stripe._coupons
+    state["down"] = False
+    stripe.create_checkout(*args)
+    assert calls.count(("POST", "/v1/coupons")) == 1  # no extra coupon call
 
 
 def test_failed_checkout_without_offer_leaves_the_coupon_cache_alone():

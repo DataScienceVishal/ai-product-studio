@@ -279,8 +279,10 @@ class StripeBilling:
             form[f"subscription_data[metadata][{key}]"] = value
         try:
             body = self._call("POST", "/checkout/sessions", form, idempotency_key=f"checkout-{uuid.uuid4().hex}")
-        except AppError:
-            if coupon_id:  # the coupon may have been deleted or archived since it was cached: re-check it next time
+        except AppError as error:
+            # A 4xx (billing_rejected) may mean the cached coupon was deleted or archived: re-check it next time.
+            # An outage (billing_unavailable) says nothing about the coupon, so keep it cached.
+            if coupon_id and error.code == "billing_rejected":
                 self._coupons.discard(coupon_id)
             raise
         if not body.get("id") or not body.get("url"):
