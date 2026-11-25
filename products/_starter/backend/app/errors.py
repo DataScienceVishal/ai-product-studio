@@ -37,7 +37,13 @@ def install(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError):
-        fields = [{"field": ".".join(str(p) for p in e.get("loc", [])[1:]), "problem": e.get("msg", "")}
-                  for e in exc.errors()]
+        fields = []
+        for e in exc.errors():
+            loc = e.get("loc", ())
+            if e.get("type") == "json_invalid" or (len(loc) == 2 and loc[0] == "body" and isinstance(loc[1], int)):
+                # A JSON syntax error: the parser's byte offset is not a field name.
+                fields.append({"field": "", "problem": "The request body is not valid JSON."})
+                continue
+            fields.append({"field": ".".join(str(p) for p in loc[1:]), "problem": e.get("msg", "")})
         payload = body("invalid_input", "Some fields need fixing.") | {"fields": fields}
         return JSONResponse(payload, status_code=422)

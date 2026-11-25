@@ -30,6 +30,8 @@ EMAIL = re.compile(r"^[^@\s]{1,64}@[^@\s]+\.[^@\s]{2,}$")
 
 def _email(value: str) -> str:
     value = value.strip().lower()
+    if not value.isascii():  # policy: ASCII-only addresses (no IDN or lookalike forms; Unicode variants would be separate accounts)
+        raise ValueError("Use an email address with only standard (ASCII) characters.")
     if len(value) > 254 or not EMAIL.match(value) or LINE_BAD.search(value):
         raise ValueError("Enter a valid email address.")
     return value
