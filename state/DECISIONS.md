@@ -194,3 +194,8 @@ Append only. One line per decision:
 
 ## 2026-11-25T03:36Z run 32ff: T-65 merged as written-not-applied; M1-M3 accepted as residual risks
 - Security gate asked for H1/M4/M5 fixes (done) and flagged M1-M3 (deploy identity can attach itself; shared-only Postgres writes; containerApps/jobs write unavoidable). Accepted for now and queued as T-69, because the role isn't assigned yet and Contributor already allows all of it, so the custom role is strictly narrower. Re-review PASS. Applying needs Vishal (Q-14); no default action.
+
+## 2026-11-25T03:52Z run 32ff: T-71 webhook status and tie-break
+- Signed but malformed billing events return 400 (not 200-and-log): a real Stripe event always parses, so failure means our parser is wrong, and Stripe's ~3-day retries let a fix still apply the event. Reviewer agreed.
+- On equal event timestamps a cancellation already applied wins over a later activation: wrongly reactivating costs money, a wrongly kept cancellation is fixed by the next newer event.
+- Reviewer's one behavioural nit (strip login/reset emails before the control-char check) applied by the Studio Lead without a second review, as it was the reviewer's exact suggested edit, with a test that fails without it and a green full suite.
