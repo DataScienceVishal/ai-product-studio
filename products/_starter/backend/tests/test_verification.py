@@ -58,6 +58,20 @@ def test_unverified_owner_cannot_invite_or_check_out(new_client, outbox):
     assert client.post("/api/notes", json={"title": "still usable"}).status_code == 201  # the product itself works
 
 
+def test_unverified_owner_cannot_open_the_billing_portal(new_client, outbox, app, database):
+    from sqlalchemy import update as sql_update
+    from app.models import Subscription
+    client = new_client()
+    sign_up(client)
+    with database.sessions() as db:  # a customer exists, so only the verification gate can refuse
+        db.execute(sql_update(Subscription).values(provider="mock", provider_customer="cus_1"))
+        db.commit()
+    response = client.post("/api/billing/portal")
+    assert response.status_code == 403 and response.json()["error"] == "email_not_verified"
+    verify_email(client, outbox)
+    assert client.post("/api/billing/portal").status_code == 200
+
+
 def test_accepting_an_invite_and_resetting_a_password_verify_the_email(owner, new_client, outbox):
     owner_client, _ = owner
     owner_client.post("/api/team/invitations", json={"email": "crew@acme.test"})

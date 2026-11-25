@@ -25,12 +25,20 @@ export function timeoutMs(raw: unknown): number {
   return Number.isFinite(seconds) && seconds >= 1 ? Math.min(seconds * 1000, MAX_TIMEOUT_MS) : DEFAULT_TIMEOUT_MS;
 }
 let requestTimeoutMs = DEFAULT_TIMEOUT_MS;
+// "mock" only when the server says so; anything else (including a failed /api/config) fails closed.
+let billingProvider = "";
+export const isMockBilling = (): boolean => billingProvider === "mock";
+export function setBillingProviderForTest(value: string): void { billingProvider = value; }
 export async function loadClientConfig(): Promise<void> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5_000);
   try {
     const response = await fetch("/api/config", { credentials: "same-origin", signal: controller.signal });
-    if (response.ok) requestTimeoutMs = timeoutMs((await response.json()).api_timeout_seconds);
+    if (response.ok) {
+      const config = await response.json();
+      requestTimeoutMs = timeoutMs(config.api_timeout_seconds);
+      billingProvider = typeof config.billing_provider === "string" ? config.billing_provider : "";
+    }
   } catch {
     requestTimeoutMs = DEFAULT_TIMEOUT_MS; // no config: keep the safe default
   } finally {

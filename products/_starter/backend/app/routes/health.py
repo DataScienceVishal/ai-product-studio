@@ -38,4 +38,5 @@ def healthz(request: Request):
 def client_config(request: Request):
     """Runtime settings the SPA reads once at startup. The browser's abort comes from here, so it is the same number
     the startup guard checked against AI_DEADLINE_SECONDS (no build-time copy to keep in step)."""
-    return {"api_timeout_seconds": request.app.state.settings.frontend_timeout_seconds}
+    return {"api_timeout_seconds": request.app.state.settings.frontend_timeout_seconds,
+            "billing_provider": request.app.state.billing.name}

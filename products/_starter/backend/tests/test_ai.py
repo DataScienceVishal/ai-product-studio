@@ -961,7 +961,7 @@ def test_config_endpoint_serves_the_configured_frontend_timeout(settings, ai, ou
                              billing_provider=MockBilling(custom.billing_webhook_secret, custom.app_base_url))
     try:
         with TestClient(application, base_url="https://testserver") as client:
-            assert client.get("/api/config").json() == {"api_timeout_seconds": 60.0}
+            assert client.get("/api/config").json() == {"api_timeout_seconds": 60.0, "billing_provider": "mock"}
     finally:
         application.state.db.dispose()
 

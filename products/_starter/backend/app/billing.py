@@ -13,6 +13,7 @@ import json
 import re
 import time
 import uuid
+from urllib.parse import quote
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Protocol
@@ -160,7 +161,7 @@ class MockBilling:
         return Checkout(session_id, f"{self.base_url}/billing/mock-checkout?session={session_id}")
 
     def portal_session(self, customer_ref, return_url) -> str:
-        return f"{self.base_url}/billing/mock-portal?customer={customer_ref}"
+        return f"{self.base_url}/billing/mock-portal?customer={quote(customer_ref, safe='')}"
 
     def completion_event(self, session_id: str) -> bytes:
         """What the mock 'provider' would post when the customer pays. Used by the dev endpoint and tests."""
