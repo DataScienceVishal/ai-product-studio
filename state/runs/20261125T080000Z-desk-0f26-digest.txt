@@ -1,0 +1,25 @@
+🧪 <b>Studio update</b> · Wed 25 Nov, 08:00
+🟢 Running normally · 🔒 Selling locked · 💷 Azure spend not reported yet
+
+<b>✨ What's new</b>
+• Packaging idea failed its test by 0.7 points, so it's dropped
+• Cheap AI model read sheets at under 1 cent each
+• Starter app billing hardened; 563 backend tests pass
+• Bug hunt fixed 4 crashes; sign-in and data isolation held
+
+<b>🙋 Need your call</b>
+<b>1. What should we do for ideas next?</b>
+A 15-min chat with your friend ⭐ · B Retry restaurant · C Another desk round
+<i>No reply → C at 20:00.</i>
+
+<b>2. Switch on the safer Azure deploy role?</b>
+A Apply on next deploy ⭐ · B Wait for next fix · C Keep as is
+<i>No reply → nothing changes.</i>
+
+Tap a button, or just reply <b>1A</b>.
+
+<b>⚠️ One problem</b>
+• Deploy sign-in still needs your Cloud Shell step (earlier question)
+
+<b>🧭 Next</b>
+• Finish starter app polish; scout ideas near your edges
