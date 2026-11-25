@@ -19,7 +19,7 @@ from ..errors import AppError
 from ..logs import bind
 from ..models import AuthSession, EmailVerification, PasswordReset, Subscription, Tenant, User
 from ..ratelimit import client_ip, email_key, off_loop
-from ..textsafe import LINE_BAD, StrippedLine, _invisible
+from ..textsafe import LINE_BAD, StrippedLine, is_blank
 from ..security import (hash_capacity_after, hash_password, needs_rehash, new_token, password_problem, token_hash,
                         verify_password)
 
@@ -49,7 +49,7 @@ class SignUp(BaseModel):
     @classmethod
     def _company(cls, value: str) -> str:
         value = " ".join(LINE_BAD.sub(" ", value).split())  # no control characters or newlines
-        if not value or _invisible(value):
+        if not value or is_blank(value):
             raise ValueError("Enter your company name.")
         return value
 

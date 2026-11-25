@@ -42,6 +42,13 @@ describe("safeNext (?next= redirect after sign-in)", () => {
     "/%2e//evil.example",
     "/\t/evil.example//x",
     "",
+    "/login",
+    "/signup",
+    "/login/",
+    "/signup//",
+    "/login?next=//evil.example",
+    "/login?next=/billing",
+    "/x/../login",
   ])("rejects %j and falls back to home", (next) => {
     at(`/login?next=${encodeURIComponent(next)}`);
     expect(safeNext()).toBe("/");

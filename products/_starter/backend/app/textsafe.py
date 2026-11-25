@@ -24,7 +24,7 @@ def _check(bad: re.Pattern, message: str):
 _FILLERS = frozenset("\u115f\u1160\u3164\uffa0\u2800")
 
 
-def _invisible(value: str) -> bool:
+def is_blank(value: str) -> bool:
     """True when the text is only whitespace, invisible format characters (category Cf: zero-width space,
     joiner, word joiner, BOM, ...) and a few known filler characters. Such text shows as nothing, so it counts as blank."""
     return all(ch.isspace() or ch in _FILLERS or unicodedata.category(ch) == "Cf" for ch in value)
@@ -35,7 +35,7 @@ def _strip(value):
         return value
     # Only the blank check changes: non-blank text keeps its inner format characters (a ZWJ in an emoji
     # sequence, a ZWNJ in Persian), only the usual whitespace at the ends is removed.
-    return "" if _invisible(value) else value.strip()
+    return "" if is_blank(value) else value.strip()
 
 
 # One line of text (names, titles, emails): no control characters at all.
@@ -47,7 +47,7 @@ StrippedLine = Annotated[str, BeforeValidator(_strip), AfterValidator(_check(LIN
 
 
 def _blank_to_empty(value):
-    return "" if isinstance(value, str) and _invisible(value) else value
+    return "" if isinstance(value, str) and is_blank(value) else value
 
 
 # Note bodies: optional, so a body of only whitespace and invisible characters is normalised to "" (nothing

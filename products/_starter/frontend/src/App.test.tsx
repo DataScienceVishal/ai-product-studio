@@ -140,6 +140,16 @@ describe("App routing when signed in (T-87)", () => {
     await waitFor(() => expect(window.location.pathname).toBe("/"));
   });
 
+  it.each(["/login?next=/login", "/login?next=/signup", "/signup?next=/login/", "/login?next=%2Flogin%3Fnext%3D%2F%2Fevil.com"])(
+    "sends a signed-in user on %s home instead of a blank sign-in page", async (url) => {
+      window.history.replaceState({}, "", url);
+      signedInWithNotes();
+      render(<App />);
+      await waitFor(() => expect(window.location.pathname).toBe("/"));
+      expect(window.location.search).toBe("");
+      expect((await screen.findAllByText(/note/i)).length).toBeGreaterThan(0); // the dashboard renders, not a blank page
+    });
+
   it("shows Page not found with a link home for an unknown path, and keeps the URL", async () => {
     window.history.replaceState({}, "", "/does-not-exist");
     signedInWithNotes();

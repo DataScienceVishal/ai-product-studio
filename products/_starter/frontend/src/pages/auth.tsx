@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api, ApiError, type Me } from "../api";
-import { Alert, AuthLayout, Button, Field, Link, navigate, takeToken } from "../ui";
+import { Alert, AuthLayout, Button, Field, Link, navigate, normalise, takeToken } from "../ui";
 
-/** Where to go after signing in: a same-site path from ?next=, otherwise home. */
+const SIGN_IN_PAGES = new Set(["/login", "/signup"]);
+
+/** Where to go after signing in: a same-site path from ?next=, otherwise home. Never a sign-in page (a signed-in user there sees nothing). */
 export function safeNext(): string {
   const next = new URLSearchParams(window.location.search).get("next") ?? "";
   if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return "/";
   try {
     const url = new URL(next, window.location.origin); // what the browser would actually resolve
     // Dot segments normalise away ("/.//evil" -> "//evil"), which is protocol-relative: refuse that too.
-    return url.origin === window.location.origin && !url.pathname.startsWith("//") ? url.pathname + url.search : "/";
+    if (url.origin !== window.location.origin || url.pathname.startsWith("//")) return "/";
+    return SIGN_IN_PAGES.has(normalise(url.pathname)) ? "/" : url.pathname + url.search;
   } catch {
     return "/";
   }
