@@ -133,6 +133,8 @@ def test_built_html_checker_passes_a_clean_vite_page(html):
     '<a href="java\tscript:alert(1)">x</a>',
     '<img src="x" ONERROR="x()" />',
     '<form action="javascript:x()"></form>',
+    '<script type="module" type="application/json">x()</script>',  # the first duplicate attribute wins
+    '<a href="\x01javascript:x()">x</a>',
 ])
 def test_built_html_checker_catches_csp_blocked_markup(html):
     assert _built_html_checker().problems(html)
