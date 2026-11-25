@@ -164,6 +164,14 @@ describe("MockPortal (/billing/mock-portal)", () => {
     fireEvent.click(link);
     expect(window.location.pathname).toBe("/billing");
   });
+
+  it("renders a hostile ?customer= as literal text, never as markup", () => {
+    const hostile = "<img src=x onerror=alert(1)>";
+    window.history.replaceState({}, "", `/billing/mock-portal?customer=${encodeURIComponent(hostile)}`);
+    const { container } = render(<MockPortal />);
+    expect(screen.getByText(hostile)).toBeTruthy();
+    expect(container.querySelector("img")).toBeNull();
+  });
 });
 
 describe("Billing: unsafe redirects and unverified owners", () => {
@@ -206,6 +214,50 @@ describe("Billing: unsafe redirects and unverified owners", () => {
     await screen.findByRole("button", { name: "Manage billing" });
     expect(screen.queryByText(/verify your email/i)).toBeNull();
   });
+});
+
+describe("Billing: mock portal in-app navigation", () => {
+  it.each(["http://localhost:5173/billing/mock-portal?customer=mock_cus_9", "/billing/mock-portal?customer=mock_cus_9"])(
+    "navigates in-app for %s without a full-page redirect, whatever the origin", async (url) => {
+      const assign = vi.fn();
+      vi.stubGlobal("location", { origin: "http://localhost:4173", assign });  // vite preview, not APP_BASE_URL's origin
+      const push = vi.spyOn(window.history, "pushState");
+      fetchMock.mockResolvedValueOnce(reply(200, PLANS));
+      fetchMock.mockResolvedValueOnce(reply(200, { url }));
+      render(<Billing me={makeMe()} refresh={vi.fn()} />);
+      fireEvent.click(await screen.findByRole("button", { name: "Manage billing" }));
+      await waitFor(() => expect(push).toHaveBeenCalledWith({}, "", "/billing/mock-portal?customer=mock_cus_9"));
+      expect(assign).not.toHaveBeenCalled();
+    });
+});
+
+describe("Billing: email verification gate (REQUIRE_EMAIL_VERIFICATION)", () => {
+  const meWith = (required: boolean, verified: boolean) => {
+    const me = makeMe();
+    me.user.email_verification_required = required;
+    me.user.email_verified = verified;
+    return me;
+  };
+  const disabled = (name: string) => (screen.getByRole("button", { name }) as HTMLButtonElement).disabled;
+
+  it("required and unverified: both Manage billing and Choose are disabled, with the hint", async () => {
+    fetchMock.mockResolvedValue(reply(200, PLANS));
+    render(<Billing me={meWith(true, false)} refresh={vi.fn()} />);
+    await screen.findByRole("button", { name: "Choose Pro" });
+    expect(disabled("Manage billing")).toBe(true);
+    expect(disabled("Choose Pro")).toBe(true);
+    expect(screen.getByText("Verify your email to manage billing")).toBeTruthy();
+  });
+
+  it.each([[true, true], [false, false], [false, true]])(
+    "required=%s verified=%s: both buttons enabled and no hint", async (required, verified) => {
+      fetchMock.mockResolvedValue(reply(200, PLANS));
+      render(<Billing me={meWith(required, verified)} refresh={vi.fn()} />);
+      await screen.findByRole("button", { name: "Choose Pro" });
+      expect(disabled("Manage billing")).toBe(false);
+      expect(disabled("Choose Pro")).toBe(false);
+      expect(screen.queryByText(/verify your email/i)).toBeNull();
+    });
 });
 
 describe("BillingDone (/billing/done)", () => {

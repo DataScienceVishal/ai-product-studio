@@ -150,4 +150,4 @@ def accept(data: AcceptIn, request: Request, response: Response, db: Session = D
     tenant = db.get(Tenant, user.tenant_id)
     bind(tenant_id=str(tenant.id), user_id=str(user.id))
     log.info("invitation accepted", extra={"invitation_id": str(invitation.id)})
-    return me_payload(db, user, tenant)
+    return me_payload(db, user, tenant, request)

@@ -100,11 +100,13 @@ def send_verification(request: Request, db: Session, user: User) -> None:
                                  f"Confirm this address for your account (valid for {settings.verify_hours} hours): {link}")
 
 
-def me_payload(db: Session, user: User, tenant: Tenant) -> dict:
+def me_payload(db: Session, user: User, tenant: Tenant, request: Request) -> dict:
     sub = subscription_of(db, tenant.id)
     return {
         "user": {"id": str(user.id), "email": user.email, "role": user.role,
-                 "email_verified": user.email_verified_at is not None},
+                 "email_verified": user.email_verified_at is not None,
+                 # The server's gate (deps.verified_owner), so the UI can match it instead of guessing.
+                 "email_verification_required": bool(request.app.state.settings.require_email_verification)},
         "tenant": {"id": str(tenant.id), "name": tenant.name},
         "subscription": {"plan": sub.plan, "status": sub.status, "offer": sub.offer,
                          "trial_ends_at": sub.trial_ends_at.isoformat() if sub.trial_ends_at else None,
@@ -170,7 +172,7 @@ def signup(data: SignUp, request: Request, response: Response, db: Session = Dep
     bind(tenant_id=str(tenant.id), user_id=str(user.id))
     log.info("signed up")
     send_verification(request, db, user)
-    return me_payload(db, user, tenant)
+    return me_payload(db, user, tenant, request)
 
 
 @router.post("/login", dependencies=[Depends(hash_capacity_after(_login_gate))])
@@ -189,7 +191,7 @@ def login(data: SignIn, request: Request, response: Response, db: Session = Depe
     tenant = db.get(Tenant, user.tenant_id)
     bind(tenant_id=str(tenant.id), user_id=str(user.id))
     log.info("signed in")
-    return me_payload(db, user, tenant)
+    return me_payload(db, user, tenant, request)
 
 
 @router.post("/logout", status_code=204)
@@ -205,8 +207,8 @@ def logout(request: Request, db: Session = Depends(get_db)) -> Response:
 
 
 @router.get("/me")
-def me(me: Current = Depends(current), db: Session = Depends(get_db)):
-    return me_payload(db, me.user, me.tenant)
+def me(request: Request, me: Current = Depends(current), db: Session = Depends(get_db)):
+    return me_payload(db, me.user, me.tenant, request)
 
 
 def _send_reset(app, user_id) -> None:
