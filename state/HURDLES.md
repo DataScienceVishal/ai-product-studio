@@ -55,3 +55,9 @@ One line per blocker:
 
 ## 2026-11-25 run 6df8: parallel builders sharing one checkout
 Two builders working in the same clone switch branches under each other, so commits land on the wrong branch (T-92 landed on main, reverted in 9e54a63). Fix: give each parallel builder its own `git worktree` (or Agent isolation: worktree), and check `git log origin/main..main` before pushing main. Status: workaround in use.
+
+## 2026-11-25T19:40Z run desk-fca6: 15:00 Desk pushed to its session branch again (second time)
+- What: the 15:00 Desk (desk-246d) sent its digest (Q-15 as 1) but committed the digest file, the Q-15 "sent" mark and the notes clear to `vishal/quirky-ritchie-knpj9s`, not `main`. Main still showed Q-15 as open and kept notes that had already been reported. The 08:00 Desk (desk-0f26) did the same; run 8f52 copied its results to main at 11:21.
+- Done: merged f5daff6 into main by explicit SHA; DIGEST_NOTES kept only the notes added after 15:00. The 19:30 digest asks Vishal for the prompt fix.
+- Fix: Vishal adds "Commit and push everything to main before ending (never to a session branch)." to both Desk prompts (state/SCHEDULED_TASKS.md). Until then, each Desk and hourly run should check `origin/vishal/*` for unmerged desk commits.
+- Needs Vishal: yes (only he can edit the routines). Status: open.
