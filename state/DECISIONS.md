@@ -248,3 +248,5 @@ Reviewer PASS on p/_starter/T-78-mock-portal-scheme (9ca11e6); merged. Two cosme
 ## 2026-11-25T11:40Z, run 8f52: T-83 merged
 - Always-On 4 security pass on T-75..T-78 code: PASS, two lows fixed on p/_starter/T-83-sec-lows, reviewer PASS, merged. Declined host allowlist (T-77 S2) stands: no concrete attack found.
 - Merged the reviewed commit unchanged and queued the reviewer's non-blocking test gap as T-84, rather than adding unreviewed tests before merge.
+
+- 2026-11-25 run 4328 (T-84): loadClientConfig sets billingProvider to "" before fetching, not only in the catch block, so every non-success path (non-OK, throw, abort) fails closed. Reversible; reviewer PASS.
