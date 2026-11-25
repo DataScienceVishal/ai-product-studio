@@ -420,7 +420,7 @@ jobs:
           execution=$(az containerapp job start --resource-group "$RESOURCE_GROUP" --name "$job" \
             --query name --output tsv --only-show-errors)
           echo "Started $execution"
-          for attempt in $(seq 1 60); do
+          for _ in $(seq 1 60); do
             status=$(az containerapp job execution show --resource-group "$RESOURCE_GROUP" --name "$job" \
               --job-execution-name "$execution" --query properties.status --output tsv --only-show-errors)
             case "$status" in
