@@ -31,7 +31,7 @@ HTML_CSP = ("default-src 'self'; script-src 'self'; style-src 'self'; img-src 's
 # Keep in step with the path checks in frontend/src/App.tsx. Anything else is a 404 (with the app's HTML).
 CLIENT_ROUTES = frozenset({
     "/", "/login", "/signup", "/forgot-password", "/reset-password", "/accept-invite", "/verify-email",
-    "/privacy", "/terms", "/help", "/billing", "/billing/done", "/billing/mock-checkout", "/settings", "/team",
+    "/privacy", "/terms", "/help", "/billing", "/billing/done", "/billing/mock-checkout", "/billing/mock-portal", "/settings", "/team",
 })
 IMMUTABLE = "public, max-age=31536000, immutable"
 OWN_HEADERS = "spa.own_headers"  # scope key: set only by responses this module produced; RequestContext honours it
