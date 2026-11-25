@@ -73,3 +73,44 @@ Then add a case: `setBillingProviderForTest("mock")`, then `reply(500, {})`, the
   old module instance.
 - The comment change at `api.ts:43` is fine. Security: no new endpoints or inputs, and the change narrows behaviour
   toward fail-closed.
+
+---
+
+## Re-review: commit d564316
+
+### Verdict: PASS
+
+C1 and C2 are fixed. The default test now imports a fresh copy of the module (`vi.resetModules()` then
+`await import("./api")`), so it checks the real starting value. `loadClientConfig` now sets `billingProvider = ""`
+before the fetch. That covers every non-success path: a non-OK answer, a thrown fetch, an abort, and an OK answer
+whose body is not valid JSON (it ends up in the catch block with the flag already off). Removing the catch-block
+reset is safe because of this upfront reset. New `it.each` cases for 500 and 404 send a `"mock"` body.
+
+### Evidence
+
+- `npx vitest run`: **166 passed (166)**, 6 files. `npx tsc --noEmit -p .`: exit 0.
+- I re-ran the full mutation set against d564316, using `api.test.ts` (30 tests) and restoring the file after each
+  mutation.
+
+| # | Mutation | Result |
+|---|---|---|
+| M1 | starting value `"mock"` | caught (1 fail), previously survived |
+| M2 | non-string fallback `"mock"` | caught (6) |
+| M3 | delete the success-path assignment | caught (1) |
+| M4 | delete the upfront `billingProvider = ""` | caught (3) |
+| M5 | catch block sets `"mock"` | caught (1) |
+| M6 | `String(...)` with no type check | caught (1) |
+| M7 | truthy check | caught (5) |
+| M8 | `isMockBilling` becomes `!== ""` | caught (1) |
+| M9 | `isMockBilling` becomes a case-insensitive substring match | survives (minor, S1 still open) |
+| M10 | non-OK `else` sets `"mock"` | caught (2), previously survived |
+| M11 | `"mock"` set before `if (response.ok)` | caught (2), previously survived |
+| M12 | upfront reset sets `"mock"` | caught (3) |
+| M13 | starting value `"mock"` and upfront reset deleted | caught (4) |
+
+### Remaining (non-blocking)
+
+- S1: add `"Mock"` (or `"mockery"`) to the non-mock cases to pin exact-match semantics. This is the only surviving
+  mutation.
+- Isolation is fine. The fresh-import test uses only `fresh.*`. The other tests use the statically imported instance,
+  which `resetModules` does not affect, and the `beforeEach`/`afterEach` setter resets still apply to it.
