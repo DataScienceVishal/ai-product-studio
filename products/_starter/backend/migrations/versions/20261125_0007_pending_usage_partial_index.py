@@ -18,6 +18,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # Used by the abandoned-reservation sweep and the in-flight count (both filter model = 'pending').
+    # A plain CREATE INDEX blocks inserts into ai_usage while it builds: fine at starter scale. On a large table use
+    # op.create_index(..., postgresql_concurrently=True) inside `with op.get_context().autocommit_block():`
+    # (CREATE INDEX CONCURRENTLY cannot run inside a transaction).
     op.create_index('ix_ai_usage_pending', 'ai_usage', ['tenant_id', 'created_at'], unique=False,
                     postgresql_where=sa.text("model = 'pending'"))
 

@@ -1,5 +1,7 @@
 """Alembic: the whole chain upgrades and downgrades on a scratch database, and matches the models."""
+import os
 import secrets
+import time
 
 import psycopg
 import pytest
@@ -9,16 +11,20 @@ from psycopg import sql
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import make_url
 
-from .conftest import TEST_DB
+from .conftest import _BASE_NAME, SHARED, TEST_DB, _create_run_db
 
 
 @pytest.fixture
 def scratch_url():
+    if SHARED:
+        pytest.skip("TEST_DATABASE_SHARED=1 means the user may not CREATE DATABASE, which this test needs")
     base = make_url(TEST_DB)
-    name = f"mig_{secrets.token_hex(4)}"
+    # Same name shape and comment marker as the per-run database, so a killed run's leftover is reclaimed by the
+    # stale cleanup in conftest instead of leaking.
+    name = f"{_BASE_NAME}_t{int(time.time())}_{os.getpid()}_{secrets.token_hex(3)}"
     plain = base.set(drivername="postgresql", database="postgres").render_as_string(hide_password=False)
     with psycopg.connect(plain, autocommit=True) as admin:
-        admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
+        _create_run_db(admin, name)
     try:
         yield base.set(database=name).render_as_string(hide_password=False)
     finally:
@@ -59,3 +65,13 @@ def test_pending_usage_partial_index_upgrades_and_downgrades(scratch_url):
         assert "ai_usage" not in inspect(engine).get_table_names()
     finally:
         engine.dispose()
+
+
+def test_scratch_database_carries_the_cleanup_marker(scratch_url):
+    admin = make_url(scratch_url).set(drivername="postgresql", database="postgres").render_as_string(hide_password=False)
+    name = make_url(scratch_url).database
+    with psycopg.connect(admin, autocommit=True) as conn:
+        comment = conn.execute("SELECT shobj_description(oid, 'pg_database') FROM pg_database WHERE datname = %s",
+                               (name,)).fetchone()[0]
+    assert comment == "starter-pytest-ephemeral"
+    assert name.startswith(f"{_BASE_NAME}_t")

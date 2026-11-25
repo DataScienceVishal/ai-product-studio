@@ -28,7 +28,7 @@ from datetime import datetime, timezone
 from typing import Protocol
 
 import httpx
-from sqlalchemy import func, select, text, update
+from sqlalchemy import func, literal_column, select, text, update
 from sqlalchemy.orm import Session
 
 from .config import REASONING_EFFORTS
@@ -454,6 +454,10 @@ def tokens_today(db: Session, tenant_id: uuid.UUID) -> int:
 # A reservation is settled within the AI deadline (25 s by default, 300 s at most). A "pending" row older than
 # this belongs to a call whose process died before it could settle, so it no longer holds budget.
 STALE_RESERVATION = timedelta(minutes=15)
+# 'pending' is sent as a SQL literal, not a bound parameter. With a parameter, Postgres may switch to a generic plan
+# (psycopg prepares after 5 runs) and then cannot prove `model = $1` implies the partial index predicate
+# `model = 'pending'`, so ix_ai_usage_pending would be ignored. A literal always matches the index.
+_PENDING = AIUsage.model == literal_column("'pending'")
 
 
 def release_stale_reservations(db: Session, tenant_id: uuid.UUID | None = None,
@@ -461,7 +465,7 @@ def release_stale_reservations(db: Session, tenant_id: uuid.UUID | None = None,
     """Turn abandoned reservations into zero-token "abandoned" rows (kept as a record, no longer counted).
     The cost of a killed call is therefore bounded by one estimate, instead of blocking caps for the month.
     Does not commit. `tenant_id=None` sweeps every tenant (used by the daily purge)."""
-    stmt = (update(AIUsage).where(AIUsage.model == "pending",
+    stmt = (update(AIUsage).where(_PENDING,
                                   AIUsage.created_at < datetime.now(timezone.utc) - older_than)
             .values(model="abandoned", input_tokens=0, output_tokens=0))
     if tenant_id is not None:
@@ -493,7 +497,7 @@ def reserve(db: Session, tenant_id: uuid.UUID, cap: int, estimate: int, feature:
 
     if max_in_flight is not None:
         pending = db.scalar(select(func.count()).select_from(AIUsage).where(
-            AIUsage.tenant_id == tenant_id, AIUsage.model == "pending",
+            AIUsage.tenant_id == tenant_id, _PENDING,
             AIUsage.created_at > datetime.now(timezone.utc) - in_flight_window))
         if pending >= max_in_flight:
             refuse(429, "ai_in_progress", "Your other AI requests are still running. Try again when they finish.")

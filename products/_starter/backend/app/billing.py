@@ -305,6 +305,9 @@ class StripeBilling:
         return Checkout(body["id"], body["url"])
 
     def portal_session(self, customer_ref, return_url) -> str:
+        # The key is random per call on purpose. A portal session is a short-lived URL, so replaying a shared key
+        # within Stripe's 24 h window would return a stale or expired URL. It only satisfies _call, which sends a key
+        # on every POST; it gives no idempotency (and none is needed: creating a second session is harmless).
         body = self._call("POST", "/billing_portal/sessions", {"customer": customer_ref, "return_url": return_url},
                           idempotency_key=f"portal-{uuid.uuid4().hex}")
         if not body.get("url"):

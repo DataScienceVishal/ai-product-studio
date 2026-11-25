@@ -1040,3 +1040,13 @@ def test_a_call_that_settles_after_being_swept_restores_its_real_cost(owner, dat
         db.commit()
         settle(db, rid, "note_summary", 300, 40, "m")
         assert db.get(AIUsage, rid).input_tokens == 300 and db.get(AIUsage, rid).model == "m"
+
+
+def test_pending_is_a_sql_literal_so_the_partial_index_survives_generic_plans():
+    """ix_ai_usage_pending only helps when the planner can see `model = 'pending'` in the SQL text (T-74 review S2)."""
+    from sqlalchemy.dialects import postgresql
+    for stmt in (select(AIUsage).where(ai_module._PENDING),
+                 update(AIUsage).where(ai_module._PENDING).values(model="abandoned")):
+        compiled = stmt.compile(dialect=postgresql.dialect())
+        assert "model = 'pending'" in str(compiled)
+        assert "pending" not in str(compiled.params.values())
