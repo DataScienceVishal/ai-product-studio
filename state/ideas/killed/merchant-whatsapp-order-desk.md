@@ -1,4 +1,5 @@
 Merged into inbound-order-entry-desk.md on 2026-11-25 (T-79).
+KILLED 2026-11-25 (T-79 validator, second G1 failure): the merged inbound-order-entry-desk scored 57; see its Gate log. To be git mv'd to killed/.
 
 # Merchant WhatsApp order desk
 

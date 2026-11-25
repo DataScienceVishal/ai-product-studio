@@ -1,7 +1,7 @@
 # Inbound order entry desk for UK SME distributors and merchants
 
 - slug: inbound-order-entry-desk
-- stage: G0
+- stage: KILLED (T-79 validator, 2026-11-25; second G1 failure for both predecessors)
 - market and segment: UK wholesale distributors and independent builders' merchants (10 to 100 staff, 1 to 10 branches) running Sage 50, Sage 200, or a merchant ERP (BisTrack, Merlin, Kerridge/Klipboard), whose trade customers send orders as email text, PDF or spreadsheet, WhatsApp text or photo of a list, or voicemail.
 - one-line pitch: Turn any inbound order into a draft sales order with matched product codes, price and stock flags, for a clerk to confirm in one click, then export it in the file format the customer's system imports.
 - merged from: merchant-whatsapp-order-desk (56) and wholesale-email-order-entry-sage (55), T-79(a), 2026-11-25. Same engine on different channels.
@@ -111,6 +111,7 @@ Not yet re-scored. Scout's honest guess after this re-check: about 58 to 60.
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
 | 10 | 11 | 10 | 7 | 8 | 4 | 9 | 59 (scout estimate) |
+| 10 | 10 | 9 | 6 | 8 | 5 | 9 | **57 (validator, T-79): KILL** |
 
 ## Notes on the web pages I read
 
@@ -119,3 +120,44 @@ No prompt-injection attempts seen in any fetched page. Several vendor sites (Sag
 ## Gate log
 - 2026-11-23: two source ideas written at G0 and REVISE 56 / 55 by validator (see old files).
 - 2026-11-25 | scout | T-79(a) | merged and re-checked on pages. Narrow wedge (Sage 50 document reading; BisTrack non-template orders; price band between free parsers and $10k+ enterprise). Not enough yet; scout estimate 59.
+
+## Gate log (T-79, 2026-11-25)
+
+Validator: G1 attempt. **Verdict: KILL, 57/100.** This counts as the second failed G1 attempt for both merchant-whatsapp-order-desk (REVISE 56) and wholesale-email-order-entry-sage (REVISE 55).
+
+| Criterion | Score | Why (evidence checked this run) |
+|---|---|---|
+| Pain /20 | 10 | Three weak-to-moderate signals: the SpotDev case (a vendor blog with no measured volume), job ads that are closed or seen only as snippets, and forum threads 7 to 8 years old. No figure for orders per day or minutes per order anywhere. |
+| Pay /20 | 10 | Clerk salaries are £25-30k (search snippets only). Zestcode and Airdev sell this as custom builds with no published price. Parseur's page shows $49-$269 a month for 100-3,000 pages ([parseur.com/pricing](https://parseur.com/pricing)). The scout's Y Meadows claim ("Starter free up to 50 orders") could not be verified: /pricing and /en/pricing both returned 404, and a search summary of the vendor page says packages start at $2,000 a month. That figure is unverified and conflicts with the scout's. I take one point off for the unverified anchor. |
+| AI /15 | 9 | Mapping each customer's own codes to the catalogue is real AI work. But extraction is now commodity: Parseur, Sage's own AI Document Capture, a free chatbot, or Airdev's and Zestcode's "trained on your orders" builds. The alias memory is a rules layer any of them can add. |
+| Reach /10 | 6 | Sage 50 and merchant buyers are easy to find (Sage Marketplace, BMF, NMBS). But no Sage partner channel is named, and selling is locked behind a single UK business. |
+| Build /15 | 8 | Sage 50 has no REST API, so the output is a CSV the customer imports by hand. A Sage 200 sandbox means hosting your own instance (403 on the docs; search only). BisTrack and Merlin write-back needs licensed APIs or eBusiness specs the studio can't test against. The demo works in mock mode, but write-back can't be shown. |
+| Competition /10 | 5 | The wedge is evidenced but thin, and the channel owner can close it. No AI sales-order reader for Sage 50 was found: Adept Tools ([Sage Marketplace](https://uk-marketplace.sage.com/en-GB/apps/84377/adept-tools-for-sage-50)) imports orders from CSV only, and Order Plus ([page](https://uk-marketplace.sage.com/en-GB/apps/90338/order-plus/features)) covers Sage 200 only, with no AI. However, Sage already ships **AI Document Capture inside Sage 50** for purchase invoices: 50 captures included, then £0.20 each ([sage.com Sage 50 AutoEntry page](https://www.sage.com/en-gb/products/sage-50-accounts/features/autoentry/), search summary). Pointing it at sales orders is a small step for Sage. Sage 200 is covered by Zestcode ([page](https://zestcode.co.uk/services/sage-200-order-automation/): emailed PDF, CSV, Excel, Word and in-body orders, line matching, account pricing, credit holds, a review queue). BisTrack's non-template gap is already sold by Airdev ([airdev.co/erp/bistrack/ai](https://www.airdev.co/erp/bistrack/ai): templateless emailed and photographed lists, matched to the item file and contractor pricing, staged through the API or eBusiness, no per-order fees). Workist does the same job for Sage 100 (DE). The cheapest substitute is Parseur ($49-$129 a month) plus Adept or PostTrans CSV import. |
+| Risk /10 | 9 | Business data, a little personal data (contact names and addresses). WhatsApp data can't be used to train across merchants (Meta terms). |
+| **Total** | **57** | |
+
+**Proof-test check (T-66 rule).** A benchmark pass would only show match accuracy. At most it moves AI to 11 and Build to 9, giving about 60. A pass can't reach 70, so no benchmark was run and none should be.
+
+**Why KILL rather than a third REVISE.** The merge was meant to combine two thin wedges, and on pages each one is now either taken or easy for the platform owner to close.
+- Sage 200 email and PDF orders: Zestcode.
+- BisTrack templateless and photo orders: Airdev, which explicitly targets the gap the scout cited from Airdev's own page.
+- Sage 50: still open, but Sage already runs AI document capture inside Sage 50 at £0.20 a document, and the studio's write-back would be a manual CSV import, the same thing a Parseur and PostTrans chain already gives for under £150 a month.
+
+What's left is volume and willingness-to-pay evidence, and that needs buyer contact, which is locked until `unlock selling`. Desk evidence has run out. The ceiling is about 62 even if every missing wedge item came back positive.
+
+**Lessons**
+- A consultancy's "gap" page (Airdev) is usually its own sales page for filling that gap. Read the source as a competitor before citing it as evidence.
+- Check the channel owner's adjacent AI feature: Sage AI Document Capture already sits in Sage 50 for purchase invoices. One document type away is not a moat.
+- Merging two ideas at 55-56 doesn't add up their wedges. It adds up their competitors.
+- Confirms round 8: SME "documents into the ERP" work is closed. The remaining gaps are integration services (Zestcode, Airdev), not products.
+
+**What would revive it.** Any one of these, plus a re-score of 70 or more:
+- a Sage partner or UK merchant group (BMF, NMBS) willing to resell, with measured order volumes (20+ orders a day per firm) after `unlock selling`;
+- page evidence that Sage has said it won't extend AI Document Capture to sales orders;
+- a measured accuracy gap against Parseur or Sage capture on photographed trade lists.
+
+**The single piece of evidence that would most move the score:** measured order volumes and a stated price from real UK Sage 50 or merchant buyers, for example 5 firms at 20+ emailed or WhatsApp orders a day willing to pay £150+ a month. That would lift Pain and Pay by about 6 to 8 points. It can't be collected until selling is unlocked.
+
+Sources checked this run: [parseur.com/pricing](https://parseur.com/pricing), [Zestcode Sage 200](https://zestcode.co.uk/services/sage-200-order-automation/), [Airdev BisTrack AI](https://www.airdev.co/erp/bistrack/ai), [Order Plus](https://uk-marketplace.sage.com/en-GB/apps/90338/order-plus/features), [Adept Tools for Sage 50](https://uk-marketplace.sage.com/en-GB/apps/84377/adept-tools-for-sage-50) (search), [Sage 50 AutoEntry / AI Document Capture](https://www.sage.com/en-gb/products/sage-50-accounts/features/autoentry/) (search), [Epicor BisTrack Order Entry Automation](https://www.epicor.com/en-gb/products/enterprise-resource-planning-erp/bistrack/ptw-order-entry-automation/) (403, search: template OCR), [Workist Sage 100](https://www.workist.com/en/erp-integrations/sage-100-de) (search), Y Meadows pricing (404 twice; search summary says from $2,000 a month). No prompt-injection text seen.
+
+File move: the validator has no shell, so this file and both predecessors are still in `state/ideas/`. The lead should `git mv` all three to `state/ideas/killed/`.

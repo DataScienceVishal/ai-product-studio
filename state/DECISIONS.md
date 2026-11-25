@@ -221,3 +221,8 @@ Reviewer PASS on p/_starter/T-77-redirect-review (c09fbca); merged to main. me_p
 
 ## 2026-11-25T07:41Z, run b5ff: T-78 merged
 Reviewer PASS on p/_starter/T-78-mock-portal-scheme (9ca11e6); merged. Two cosmetic test nits left unqueued (not worth a task).
+
+## 2026-11-25T08:25Z, run 4f19: T-79 targeted re-check
+- G0→G1 KILL: inbound-order-entry-desk 57 (merge of merchant-whatsapp-order-desk 56 and wholesale-email-order-entry-sage 55; second G1 failure for both). Zestcode (Sage 200) and Airdev (BisTrack) already sell AI order entry; Sage 50 write-back is only CSV import, which Parseur plus PostTrans/Adept gives; a benchmark pass would reach ~60, so no proof test. All three files moved to state/ideas/killed/. Validator gate log in the file.
+- Ireland BER watch-list dropped: 0 pain signals, 0 tool prices, DEAP 4 has no import route for a pre-fill (round17-summary.md T-79 follow-up).
+- Picked a targeted Always-On 6 re-check rather than a broad desk round, because Q-13's default (C) only applies from ~20:00Z and the meta-review says broad desk scouting is why nothing passes.
