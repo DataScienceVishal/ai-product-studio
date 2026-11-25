@@ -486,7 +486,12 @@ def test_shutdown_while_gate_is_queued_answers_from_memory_not_cancelled(server)
 
 
 def test_cancelled_request_task_still_gets_cancelled_error_when_future_is_cancelled(server, monkeypatch):
-    """S3: if the request task is itself being cancelled, CancelledError propagates and no fallback gate runs."""
+    """S3: if the request task is itself being cancelled, CancelledError propagates and no fallback gate runs.
+
+    The patched asyncio.wait cancels the current task right after the pool dropped the queued job. That simulates an
+    earlier cancellation that the code swallowed without uncancel(), the only real way to reach the
+    cancelling() > 0 branch, so the test pins the "propagate, do not answer" contract.
+    """
     calls: list[str] = []
     limiter = _slow_gate_limiter(server, calls, delay=0.4, timeout=5)
     real_wait = asyncio.wait

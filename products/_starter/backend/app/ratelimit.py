@@ -169,8 +169,8 @@ class RateLimiter:
         if fut.cancelled():
             # shutdown(cancel_futures=True) dropped this queued job. If our own task is being cancelled, let that
             # propagate; otherwise the request is still alive and must get an answer, so use the in-memory check.
-            task = asyncio.current_task()
-            if task is None or task.cancelling() == 0:
+            # current_task() is never None here: this coroutine always runs inside a task on the loop.
+            if asyncio.current_task().cancelling() == 0:
                 self._answer_in_memory(fn)
                 return
         await fut  # finished, or already running (bounded by the Redis socket timeouts)
