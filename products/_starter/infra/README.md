@@ -93,7 +93,7 @@ Nothing here costs money until step 4. Do the steps only after approving the cos
   _starter-deploy.yml` and `gh run view <id> --log`.
 - Inputs:
   - `ai_provider`: `fake` (default, no cost) or `azure`. `azure` needs the `AZURE_OPENAI_*` secrets from
-    SETUP.md step 3. It spends tokens, capped at 100,000 a day for all tenants together.
+    SETUP.md step 3. It spends tokens, capped at 98,000 a day for all tenants together.
   - `billing_provider`: `mock` (default) or `stripe`, which is test mode only and needs the
     `STARTER_BILLING_WEBHOOK_SECRET` and `STARTER_STRIPE_SECRET_KEY` secrets.
   - `require_email_verification`: off by default **while email is outbox-only**, because nobody can receive

@@ -97,8 +97,8 @@ AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
 | `BILLING_PROVIDER` | `mock` (default) or `stripe` (test keys only; live keys are refused) |
 | `BILLING_WEBHOOK_SECRET`, `STRIPE_SECRET_KEY` | leave the secret unset with mock billing (a random one is made); with Stripe, its `whsec_` value and a test key |
 | `MOCK_CHECKOUT_ENABLED` | `false` (default); `true` only for demos, where "Pay (test)" grants a plan with trial-sized AI allowances |
-| `AI_GLOBAL_DAILY_TOKENS`, `AI_TRIAL_SHARE` | studio-wide AI budget per UTC day (default 100,000; the Bicep default too), and the share all free trials may use together (0.5). Size it from the price, see "Sizing the daily AI cap" |
-| `AI_PRICE_PER_MILLION_TOKENS`, `AI_MONTHLY_BUDGET_USD` | optional explicit blended USD price per million tokens (unset: looked up by `AZURE_OPENAI_DEPLOYMENT` in the table in `app/aicost.py`; an unknown deployment must set it), and the monthly AI budget (default 6.20). With `AI_PROVIDER=azure` the app refuses to start when `AI_GLOBAL_DAILY_TOKENS` x 31 x price is above the budget. `fake` needs no price. The deploy guard applies the same rule |
+| `AI_GLOBAL_DAILY_TOKENS`, `AI_TRIAL_SHARE` | studio-wide AI budget per UTC day (default 98,000; the Bicep default too), and the share all free trials may use together (0.5). Size it from the price, see "Sizing the daily AI cap" |
+| `AI_PRICE_PER_MILLION_TOKENS`, `AI_MONTHLY_BUDGET_USD` | optional explicit blended USD price per million tokens (unset: looked up by `AZURE_OPENAI_DEPLOYMENT` in the table in `app/aicost.py`; an unknown deployment must set it), and the monthly AI budget (default 6.10). With `AI_PROVIDER=azure` the app refuses to start when `AI_GLOBAL_DAILY_TOKENS` x 31 x price is above the budget. `fake` needs no price. The deploy guard applies the same rule |
 | `AI_REASONING_HEADROOM` | extra output tokens (default 1500) added to each Responses-API call and to its token reservation, so reasoning cannot use up the answer's room; ignored for chat completions |
 | `AI_CONCURRENT_CALLS`, `AI_CALLS_PER_TENANT_AT_ONCE` | at most 8 AI calls at once per process, 2 per customer |
 | `SIGNUPS_PER_IP_PER_DAY`, `NEW_TRIALS_PER_DAY` | sign-up limits: 20 a day per IP, 200 new trials a day in total |
@@ -180,16 +180,16 @@ The cap counts tokens, not money, so it is only as safe as the price you assume:
     monthly cost = AI_GLOBAL_DAILY_TOKENS x AI_PRICE_PER_MILLION_TOKENS / 1,000,000 x 31
     AI_GLOBAL_DAILY_TOKENS = monthly budget / (31 x price) x 1,000,000
 
-The AI budget is $6.20 a month (`state/BUDGET.md`'s "at most about $6", over a 31-day month). With a gpt-5-mini style blend of
-$2.00 per million, 100,000 tokens a day costs $6.20 a month. **A pro deployment needs a much smaller cap.** gpt-5.4-pro lists at
+The AI budget is $6.10 a month (`state/BUDGET.md`'s "at most 6.10", which Vishal approved; checked over a 31-day month). With a
+gpt-5-mini style blend of $2.00 per million, the default 98,000 tokens a day costs at most $6.08 a month. **A pro deployment needs a much smaller cap.** gpt-5.4-pro lists at
 $180 per million output tokens ($30 input; OpenAI's model page and Microsoft's Foundry launch post, checked 2026-11-24).
-Counting every capped token as output, $6.20 allows only 6.20 / (31 x 180) x 1,000,000, about 1,110 tokens a day. The smallest
+Counting every capped token as output, $6.10 allows only 6.10 / (31 x 180) x 1,000,000, about 1,093 tokens a day. The smallest
 reservation for one call is 1,504 tokens (3,004 on the Responses API), so **gpt-5.4-pro at the default budget means AI is
-effectively off**: not one call fits. The real choices are a cheaper deployment, or a bigger budget from Vishal. At 100,000
-tokens a day that deployment could cost up to $558 a month, far over the $80 credit. **Since T-91 this can't happen by accident:**
+effectively off**: not one call fits. The real choices are a cheaper deployment, or a bigger budget from Vishal. At 98,000
+tokens a day that deployment could cost up to $547 a month, far over the $80 credit. **Since T-91 this can't happen by accident:**
 the price comes from the deployment that is actually deployed (`MODEL_PRICES_PER_MILLION` in `backend/app/aicost.py`, estimates
 dated 2026-11-25; gpt-5.4-pro is 180, the output price). The app (`AI_PROVIDER=azure`) refuses to start, and `infra/cost-guard.sh`
-fails the deploy workflow's check job, when `AI_GLOBAL_DAILY_TOKENS` x 31 x price is above `AI_MONTHLY_BUDGET_USD` (6.20). A
+fails the deploy workflow's check job, when `AI_GLOBAL_DAILY_TOKENS` x 31 x price is above `AI_MONTHLY_BUDGET_USD` (6.10). A
 deployment name not in the table needs `AI_PRICE_PER_MILLION_TOKENS` (app) or the repository variable of the same name (workflow);
 an explicit price can only raise a table price, never lower it (a lower price needs a reviewed change to the table). Error messages
 never print the deployment name or any setting value.
@@ -200,10 +200,10 @@ tokens actually used. The reservation is `system prompt (287 bytes) + note bytes
 `/openai/v1/responses`). So the cap is not a daily call count: a call is refused once less than its reservation is
 left, and `cap / reservation` is a floor (calls that all run at once, or each use their full budget). Short answers
 leave room for more.
-Worked example (Responses API, 1 KB note): reservation about 287 + 1,000 + 17 + 2,700 = 4,004, so 100,000 admits at
-least 24 such calls (100,000 / 4,004). A 20,000-character note reserves 23k to 83k (multibyte text), which can exceed the 30k trial cap on
+Worked example (Responses API, 1 KB note): reservation about 287 + 1,000 + 17 + 2,700 = 4,004, so 98,000 admits at
+least 24 such calls (98,000 / 4,004). A 20,000-character note reserves 23k to 83k (multibyte text), which can exceed the 30k trial cap on
 its own. Until `unlock selling`, `LIMITED_PROVIDERS` (mock, Stripe test) makes every tenant draw on the trial half
-(`AI_TRIAL_SHARE` 0.5, 50,000 of 100,000). Size the cap from the reservation of your typical note, then check the cost
+(`AI_TRIAL_SHARE` 0.5, 49,000 of 98,000). Size the cap from the reservation of your typical note, then check the cost
 with the formula above.
 
 ## Azure OpenAI sign-in

@@ -11,14 +11,14 @@
 #   - a custom network for the environment (vnetConfiguration, infrastructureSubnetId): about $25.55 a month;
 #   - any Microsoft.Network resource, private endpoint or planned maintenance window ($0.10 an hour each);
 #   - a template with an aiGlobalDailyTokens parameter whose default gives tokens a day x price per million x 31
-#     above AI_MONTHLY_BUDGET_USD (default 6.20, the Azure OpenAI line in state/BUDGET.md). The price is the
+#     above AI_MONTHLY_BUDGET_USD (default 6.10, the Azure OpenAI line in state/BUDGET.md). The price is the
 #     explicit AI_PRICE_PER_MILLION_TOKENS / aiPricePerMillionTokens (it can only raise a table price), else the table price of the deployment
 #     in AZURE_OPENAI_DEPLOYMENT (backend/app/aicost.py); with AI_PROVIDER=azure an unknown deployment and no
 #     explicit price is refused. The deploy workflow passes AI_PROVIDER, AZURE_OPENAI_DEPLOYMENT and the optional
 #     AI_PRICE_PER_MILLION_TOKENS; none of them is printed.
 set -euo pipefail
 
-AI_MONTHLY_BUDGET_USD="${AI_MONTHLY_BUDGET_USD:-6.20}"
+AI_MONTHLY_BUDGET_USD="${AI_MONTHLY_BUDGET_USD:-6.10}"
 AICOST="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../backend/app/aicost.py"
 command -v python3 >/dev/null 2>&1 || { echo "::error::cost-guard: python3 is needed for the AI cost rule" >&2; exit 2; }
 [ -f "$AICOST" ] || { echo "::error::cost-guard: backend/app/aicost.py is missing" >&2; exit 2; }
