@@ -189,7 +189,7 @@ for expr in \
   "HAS_AZURE: \${{ secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' && secrets.AZURE_SUBSCRIPTION_ID != '' }}" \
   "HAS_DEPLOY_ID: \${{ secrets.AZURE_CLIENT_ID != '' }}" \
   "APPROVED: \${{ vars.STUDIO_AZURE_APPROVED }}"; do
-  grep -qF "          $expr" "$wf" && ok "deploy gate: env ${expr%%:*} built from the right secrets" || bad "deploy gate: env ${expr%%:*} built from the right secrets"
+  grep -qF "          $expr" "$wf" && ok "deploy gate: env ${expr%%:*} built from the right secret or variable" || bad "deploy gate: env ${expr%%:*} built from the right secret or variable"
 done
 gate="$(mktemp)"
 awk '/- name: Credentials, approval and branch/{f=1;next} f&&/run: \|/{r=1;next} r&&/^      - name:|^  [a-z_]+:$/{exit} r' "$wf" | sed 's/^          //' > "$gate"
@@ -221,7 +221,7 @@ fi
 rm -f "$gate"
 # The gate's answer must reach the jobs that sign in: the job output comes from the step, and both jobs need it.
 grep -qF '      go: ${{ steps.gate.outputs.go }}' "$wf" && ok "deploy gate: check job output go comes from the gate step" || bad "deploy gate: check job output go comes from the gate step"
-[ "$(grep -cF "    if: needs.check.outputs.go == 'true' && inputs.rollback_to" "$wf")" = 2 ] && ok "deploy gate: deploy and rollback both require go == 'true'" || bad "deploy gate: deploy and rollback both require go == 'true'"
+grep -qxF "    if: needs.check.outputs.go == 'true' && inputs.rollback_to == ''" "$wf" && grep -qxF "    if: needs.check.outputs.go == 'true' && inputs.rollback_to != ''" "$wf" && [ "$(grep -cE "^    if: .*needs\.check\.outputs\.go" "$wf")" = 2 ] && ok "deploy gate: deploy and rollback both require go == 'true'" || bad "deploy gate: deploy and rollback both require go == 'true'"
 
 # ---- azure-spend.yml ----------------------------------------------------------------------------------------------
 sp="$(dirname "$wf")/azure-spend.yml"
