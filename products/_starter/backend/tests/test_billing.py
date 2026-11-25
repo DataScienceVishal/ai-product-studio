@@ -592,3 +592,179 @@ def test_webhook_refuses_the_trial_plan_on_an_active_event(owner, app):
     client, _ = owner
     r = _sub_event(client, app, "e_trial", "checkout.completed", int(time.time()), "s1", plan="trial")
     assert r.status_code == 400 and r.json()["error"] == "unknown_plan"
+
+
+# --- T-73: no new checkout while the subscription is past_due ---
+
+def test_checkout_refused_while_past_due(owner, app):
+    client, _ = owner
+    now = int(time.time())
+    _sub_event(client, app, "p1", "checkout.completed", now - 100, "s1")
+    _sub_event(client, app, "p2", "subscription.past_due", now, "s1")
+    assert _status(client) == "past_due"
+    r = client.post("/api/billing/checkout", json={"plan": "pro"})
+    assert r.status_code == 409 and r.json()["error"] == "subscription_past_due"
+
+
+def test_checkout_allowed_after_cancel(owner, app):
+    client, _ = owner
+    now = int(time.time())
+    _sub_event(client, app, "c1", "checkout.completed", now - 100, "s1")
+    _sub_event(client, app, "c2", "subscription.canceled", now, "s1")
+    assert _status(client) == "canceled"
+    assert client.post("/api/billing/checkout", json={"plan": "pro"}).status_code == 200
+
+
+def test_checkout_allowed_on_trial(owner):
+    client, _ = owner
+    assert client.post("/api/billing/checkout", json={"plan": "pro"}).status_code == 200
+
+
+# --- T-74: past_due follow-ups (T-73 review S1 and S3) and the billing portal (S2) ---
+
+def test_past_due_refusal_creates_no_checkout_session(owner, app):
+    client, _ = owner
+    now = int(time.time())
+    _sub_event(client, app, "n1", "checkout.completed", now - 100, "s1")
+    _sub_event(client, app, "n2", "subscription.past_due", now, "s1")
+    sessions_before = dict(app.state.billing.sessions)
+    r = client.post("/api/billing/checkout", json={"plan": "pro"})
+    assert r.status_code == 409 and r.json()["error"] == "subscription_past_due"
+    assert app.state.billing.sessions == sessions_before  # the provider was never called
+
+
+def test_past_due_from_another_provider_does_not_block_checkout(owner, app):
+    """S1: a tenant left past_due by the mock provider must be able to buy once the app uses another provider."""
+    client, _ = owner
+    now = int(time.time())
+    _sub_event(client, app, "m1", "checkout.completed", now - 100, "s1")
+    _sub_event(client, app, "m2", "subscription.past_due", now, "s1")
+    assert client.post("/api/billing/checkout", json={"plan": "pro"}).status_code == 409
+    app.state.billing.name = "stripe"  # the app now runs another provider than the one that owns the subscription
+    assert client.post("/api/billing/checkout", json={"plan": "pro"}).status_code == 200
+
+
+def test_stripe_unpaid_blocks_checkout(owner, database):
+    """S3b: Stripe's `unpaid` maps to past_due, so the refusal applies to a real-shaped Stripe event."""
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    app_billing = client.app.state.billing
+    _stripe_apply(database, t, "u1", "checkout.session.completed", now - 100, "sub_1")
+    _stripe_apply(database, t, "u2", "customer.subscription.updated", now, "sub_1", "unpaid")
+    assert _stripe_sub(database, t)[0] == "past_due"
+    app_billing.name = "stripe"  # the subscription is Stripe's, so the app must be running Stripe
+    r = client.post("/api/billing/checkout", json={"plan": "pro"})
+    assert r.status_code == 409 and r.json()["error"] == "subscription_past_due"
+
+
+def test_past_due_then_active_on_same_ref_is_already_subscribed(owner, app):
+    """S3c: recovery moves the refusal from subscription_past_due to already_subscribed."""
+    client, _ = owner
+    now = int(time.time())
+    _sub_event(client, app, "r1", "checkout.completed", now - 300, "s1")
+    _sub_event(client, app, "r2", "subscription.past_due", now - 200, "s1")
+    assert client.post("/api/billing/checkout", json={"plan": "pro"}).json()["error"] == "subscription_past_due"
+    # the same subscription recovers: a later activation event on the same ref
+    _sub_event(client, app, "r3", "checkout.completed", now - 100, "s1")
+    assert _status(client) == "active"
+    r = client.post("/api/billing/checkout", json={"plan": "pro"})
+    assert r.status_code == 409 and r.json()["error"] == "already_subscribed"
+
+
+def _set_customer(database, client, customer="cus_1", provider="mock"):
+    from sqlalchemy import select
+    from app.models import Subscription
+    with database.sessions() as db:
+        sub = db.scalar(select(Subscription).where(Subscription.tenant_id == uuid.UUID(_tenant_id(client))))
+        sub.provider_customer, sub.provider = customer, provider
+        db.commit()
+
+
+def test_portal_without_a_customer_is_409(owner):
+    client, _ = owner
+    r = client.post("/api/billing/portal")
+    assert r.status_code == 409 and r.json()["error"] == "no_billing_customer"
+
+
+def test_portal_customer_of_another_provider_is_409(owner, database):
+    client, _ = owner
+    _set_customer(database, client, "cus_1", provider="stripe")  # the app runs the mock provider
+    assert client.post("/api/billing/portal").status_code == 409
+
+
+def test_portal_mock_success(owner, database):
+    client, _ = owner
+    _set_customer(database, client)
+    r = client.post("/api/billing/portal")
+    assert r.status_code == 200
+    assert r.json()["url"] == "https://app.test/billing/mock-portal?customer=cus_1"
+
+
+def test_portal_is_owner_only(owner, new_client, outbox, database):
+    from .conftest import link_token
+    client, _ = owner
+    _set_customer(database, client)
+    client.post("/api/team/invitations", json={"email": "member@acme.test"})
+    member = new_client()
+    assert member.post("/api/invitations/accept", json={"token": link_token(outbox, "accept-invite"),
+                                                        "password": "correct horse battery 2"}).status_code == 201
+    assert member.post("/api/billing/portal").status_code == 403
+    assert new_client().post("/api/billing/portal").status_code == 401
+
+
+def test_portal_never_shows_another_tenants_customer(owner, new_client, outbox, database):
+    from .conftest import sign_up, verify_email
+    client, _ = owner
+    _set_customer(database, client, "cus_acme")
+    other = new_client()
+    sign_up(other, email="other@beta.test", company="Beta")
+    verify_email(other, outbox)
+    assert other.post("/api/billing/portal").status_code == 409  # Beta has no customer; it never sees cus_acme
+
+
+def test_portal_is_rate_limited(owner, database):
+    client, _ = owner
+    _set_customer(database, client)
+    codes = [client.post("/api/billing/portal").status_code for _ in range(11)]
+    assert codes[:10] == [200] * 10 and codes[10] == 429
+
+
+def _portal_stripe(reply=None):
+    calls = []
+
+    def handler(request: httpx.Request):
+        calls.append((request.method, request.url.path, parse_qs(request.content.decode()),
+                      request.headers.get("idempotency-key")))
+        return reply(request) if reply else httpx.Response(200, json={"url": "https://billing.stripe.com/p/session/x"})
+
+    return StripeBilling("sk_test_x", SECRET, client=httpx.Client(transport=httpx.MockTransport(handler))), calls
+
+
+def test_stripe_portal_session_call_parameters():
+    stripe, calls = _portal_stripe()
+    url = stripe.portal_session("cus_42", "https://app.test/billing")
+    assert url == "https://billing.stripe.com/p/session/x"
+    (method, path, form, key), = calls
+    assert (method, path) == ("POST", "/v1/billing_portal/sessions")
+    assert form == {"customer": ["cus_42"], "return_url": ["https://app.test/billing"]} and key
+
+
+def test_stripe_portal_incomplete_reply_and_rejection():
+    stripe, _ = _portal_stripe(lambda r: httpx.Response(200, json={}))
+    with pytest.raises(AppError) as error:
+        stripe.portal_session("cus_1", "https://a/b")
+    assert error.value.code == "billing_rejected"
+    stripe, _ = _portal_stripe(lambda r: httpx.Response(400, json={"error": {"code": "x"}}))
+    with pytest.raises(AppError):
+        stripe.portal_session("cus_1", "https://a/b")
+
+
+def test_portal_route_builds_return_url_from_settings_not_headers(owner, database, app, monkeypatch):
+    client, _ = owner
+    _set_customer(database, client, "cus_9", provider="stripe")
+    stripe, calls = _portal_stripe()
+    stripe.name = "stripe"
+    monkeypatch.setattr(app.state, "billing", stripe)
+    r = client.post("/api/billing/portal", headers={"Host": "evil.test", "Origin": "https://evil.test"})
+    assert r.status_code == 200
+    assert calls[0][2]["return_url"] == ["https://app.test/billing"] and calls[0][2]["customer"] == ["cus_9"]

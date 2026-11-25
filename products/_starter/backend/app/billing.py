@@ -93,6 +93,10 @@ class BillingProvider(Protocol):
     def create_checkout(self, tenant_id: uuid.UUID, plan: Plan, offer: Offer | None,
                         success_url: str, cancel_url: str) -> Checkout: ...
 
+    def portal_session(self, customer_ref: str, return_url: str) -> str:
+        """URL of a provider-hosted page where the customer manages their payment method and subscription."""
+        ...
+
     def parse_webhook(self, payload: bytes, signature: str) -> BillingUpdate | None: ...
 
     def close(self, customer_ref: str | None, subscription_ref: str | None) -> None:
@@ -154,6 +158,9 @@ class MockBilling:
         self.sessions[session_id] = {"tenant_id": str(tenant_id), "plan": plan.id,
                                      "offer": offer.code if offer else None}
         return Checkout(session_id, f"{self.base_url}/billing/mock-checkout?session={session_id}")
+
+    def portal_session(self, customer_ref, return_url) -> str:
+        return f"{self.base_url}/billing/mock-portal?customer={customer_ref}"
 
     def completion_event(self, session_id: str) -> bytes:
         """What the mock 'provider' would post when the customer pays. Used by the dev endpoint and tests."""
@@ -296,6 +303,13 @@ class StripeBilling:
         if not body.get("id") or not body.get("url"):
             raise AppError(502, "billing_rejected", "The payment provider sent an incomplete reply.")
         return Checkout(body["id"], body["url"])
+
+    def portal_session(self, customer_ref, return_url) -> str:
+        body = self._call("POST", "/billing_portal/sessions", {"customer": customer_ref, "return_url": return_url},
+                          idempotency_key=f"portal-{uuid.uuid4().hex}")
+        if not body.get("url"):
+            raise AppError(502, "billing_rejected", "The payment provider sent an incomplete reply.")
+        return body["url"]
 
     def close(self, customer_ref, subscription_ref) -> None:
         if customer_ref:  # deleting the customer cancels their subscriptions and removes their details

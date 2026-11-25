@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, Uuid, false
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, Uuid, false, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base
@@ -96,7 +96,11 @@ class AIUsage(Base):
     daily budget must still count what deleted accounts spent; they hold no personal data."""
     __tablename__ = "ai_usage"
     __table_args__ = (Index("ix_ai_usage_tenant_created", "tenant_id", "created_at"),
-                      Index("ix_ai_usage_created", "created_at"))
+                      Index("ix_ai_usage_created", "created_at"),
+                      # The abandoned-reservation sweep (ai.release_stale_reservations) and the in-flight count
+                      # only look at pending rows, which are few and short-lived.
+                      Index("ix_ai_usage_pending", "tenant_id", "created_at",
+                            postgresql_where=text("model = 'pending'"), sqlite_where=text("model = 'pending'")))
     id: Mapped[uuid.UUID] = _id()
     tenant_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("tenants.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = _created()
