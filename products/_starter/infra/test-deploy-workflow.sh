@@ -184,6 +184,45 @@ firsttok=$(grep -n 'get-access-token --resource-type oss-rdbms' "$wf" | head -1 
 lastlogin=$(grep -n 'uses: azure/login@' "$wf" | awk -F: -v d="$dbl" '$1<d{l=$1} END{print l}')
 [ -n "$lastlogin" ] && [ "$lastlogin" -lt "$dbl" ] && [ "$dbl" -lt "$firsttok" ] && [ $((dbl - lastlogin)) -le 12 ] && ok "the database token is first requested right after a sign-in" || bad "the database token is first requested right after a sign-in"
 
+# ---- T-104: the deploy gate over every secret, approval and branch combination ------------------------------------
+for expr in \
+  "HAS_AZURE: \${{ secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' && secrets.AZURE_SUBSCRIPTION_ID != '' }}" \
+  "HAS_DEPLOY_ID: \${{ secrets.AZURE_CLIENT_ID != '' }}" \
+  "APPROVED: \${{ vars.STUDIO_AZURE_APPROVED }}"; do
+  grep -qF "          $expr" "$wf" && ok "deploy gate: env ${expr%%:*} built from the right secrets" || bad "deploy gate: env ${expr%%:*} built from the right secrets"
+done
+gate="$(mktemp)"
+awk '/- name: Credentials, approval and branch/{f=1;next} f&&/run: \|/{r=1;next} r&&/^      - name:|^  [a-z_]+:$/{exit} r' "$wf" | sed 's/^          //' > "$gate"
+if ! [ -s "$gate" ] || ! grep -q 'go=' "$gate"; then
+  bad "deploy gate: could not extract the 'Credentials, approval and branch' run block"
+else
+  gate_out() { # deploy_id tenant_sub approved(value) on_main -> go=true / go=false / fail
+    local out rc
+    out="$(mktemp)"
+    HAS_DEPLOY_ID=$([ "$1" = 1 ] && echo true || echo false) HAS_AZURE=$([ "$1" = 1 ] && [ "$2" = 1 ] && echo true || echo false) \
+      APPROVED="$3" GITHUB_REF=$([ "$4" = 1 ] && echo refs/heads/main || echo refs/heads/x) \
+      PRODUCT_DIR=products/_starter GITHUB_OUTPUT="$out" bash -e "$gate" >/dev/null 2>&1; rc=$?
+    if [ $rc -ne 0 ]; then echo fail; else sed -n 's/^go=//p' "$out"; fi
+    rm -f "$out"
+  }
+  g_bad=0; g_n=0
+  # Approval values: only the exact "yes" approves. "" is the real default (variable unset); "no", "Yes" and
+  # "yes " must not approve either.
+  for d in 0 1; do for t in 0 1; do for a in yes "" no Yes "yes "; do for m in 0 1; do
+    g_n=$((g_n+1))
+    if [ $d = 1 ] && [ $t = 0 ]; then exp=fail          # client id without tenant/subscription: broken, fail loudly
+    elif [ $d = 1 ] && [ "$a" = yes ] && [ $m = 1 ]; then exp=true
+    else exp=false; fi                                   # fresh setup, unapproved or off main: notice, no deploy
+    got=$(gate_out $d $t "$a" $m)
+    [ "$got" = "$exp" ] || { g_bad=$((g_bad+1)); echo "  deploy gate deploy_id=$d tenant_sub=$t approved='$a' on_main=$m: want $exp, got $got"; }
+  done; done; done; done
+  [ "$g_n" = 40 ] && [ "$g_bad" = 0 ] && ok "deploy gate: matches the 40-row truth table (half-set client id fails, deploys only when all hold)" || bad "deploy gate: matches the 40-row truth table ($g_bad wrong)"
+fi
+rm -f "$gate"
+# The gate's answer must reach the jobs that sign in: the job output comes from the step, and both jobs need it.
+grep -qF '      go: ${{ steps.gate.outputs.go }}' "$wf" && ok "deploy gate: check job output go comes from the gate step" || bad "deploy gate: check job output go comes from the gate step"
+[ "$(grep -cF "    if: needs.check.outputs.go == 'true' && inputs.rollback_to" "$wf")" = 2 ] && ok "deploy gate: deploy and rollback both require go == 'true'" || bad "deploy gate: deploy and rollback both require go == 'true'"
+
 # ---- azure-spend.yml ----------------------------------------------------------------------------------------------
 sp="$(dirname "$wf")/azure-spend.yml"
 if [ -f "$sp" ]; then
@@ -222,6 +261,8 @@ if [ -f "$sp" ]; then
       else echo "$(sed -n 's/^AZURE_MODE=//p' "$env_file")$(grep -qx 'HAS_AZURE=true' "$env_file" && echo ,azure)"; fi
       rm -f "$env_file"
     }
+    # Tenant and subscription share one bit (tenant_sub). That is safe because the env-flag checks above prove
+    # HAS_SPEND and HAS_OIDC each need both secrets, so "tenant only" behaves exactly like "neither".
     tt_bad=0; tt_n=0
     for a in 0 1; do for t in 0 1; do for d in 0 1; do for c in 0 1; do for m in 0 1; do
       tt_n=$((tt_n+1))

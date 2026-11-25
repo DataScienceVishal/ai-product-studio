@@ -4,7 +4,8 @@
 #
 # Manual only, for now. Every run compiles the Bicep and checks the compiled templates for features with a
 # fixed charge. It deploys only when all three hold; otherwise it stops with a notice:
-#   - the AZURE_CLIENT_ID, AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID secrets exist. They name the user-assigned
+#   - the AZURE_CLIENT_ID, AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID secrets exist (AZURE_CLIENT_ID set while
+#     either of the other two is missing fails the run instead of stopping with a notice). They name the user-assigned
 #     managed identity id-github-deploy (Contributor on rg-ai-studio only), which GitHub signs in as through
 #     OIDC: no stored password. Its federated credential trusts only
 #     repo:DataScienceVishal@102427114/ai-product-studio@1468636475:ref:refs/heads/main, so Azure sign-in works only from main. Don't
@@ -126,10 +127,16 @@ jobs:
         id: gate
         env:
           HAS_AZURE: ${{ secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' && secrets.AZURE_SUBSCRIPTION_ID != '' }}
+          HAS_DEPLOY_ID: ${{ secrets.AZURE_CLIENT_ID != '' }}
           APPROVED: ${{ vars.STUDIO_AZURE_APPROVED }}
         run: |
           go=false
-          if [ "$HAS_AZURE" != "true" ]; then
+          # A client id without tenant or subscription is a broken setup, not a fresh one: fail loudly, as
+          # azure-spend.yml does. Tenant and subscription alone are fine (the spend identity uses them too).
+          if [ "$HAS_DEPLOY_ID" = "true" ] && [ "$HAS_AZURE" != "true" ]; then
+            echo "::error::AZURE_CLIENT_ID is set but AZURE_TENANT_ID or AZURE_SUBSCRIPTION_ID is missing, so the deploy identity can't sign in. Add both secrets (SETUP.md step 3)."
+            exit 1
+          elif [ "$HAS_AZURE" != "true" ]; then
             echo "::notice::The AZURE_CLIENT_ID, AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID secrets aren't all set, so nothing was deployed. The Bicep compiled. See $PRODUCT_DIR/infra/README.md."
           elif [ "$APPROVED" != "yes" ]; then
             echo "::notice::Nothing was deployed: the costs in state/BUDGET.md need Vishal's approval first. He approves by setting the repository variable STUDIO_AZURE_APPROVED to yes."
