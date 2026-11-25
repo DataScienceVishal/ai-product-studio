@@ -1,0 +1,167 @@
+{
+ "page_id": "TEST-025_p1",
+ "invoice_id": "TEST-025",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2272,
+   "output_tokens": 2976,
+   "latency_s": 23.87,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 23.87,
+ "input_tokens": 2272,
+ "output_tokens": 2976,
+ "cost_usd": 0.00652,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "Code",
+   "Description",
+   "Pack",
+   "Qty",
+   "UoM",
+   "Price",
+   "Disc%",
+   "VAT",
+   "Net"
+  ],
+  "supplier_name": "Fenwick & Dale Foodservice Ltd",
+  "invoice_number": "86391",
+  "invoice_date": "2026-10-16",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "FD48633 TOM CHOPPED IN JUICE 6X400G 6x400g 4 CS 7.05  0% 28.20",
+    "description": "TOM CHOPPED IN JUICE 6X400G",
+    "pack_size": "6x400g",
+    "unit": "case",
+    "qty": 4,
+    "unit_price": 7.05,
+    "line_total": 28.2,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD80637 CHOC DARK CHIPS 2.5KG 2.5kg 1 EA 16.03  0% 16.03",
+    "description": "CHOC DARK CHIPS 2.5KG",
+    "pack_size": "2.5kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 16.03,
+    "line_total": 16.03,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD13815 BUTTER UNSLTD 20X250G 20x250g 1 CS 49.46 10 0% 44.51",
+    "description": "BUTTER UNSLTD 20X250G",
+    "pack_size": "20x250g",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 49.46,
+    "line_total": 44.51,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD93800 CHEESE MOZZ BLK 2.3KG 2.3kg 1 EA 14.65  0% 14.65",
+    "description": "CHEESE MOZZ BLK 2.3KG",
+    "pack_size": "2.3kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 14.65,
+    "line_total": 14.65,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD18474 BLK PEPPER GRND 500G 500g 5 EA 6.77 10 0% 30.47",
+    "description": "BLK PEPPER GRND 500G",
+    "pack_size": "500g",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 6.77,
+    "line_total": 30.47,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD87624 SPICE MIX CAJUN 6 X 2.5KG 6 x 2.5kg 5 CS 39.37  0% 196.85",
+    "description": "SPICE MIX CAJUN 6 X 2.5KG",
+    "pack_size": "6x2.5kg",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 39.37,
+    "line_total": 196.85,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD56300 SUGAR GRAN 15KG 15kg 2 EA 15.24 5 0% 28.96",
+    "description": "SUGAR GRAN 15KG",
+    "pack_size": "15kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 15.24,
+    "line_total": 28.96,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD75889 BIN LINER HD BLK 200S 200 1 BX 12.76  20% 12.76",
+    "description": "BIN LINER HD BLK 200S",
+    "pack_size": "200",
+    "unit": "box",
+    "qty": 1,
+    "unit_price": 12.76,
+    "line_total": 12.76,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD58976 PLASTIC TAKEAWAY CNTR 500CC X250 250 6 CS 25.51 10 20% 137.75",
+    "description": "PLASTIC TAKEAWAY CNTR 500CC X250",
+    "pack_size": "250",
+    "unit": "case",
+    "qty": 6,
+    "unit_price": 25.51,
+    "line_total": 137.75,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD42430 CLNG FLUID MULTI SURF 5L 5L 1 EA 6.63  20% 6.63",
+    "description": "CLNG FLUID MULTI SURF 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 6.63,
+    "line_total": 6.63,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD14589 EGGS MED FR RANGE 180 180 1 CS 22.38 10 0% 20.14",
+    "description": "EGGS MED FR RANGE 180",
+    "pack_size": "180",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 22.38,
+    "line_total": 20.14,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD57163 VINEGAR MALT 5L 5L 6 EA 3.57  0% 21.42",
+    "description": "VINEGAR MALT 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 3.57,
+    "line_total": 21.42,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": null,
+   "vat": null,
+   "gross": null
+  }
+ },
+ "retries": 0
+}

@@ -1,0 +1,157 @@
+{
+ "page_id": "TEST-049_p1",
+ "invoice_id": "TEST-049",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 7912,
+   "latency_s": 57.07,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 57.07,
+ "input_tokens": 2243,
+ "output_tokens": 7912,
+ "cost_usd": 0.016385,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "Code",
+   "Description",
+   "Pack",
+   "Qty",
+   "UoM",
+   "Price",
+   "Disc%",
+   "VAT",
+   "Net"
+  ],
+  "supplier_name": "Fenwick & Dale Foodservice Ltd",
+  "invoice_number": "19679",
+  "invoice_date": "2026-10-16",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "FD32663 CREAM DBL 6X1L 6x1L 6 CS 16.60 5% 0% 94.62",
+    "description": "CREAM DBL 6X1L",
+    "pack_size": "6x1L",
+    "unit": "case",
+    "qty": 6,
+    "unit_price": 16.6,
+    "line_total": 94.62,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD58452 CHICKEN BREAST FIL SKLS 2.5KG 2.5kg 3 CS 14.83 0% 0% 44.49",
+    "description": "CHICKEN BREAST FIL SKLS 2.5KG",
+    "pack_size": "2.5kg",
+    "unit": "case",
+    "qty": 3,
+    "unit_price": 14.83,
+    "line_total": 44.49,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD20149 OIL RAPESEED CATERING 20L 20L 1 EA 14.83 0% 0% 14.83",
+    "description": "OIL RAPESEED CATERING 20L",
+    "pack_size": "20L",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 14.83,
+    "line_total": 14.83,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD20409 EGGS MED FR RANGE 180 180 8 CS 27.12 10% 0% 195.26",
+    "description": "EGGS MED FR RANGE 180",
+    "pack_size": "180",
+    "unit": "case",
+    "qty": 8,
+    "unit_price": 27.12,
+    "line_total": 195.26,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD43302 SUGAR GRAN 15KG 15kg 1 CS 31.82 0% 0% 31.82",
+    "description": "SUGAR GRAN 15KG",
+    "pack_size": "15kg",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 31.82,
+    "line_total": 31.82,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD75041 LPG CYLINDER REFILL 13KG 13kg 6 EA 27.12 0% 0% 162.72",
+    "description": "LPG CYLINDER REFILL 13KG",
+    "pack_size": "13kg",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 27.12,
+    "line_total": 162.72,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD83149 STOCK BEEF PASTE 6X1KG 6x1KG 6 EA 15.29 0% 0% 91.74",
+    "description": "STOCK BEEF PASTE 6X1KG",
+    "pack_size": "6x1KG",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 15.29,
+    "line_total": 91.74,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD27740 TOM CHOPPED IN JUICE 6X400G 6x400g 2 CS 24.39 0% 0% 48.78",
+    "description": "TOM CHOPPED IN JUICE 6X400G",
+    "pack_size": "6x400g",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 24.39,
+    "line_total": 48.78,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD11549 EGGS FREE RANGE DOZEN dozen 5 CS 7.48 0% 0% 37.40",
+    "description": "EGGS FREE RANGE DOZEN",
+    "pack_size": "dozen",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 7.48,
+    "line_total": 37.4,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD41024 CHICKEN WINGS 5KG CASE 5kg case 4 EA 3.38 0% 0% 13.52",
+    "description": "CHICKEN WINGS 5KG CASE",
+    "pack_size": "5kg case",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 3.38,
+    "line_total": 13.52,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD41024 CHICKEN WINGS 5KG CASE 5kg case 8 CS 18.93 10% 0% 136.30",
+    "description": "CHICKEN WINGS 5KG CASE",
+    "pack_size": "5kg case",
+    "unit": "case",
+    "qty": 8,
+    "unit_price": 18.93,
+    "line_total": 136.3,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 759.76,
+   "vat": 2.44,
+   "gross": 762.2
+  }
+ },
+ "retries": 0
+}

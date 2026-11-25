@@ -1,0 +1,147 @@
+{
+ "page_id": "TEST-031_p1",
+ "invoice_id": "TEST-031",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 8991,
+   "latency_s": 66.13,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 66.13,
+ "input_tokens": 2243,
+ "output_tokens": 8991,
+ "cost_usd": 0.018543,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "Code",
+   "Description",
+   "Pack",
+   "Qty",
+   "UoM",
+   "Price",
+   "Disc%",
+   "VAT",
+   "Net"
+  ],
+  "supplier_name": "Fenwick & Dale Foodservice Ltd",
+  "invoice_number": "24958",
+  "invoice_date": "2026-10-15",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "FD96126 CLNG FLUID MULTI SURF 5L 5L 2 EA 4.48 20% 8.96",
+    "description": "CLNG FLUID MULTI SURF 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 4.48,
+    "line_total": 8.96,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD37944 PASTA PENNE DRY 3KG 3kg 6 CS 3.76 0% 22.56",
+    "description": "PASTA PENNE DRY 3KG",
+    "pack_size": "3kg",
+    "unit": "case",
+    "qty": 6,
+    "unit_price": 3.76,
+    "line_total": 22.56,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD20000 CHICKEN WINGS 5KG CASE 5kg case 6 CS 21.78 10 0% 117.61",
+    "description": "CHICKEN WINGS 5KG CASE",
+    "pack_size": "5kg case",
+    "unit": "case",
+    "qty": 6,
+    "unit_price": 21.78,
+    "line_total": 117.61,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD20000 BLK PEPPER GRND 500G 500g 1 BX 7.11 20% 6.46",
+    "description": "BLK PEPPER GRND 500G",
+    "pack_size": "500g",
+    "unit": "box",
+    "qty": 1,
+    "unit_price": 7.11,
+    "line_total": 6.46,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD88331 GLOVE NITRILE BLU L X100 100 4 CS 21.97 0% 87.88",
+    "description": "GLOVE NITRILE BLU L X100",
+    "pack_size": "100",
+    "unit": "case",
+    "qty": 4,
+    "unit_price": 21.97,
+    "line_total": 87.88,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD67774 EGGS MED FR RANGE 180 180 1 EA 16.46 0% 16.46",
+    "description": "EGGS MED FR RANGE 180",
+    "pack_size": "180",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 16.46,
+    "line_total": 16.46,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD94611 HONEY CLEAR 3KG 3kg 2 CS 31.00 5 0% 58.90",
+    "description": "HONEY CLEAR 3KG",
+    "pack_size": "3kg",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 31.0,
+    "line_total": 58.9,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD80118 VINEGAR MALT 5L 5L 2 EA 12.39 20% 24.78",
+    "description": "VINEGAR MALT 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 12.39,
+    "line_total": 24.78,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD25412 STOCK BEEF PASTE 6X1KG 6x1kg 2 EA 12.39 20% 24.78",
+    "description": "STOCK BEEF PASTE 6X1KG",
+    "pack_size": "6x1kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 12.39,
+    "line_total": 24.78,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD86234 FOIL CATERING 450MMX90M 1 EA 12.39 0% 12.39",
+    "description": "FOIL CATERING 450MMX90M",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 12.39,
+    "line_total": 12.39,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 392.12,
+   "vat": 8.04,
+   "gross": 400.16
+  }
+ },
+ "retries": 0
+}

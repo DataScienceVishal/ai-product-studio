@@ -1,0 +1,182 @@
+{
+ "page_id": "TEST-047_p1",
+ "invoice_id": "TEST-047",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 10151,
+   "latency_s": 75.96,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 75.96,
+ "input_tokens": 2243,
+ "output_tokens": 10151,
+ "cost_usd": 0.020863,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "ITEM",
+   "PRICE",
+   "AMOUNT"
+  ],
+  "supplier_name": "MARROW LANE GREENGROCERS",
+  "invoice_number": "DELIVERY NOTE 69706",
+  "invoice_date": "2026-09-01",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "1 CELERY HEAD                      1.17 ea    1.17",
+    "description": "CELERY HEAD",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 1.17,
+    "line_total": 1.17,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "8 AVOCADO RIPE 12S                 11.76 ea   94.08",
+    "description": "AVOCADO RIPE 12S",
+    "pack_size": "12S",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 11.76,
+    "line_total": 94.08,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 LETTUCE COS                      1.38 ea    2.76",
+    "description": "LETTUCE COS",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 1.38,
+    "line_total": 2.76,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 CARRIER BAGS 100                 1.38 ea    2.76",
+    "description": "CARRIER BAGS 100",
+    "pack_size": "100",
+    "unit": "pack",
+    "qty": 2,
+    "unit_price": 1.38,
+    "line_total": 2.76,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "8 MUSHROOM CHESTNUT 3KG            3.86 ea   30.88*",
+    "description": "MUSHROOM CHESTNUT 3KG",
+    "pack_size": "3KG",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 3.86,
+    "line_total": 30.88,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "3 APPLE BRAMLEY 12KG               10.54 ea  31.62",
+    "description": "APPLE BRAMLEY 12KG",
+    "pack_size": "12KG",
+    "unit": "each",
+    "qty": 3,
+    "unit_price": 10.54,
+    "line_total": 31.62,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 CAULIFLOWER                      19.27 ea  19.27",
+    "description": "CAULIFLOWER",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 19.27,
+    "line_total": 19.27,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "5 TOMATOES VINE 6KG BOX            1.80 ea    9.00",
+    "description": "TOMATOES VINE 6KG BOX",
+    "pack_size": "6KG",
+    "unit": "box",
+    "qty": 5,
+    "unit_price": 1.8,
+    "line_total": 9.0,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "0.91 GARLIC WHITE                  15.73 ea  31.46",
+    "description": "GARLIC WHITE",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 0.91,
+    "unit_price": 15.73,
+    "line_total": 31.46,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "3 PARSLEY FLAT BUNCH               6.71/kg   6.11",
+    "description": "PARSLEY FLAT BUNCH",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 3,
+    "unit_price": 6.71,
+    "line_total": 6.11,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 RASPBERRIES 12X125G              1.03 ea    3.09",
+    "description": "RASPBERRIES 12X125G",
+    "pack_size": "12x125G",
+    "unit": "pack",
+    "qty": 1,
+    "unit_price": 1.03,
+    "line_total": 3.09,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 LEMONS 15CT BOX                  21.53 ea  21.53",
+    "description": "LEMONS 15CT BOX",
+    "pack_size": "15CT",
+    "unit": "box",
+    "qty": 1,
+    "unit_price": 21.53,
+    "line_total": 21.53,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2.68 BROCCOLI                      2.42/kg   6.49",
+    "description": "BROCCOLI",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 2.68,
+    "unit_price": 2.42,
+    "line_total": 6.49,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-1 CR CARRIER BAGS 100 DAMAGED     3.86 ea   -3.86*",
+    "description": "CR CARRIER BAGS 100 DAMAGED",
+    "pack_size": "100",
+    "unit": "pack",
+    "qty": -1,
+    "unit_price": 3.86,
+    "line_total": -3.86,
+    "vat_rate": 20
+   }
+  ],
+  "totals": {
+   "net": 258.66,
+   "vat": 5.4,
+   "gross": 264.06
+  }
+ },
+ "retries": 0
+}

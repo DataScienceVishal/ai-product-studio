@@ -1,0 +1,146 @@
+{
+ "page_id": "TEST-044_p1",
+ "invoice_id": "TEST-044",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 11004,
+   "latency_s": 82.92,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 82.92,
+ "input_tokens": 2243,
+ "output_tokens": 11004,
+ "cost_usd": 0.022569,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "U/M",
+   "PRODUCT DESCRIPTION",
+   "SIZE",
+   "PRICE",
+   "DISC %",
+   "VAT",
+   "NET VALUE"
+  ],
+  "supplier_name": "Calder Valley Catering Supplies plc",
+  "invoice_number": "Ref 13307",
+  "invoice_date": "2026-09-16",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "4 EA FLR STRONG WHT BREAD 16KG 16kg 16.52  Z 66.08",
+    "description": "FLR STRONG WHT BREAD 16KG",
+    "pack_size": "16kg",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 16.52,
+    "line_total": 66.08,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 CS TOMATO PLUM WHL 6X2.5KG 6x2.5kg 17.64  Z 17.64",
+    "description": "TOMATO PLUM WHL 6X2.5KG",
+    "pack_size": "6x2.5kg",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 17.64,
+    "line_total": 17.64,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 EA YOG GREEK STYLE 10KG 10kg 17.12  Z 34.24",
+    "description": "YOG GREEK STYLE 10KG",
+    "pack_size": "10kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 17.12,
+    "line_total": 34.24,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "5 EA HAM COOKED SLCD 1KG 1kg 10.36  Z 51.80",
+    "description": "HAM COOKED SLCD 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 10.36,
+    "line_total": 51.8,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "8 EA PEPPER WHITE GRND 1KG 1kg 15.97  Z 127.76",
+    "description": "PEPPER WHITE GRND 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 15.97,
+    "line_total": 127.76,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 BX GLOVES VINYL CLR M 100 100 3.28  S 3.28",
+    "description": "GLOVES VINYL CLR M 100",
+    "pack_size": "100",
+    "unit": "box",
+    "qty": 1,
+    "unit_price": 3.28,
+    "line_total": 3.28,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "4 CS SYRUP GOLDEN 6X680G 6x680g 13.79  Z 55.16",
+    "description": "SYRUP GOLDEN 6X680G",
+    "pack_size": "6x680g",
+    "unit": "case",
+    "qty": 4,
+    "unit_price": 13.79,
+    "line_total": 55.16,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "6 EA GRAVY GRANULES BEEF 2KG 2kg 10.45  Z 62.70",
+    "description": "GRAVY GRANULES BEEF 2KG",
+    "pack_size": "2kg",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 10.45,
+    "line_total": 62.7,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 EA VINEGAR BREWED 5 LTR 5L 5.47  Z 5.47",
+    "description": "VINEGAR BREWED 5 LTR",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 5.47,
+    "line_total": 5.47,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "5 CS MILK WHOLE 12X1L 12x1L 8.97  Z 44.85",
+    "description": "MILK WHOLE 12X1L",
+    "pack_size": "12x1L",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 8.97,
+    "line_total": 44.85,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 468.98,
+   "vat": 0.66,
+   "gross": 469.64
+  }
+ },
+ "retries": 0
+}

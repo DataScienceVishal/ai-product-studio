@@ -1,0 +1,152 @@
+{
+ "page_id": "TEST-041_p1",
+ "invoice_id": "TEST-041",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 6498,
+   "latency_s": 47.32,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 47.32,
+ "input_tokens": 2243,
+ "output_tokens": 6498,
+ "cost_usd": 0.013557,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "ITEM",
+   "PRICE",
+   "AMOUNT"
+  ],
+  "supplier_name": "MARROW LANE GREENGROCERS",
+  "invoice_number": "DELIVERY NOTE 11512",
+  "invoice_date": "2026-09-17",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "2 CAULIFLOWER 1.74 ea 3.48",
+    "description": "CAULIFLOWER",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 1.74,
+    "line_total": 3.48,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "5 LEMONS 15CT BOX 6.02 ea 30.10",
+    "description": "LEMONS 15CT BOX",
+    "pack_size": "15ct box",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 6.02,
+    "line_total": 30.1,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 EGGS FREE RANGE DOZEN 2.55 ea 5.10",
+    "description": "EGGS FREE RANGE DOZEN",
+    "pack_size": "dozen",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 2.55,
+    "line_total": 5.1,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "4 CARROT LOOSE 20KG 9.95 ea 39.80",
+    "description": "CARROT LOOSE 20KG",
+    "pack_size": "20kg",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 9.95,
+    "line_total": 39.8,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "4 CELERY HEAD 0.99 ea 3.96",
+    "description": "CELERY HEAD",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 0.99,
+    "line_total": 3.96,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 RASPBERRIES 12X125G 18.69 ea 18.69",
+    "description": "RASPBERRIES 12X125G",
+    "pack_size": "12x125g",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 18.69,
+    "line_total": 18.69,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "3 SPINACH BABY 500G 3.09 ea 9.27",
+    "description": "SPINACH BABY 500G",
+    "pack_size": "500g",
+    "unit": "pack",
+    "qty": 3,
+    "unit_price": 3.09,
+    "line_total": 9.27,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "7.42 GARLIC WHITE 7.80/kg 57.88",
+    "description": "GARLIC WHITE",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 7.42,
+    "unit_price": 7.8,
+    "line_total": 57.88,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 PARSLEY FLAT BUNCH 0.89 ea 1.78",
+    "description": "PARSLEY FLAT BUNCH",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 0.89,
+    "line_total": 1.78,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "3 PEPPERS RED MIXED 5KG 12.32 ea 36.96",
+    "description": "PEPPERS RED MIXED 5KG",
+    "pack_size": "5kg",
+    "unit": "each",
+    "qty": 3,
+    "unit_price": 12.32,
+    "line_total": 36.96,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 POTATO MARIS PIPER 25KG 15.67 ea 31.34",
+    "description": "POTATO MARIS PIPER 25KG",
+    "pack_size": "25kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 15.67,
+    "line_total": 31.34,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 238.36,
+   "vat": 0.0,
+   "gross": 238.36
+  }
+ },
+ "retries": 0
+}

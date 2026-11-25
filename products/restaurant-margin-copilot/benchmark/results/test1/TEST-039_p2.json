@@ -1,0 +1,87 @@
+{
+ "page_id": "TEST-039_p2",
+ "invoice_id": "TEST-039",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2963,
+   "output_tokens": 2690,
+   "latency_s": 21.17,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 21.17,
+ "input_tokens": 2963,
+ "output_tokens": 2690,
+ "cost_usd": 0.006121,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [],
+  "supplier_name": "BULKBUY CASH & CARRY",
+  "invoice_number": "SALE REF 28655",
+  "invoice_date": "2026-09-10",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "MINCED BEEF 5L 2KG    74.30 B 5 x 14.86",
+    "description": "MINCED BEEF 5L 2KG",
+    "pack_size": "2kg",
+    "unit": "pack",
+    "qty": 5,
+    "unit_price": 14.86,
+    "line_total": 74.3,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SOFT DRINK COLA 24X330ML    12.37 A 1 x 12.37",
+    "description": "SOFT DRINK COLA 24X330ML",
+    "pack_size": "24x330ml",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 12.37,
+    "line_total": 12.37,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "TISSUE CENTREFEED 6RL    9.84 A 1 x 9.84",
+    "description": "TISSUE CENTREFEED 6RL",
+    "pack_size": "6rl",
+    "unit": "pack",
+    "qty": 1,
+    "unit_price": 9.84,
+    "line_total": 9.84,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "KETCHUP SACHET 1000    16.37 B 1 x 16.37",
+    "description": "KETCHUP SACHET 1000",
+    "pack_size": "1000",
+    "unit": "pack",
+    "qty": 1,
+    "unit_price": 16.37,
+    "line_total": 16.37,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BIN BAGS BLACK ROLL 100    8.50 A 1 x 8.50",
+    "description": "BIN BAGS BLACK ROLL 100",
+    "pack_size": "100",
+    "unit": "pack",
+    "qty": 1,
+    "unit_price": 8.5,
+    "line_total": 8.5,
+    "vat_rate": 20
+   }
+  ],
+  "totals": {
+   "net": 934.01,
+   "vat": 19.18,
+   "gross": 953.19
+  }
+ },
+ "retries": 0
+}

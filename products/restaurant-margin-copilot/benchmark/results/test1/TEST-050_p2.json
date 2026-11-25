@@ -1,0 +1,66 @@
+{
+ "page_id": "TEST-050_p2",
+ "invoice_id": "TEST-050",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2272,
+   "output_tokens": 1387,
+   "latency_s": 12.32,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 12.32,
+ "input_tokens": 2272,
+ "output_tokens": 1387,
+ "cost_usd": 0.003342,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "U/M",
+   "PRODUCT DESCRIPTION",
+   "SIZE",
+   "PRICE",
+   "DISC %",
+   "VAT",
+   "NET VALUE"
+  ],
+  "supplier_name": "Calder Valley Catering Supplies plc",
+  "invoice_number": "Ref 28884",
+  "invoice_date": "2026-10-31",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "5  CS  HONEY SQUEEZY 12X340G  12x340g  23.78  Z  118.90",
+    "description": "HONEY SQUEEZY 12X340G",
+    "pack_size": "12x340g",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 23.78,
+    "line_total": 118.9,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "5  CS  SPAGHETTI DRY 6X500G  6x500g  6.46  Z  32.30",
+    "description": "SPAGHETTI DRY 6X500G",
+    "pack_size": "6x500g",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 6.46,
+    "line_total": 32.3,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 670.77,
+   "vat": 19.74,
+   "gross": 690.51
+  }
+ },
+ "retries": 0
+}

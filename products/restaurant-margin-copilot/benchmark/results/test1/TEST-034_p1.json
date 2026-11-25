@@ -1,0 +1,153 @@
+{
+ "page_id": "TEST-034_p1",
+ "invoice_id": "TEST-034",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2283,
+   "output_tokens": 7801,
+   "latency_s": 61.3,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 61.3,
+ "input_tokens": 2283,
+ "output_tokens": 7801,
+ "cost_usd": 0.016173,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "ITEM",
+   "WEIGHT / QTY",
+   "PRICE",
+   "V",
+   "AMOUNT"
+  ],
+  "supplier_name": "HARKER & SONS",
+  "invoice_number": "72115",
+  "invoice_date": "2026-10-27",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "BEEF DICED CHUCK 4.79 kg 8.01/kg Z 38.37",
+    "description": "BEEF DICED CHUCK",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 4.79,
+    "unit_price": 8.01,
+    "line_total": 38.37,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CHICKEN THIGH BONE IN 10KG 8 x 24.68 ea Z 197.44",
+    "description": "CHICKEN THIGH BONE IN 10KG",
+    "pack_size": "10kg",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 24.68,
+    "line_total": 197.44,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BUTCHERS STRING 500G 4 x 3.31 ea S 13.24",
+    "description": "BUTCHERS STRING 500G",
+    "pack_size": "500g",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 3.31,
+    "line_total": 13.24,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "DUCK BREAST X2 400G 5 x 7.51 ea Z 37.55",
+    "description": "DUCK BREAST X2 400G",
+    "pack_size": "2x400g",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 7.51,
+    "line_total": 37.55,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CHICKEN WHOLE FR 1.8KG 8 x 8.98 ea Z 71.84",
+    "description": "CHICKEN WHOLE FR 1.8KG",
+    "pack_size": "1.8kg",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 8.98,
+    "line_total": 71.84,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "DISPOSABLE GLOVES BLU X100 1 x 4.74 ea S 4.74",
+    "description": "DISPOSABLE GLOVES BLU X100",
+    "pack_size": "100",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 4.74,
+    "line_total": 4.74,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "PORK SAUS 8S 454G 8 x 4.07 ea Z 32.56",
+    "description": "PORK SAUS 8S 454G",
+    "pack_size": "8x454g",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 4.07,
+    "line_total": 32.56,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PORK BELLY RIND ON 2.85 kg 7.92/kg Z 22.57",
+    "description": "PORK BELLY RIND ON",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 2.85,
+    "unit_price": 7.92,
+    "line_total": 22.57,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PORK SHOULDER DICED 7.21 kg 8.63/kg Z 62.22",
+    "description": "PORK SHOULDER DICED",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 7.21,
+    "unit_price": 8.63,
+    "line_total": 62.22,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BEEF MINCE 20% 5KG 1 x 38.55 ea Z 38.55",
+    "description": "BEEF MINCE 20% 5KG",
+    "pack_size": "5kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 38.55,
+    "line_total": 38.55,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "OX CHEEK 6.78 kg 10.40/kg Z 70.51",
+    "description": "OX CHEEK",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 6.78,
+    "unit_price": 10.4,
+    "line_total": 70.51,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 589.59,
+   "vat": 3.6,
+   "gross": 593.19
+  }
+ },
+ "retries": 0
+}

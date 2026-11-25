@@ -1,0 +1,156 @@
+{
+ "page_id": "TEST-050_p1",
+ "invoice_id": "TEST-050",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2272,
+   "output_tokens": 2484,
+   "latency_s": 20.78,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 20.78,
+ "input_tokens": 2272,
+ "output_tokens": 2484,
+ "cost_usd": 0.005536,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "U/M",
+   "PRODUCT DESCRIPTION",
+   "SIZE",
+   "PRICE",
+   "DISC %",
+   "VAT",
+   "NET VALUE"
+  ],
+  "supplier_name": "Calder Valley Catering Supplies plc",
+  "invoice_number": "Ref 28884",
+  "invoice_date": "2026-10-31",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "1 EA CLING FILM 450MM X 300M 9.91 S 9.91",
+    "description": "CLING FILM 450MM X 300M",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 9.91,
+    "line_total": 9.91,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "2 EA VINEGAR BREWED 5 LTR 5L 3.59 Z 7.18",
+    "description": "VINEGAR BREWED 5 LTR",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 3.59,
+    "line_total": 7.18,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 EA MAYONNAISE LT 10 LTR 10L 16.44 Z 32.88",
+    "description": "MAYONNAISE LT 10 LTR",
+    "pack_size": "10L",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 16.44,
+    "line_total": 32.88,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 EA DEGREASER HD SPRAY 750ML 750ml 3.01 S 3.01",
+    "description": "DEGREASER HD SPRAY 750ML",
+    "pack_size": "750ml",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 3.01,
+    "line_total": 3.01,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "4 CS CREAM SNGL 12X500ML 12x500ml 17.68 Z 70.72",
+    "description": "CREAM SNGL 12X500ML",
+    "pack_size": "12x500ml",
+    "unit": "case",
+    "qty": 4,
+    "unit_price": 17.68,
+    "line_total": 70.72,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "6 CS TOMATO PLUM WHL 6X2.5KG 6x2.5kg 17.13 Z 102.78",
+    "description": "TOMATO PLUM WHL 6X2.5KG",
+    "pack_size": "6x2.5kg",
+    "unit": "case",
+    "qty": 6,
+    "unit_price": 17.13,
+    "line_total": 102.78,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "4 BX CONTAINER FOIL 1/2 GN X50 50 21.45 S 85.80",
+    "description": "CONTAINER FOIL 1/2 GN X50",
+    "pack_size": "50",
+    "unit": "box",
+    "qty": 4,
+    "unit_price": 21.45,
+    "line_total": 85.8,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "2 EA FLR STRONG WHT BREAD 16KG 16kg 13.65 Z 27.30",
+    "description": "FLR STRONG WHT BREAD 16KG",
+    "pack_size": "16kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 13.65,
+    "line_total": 27.3,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "8 EA MARGARINE CATERING 10KG 10kg 19.75 Z 158.00",
+    "description": "MARGARINE CATERING 10KG",
+    "pack_size": "10kg",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 19.75,
+    "line_total": 158.0,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 EA SEA SALT COARSE 1.5KG 1.5kg 1.95 Z 1.95",
+    "description": "SEA SALT COARSE 1.5KG",
+    "pack_size": "1.5kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 1.95,
+    "line_total": 1.95,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 EA RICE LONG GRAIN 20KG 20kg 20.04 Z 20.04",
+    "description": "RICE LONG GRAIN 20KG",
+    "pack_size": "20kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 20.04,
+    "line_total": 20.04,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": null,
+   "vat": null,
+   "gross": null
+  }
+ },
+ "retries": 0
+}

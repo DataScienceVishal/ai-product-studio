@@ -1,0 +1,167 @@
+{
+ "page_id": "TEST-037_p1",
+ "invoice_id": "TEST-037",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 5842,
+   "latency_s": 43.96,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 43.96,
+ "input_tokens": 2243,
+ "output_tokens": 5842,
+ "cost_usd": 0.012245,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "Code",
+   "Description",
+   "Pack",
+   "Qty",
+   "UoM",
+   "Price",
+   "Disc%",
+   "VAT",
+   "Net"
+  ],
+  "supplier_name": "Fenwick & Dale Foodservice Ltd",
+  "invoice_number": "75923",
+  "invoice_date": "2026-09-22",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "FD42725 CHICKEN BREAST FIL SKLS 2.5KG 2.5kg 4 CS 17.53 5 0% 66.61",
+    "description": "CHICKEN BREAST FIL SKLS 2.5KG",
+    "pack_size": "2.5kg",
+    "unit": "case",
+    "qty": 4,
+    "unit_price": 17.53,
+    "line_total": 66.61,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD51954 TOM CHOPPED IN JUICE 6X400G 6x400g 1 CS 8.99 0% 8.99",
+    "description": "TOM CHOPPED IN JUICE 6X400G",
+    "pack_size": "6x400g",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 8.99,
+    "line_total": 8.99,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD64482 FOIL CATERING 450MMX90M  3 EA 12.94  20% 38.82",
+    "description": "FOIL CATERING 450MMX90M",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 3,
+    "unit_price": 12.94,
+    "line_total": 38.82,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD22824 SUGAR GRAN 15KG 15kg 6 EA 18.09 0% 108.54",
+    "description": "SUGAR GRAN 15KG",
+    "pack_size": "15kg",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 18.09,
+    "line_total": 108.54,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD67626 CREAM DBL 6X1L 6x1L 1 CS 18.62 10 0% 16.76",
+    "description": "CREAM DBL 6X1L",
+    "pack_size": "6x1L",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 18.62,
+    "line_total": 16.76,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD76067 EGGS FREE RANGE DOZEN dozen 8 EA 2.79 0% 22.32",
+    "description": "EGGS FREE RANGE DOZEN",
+    "pack_size": "dozen",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 2.79,
+    "line_total": 22.32,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD72503 SALT TABLE FINE 3KG 3kg 8 EA 2.33 10 0% 16.78",
+    "description": "SALT TABLE FINE 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 2.33,
+    "line_total": 16.78,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD61634 PASTA PENNE DRY 3KG 3kg 5 EA 4.00 0% 20.00",
+    "description": "PASTA PENNE DRY 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 4.0,
+    "line_total": 20.0,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD71914 BLK PEPPER GRND 500G 500g 3 EA 6.01 0% 18.03",
+    "description": "BLK PEPPER GRND 500G",
+    "pack_size": "500g",
+    "unit": "each",
+    "qty": 3,
+    "unit_price": 6.01,
+    "line_total": 18.03,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD79335 VINEGAR MALT 5L 5L 1 EA 4.85 0% 4.85",
+    "description": "VINEGAR MALT 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 4.85,
+    "line_total": 4.85,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD18504 STOCK BEEF PASTE 6X1KG 6x1kg 1 CS 25.95 0% 25.95",
+    "description": "STOCK BEEF PASTE 6X1KG",
+    "pack_size": "6x1kg",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 25.95,
+    "line_total": 25.95,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD42725 CR CHICKEN BREAST FIL SKLS 2.5KG DAMAGED2.5kg -1 CS 17.53 0% -17.53",
+    "description": "CR CHICKEN BREAST FIL SKLS 2.5KG DAMAGED",
+    "pack_size": "2.5kg",
+    "unit": "case",
+    "qty": -1,
+    "unit_price": 17.53,
+    "line_total": -17.53,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 330.12,
+   "vat": 7.76,
+   "gross": 337.88
+  }
+ },
+ "retries": 0
+}

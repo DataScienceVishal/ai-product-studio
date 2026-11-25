@@ -1,0 +1,106 @@
+{
+ "page_id": "TEST-032_p2",
+ "invoice_id": "TEST-032",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 5244,
+   "latency_s": 40.96,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 40.96,
+ "input_tokens": 2243,
+ "output_tokens": 5244,
+ "cost_usd": 0.011049,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "U/M",
+   "PRODUCT DESCRIPTION",
+   "SIZE",
+   "PRICE",
+   "DISC %",
+   "VAT",
+   "NET VALUE"
+  ],
+  "supplier_name": "Calder Valley Catering Supplies plc",
+  "invoice_number": "Ref 12569",
+  "invoice_date": "2026-10-17",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "8 EA CLING FILM 450MM X 300M 9.45 S 75.60",
+    "description": "CLING FILM 450MM X 300M",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 9.45,
+    "line_total": 75.6,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "2 EA SEA SALT COARSE 1.5KG 1.5kg 1.26 Z 2.52",
+    "description": "SEA SALT COARSE 1.5KG",
+    "pack_size": "1.5kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 1.26,
+    "line_total": 2.52,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 CS TOMATO PLUM WHL 6X2.5KG 6x2.5kg 17.73 Z 17.73",
+    "description": "TOMATO PLUM WHL 6X2.5KG",
+    "pack_size": "6x2.5kg",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 17.73,
+    "line_total": 17.73,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 CS SPAGHETTI DRY 6X500G 6x500g 5.74 Z 5.74",
+    "description": "SPAGHETTI DRY 6X500G",
+    "pack_size": "6x500g",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 5.74,
+    "line_total": 5.74,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "6 EA LPG PROPANE CYL 19KG REFILL 19kg 41.10 Z 246.60",
+    "description": "LPG PROPANE CYL 19KG REFILL",
+    "pack_size": "19kg",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 41.1,
+    "line_total": 246.6,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "4 CS EGGS LARGE FR 15 DOZEN 180 23.04 Z 92.16",
+    "description": "EGGS LARGE FR 15 DOZEN",
+    "pack_size": "180",
+    "unit": "case",
+    "qty": 4,
+    "unit_price": 23.04,
+    "line_total": 92.16,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 1245.08,
+   "vat": 29.33,
+   "gross": 1274.41
+  }
+ },
+ "retries": 0
+}

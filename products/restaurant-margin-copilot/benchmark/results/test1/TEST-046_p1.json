@@ -1,0 +1,163 @@
+{
+ "page_id": "TEST-046_p1",
+ "invoice_id": "TEST-046",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 5675,
+   "latency_s": 46.5,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 46.5,
+ "input_tokens": 2243,
+ "output_tokens": 5675,
+ "cost_usd": 0.011911,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "ITEM",
+   "WEIGHT / QTY",
+   "PRICE",
+   "V",
+   "AMOUNT"
+  ],
+  "supplier_name": "HARKER & SONS",
+  "invoice_number": "45569",
+  "invoice_date": "2026-10-01",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "RUMP STEAK TRIMMED        1.83 kg    14.06/kg       25.73",
+    "description": "RUMP STEAK TRIMMED",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 1.83,
+    "unit_price": 14.06,
+    "line_total": 25.73,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BEEF MARROW BONES        5.89 kg    3.25/kg    Z   19.14",
+    "description": "BEEF MARROW BONES",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 5.89,
+    "unit_price": 3.25,
+    "line_total": 19.14,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PORK SHOULDER DICED      5.52 kg    8.29/kg    Z   45.76",
+    "description": "PORK SHOULDER DICED",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 5.52,
+    "unit_price": 8.29,
+    "line_total": 45.76,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BEEF DICED CHUCK         7.75 kg    9.73/kg    Z   75.41",
+    "description": "BEEF DICED CHUCK",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 7.75,
+    "unit_price": 9.73,
+    "line_total": 75.41,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PORK SAUS 8S 454G        1 x        3.18 ea    Z   3.18",
+    "description": "PORK SAUS 8S 454G",
+    "pack_size": "454g",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 3.18,
+    "line_total": 3.18,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "DISPOSABLE GLOVES BLU X100 2 x      4.89 ea    S   9.78",
+    "description": "DISPOSABLE GLOVES BLU X100",
+    "pack_size": "100",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 4.89,
+    "line_total": 9.78,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "CHICKEN WHOLE FR 1.8KG   2 x        7.02 ea    Z   14.04",
+    "description": "CHICKEN WHOLE FR 1.8KG",
+    "pack_size": "1.8kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 7.02,
+    "line_total": 14.04,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BUTCHERS STRING 500G     1 x        4.95 ea    S   4.95",
+    "description": "BUTCHERS STRING 500G",
+    "pack_size": "500g",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 4.95,
+    "line_total": 4.95,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "DUCK BREAST X2 400G      2 x        7.02 ea    Z   14.04",
+    "description": "DUCK BREAST X2 400G",
+    "pack_size": "2x400g",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 7.02,
+    "line_total": 14.04,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "OX CHEEK                 1 x        4.95 ea    S   4.95",
+    "description": "OX CHEEK",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 4.95,
+    "line_total": 4.95,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "BACON SMKD BACK 2KG      3.96 kg    11.26/kg   Z   44.59",
+    "description": "BACON SMKD BACK 2KG",
+    "pack_size": "2kg",
+    "unit": "kg",
+    "qty": 3.96,
+    "unit_price": 11.26,
+    "line_total": 44.59,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PORK BELLY RIND ON       5.55 kg    6.70/kg    Z   37.19",
+    "description": "PORK BELLY RIND ON",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 5.55,
+    "unit_price": 6.7,
+    "line_total": 37.19,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": null,
+   "vat": null,
+   "gross": null
+  }
+ },
+ "retries": 0
+}

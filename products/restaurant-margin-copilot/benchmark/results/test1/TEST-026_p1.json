@@ -1,0 +1,156 @@
+{
+ "page_id": "TEST-026_p1",
+ "invoice_id": "TEST-026",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 10542,
+   "latency_s": 81.83,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 81.83,
+ "input_tokens": 2243,
+ "output_tokens": 10542,
+ "cost_usd": 0.021645,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "U/M",
+   "PRODUCT DESCRIPTION",
+   "SIZE",
+   "PRICE",
+   "DISC %",
+   "VAT",
+   "NET VALUE"
+  ],
+  "supplier_name": "Calder Valley Catering Supplies plc",
+  "invoice_number": "Ref 98199",
+  "invoice_date": "2026-09-06",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "8 EA MAYONNAISE LT 10 LTR 10L 14.56 Z 116.48",
+    "description": "MAYONNAISE LT 10 LTR",
+    "pack_size": "10L",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 14.56,
+    "line_total": 116.48,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "5 EA HAM COOKED SLCD 1KG 1kg 8.55 Z 42.75",
+    "description": "HAM COOKED SLCD 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 8.55,
+    "line_total": 42.75,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 CS EGG LIQUID PAST 5X1L 5x1L 13.59 Z 13.59",
+    "description": "EGG LIQUID PAST 5X1L",
+    "pack_size": "5x1L",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 13.59,
+    "line_total": 13.59,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "6 EA SEA SALT COARSE 1.5KG 1.5kg 1.88 Z 11.28",
+    "description": "SEA SALT COARSE 1.5KG",
+    "pack_size": "1.5kg",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 1.88,
+    "line_total": 11.28,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 EA FLR STRONG WHT BREAD 16KG 16kg 16.52 S 16.52",
+    "description": "FLR STRONG WHT BREAD 16KG",
+    "pack_size": "16kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 16.52,
+    "line_total": 16.52,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "3 EA DEGREASER HD SPRAY 750ML 750ml 4.04 Z 12.12",
+    "description": "DEGREASER HD SPRAY 750ML",
+    "pack_size": "750ml",
+    "unit": "each",
+    "qty": 3,
+    "unit_price": 4.04,
+    "line_total": 12.12,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 CS HONEY SQUEEZY 12X340G 12x340g 23.72 Z 47.44",
+    "description": "HONEY SQUEEZY 12X340G",
+    "pack_size": "12x340g",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 23.72,
+    "line_total": 47.44,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "4 EA HONEY SQUEEZY 12X340G 12x340g 8.46 Z 33.84",
+    "description": "HONEY SQUEEZY 12X340G",
+    "pack_size": "12x340g",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 8.46,
+    "line_total": 33.84,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "4 EA GRAVY GRANULES BEEF 2KG 5kg 31.29 Z 125.16",
+    "description": "GRAVY GRANULES BEEF 2KG",
+    "pack_size": "5kg",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 31.29,
+    "line_total": 125.16,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 EA CHEESE CHEDDAR MED 5KG 10kg 14.15 Z 14.15",
+    "description": "CHEESE CHEDDAR MED 5KG",
+    "pack_size": "10kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 14.15,
+    "line_total": 14.15,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 EA YOG GREEK STYLE 10KG 10kg 14.15 Z 14.15",
+    "description": "YOG GREEK STYLE 10KG",
+    "pack_size": "10kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 14.15,
+    "line_total": 14.15,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 433.33,
+   "vat": 2.42,
+   "gross": 435.75
+  }
+ },
+ "retries": 0
+}

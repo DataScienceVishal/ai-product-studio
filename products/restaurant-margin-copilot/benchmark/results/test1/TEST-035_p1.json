@@ -1,0 +1,142 @@
+{
+ "page_id": "TEST-035_p1",
+ "invoice_id": "TEST-035",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2301,
+   "output_tokens": 3112,
+   "latency_s": 26.38,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 26.38,
+ "input_tokens": 2301,
+ "output_tokens": 3112,
+ "cost_usd": 0.006799,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "ITEM",
+   "PRICE",
+   "AMOUNT"
+  ],
+  "supplier_name": "MARROW LANE GREENGROCERS",
+  "invoice_number": "DELIVERY NOTE 14252",
+  "invoice_date": "2026-10-30",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "6 EGGS FREE RANGE DOZEN 2.45 ea 14.70",
+    "description": "EGGS FREE RANGE DOZEN",
+    "pack_size": "dozen",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 2.45,
+    "line_total": 14.7,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 SPINACH BABY 500G 3.52 ea 3.52",
+    "description": "SPINACH BABY 500G",
+    "pack_size": "500g",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 3.52,
+    "line_total": 3.52,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "5 CELERY HEAD 1.45 ea 7.25",
+    "description": "CELERY HEAD",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 1.45,
+    "line_total": 7.25,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 PARSLEY FLAT BUNCH 0.94 ea 1.88",
+    "description": "PARSLEY FLAT BUNCH",
+    "pack_size": "bunch",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 0.94,
+    "line_total": 1.88,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "5 CARRIER BAGS 100 3.33 ea 16.65*",
+    "description": "CARRIER BAGS 100",
+    "pack_size": "100",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 3.33,
+    "line_total": 16.65,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "2 RASPBERRIES 12X125G 19.23 ea 38.46",
+    "description": "RASPBERRIES 12X125G",
+    "pack_size": "12x125g",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 19.23,
+    "line_total": 38.46,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "7.02 BROCCOLI 2.76/kg 19.38",
+    "description": "BROCCOLI",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 7.02,
+    "unit_price": 2.76,
+    "line_total": 19.38,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 LETTUCE COS 1.18 ea 1.18",
+    "description": "LETTUCE COS",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 1.18,
+    "line_total": 1.18,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 CAULIFLOWER 1.36 ea 1.36",
+    "description": "CAULIFLOWER",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 1.36,
+    "line_total": 1.36,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "5 PEPPERS RED MIXED 5KG 16.57 ea 82.85",
+    "description": "PEPPERS RED MIXED 5KG",
+    "pack_size": "5kg",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 16.57,
+    "line_total": 82.85,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 187.23,
+   "vat": 3.33,
+   "gross": 190.56
+  }
+ },
+ "retries": 0
+}

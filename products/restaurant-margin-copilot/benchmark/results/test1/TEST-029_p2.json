@@ -1,0 +1,92 @@
+{
+ "page_id": "TEST-029_p2",
+ "invoice_id": "TEST-029",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 2629,
+   "latency_s": 20.43,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 20.43,
+ "input_tokens": 2243,
+ "output_tokens": 2629,
+ "cost_usd": 0.005819,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "ITEM",
+   "PRICE",
+   "AMOUNT"
+  ],
+  "supplier_name": "MARROW LANE GREENGROCERS",
+  "invoice_number": "DELIVERY NOTE 61732",
+  "invoice_date": "2026-10-08",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "1 LETTUCE COS 0.85 ea 0.85",
+    "description": "LETTUCE COS",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 0.85,
+    "line_total": 0.85,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "4 LEMONS 15CT BOX 6.19 ea 24.76",
+    "description": "LEMONS 15CT BOX",
+    "pack_size": "15ct",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 6.19,
+    "line_total": 24.76,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "7.41 BROCCOLI 3.26/kg 24.16",
+    "description": "BROCCOLI",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 7.41,
+    "unit_price": 3.26,
+    "line_total": 24.16,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "6 POTATO MARIS PIPER 25KG 18.22 ea 109.32",
+    "description": "POTATO MARIS PIPER 25KG",
+    "pack_size": "25kg",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 18.22,
+    "line_total": 109.32,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "3 AVOCADO RIPE 12S 12.71 ea 38.13",
+    "description": "AVOCADO RIPE 12S",
+    "pack_size": "12s",
+    "unit": "each",
+    "qty": 3,
+    "unit_price": 12.71,
+    "line_total": 38.13,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 580.3,
+   "vat": 0.66,
+   "gross": 580.96
+  }
+ },
+ "retries": 0
+}

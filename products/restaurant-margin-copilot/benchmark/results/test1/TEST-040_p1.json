@@ -1,0 +1,143 @@
+{
+ "page_id": "TEST-040_p1",
+ "invoice_id": "TEST-040",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2272,
+   "output_tokens": 2830,
+   "latency_s": 25.63,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 25.63,
+ "input_tokens": 2272,
+ "output_tokens": 2830,
+ "cost_usd": 0.006228,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "ITEM",
+   "WEIGHT / QTY",
+   "PRICE",
+   "V",
+   "AMOUNT"
+  ],
+  "supplier_name": "HARKER & SONS",
+  "invoice_number": "36368",
+  "invoice_date": "2026-10-18",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "PORK SAUS 8S 454G 1 x 3.29 ea Z 3.29",
+    "description": "PORK SAUS 8S 454G",
+    "pack_size": "454g",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 3.29,
+    "line_total": 3.29,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BEEF DICED CHUCK 2.09 kg 8.36/kg Z 17.47",
+    "description": "BEEF DICED CHUCK",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 2.09,
+    "unit_price": 8.36,
+    "line_total": 17.47,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BACON SMKD BACK 2KG 1 x 16.44 ea Z 16.44",
+    "description": "BACON SMKD BACK 2KG",
+    "pack_size": "2kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 16.44,
+    "line_total": 16.44,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "LAMB SHOULDER BONE IN 6.12 kg 11.83/kg Z 72.40",
+    "description": "LAMB SHOULDER BONE IN",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 6.12,
+    "unit_price": 11.83,
+    "line_total": 72.4,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BUTCHERS STRING 500G 5 x 4.14 ea S 20.70",
+    "description": "BUTCHERS STRING 500G",
+    "pack_size": "500g",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 4.14,
+    "line_total": 20.7,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "BLACK PUDDING 1KG 2 x 5.53 ea Z 11.06",
+    "description": "BLACK PUDDING 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 5.53,
+    "line_total": 11.06,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SIRLOIN 28D HUNG 5.05 kg 22.88/kg Z 115.54",
+    "description": "SIRLOIN 28D HUNG",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 5.05,
+    "unit_price": 22.88,
+    "line_total": 115.54,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CHICKEN THIGH BONE IN 10KG 5 x 25.82 ea Z 129.10",
+    "description": "CHICKEN THIGH BONE IN 10KG",
+    "pack_size": "10kg",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 25.82,
+    "line_total": 129.1,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PORK BELLY RIND ON 3.42 kg 6.11/kg Z 20.90",
+    "description": "PORK BELLY RIND ON",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 3.42,
+    "unit_price": 6.11,
+    "line_total": 20.9,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PORK SAUSAGE DOZEN 2 x 4.38 ea Z 8.76",
+    "description": "PORK SAUSAGE DOZEN",
+    "pack_size": "dozen",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 4.38,
+    "line_total": 8.76,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 415.66,
+   "vat": 4.14,
+   "gross": 419.8
+  }
+ },
+ "retries": 0
+}

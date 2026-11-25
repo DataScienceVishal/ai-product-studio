@@ -1,0 +1,94 @@
+{
+ "page_id": "TEST-036_p2",
+ "invoice_id": "TEST-036",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 6190,
+   "latency_s": 47.45,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 47.45,
+ "input_tokens": 2243,
+ "output_tokens": 6190,
+ "cost_usd": 0.012941,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "PRODUCT",
+   "SIZE",
+   "QTY",
+   "PRICE",
+   "VAT",
+   "LINE VALUE"
+  ],
+  "supplier_name": "TIDEWATER DAIRY & DRINKS",
+  "invoice_number": "22882",
+  "invoice_date": "2026-09-16",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "VODKA 6X70CL            6x70cl  4  105.64  S  422.56",
+    "description": "VODKA 6X70CL",
+    "pack_size": "6x70cl",
+    "unit": "case",
+    "qty": 4,
+    "unit_price": 105.64,
+    "line_total": 422.56,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "VODKA 6X70CL            5kg  1  29.66  Z  29.66",
+    "description": "VODKA 6X70CL",
+    "pack_size": "5kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 29.66,
+    "line_total": 29.66,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CHEESE CHEDDAR 5KG BLOCK    5kg  6  15.03  Z  90.18",
+    "description": "CHEESE CHEDDAR 5KG BLOCK",
+    "pack_size": "5kg",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 15.03,
+    "line_total": 90.18,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "COFFEE BEANS ESPRESSO 1KG    1kg  1  9.90  S  9.90",
+    "description": "COFFEE BEANS ESPRESSO 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 9.9,
+    "line_total": 9.9,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "WATER SPARKLING 12X75CL    12x75cl  1  9.90  S  9.90",
+    "description": "WATER SPARKLING 12X75CL",
+    "pack_size": "12x75cl",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 9.9,
+    "line_total": 9.9,
+    "vat_rate": 20
+   }
+  ],
+  "totals": {
+   "net": 1907.35,
+   "vat": 255.2,
+   "gross": 2162.55
+  }
+ },
+ "retries": 0
+}

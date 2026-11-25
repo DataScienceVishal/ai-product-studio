@@ -1,0 +1,174 @@
+{
+ "page_id": "TEST-024_p1",
+ "invoice_id": "TEST-024",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 4038,
+   "latency_s": 32.15,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 32.15,
+ "input_tokens": 2243,
+ "output_tokens": 4038,
+ "cost_usd": 0.008637,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "PRODUCT",
+   "SIZE",
+   "QTY",
+   "PRICE",
+   "VAT",
+   "LINE VALUE"
+  ],
+  "supplier_name": "TIDEWATER DAIRY & DRINKS",
+  "invoice_number": "93861",
+  "invoice_date": "2026-09-22",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "COFFEE BEANS ESPRESSO 1KG 1kg 4 11.33 Z 45.32",
+    "description": "COFFEE BEANS ESPRESSO 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 11.33,
+    "line_total": 45.32,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "GIN LONDON DRY 6X70CL 6x70cl 2 101.24 S 202.48",
+    "description": "GIN LONDON DRY 6X70CL",
+    "pack_size": "6x70cl",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 101.24,
+    "line_total": 202.48,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "GINGER BEER 12X200ML 12x200ml 1 11.83 S 11.83",
+    "description": "GINGER BEER 12X200ML",
+    "pack_size": "12x200ml",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 11.83,
+    "line_total": 11.83,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "PROSECCO DOC 6X75CL 6x75cl 5 48.76 S 243.80",
+    "description": "PROSECCO DOC 6X75CL",
+    "pack_size": "6x75cl",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 48.76,
+    "line_total": 243.8,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "MILK SEMI 12X1L 12x1L 2 10.28 Z 20.56",
+    "description": "MILK SEMI 12X1L",
+    "pack_size": "12x1L",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 10.28,
+    "line_total": 20.56,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "COLA CLASSIC 24X330ML 24x330ml 8 13.57 S 108.56",
+    "description": "COLA CLASSIC 24X330ML",
+    "pack_size": "24x330ml",
+    "unit": "case",
+    "qty": 8,
+    "unit_price": 13.57,
+    "line_total": 108.56,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "EGGS FREE RANGE 15 DOZEN 180 4 26.68 Z 106.72",
+    "description": "EGGS FREE RANGE 15 DOZEN",
+    "pack_size": "180",
+    "unit": "pack",
+    "qty": 4,
+    "unit_price": 26.68,
+    "line_total": 106.72,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "VODKA 6X70CL 6x70cl 1 93.32 S 93.32",
+    "description": "VODKA 6X70CL",
+    "pack_size": "6x70cl",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 93.32,
+    "line_total": 93.32,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "LAGER PREMIUM 4.2% 24X500ML 24x500ml 2 28.49 S 56.98",
+    "description": "LAGER PREMIUM 4.2% 24X500ML",
+    "pack_size": "24x500ml",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 28.49,
+    "line_total": 56.98,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "ICE CREAM VANILLA 4L 4L 1 9.33 Z 9.33",
+    "description": "ICE CREAM VANILLA 4L",
+    "pack_size": "4L",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 9.33,
+    "line_total": 9.33,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CREAM DOUBLE 6X1L 6x1L 1 15.54 Z 15.54",
+    "description": "CREAM DOUBLE 6X1L",
+    "pack_size": "6x1L",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 15.54,
+    "line_total": 15.54,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "DELIVERY CHARGE  4 12.41 S 49.64",
+    "description": "DELIVERY CHARGE",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 12.41,
+    "line_total": 49.64,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "WATER SPARKLING 12X75CL 12x75cl 5 10.17 S 50.85",
+    "description": "WATER SPARKLING 12X75CL",
+    "pack_size": "12x75cl",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 10.17,
+    "line_total": 50.85,
+    "vat_rate": 20
+   }
+  ],
+  "totals": {
+   "net": 1014.93,
+   "vat": 163.49,
+   "gross": 2178.42
+  }
+ },
+ "retries": 0
+}

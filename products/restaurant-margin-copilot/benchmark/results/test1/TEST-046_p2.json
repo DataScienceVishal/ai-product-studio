@@ -1,0 +1,63 @@
+{
+ "page_id": "TEST-046_p2",
+ "invoice_id": "TEST-046",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 1153,
+   "latency_s": 10.33,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 10.33,
+ "input_tokens": 2243,
+ "output_tokens": 1153,
+ "cost_usd": 0.002867,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "ITEM",
+   "WEIGHT / QTY",
+   "PRICE",
+   "V",
+   "AMOUNT"
+  ],
+  "supplier_name": "HARKER & SONS",
+  "invoice_number": "45569",
+  "invoice_date": "2026-10-01",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "LAMB RACK FRENCH TRIM 6.22 kg 29.54/kg Z 183.74",
+    "description": "LAMB RACK FRENCH TRIM",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 6.22,
+    "unit_price": 29.54,
+    "line_total": 183.74,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SIRLOIN 28D HUNG 1.35 kg 24.09/kg Z 32.52",
+    "description": "SIRLOIN 28D HUNG",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 1.35,
+    "unit_price": 24.09,
+    "line_total": 32.52,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 601.63,
+   "vat": 2.95,
+   "gross": 604.58
+  }
+ },
+ "retries": 0
+}

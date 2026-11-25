@@ -1,0 +1,144 @@
+{
+ "page_id": "TEST-030_p1",
+ "invoice_id": "TEST-030",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2272,
+   "output_tokens": 2552,
+   "latency_s": 18.81,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 18.81,
+ "input_tokens": 2272,
+ "output_tokens": 2552,
+ "cost_usd": 0.005672,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "PRODUCT",
+   "SIZE",
+   "QTY",
+   "PRICE",
+   "VAT",
+   "LINE VALUE"
+  ],
+  "supplier_name": "TIDEWATER DAIRY & DRINKS",
+  "invoice_number": "74308",
+  "invoice_date": "2026-09-13",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "WINE WHITE PINOT 6X75CL 6x75cl 1 46.00 S 46.00",
+    "description": "WINE WHITE PINOT 6X75CL",
+    "pack_size": "6x75cl",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 46.0,
+    "line_total": 46.0,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "TONIC SLIM 24X200ML 24x200ml 3 14.05 S 42.15",
+    "description": "TONIC SLIM 24X200ML",
+    "pack_size": "24x200ml",
+    "unit": "case",
+    "qty": 3,
+    "unit_price": 14.05,
+    "line_total": 42.15,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "CIDER KEG 50L 50L 4 113.45 S 453.80",
+    "description": "CIDER KEG 50L",
+    "pack_size": "50L",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 113.45,
+    "line_total": 453.8,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "MILK SEMI 12X1L 12x1L 2 8.78 Z 17.56",
+    "description": "MILK SEMI 12X1L",
+    "pack_size": "12x1L",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 8.78,
+    "line_total": 17.56,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "GINGER BEER 12X200ML 12x200ml 1 9.11 S 9.11",
+    "description": "GINGER BEER 12X200ML",
+    "pack_size": "12x200ml",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 9.11,
+    "line_total": 9.11,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "TEA BAGS BREAKFAST 1100 1100 8 12.46 Z 99.68",
+    "description": "TEA BAGS BREAKFAST 1100",
+    "pack_size": "1100",
+    "unit": "pack",
+    "qty": 8,
+    "unit_price": 12.46,
+    "line_total": 99.68,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "WATER SPARKLING 12X75CL 12x75cl 1 9.37 S 9.37",
+    "description": "WATER SPARKLING 12X75CL",
+    "pack_size": "12x75cl",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 9.37,
+    "line_total": 9.37,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "COLA CLASSIC 24X330ML 24x330ml 3 14.72 S 44.16",
+    "description": "COLA CLASSIC 24X330ML",
+    "pack_size": "24x330ml",
+    "unit": "case",
+    "qty": 3,
+    "unit_price": 14.72,
+    "line_total": 44.16,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "VODKA 6X70CL 6x70cl 6 91.80 S 550.80",
+    "description": "VODKA 6X70CL",
+    "pack_size": "6x70cl",
+    "unit": "case",
+    "qty": 6,
+    "unit_price": 91.8,
+    "line_total": 550.8,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "JUICE ORANGE 12X1L 12x1L 4 15.75 S 63.00",
+    "description": "JUICE ORANGE 12X1L",
+    "pack_size": "12x1L",
+    "unit": "case",
+    "qty": 4,
+    "unit_price": 15.75,
+    "line_total": 63.0,
+    "vat_rate": 20
+   }
+  ],
+  "totals": {
+   "net": 1335.63,
+   "vat": 243.68,
+   "gross": 1579.31
+  }
+ },
+ "retries": 0
+}

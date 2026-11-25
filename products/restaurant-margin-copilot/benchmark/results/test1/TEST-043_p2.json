@@ -1,0 +1,167 @@
+{
+ "page_id": "TEST-043_p2",
+ "invoice_id": "TEST-043",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2272,
+   "output_tokens": 3069,
+   "latency_s": 25.39,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 25.39,
+ "input_tokens": 2272,
+ "output_tokens": 3069,
+ "cost_usd": 0.006706,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "Code",
+   "Description",
+   "Pack",
+   "Qty",
+   "UoM",
+   "Price",
+   "Disc%",
+   "VAT",
+   "Net"
+  ],
+  "supplier_name": "Fenwick & Dale Foodservice Ltd",
+  "invoice_number": "CN3068",
+  "invoice_date": "2026-10-12",
+  "is_credit_note": true,
+  "lines": [
+   {
+    "row_text": "FD10635 CHEESE MOZZ BLK 2.3KG 2.3kg -1 EA 13.36  0% -13.36",
+    "description": "CHEESE MOZZ BLK 2.3KG",
+    "pack_size": "2.3kg",
+    "unit": "each",
+    "qty": -1,
+    "unit_price": 13.36,
+    "line_total": -13.36,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD14755 CHOC DARK CHIPS 2.5KG 2.5kg -1 EA 15.16  0% -14.40",
+    "description": "CHOC DARK CHIPS 2.5KG",
+    "pack_size": "2.5kg",
+    "unit": "each",
+    "qty": -1,
+    "unit_price": 15.16,
+    "line_total": -14.4,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD80243 BACON SMKD RINDLESS 2KG 2kg -2 EA 17.99  0% -35.98",
+    "description": "BACON SMKD RINDLESS 2KG",
+    "pack_size": "2kg",
+    "unit": "each",
+    "qty": -2,
+    "unit_price": 17.99,
+    "line_total": -35.98,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD23206 BIN LINER HD BLK 200S 200 -4 BX 15.50 5 20% -58.90",
+    "description": "BIN LINER HD BLK 200S",
+    "pack_size": "200",
+    "unit": "box",
+    "qty": -4,
+    "unit_price": 15.5,
+    "line_total": -58.9,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD88609 CREAM DBL 6X1L 6x1L -1 CS 18.48  0% -18.48",
+    "description": "CREAM DBL 6X1L",
+    "pack_size": "6x1L",
+    "unit": "case",
+    "qty": -1,
+    "unit_price": 18.48,
+    "line_total": -18.48,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD97959 PASTA PENNE DRY 3KG 3kg -2 EA 3.58  0% -7.16",
+    "description": "PASTA PENNE DRY 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": -2,
+    "unit_price": 3.58,
+    "line_total": -7.16,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD38884 EGGS FREE RANGE DOZEN dozen -4 EA 3.01  0% -12.04",
+    "description": "EGGS FREE RANGE DOZEN",
+    "pack_size": "dozen",
+    "unit": "each",
+    "qty": -4,
+    "unit_price": 3.01,
+    "line_total": -12.04,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD31321 MILK SEMI SKIM 6X2L 6x2L -1 CS 8.09  0% -8.09",
+    "description": "MILK SEMI SKIM 6X2L",
+    "pack_size": "6x2L",
+    "unit": "case",
+    "qty": -1,
+    "unit_price": 8.09,
+    "line_total": -8.09,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD15251 PLASTIC TAKEAWAY CNTR 500CC X250 250 -8 CS 20.87  20% -166.96",
+    "description": "PLASTIC TAKEAWAY CNTR 500CC X250",
+    "pack_size": "250",
+    "unit": "case",
+    "qty": -8,
+    "unit_price": 20.87,
+    "line_total": -166.96,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD75621 GLOVE NITRILE BLU L X100 100 -4 BX 4.63 10 20% -16.67",
+    "description": "GLOVE NITRILE BLU L X100",
+    "pack_size": "100",
+    "unit": "box",
+    "qty": -4,
+    "unit_price": 4.63,
+    "line_total": -16.67,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD71683 TOM CHOPPED IN JUICE 6X400G 6x400g -1 CS 7.12  0% -7.12",
+    "description": "TOM CHOPPED IN JUICE 6X400G",
+    "pack_size": "6x400g",
+    "unit": "case",
+    "qty": -1,
+    "unit_price": 7.12,
+    "line_total": -7.12,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD90367 CLNG FLUID MULTI SURF 5L 5L -5 EA 5.61  20% -28.05",
+    "description": "CLNG FLUID MULTI SURF 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": -5,
+    "unit_price": 5.61,
+    "line_total": -28.05,
+    "vat_rate": 20
+   }
+  ],
+  "totals": {
+   "net": -1103.86,
+   "vat": -67.0,
+   "gross": -1170.86
+  }
+ },
+ "retries": 0
+}

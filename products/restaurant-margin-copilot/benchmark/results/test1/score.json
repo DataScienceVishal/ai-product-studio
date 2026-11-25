@@ -1,0 +1,2849 @@
+{
+ "metrics": {
+  "invoices": 50,
+  "pages": 66,
+  "overall": {
+   "invoices": 50,
+   "truth_lines": 684,
+   "correct": 571,
+   "hallucinated": 7,
+   "accuracy": 0.8263386396526773
+  },
+  "subsets": {
+   "clean": {
+    "invoices": 20,
+    "truth_lines": 275,
+    "correct": 271,
+    "hallucinated": 0,
+    "accuracy": 0.9854545454545455
+   },
+   "distorted": {
+    "invoices": 30,
+    "truth_lines": 409,
+    "correct": 300,
+    "hallucinated": 7,
+    "accuracy": 0.7211538461538461
+   },
+   "heldout": {
+    "invoices": 25,
+    "truth_lines": 326,
+    "correct": 278,
+    "hallucinated": 4,
+    "accuracy": 0.8424242424242424
+   },
+   "dev_layouts": {
+    "invoices": 25,
+    "truth_lines": 358,
+    "correct": 293,
+    "hallucinated": 3,
+    "accuracy": 0.8116343490304709
+   },
+   "credit_notes": {
+    "invoices": 10,
+    "truth_lines": 140,
+    "correct": 137,
+    "hallucinated": 0,
+    "accuracy": 0.9785714285714285
+   },
+   "multipage": {
+    "invoices": 15,
+    "truth_lines": 292,
+    "correct": 251,
+    "hallucinated": 2,
+    "accuracy": 0.8537414965986394
+   }
+  },
+  "per_layout": {
+   "broadliner_a": {
+    "invoices": 9,
+    "truth_lines": 135,
+    "correct": 98,
+    "hallucinated": 2,
+    "accuracy": 0.7153284671532847
+   },
+   "broadliner_b": {
+    "invoices": 9,
+    "truth_lines": 109,
+    "correct": 94,
+    "hallucinated": 2,
+    "accuracy": 0.8468468468468469
+   },
+   "butcher": {
+    "invoices": 8,
+    "truth_lines": 103,
+    "correct": 81,
+    "hallucinated": 1,
+    "accuracy": 0.7788461538461539
+   },
+   "cashcarry": {
+    "invoices": 8,
+    "truth_lines": 120,
+    "correct": 114,
+    "hallucinated": 0,
+    "accuracy": 0.95
+   },
+   "dairy_drinks": {
+    "invoices": 8,
+    "truth_lines": 107,
+    "correct": 94,
+    "hallucinated": 2,
+    "accuracy": 0.8623853211009175
+   },
+   "greengrocer": {
+    "invoices": 8,
+    "truth_lines": 110,
+    "correct": 90,
+    "hallucinated": 0,
+    "accuracy": 0.8181818181818182
+   }
+  },
+  "reconciliation_rate": 0.64,
+  "silent_errors": 5,
+  "silent_error_invoices": [
+   "TEST-004",
+   "TEST-015",
+   "TEST-033",
+   "TEST-034",
+   "TEST-039"
+  ],
+  "pages_failed_after_retry": 0,
+  "pages_unscored_no_result": 0,
+  "failure_rate": 0.0,
+  "cost_total_usd": 0.6671,
+  "cost_from_page_records_usd": 0.6671,
+  "cost_per_page_usd": 0.01011,
+  "p95_latency_s": 82.92,
+  "retried_pages": 0,
+  "tokens": {
+   "input": 155958,
+   "output": 314039
+  },
+  "header_accuracy": {
+   "supplier": 0.36,
+   "invoice_no": 0.58,
+   "date": 1.0,
+   "credit_flag": 1.0
+  },
+  "by_distortion_param": {
+   "rotation_deg": {
+    "more_severe": {
+     "invoices": 15,
+     "truth_lines": 194,
+     "correct": 111,
+     "hallucinated": 4,
+     "accuracy": 0.5606060606060606
+    },
+    "milder": {
+     "invoices": 15,
+     "truth_lines": 215,
+     "correct": 189,
+     "hallucinated": 3,
+     "accuracy": 0.8669724770642202
+    }
+   },
+   "blur_sigma": {
+    "more_severe": {
+     "invoices": 15,
+     "truth_lines": 219,
+     "correct": 175,
+     "hallucinated": 4,
+     "accuracy": 0.7847533632286996
+    },
+    "milder": {
+     "invoices": 15,
+     "truth_lines": 190,
+     "correct": 125,
+     "hallucinated": 3,
+     "accuracy": 0.6476683937823834
+    }
+   },
+   "jpeg_quality": {
+    "more_severe": {
+     "invoices": 15,
+     "truth_lines": 197,
+     "correct": 132,
+     "hallucinated": 5,
+     "accuracy": 0.6534653465346535
+    },
+    "milder": {
+     "invoices": 15,
+     "truth_lines": 212,
+     "correct": 168,
+     "hallucinated": 2,
+     "accuracy": 0.7850467289719626
+    }
+   },
+   "shadow_strength": {
+    "more_severe": {
+     "invoices": 15,
+     "truth_lines": 193,
+     "correct": 122,
+     "hallucinated": 5,
+     "accuracy": 0.6161616161616161
+    },
+    "milder": {
+     "invoices": 15,
+     "truth_lines": 216,
+     "correct": 178,
+     "hallucinated": 2,
+     "accuracy": 0.8165137614678899
+    }
+   },
+   "crumple_amp_px": {
+    "more_severe": {
+     "invoices": 15,
+     "truth_lines": 190,
+     "correct": 127,
+     "hallucinated": 3,
+     "accuracy": 0.6580310880829016
+    },
+    "milder": {
+     "invoices": 15,
+     "truth_lines": 219,
+     "correct": 173,
+     "hallucinated": 4,
+     "accuracy": 0.7757847533632287
+    }
+   },
+   "perspective_jitter": {
+    "more_severe": {
+     "invoices": 15,
+     "truth_lines": 190,
+     "correct": 129,
+     "hallucinated": 4,
+     "accuracy": 0.6649484536082474
+    },
+    "milder": {
+     "invoices": 15,
+     "truth_lines": 219,
+     "correct": 171,
+     "hallucinated": 3,
+     "accuracy": 0.7702702702702703
+    }
+   }
+  },
+  "line_error_kinds": {
+   "qty": 65,
+   "pack": 101,
+   "unit_price": 91,
+   "line_total": 87,
+   "vat_rate": 34,
+   "description": 3
+  },
+  "verdict_if_test": {
+   "result": "KILL",
+   "kill_triggers": [
+    "overall < 88%",
+    "distorted < 80%",
+    "silent errors >= 3"
+   ],
+   "pass_checks": {
+    "overall >= 95%": false,
+    "distorted >= 90%": false,
+    "held-out >= 90%": false,
+    "reconciliation >= 90%": false,
+    "silent errors <= 1": false,
+    "cost <= $0.02/page": true,
+    "p95 latency <= 90 s": true,
+    "failure rate <= 2%": true
+   }
+  }
+ },
+ "invoices": [
+  {
+   "id": "TEST-001",
+   "layout": "broadliner_a",
+   "heldout": false,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": true,
+   "truth_lines": 30,
+   "correct": 26,
+   "hallucinated": 0,
+   "wrong_lines": 4,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [
+    {
+     "truth": "EGGS FREE RANGE DOZEN",
+     "pred": "EGGS FREE RANGE DOZEN",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "PASTA PENNE DRY 3KG",
+     "pred": "PASTA PENNE DRY 3KG",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "HONEY CLEAR 3KG",
+     "pred": "HONEY CLEAR 3KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "FOIL CATERING 450MMX90M",
+     "pred": "FOIL CATERING 450MMX90M",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    }
+   ],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 1610.22,
+    "extracted_gross": 1613.76,
+    "truth_gross": 1613.76
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-002",
+   "layout": "broadliner_b",
+   "heldout": true,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 10,
+   "correct": 9,
+   "hallucinated": 0,
+   "wrong_lines": 1,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [
+    {
+     "truth": "PEPPER WHITE GRND 1KG",
+     "pred": "PEPPER WHITE GRND 1KG",
+     "errors": [
+      "vat_rate"
+     ]
+    }
+   ],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 812.48,
+    "extracted_gross": 780.93,
+    "truth_gross": 780.93
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-003",
+   "layout": "cashcarry",
+   "heldout": false,
+   "distorted": false,
+   "credit_note": true,
+   "multipage": false,
+   "truth_lines": 10,
+   "correct": 10,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": -238.01,
+    "extracted_gross": -238.01,
+    "truth_gross": -238.01
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-004",
+   "layout": "butcher",
+   "heldout": false,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": true,
+   "truth_lines": 15,
+   "correct": 14,
+   "hallucinated": 0,
+   "wrong_lines": 1,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [
+    {
+     "truth": "DUCK BREAST X2 400G",
+     "pred": "DUCK BREAST X2 400G",
+     "errors": [
+      "pack"
+     ]
+    }
+   ],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 567.13,
+    "extracted_gross": 567.13,
+    "truth_gross": 567.13
+   },
+   "silent_error": true,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-005",
+   "layout": "greengrocer",
+   "heldout": true,
+   "distorted": false,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 11,
+   "correct": 11,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 155.66,
+    "extracted_gross": 155.66,
+    "truth_gross": 155.66
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-006",
+   "layout": "dairy_drinks",
+   "heldout": true,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 11,
+   "correct": 11,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 2673.79,
+    "extracted_gross": 2673.79,
+    "truth_gross": 2673.79
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-007",
+   "layout": "broadliner_a",
+   "heldout": false,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 10,
+   "correct": 1,
+   "hallucinated": 1,
+   "wrong_lines": 10,
+   "missing": [],
+   "hallucinated_lines": [
+    "TOM CHOPPED IN JUICE 6X400G"
+   ],
+   "line_errors": [
+    {
+     "truth": "MAYO CATERING 5L",
+     "pred": "MAYO CATERING 5L",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "CREAM DBL 6X1L",
+     "pred": "CREAM DBL 6X1L",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "POTATO CHIP FRZN 4X2.5KG",
+     "pred": "POTATO CHIP FRZN 4X2.5KG",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "OIL RAPESEED CATERING 20L",
+     "pred": "OIL RAPESEED CATERING 20L",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "PLASTIC TAKEAWAY CNTR 500CC X250",
+     "pred": "PLASTIC TAKEAWAY CNTR 500CC X250",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "MILK SEMI SKIM 6X2L",
+     "pred": "MLK SEMI SKIM 6X2L",
+     "errors": [
+      "description",
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "FOIL CATERING 450MMX90M",
+     "pred": "FOIL CATERING 450MMX90M",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "VINEGAR MALT 5L",
+     "pred": "VINEGAR MALT 5L",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "TOM CHOPPED IN JUICE 6X400G",
+     "pred": "TOM CHOPPED IN JUICE 6X400G",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    }
+   ],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 278.79,
+    "extracted_gross": 278.31,
+    "truth_gross": 278.31
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-008",
+   "layout": "broadliner_b",
+   "heldout": true,
+   "distorted": false,
+   "credit_note": true,
+   "multipage": true,
+   "truth_lines": 19,
+   "correct": 19,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": -1151.13,
+    "extracted_gross": -1151.13,
+    "truth_gross": -1151.13
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-009",
+   "layout": "cashcarry",
+   "heldout": false,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 13,
+   "correct": 13,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 565.3,
+    "extracted_gross": 565.3,
+    "truth_gross": 565.3
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-010",
+   "layout": "butcher",
+   "heldout": false,
+   "distorted": false,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 12,
+   "correct": 12,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 406.62,
+    "extracted_gross": 406.62,
+    "truth_gross": 406.62
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-011",
+   "layout": "greengrocer",
+   "heldout": true,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": true,
+   "truth_lines": 18,
+   "correct": 8,
+   "hallucinated": 0,
+   "wrong_lines": 10,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [
+    {
+     "truth": "RASPBERRIES 12X125G",
+     "pred": "RASPBERRIES 12X125G",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "MUSHROOM CHESTNUT 3KG",
+     "pred": "MUSHROOM CHESTNUT 3KG",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "CARROT LOOSE 20KG",
+     "pred": "CARROT LOOSE 20KG",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "PARSLEY FLAT BUNCH",
+     "pred": "PARSLEY FLAT BUNCH",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "SPINACH BABY 500G",
+     "pred": "SPINACH BABY 500G",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "GARLIC WHITE",
+     "pred": "GARLIC WHITE",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "BASIL POT LIVING",
+     "pred": "BASIL POT LIVING",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "CARRIER BAGS 100",
+     "pred": "CARRIER BAGS 100",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "TOMATOES VINE 6KG BOX",
+     "pred": "TOMATOES VINE 6KG BOX",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "CR POTATO MARIS PIPER 25KG DAMAGED",
+     "pred": "CR POTATO MARIS PIPER 25KG DAM",
+     "errors": [
+      "description"
+     ]
+    }
+   ],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 260.66,
+    "extracted_gross": 290.06,
+    "truth_gross": 290.06
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-012",
+   "layout": "dairy_drinks",
+   "heldout": true,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 13,
+   "correct": 11,
+   "hallucinated": 0,
+   "wrong_lines": 2,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [
+    {
+     "truth": "JUICE APPLE 12X1L",
+     "pred": "JUICE APPLE 12X1L",
+     "errors": [
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "COFFEE BEANS ESPRESSO 1KG",
+     "pred": "COFFEE BEANS ESPRESSO 1KG",
+     "errors": [
+      "vat_rate"
+     ]
+    }
+   ],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 1448.92,
+    "extracted_gross": 1449.65,
+    "truth_gross": 1449.65
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-013",
+   "layout": "broadliner_a",
+   "heldout": false,
+   "distorted": false,
+   "credit_note": true,
+   "multipage": false,
+   "truth_lines": 10,
+   "correct": 10,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": -375.44,
+    "extracted_gross": -375.44,
+    "truth_gross": -375.44
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-014",
+   "layout": "broadliner_b",
+   "heldout": true,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 10,
+   "correct": 10,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 497.73,
+    "extracted_gross": 497.73,
+    "truth_gross": 497.73
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-015",
+   "layout": "cashcarry",
+   "heldout": false,
+   "distorted": false,
+   "credit_note": false,
+   "multipage": true,
+   "truth_lines": 27,
+   "correct": 26,
+   "hallucinated": 0,
+   "wrong_lines": 1,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [
+    {
+     "truth": "TISSUE CENTREFEED 6RL",
+     "pred": "TISSUE CENTREFEED 6RL",
+     "errors": [
+      "pack"
+     ]
+    }
+   ],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 951.45,
+    "extracted_gross": 951.45,
+    "truth_gross": 951.45
+   },
+   "silent_error": true,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-016",
+   "layout": "butcher",
+   "heldout": false,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 11,
+   "correct": 2,
+   "hallucinated": 1,
+   "wrong_lines": 10,
+   "missing": [],
+   "hallucinated_lines": [
+    "PORK SAUS 8S 454G"
+   ],
+   "line_errors": [
+    {
+     "truth": "PORK SAUS 8S 454G",
+     "pred": "PORK SAUS 8S 454G",
+     "errors": [
+      "pack"
+     ]
+    },
+    {
+     "truth": "BUTCHERS STRING 500G",
+     "pred": "BUTCHERS STRING 500G",
+     "errors": [
+      "pack"
+     ]
+    },
+    {
+     "truth": "CHICKEN THIGH BONE IN 10KG",
+     "pred": "CHICKEN THIGH BONE IN 10KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "RUMP STEAK TRIMMED",
+     "pred": "RUMP STEAK TRIMMED",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "LAMB RACK FRENCH TRIM",
+     "pred": "LAMB RACK FRENCH TRIM",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "DISPOSABLE GLOVES BLU X100",
+     "pred": "DISPOSABLE GLOVES BLU X100",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "PORK BELLY RIND ON",
+     "pred": "PORK BELLY RIND ON",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "LAMB SHOULDER BONE IN",
+     "pred": "LAMB SHOULDER BONE IN",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "BLACK PUDDING 1KG",
+     "pred": "BLACK PUDDING 1KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    }
+   ],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 569.15,
+    "extracted_gross": 553.45,
+    "truth_gross": 553.45
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-017",
+   "layout": "greengrocer",
+   "heldout": true,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 12,
+   "correct": 12,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 544.22,
+    "extracted_gross": 544.22,
+    "truth_gross": 544.22
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-018",
+   "layout": "dairy_drinks",
+   "heldout": true,
+   "distorted": false,
+   "credit_note": true,
+   "multipage": true,
+   "truth_lines": 19,
+   "correct": 19,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": -2902.89,
+    "extracted_gross": -2902.89,
+    "truth_gross": -2902.89
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-019",
+   "layout": "broadliner_a",
+   "heldout": false,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 10,
+   "correct": 0,
+   "hallucinated": 0,
+   "wrong_lines": 10,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [
+    {
+     "truth": "BACON SMKD RINDLESS 2KG",
+     "pred": "BACON SMKD RINDLESS 2KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "CLNG FLUID MULTI SURF 5L",
+     "pred": "CLNG FLUID MULTI SURF 5L",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "BUTTER UNSLTD 20X250G",
+     "pred": "BUTTER UNSLTD 20X250G",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "MAYO CATERING 5L",
+     "pred": "MAYO CATERING 5L",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "NAPKIN 2PLY WHT 2000",
+     "pred": "NAPKIN 2PLY WHT 2000",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "PASTA PENNE DRY 3KG",
+     "pred": "PASTA PENNE DRY 3KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "CHICKEN BREAST FIL SKLS 2.5KG",
+     "pred": "CHICKEN BREAST FIL SKLS 2.5KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "GLOVE NITRILE BLU L X100",
+     "pred": "GLOVE NITRILE BLU L X100",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "SUGAR GRAN 15KG",
+     "pred": "SUGAR GRAN 15KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "BIN LINER HD BLK 200S",
+     "pred": "BIN LINER HD BLK 200S",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    }
+   ],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 0.0,
+    "extracted_gross": 578.2,
+    "truth_gross": 578.2
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-020",
+   "layout": "broadliner_b",
+   "heldout": true,
+   "distorted": false,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 10,
+   "correct": 10,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 513.65,
+    "extracted_gross": 513.65,
+    "truth_gross": 513.65
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-021",
+   "layout": "cashcarry",
+   "heldout": false,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 13,
+   "correct": 13,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 846.51,
+    "extracted_gross": 846.51,
+    "truth_gross": 846.51
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-022",
+   "layout": "butcher",
+   "heldout": false,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": true,
+   "truth_lines": 19,
+   "correct": 12,
+   "hallucinated": 0,
+   "wrong_lines": 7,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [
+    {
+     "truth": "DUCK BREAST X2 400G",
+     "pred": "DUCK BREAST X2 400G",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price"
+     ]
+    },
+    {
+     "truth": "BUTCHERS STRING 500G",
+     "pred": "BUTCHERS STRING 500G",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "DISPOSABLE GLOVES BLU X100",
+     "pred": "DISPOSABLE GLOVES BLU X100",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price"
+     ]
+    },
+    {
+     "truth": "CHICKEN THIGH BONE IN 10KG",
+     "pred": "CHICKEN THIGH BONE IN 10KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price"
+     ]
+    },
+    {
+     "truth": "SIRLOIN 28D HUNG",
+     "pred": "SIRLOIN 28D HUNG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price"
+     ]
+    },
+    {
+     "truth": "BLACK PUDDING 1KG",
+     "pred": "BLACK PUDDING 1KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price"
+     ]
+    },
+    {
+     "truth": "PORK SAUS 8S 454G",
+     "pred": "PORK SAUS 8S 454G",
+     "errors": [
+      "pack"
+     ]
+    }
+   ],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 900.52,
+    "extracted_gross": 908.48,
+    "truth_gross": 908.48
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-023",
+   "layout": "greengrocer",
+   "heldout": true,
+   "distorted": false,
+   "credit_note": true,
+   "multipage": false,
+   "truth_lines": 13,
+   "correct": 13,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": -439.82,
+    "extracted_gross": -439.82,
+    "truth_gross": -439.82
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-024",
+   "layout": "dairy_drinks",
+   "heldout": true,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 13,
+   "correct": 13,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 1178.42,
+    "extracted_gross": 2178.42,
+    "truth_gross": 1178.42
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-025",
+   "layout": "broadliner_a",
+   "heldout": false,
+   "distorted": false,
+   "credit_note": false,
+   "multipage": true,
+   "truth_lines": 19,
+   "correct": 19,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 893.1,
+    "extracted_gross": 893.1,
+    "truth_gross": 893.1
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-026",
+   "layout": "broadliner_b",
+   "heldout": true,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 10,
+   "correct": 6,
+   "hallucinated": 1,
+   "wrong_lines": 5,
+   "missing": [],
+   "hallucinated_lines": [
+    "HONEY SQUEEZY 12X340G"
+   ],
+   "line_errors": [
+    {
+     "truth": "FLR STRONG WHT BREAD 16KG",
+     "pred": "FLR STRONG WHT BREAD 16KG",
+     "errors": [
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "DEGREASER HD SPRAY 750ML",
+     "pred": "DEGREASER HD SPRAY 750ML",
+     "errors": [
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "GRAVY GRANULES BEEF 2KG",
+     "pred": "GRAVY GRANULES BEEF 2KG",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "CHEESE CHEDDAR MED 5KG",
+     "pred": "CHEESE CHEDDAR MED 5KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    }
+   ],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 450.78,
+    "extracted_gross": 435.75,
+    "truth_gross": 435.75
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-027",
+   "layout": "cashcarry",
+   "heldout": false,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 12,
+   "correct": 12,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 794.86,
+    "extracted_gross": 794.86,
+    "truth_gross": 794.86
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-028",
+   "layout": "butcher",
+   "heldout": false,
+   "distorted": false,
+   "credit_note": true,
+   "multipage": false,
+   "truth_lines": 11,
+   "correct": 11,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": -702.78,
+    "extracted_gross": -702.78,
+    "truth_gross": -702.78
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-029",
+   "layout": "greengrocer",
+   "heldout": true,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": true,
+   "truth_lines": 21,
+   "correct": 20,
+   "hallucinated": 0,
+   "wrong_lines": 1,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [
+    {
+     "truth": "CARRIER BAGS 100",
+     "pred": "CARRIER BAGS 100",
+     "errors": [
+      "vat_rate"
+     ]
+    }
+   ],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 580.3,
+    "extracted_gross": 580.96,
+    "truth_gross": 580.96
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-030",
+   "layout": "dairy_drinks",
+   "heldout": true,
+   "distorted": false,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 10,
+   "correct": 10,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 1579.31,
+    "extracted_gross": 1579.31,
+    "truth_gross": 1579.31
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-031",
+   "layout": "broadliner_a",
+   "heldout": false,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 10,
+   "correct": 3,
+   "hallucinated": 0,
+   "wrong_lines": 7,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [
+    {
+     "truth": "BLK PEPPER GRND 500G",
+     "pred": "BLK PEPPER GRND 500G",
+     "errors": [
+      "qty",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "GLOVE NITRILE BLU L X100",
+     "pred": "GLOVE NITRILE BLU L X100",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "EGGS MED FR RANGE 180",
+     "pred": "EGGS MED FR RANGE 180",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "HONEY CLEAR 3KG",
+     "pred": "HONEY CLEAR 3KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "VINEGAR MALT 5L",
+     "pred": "VINEGAR MALT 5L",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "STOCK BEEF PASTE 6X1KG",
+     "pred": "STOCK BEEF PASTE 6X1KG",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "FOIL CATERING 450MMX90M",
+     "pred": "FOIL CATERING 450MMX90M",
+     "errors": [
+      "qty",
+      "line_total",
+      "vat_rate"
+     ]
+    }
+   ],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 393.78,
+    "extracted_gross": 400.16,
+    "truth_gross": 400.16
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-032",
+   "layout": "broadliner_b",
+   "heldout": true,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": true,
+   "truth_lines": 17,
+   "correct": 7,
+   "hallucinated": 1,
+   "wrong_lines": 11,
+   "missing": [],
+   "hallucinated_lines": [
+    "(line text partly obscured)"
+   ],
+   "line_errors": [
+    {
+     "truth": "SYRUP GOLDEN 6X680G",
+     "pred": "SYRUP GOLDEN 6X680G",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "COOKING CHOC 2X2.5KG",
+     "pred": "COOKING CHOC 2X2.5KG",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "VINEGAR BREWED 5 LTR",
+     "pred": "VINEGAR BREWED 5 LTR",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "OIL SUNFLWR 20 LTR JERRY",
+     "pred": "OIL SUNFLWR 20 LTR JERRY",
+     "errors": [
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "EGG LIQUID PAST 5X1L",
+     "pred": "EGG LIQUID PAST 5X1L",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "CREAM SNGL 12X500ML",
+     "pred": "CREAM SNGL 12X500ML",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "FRIES 9MM FRZN 4X2.5KG",
+     "pred": "FRIES 9MM FRZN 4X2.5KG",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "TABLE ROLL WHT 40CM X 100M",
+     "pred": "TABLE ROLL WHT 40CM X 100M",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "CHKN FILLET MINI 2KG PK",
+     "pred": "CHKN FILLET MINI 2KG PK",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "LPG PROPANE CYL 19KG REFILL",
+     "pred": "LPG PROPANE CYL 19KG REFILL",
+     "errors": [
+      "vat_rate"
+     ]
+    }
+   ],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 1419.3,
+    "extracted_gross": 1274.41,
+    "truth_gross": 1274.41
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-033",
+   "layout": "cashcarry",
+   "heldout": false,
+   "distorted": false,
+   "credit_note": true,
+   "multipage": false,
+   "truth_lines": 13,
+   "correct": 10,
+   "hallucinated": 0,
+   "wrong_lines": 3,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [
+    {
+     "truth": "BIN BAGS BLACK ROLL 100",
+     "pred": "BIN BAGS BLACK ROLL 100",
+     "errors": [
+      "pack"
+     ]
+    },
+    {
+     "truth": "BIN LINERS 200S",
+     "pred": "BIN LINERS 200S",
+     "errors": [
+      "pack"
+     ]
+    },
+    {
+     "truth": "TISSUE CENTREFEED 6RL",
+     "pred": "TISSUE CENTREFEED 6RL",
+     "errors": [
+      "pack"
+     ]
+    }
+   ],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": -460.95,
+    "extracted_gross": -460.95,
+    "truth_gross": -460.95
+   },
+   "silent_error": true,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-034",
+   "layout": "butcher",
+   "heldout": false,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 11,
+   "correct": 9,
+   "hallucinated": 0,
+   "wrong_lines": 2,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [
+    {
+     "truth": "DUCK BREAST X2 400G",
+     "pred": "DUCK BREAST X2 400G",
+     "errors": [
+      "pack"
+     ]
+    },
+    {
+     "truth": "PORK SAUS 8S 454G",
+     "pred": "PORK SAUS 8S 454G",
+     "errors": [
+      "pack"
+     ]
+    }
+   ],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 593.19,
+    "extracted_gross": 593.19,
+    "truth_gross": 593.19
+   },
+   "silent_error": true,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-035",
+   "layout": "greengrocer",
+   "heldout": true,
+   "distorted": false,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 10,
+   "correct": 10,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 190.56,
+    "extracted_gross": 190.56,
+    "truth_gross": 190.56
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-036",
+   "layout": "dairy_drinks",
+   "heldout": true,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": true,
+   "truth_lines": 18,
+   "correct": 16,
+   "hallucinated": 1,
+   "wrong_lines": 3,
+   "missing": [],
+   "hallucinated_lines": [
+    "VODKA 6X70CL"
+   ],
+   "line_errors": [
+    {
+     "truth": "CHEESE CHEDDAR 5KG BLOCK",
+     "pred": "CHEESE CHEDDAR 5KG BLOCK",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "COFFEE BEANS ESPRESSO 1KG",
+     "pred": "COFFEE BEANS ESPRESSO 1KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    }
+   ],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 2174.43,
+    "extracted_gross": 2162.55,
+    "truth_gross": 2162.55
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-037",
+   "layout": "broadliner_a",
+   "heldout": false,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 12,
+   "correct": 12,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 337.88,
+    "extracted_gross": 337.88,
+    "truth_gross": 337.88
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-038",
+   "layout": "broadliner_b",
+   "heldout": true,
+   "distorted": false,
+   "credit_note": true,
+   "multipage": false,
+   "truth_lines": 10,
+   "correct": 10,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": -455.7,
+    "extracted_gross": -455.7,
+    "truth_gross": -455.7
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-039",
+   "layout": "cashcarry",
+   "heldout": false,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": true,
+   "truth_lines": 19,
+   "correct": 17,
+   "hallucinated": 0,
+   "wrong_lines": 2,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [
+    {
+     "truth": "MINCED BEEF 5% 2KG",
+     "pred": "MINCED BEEF 5L 2KG",
+     "errors": [
+      "description"
+     ]
+    },
+    {
+     "truth": "TISSUE CENTREFEED 6RL",
+     "pred": "TISSUE CENTREFEED 6RL",
+     "errors": [
+      "pack"
+     ]
+    }
+   ],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 953.19,
+    "extracted_gross": 953.19,
+    "truth_gross": 953.19
+   },
+   "silent_error": true,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-040",
+   "layout": "butcher",
+   "heldout": false,
+   "distorted": false,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 10,
+   "correct": 10,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 419.8,
+    "extracted_gross": 419.8,
+    "truth_gross": 419.8
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-041",
+   "layout": "greengrocer",
+   "heldout": true,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 11,
+   "correct": 11,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 238.36,
+    "extracted_gross": 238.36,
+    "truth_gross": 238.36
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-042",
+   "layout": "dairy_drinks",
+   "heldout": true,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 12,
+   "correct": 3,
+   "hallucinated": 1,
+   "wrong_lines": 10,
+   "missing": [],
+   "hallucinated_lines": [
+    "40x250g"
+   ],
+   "line_errors": [
+    {
+     "truth": "WINE WHITE PINOT 6X75CL",
+     "pred": "WINE WHITE PINOT 6X75CL",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "PROSECCO DOC 6X75CL",
+     "pred": "PROSECCO DOC 6X75CL",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "JUICE APPLE 12X1L",
+     "pred": "JUICE APPLE 12X1L",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "GINGER BEER 12X200ML",
+     "pred": "GINGER BEER 12X200ML",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "CREAM DOUBLE 6X1L",
+     "pred": "CREAM DOUBLE 6X1L",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "GIN LONDON DRY 6X70CL",
+     "pred": "GIN LONDON DRY 6X70CL",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "CIDER KEG 50L",
+     "pred": "CIDER KEG 50L",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "YOGHURT NATURAL 6X1KG",
+     "pred": "YOGHURT NATURAL 6X1KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "BUTTER SALTED 40X250G",
+     "pred": "BUTTER SALTED 40X250G",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    }
+   ],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 1799.3,
+    "extracted_gross": 1735.62,
+    "truth_gross": 1735.62
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-043",
+   "layout": "broadliner_a",
+   "heldout": false,
+   "distorted": false,
+   "credit_note": true,
+   "multipage": true,
+   "truth_lines": 24,
+   "correct": 24,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": -1170.86,
+    "extracted_gross": -1170.86,
+    "truth_gross": -1170.86
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-044",
+   "layout": "broadliner_b",
+   "heldout": true,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 10,
+   "correct": 10,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 469.64,
+    "extracted_gross": 469.64,
+    "truth_gross": 469.64
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-045",
+   "layout": "cashcarry",
+   "heldout": false,
+   "distorted": false,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 13,
+   "correct": 13,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 365.54,
+    "extracted_gross": 365.54,
+    "truth_gross": 365.54
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-046",
+   "layout": "butcher",
+   "heldout": false,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": true,
+   "truth_lines": 14,
+   "correct": 11,
+   "hallucinated": 0,
+   "wrong_lines": 3,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [
+    {
+     "truth": "DUCK BREAST X2 400G",
+     "pred": "DUCK BREAST X2 400G",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "OX CHEEK",
+     "pred": "OX CHEEK",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "BACON SMKD BACK 2KG",
+     "pred": "BACON SMKD BACK 2KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    }
+   ],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 518.96,
+    "extracted_gross": 604.58,
+    "truth_gross": 604.58
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-047",
+   "layout": "greengrocer",
+   "heldout": true,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 14,
+   "correct": 5,
+   "hallucinated": 0,
+   "wrong_lines": 9,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [
+    {
+     "truth": "CARRIER BAGS 100",
+     "pred": "CARRIER BAGS 100",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "MUSHROOM CHESTNUT 3KG",
+     "pred": "MUSHROOM CHESTNUT 3KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "APPLE BRAMLEY 12KG",
+     "pred": "APPLE BRAMLEY 12KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "CAULIFLOWER",
+     "pred": "CAULIFLOWER",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "TOMATOES VINE 6KG BOX",
+     "pred": "TOMATOES VINE 6KG BOX",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "GARLIC WHITE",
+     "pred": "GARLIC WHITE",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "PARSLEY FLAT BUNCH",
+     "pred": "PARSLEY FLAT BUNCH",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "RASPBERRIES 12X125G",
+     "pred": "RASPBERRIES 12X125G",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "LEMONS 15CT BOX",
+     "pred": "LEMONS 15CT BOX",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    }
+   ],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 261.76,
+    "extracted_gross": 264.06,
+    "truth_gross": 264.06
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-048",
+   "layout": "dairy_drinks",
+   "heldout": true,
+   "distorted": false,
+   "credit_note": true,
+   "multipage": false,
+   "truth_lines": 11,
+   "correct": 11,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": -1709.67,
+    "extracted_gross": -1709.67,
+    "truth_gross": -1709.67
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": false,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-049",
+   "layout": "broadliner_a",
+   "heldout": false,
+   "distorted": true,
+   "credit_note": false,
+   "multipage": false,
+   "truth_lines": 10,
+   "correct": 3,
+   "hallucinated": 1,
+   "wrong_lines": 8,
+   "missing": [],
+   "hallucinated_lines": [
+    "CHICKEN WINGS 5KG CASE"
+   ],
+   "line_errors": [
+    {
+     "truth": "OIL RAPESEED CATERING 20L",
+     "pred": "OIL RAPESEED CATERING 20L",
+     "errors": [
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "SUGAR GRAN 15KG",
+     "pred": "SUGAR GRAN 15KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "LPG CYLINDER REFILL 13KG",
+     "pred": "LPG CYLINDER REFILL 13KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total",
+      "vat_rate"
+     ]
+    },
+    {
+     "truth": "STOCK BEEF PASTE 6X1KG",
+     "pred": "STOCK BEEF PASTE 6X1KG",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "TOM CHOPPED IN JUICE 6X400G",
+     "pred": "TOM CHOPPED IN JUICE 6X400G",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "EGGS FREE RANGE DOZEN",
+     "pred": "EGGS FREE RANGE DOZEN",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    },
+    {
+     "truth": "CHICKEN WINGS 5KG CASE",
+     "pred": "CHICKEN WINGS 5KG CASE",
+     "errors": [
+      "qty",
+      "pack",
+      "unit_price",
+      "line_total"
+     ]
+    }
+   ],
+   "reconciled": false,
+   "reconciliation": {
+    "ok": false,
+    "calc_gross": 871.48,
+    "extracted_gross": 762.2,
+    "truth_gross": 762.2
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": true,
+    "date": true,
+    "credit_flag": true
+   }
+  },
+  {
+   "id": "TEST-050",
+   "layout": "broadliner_b",
+   "heldout": true,
+   "distorted": false,
+   "credit_note": false,
+   "multipage": true,
+   "truth_lines": 13,
+   "correct": 13,
+   "hallucinated": 0,
+   "wrong_lines": 0,
+   "missing": [],
+   "hallucinated_lines": [],
+   "line_errors": [],
+   "reconciled": true,
+   "reconciliation": {
+    "ok": true,
+    "calc_gross": 690.51,
+    "extracted_gross": 690.51,
+    "truth_gross": 690.51
+   },
+   "silent_error": false,
+   "failed_pages": [],
+   "header": {
+    "supplier": true,
+    "invoice_no": false,
+    "date": true,
+    "credit_flag": true
+   }
+  }
+ ]
+}

@@ -1,0 +1,153 @@
+{
+ "page_id": "TEST-028_p1",
+ "invoice_id": "TEST-028",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2272,
+   "output_tokens": 3346,
+   "latency_s": 27.15,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 27.15,
+ "input_tokens": 2272,
+ "output_tokens": 3346,
+ "cost_usd": 0.00726,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "ITEM",
+   "WEIGHT / QTY",
+   "PRICE",
+   "V",
+   "AMOUNT"
+  ],
+  "supplier_name": "HARKER & SONS",
+  "invoice_number": "CN4684",
+  "invoice_date": "2026-09-24",
+  "is_credit_note": true,
+  "lines": [
+   {
+    "row_text": "BACON SMKD BACK 2KG                      -4 x     16.09 ea    Z    -64.36",
+    "description": "BACON SMKD BACK 2KG",
+    "pack_size": "2kg",
+    "unit": "each",
+    "qty": -4,
+    "unit_price": 16.09,
+    "line_total": -64.36,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CHICKEN THIGH BONE IN 10KG               -1 x     28.88 ea    Z    -28.88",
+    "description": "CHICKEN THIGH BONE IN 10KG",
+    "pack_size": "10kg",
+    "unit": "each",
+    "qty": -1,
+    "unit_price": 28.88,
+    "line_total": -28.88,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PORK SAUS 8S 454G                         -2 x      3.91 ea    Z     -7.82",
+    "description": "PORK SAUS 8S 454G",
+    "pack_size": "454g",
+    "unit": "each",
+    "qty": -2,
+    "unit_price": 3.91,
+    "line_total": -7.82,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "LAMB RACK FRENCH TRIM                     -7.68 kg  24.99/kg    Z   -191.92",
+    "description": "LAMB RACK FRENCH TRIM",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": -7.68,
+    "unit_price": 24.99,
+    "line_total": -191.92,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BLACK PUDDING 1KG                         -4 x      7.86 ea    Z    -31.44",
+    "description": "BLACK PUDDING 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": -4,
+    "unit_price": 7.86,
+    "line_total": -31.44,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PORK SHOULDER DICED                       -4.48 kg  6.57/kg     Z    -29.43",
+    "description": "PORK SHOULDER DICED",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": -4.48,
+    "unit_price": 6.57,
+    "line_total": -29.43,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "LAMB SHOULDER BONE IN                     -6.87 kg  11.90/kg    Z    -81.75",
+    "description": "LAMB SHOULDER BONE IN",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": -6.87,
+    "unit_price": 11.9,
+    "line_total": -81.75,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SIRLOIN 28D HUNG                          -9.14 kg  24.59/kg    Z   -224.75",
+    "description": "SIRLOIN 28D HUNG",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": -9.14,
+    "unit_price": 24.59,
+    "line_total": -224.75,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BEEF MARROW BONES                         -1.54 kg   2.07/kg    Z     -3.19",
+    "description": "BEEF MARROW BONES",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": -1.54,
+    "unit_price": 2.07,
+    "line_total": -3.19,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PORK SAUSAGE DOZEN                        -5 x      4.21 ea    Z    -21.05",
+    "description": "PORK SAUSAGE DOZEN",
+    "pack_size": "dozen",
+    "unit": "each",
+    "qty": -5,
+    "unit_price": 4.21,
+    "line_total": -21.05,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BUTCHERS STRING 500G                      -4 x      3.79 ea    S    -15.16",
+    "description": "BUTCHERS STRING 500G",
+    "pack_size": "500g",
+    "unit": "each",
+    "qty": -4,
+    "unit_price": 3.79,
+    "line_total": -15.16,
+    "vat_rate": 20
+   }
+  ],
+  "totals": {
+   "net": -699.75,
+   "vat": -3.03,
+   "gross": -702.78
+  }
+ },
+ "retries": 0
+}

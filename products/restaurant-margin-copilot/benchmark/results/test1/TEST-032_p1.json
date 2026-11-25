@@ -1,0 +1,166 @@
+{
+ "page_id": "TEST-032_p1",
+ "invoice_id": "TEST-032",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2214,
+   "output_tokens": 7225,
+   "latency_s": 54.23,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 54.23,
+ "input_tokens": 2214,
+ "output_tokens": 7225,
+ "cost_usd": 0.015003,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "U/M",
+   "PRODUCT DESCRIPTION",
+   "SIZE",
+   "PRICE",
+   "DISC %",
+   "VAT",
+   "NET VALUE"
+  ],
+  "supplier_name": "Calder Valley Catering Supplies plc",
+  "invoice_number": "Ref 12569",
+  "invoice_date": "2026-10-17",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "6 EA PEPPER WHITE GRND 1KG 1kg 19.44 Z 116.64",
+    "description": "PEPPER WHITE GRND 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 19.44,
+    "line_total": 116.64,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 CS SYRUP GOLDEN 6X680G 6x680g 19.44 Z 38.88",
+    "description": "SYRUP GOLDEN 6X680G",
+    "pack_size": "6x680g",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 19.44,
+    "line_total": 38.88,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "3 EA CHEESE CHEDDAR MED 5KG 5kg 29.74 Z 89.22",
+    "description": "CHEESE CHEDDAR MED 5KG",
+    "pack_size": "5kg",
+    "unit": "each",
+    "qty": 3,
+    "unit_price": 29.74,
+    "line_total": 89.22,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "4 CS COOKING CHOC 2X2.5KG 2x2.5kg 14.28 Z 57.12",
+    "description": "COOKING CHOC 2X2.5KG",
+    "pack_size": "2x2.5kg",
+    "unit": "case",
+    "qty": 4,
+    "unit_price": 14.28,
+    "line_total": 57.12,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "8 EA VINEGAR BREWED 5 LTR 5L 29.74 Z 237.92",
+    "description": "VINEGAR BREWED 5 LTR",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 29.74,
+    "line_total": 237.92,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "6 EA OIL SUNFLWR 20 LTR JERRY 20L 31.56 Z 189.36",
+    "description": "OIL SUNFLWR 20 LTR JERRY",
+    "pack_size": "20L",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 31.56,
+    "line_total": 189.36,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "6 CS EGG LIQUID PAST 5X1L 5L 4.52 Z 27.12",
+    "description": "EGG LIQUID PAST 5X1L",
+    "pack_size": "5L",
+    "unit": "case",
+    "qty": 6,
+    "unit_price": 4.52,
+    "line_total": 27.12,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "3 CS CREAM SNGL 12X500ML 12x500ml 31.62 Z 94.86",
+    "description": "CREAM SNGL 12X500ML",
+    "pack_size": "12x500ml",
+    "unit": "case",
+    "qty": 3,
+    "unit_price": 31.62,
+    "line_total": 94.86,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "3 CS FRIES 9MM FRZN 4X2.5KG 4x2.5kg 16.10 Z 48.30",
+    "description": "FRIES 9MM FRZN 4X2.5KG",
+    "pack_size": "4x2.5kg",
+    "unit": "case",
+    "qty": 3,
+    "unit_price": 16.1,
+    "line_total": 48.3,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 EA TABLE ROLL WHT 40CM X 100M 12x500ml 16.39 Z 16.39",
+    "description": "TABLE ROLL WHT 40CM X 100M",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 16.39,
+    "line_total": 16.39,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 EA ? 4x2.5kg 10.44 Z 10.44",
+    "description": "(line text partly obscured)",
+    "pack_size": "4x2.5kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 10.44,
+    "line_total": 10.44,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 PK CHKN FILLET MINI 2KG PK 2kg 9.40 S 31.32",
+    "description": "CHKN FILLET MINI 2KG PK",
+    "pack_size": "2kg",
+    "unit": "pack",
+    "qty": 2,
+    "unit_price": 9.4,
+    "line_total": 31.32,
+    "vat_rate": 20
+   }
+  ],
+  "totals": {
+   "net": null,
+   "vat": null,
+   "gross": null
+  }
+ },
+ "retries": 0
+}

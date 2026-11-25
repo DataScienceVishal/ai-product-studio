@@ -1,0 +1,174 @@
+{
+ "page_id": "TEST-042_p1",
+ "invoice_id": "TEST-042",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 7768,
+   "latency_s": 56.73,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 56.73,
+ "input_tokens": 2243,
+ "output_tokens": 7768,
+ "cost_usd": 0.016097,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "PRODUCT",
+   "SIZE",
+   "QTY",
+   "PRICE",
+   "VAT",
+   "LINE VALUE"
+  ],
+  "supplier_name": "TIDEWATER DAIRY & DRINKS",
+  "invoice_number": "20571",
+  "invoice_date": "2026-10-12",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "VODKA 6X70CL                     6x70cl    2    92.57    S    185.14",
+    "description": "VODKA 6X70CL",
+    "pack_size": "6x70cl",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 92.57,
+    "line_total": 185.14,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "WINE RED MERLOT 6X75CL          6x75cl    1    47.07    S    47.07",
+    "description": "WINE RED MERLOT 6X75CL",
+    "pack_size": "6x75cl",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 47.07,
+    "line_total": 47.07,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "DELIVERY CHARGE                              4     9.31    S    37.24",
+    "description": "DELIVERY CHARGE",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 9.31,
+    "line_total": 37.24,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "WINE WHITE PINOT 6X75CL         6x75cl    1    47.07    S    47.07",
+    "description": "WINE WHITE PINOT 6X75CL",
+    "pack_size": "6x75cl",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 47.07,
+    "line_total": 47.07,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "PROSECCO DOC 6X75CL             6x75cl    2    39.43    S    78.86",
+    "description": "PROSECCO DOC 6X75CL",
+    "pack_size": "6x75cl",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 39.43,
+    "line_total": 78.86,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "JUICE APPLE 12X1L               12x1L    1    44.06    S    44.06",
+    "description": "JUICE APPLE 12X1L",
+    "pack_size": "12x1L",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 44.06,
+    "line_total": 44.06,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "GINGER BEER 12X200ML            12x200ml    1    12.33    S    12.33",
+    "description": "GINGER BEER 12X200ML",
+    "pack_size": "12x200ml",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 12.33,
+    "line_total": 12.33,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "CREAM DOUBLE 6X1L               6x1L    2    11.71    S    23.42",
+    "description": "CREAM DOUBLE 6X1L",
+    "pack_size": "6x1L",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 11.71,
+    "line_total": 23.42,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "GIN LONDON DRY 6X70CL           6x70cl    2    18.00    S    36.00",
+    "description": "GIN LONDON DRY 6X70CL",
+    "pack_size": "6x70cl",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 18.0,
+    "line_total": 36.0,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "CIDER KEG 50L                   50L    5    112.10    S    560.50",
+    "description": "CIDER KEG 50L",
+    "pack_size": "50L",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 112.1,
+    "line_total": 560.5,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "YOGHURT NATURAL 6X1KG           6x1kg    3    108.96    S    326.88",
+    "description": "YOGHURT NATURAL 6X1KG",
+    "pack_size": "6x1kg",
+    "unit": "case",
+    "qty": 3,
+    "unit_price": 108.96,
+    "line_total": 326.88,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "BUTTER SALTED 40X250G           40x250g    2    15.59    Z    31.18",
+    "description": "BUTTER SALTED 40X250G",
+    "pack_size": "40x250g",
+    "unit": "pack",
+    "qty": 2,
+    "unit_price": 15.59,
+    "line_total": 31.18,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "40x250g                         40x250g    1    89.84    Z    89.84",
+    "description": "40x250g",
+    "pack_size": "40x250g",
+    "unit": "pack",
+    "qty": 1,
+    "unit_price": 89.84,
+    "line_total": 89.84,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 1472.52,
+   "vat": 263.1,
+   "gross": 1735.62
+  }
+ },
+ "retries": 0
+}
