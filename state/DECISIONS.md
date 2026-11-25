@@ -244,3 +244,7 @@ Reviewer PASS on p/_starter/T-78-mock-portal-scheme (9ca11e6); merged. Two cosme
 ## 2026-11-25T11:23Z, run 8f52: T-82 round 18 (edges-only), 0 written
 - Ran Q-13's fallback C once restaurant was killed: one desk round aimed only at Vishal's finance/tax and data edges, each candidate needing a dated 2026-2028 UK forcing function and a self-run proof test. Every deadline tested already has an incumbent or is built into payroll/accounts software; 0 idea files, so no validator pass was needed.
 - No further desk rounds queued. Queued Q-15 (buyer chat with the friend, recommended A; default B = edges-only desk rounds continue). Until it is answered, idea runs should only re-check parked ideas (holiday-pay monthly) and runs otherwise work the Always-On list.
+
+## 2026-11-25T11:40Z, run 8f52: T-83 merged
+- Always-On 4 security pass on T-75..T-78 code: PASS, two lows fixed on p/_starter/T-83-sec-lows, reviewer PASS, merged. Declined host allowlist (T-77 S2) stands: no concrete attack found.
+- Merged the reviewed commit unchanged and queued the reviewer's non-blocking test gap as T-84, rather than adding unreviewed tests before merge.
