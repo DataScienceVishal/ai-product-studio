@@ -10,7 +10,7 @@
   Nothing is created until Vishal approves the costs. Products inherit this design. Change it only with a
   new ADR.
 - Files: `infra/` (Bicep, SQL, scripts, runbook) and `.github/workflows/_starter-deploy.yml`.
-- Prices are estimates read for uksouth (the resource group region; resources are in francecentral, see "Region (T-61)"), read on 2026-11-23 from Microsoft's Retail Prices API and pricing docs
+- Prices are estimates read for uksouth (the resource group region; resources are in francecentral, see "Region (T-61)") on 2026-11-23 from Microsoft's Retail Prices API and pricing docs
   (sources at the end). They change; the daily spend report (T-2) shows what is really billed.
 
 ## The picture
@@ -19,7 +19,7 @@
             GitHub Actions (_starter-deploy.yml, manual)                     the browser
             build ─► scan ─► push ─► deploy ─► migrate ─► smoke ─► traffic ─► purge job  │ https only
                                │        │         │                                      ▼
-  rg-ai-studio (meta uksouth)▼        ▼         ▼                       ┌──────────────────────────┐
+  rg-ai-studio (francecentral) ▼        ▼         ▼                       ┌──────────────────────────┐
   ┌──────────────────┐   ┌──────────────────────────────────────────┐   │ ca-starter (one origin)   │
   │ acrstudioznp96r  │◄──┤ cae-studio: Container Apps environment     │   │  /api, /livez, /healthz   │
   │ registry, Basic  │   │ Consumption profile only, scale to zero    ├──►│  (+ the built SPA after   │
