@@ -23,6 +23,15 @@ describe("App routing when signed out", () => {
     expect(await screen.findByRole("heading", { name: "Sign in" })).toBeTruthy();
   });
 
+  it("redirects to /login with replaceState, not pushState", async () => {
+    window.history.replaceState({}, "", "/billing");
+    signedOut();
+    const push = vi.spyOn(window.history, "pushState");
+    render(<App />);
+    await waitFor(() => expect(window.location.pathname).toBe("/login"));
+    expect(push).not.toHaveBeenCalled();
+  });
+
   it.each([
     ["/signup", "Start your free trial"],
     ["/forgot-password", "Reset your password"],
@@ -104,6 +113,31 @@ describe("App routing when signed in (T-87)", () => {
     await waitFor(() => expect(window.location.pathname).toBe("/"));
     expect(screen.queryByRole("heading", { name: "Sign in" })).toBeNull();
     expect(screen.queryByRole("heading", { name: /start your free trial/i })).toBeNull();
+  });
+
+  it("redirects /login and /signup with replaceState, not pushState (no Back bounce)", async () => {
+    window.history.replaceState({}, "", "/login");
+    signedInWithNotes();
+    const push = vi.spyOn(window.history, "pushState");
+    const replace = vi.spyOn(window.history, "replaceState");
+    render(<App />);
+    await waitFor(() => expect(window.location.pathname).toBe("/"));
+    expect(replace).toHaveBeenCalledWith({}, "", "/");
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("sends a signed-in user on /login?next=/billing to /billing", async () => {
+    window.history.replaceState({}, "", "/login?next=/billing");
+    signedIn(); // the Billing page needs plans in its replies
+    render(<App />);
+    await waitFor(() => expect(window.location.pathname).toBe("/billing"));
+  });
+
+  it("ignores an unsafe ?next= when signed in", async () => {
+    window.history.replaceState({}, "", "/login?next=//evil.com");
+    signedInWithNotes();
+    render(<App />);
+    await waitFor(() => expect(window.location.pathname).toBe("/"));
   });
 
   it("shows Page not found with a link home for an unknown path, and keeps the URL", async () => {

@@ -14,11 +14,59 @@ def test_invisible_only_title_is_422_like_an_empty_one(owner, blank):
     assert client.put(f"/api/notes/{made['id']}", json={"title": blank}).status_code == 422
 
 
-@pytest.mark.parametrize("blank", INVISIBLE)
-def test_invisible_only_body_is_422_but_empty_body_is_fine(owner, blank):
+@pytest.mark.parametrize("blank", INVISIBLE + ["   ", "\n", "\u200b"])
+def test_invisible_only_body_is_normalised_to_empty(owner, blank):
     client, _ = owner
-    assert client.post("/api/notes", json={"title": "t", "body": blank}).status_code == 422
-    assert client.post("/api/notes", json={"title": "t", "body": ""}).status_code == 201
+    made = client.post("/api/notes", json={"title": "t", "body": blank})
+    assert made.status_code == 201
+    assert made.json()["body"] == ""
+    again = client.put(f"/api/notes/{made.json()['id']}", json={"title": "t", "body": blank})
+    assert again.status_code == 200
+    assert again.json()["body"] == ""
+    assert client.post("/api/notes", json={"title": "t", "body": ""}).json()["body"] == ""
+
+
+FILLERS = ["\u115f", "\u1160", "\u3164", "\uffa0", "\u2800", "\u3164\u2800 "]
+
+
+@pytest.mark.parametrize("blank", FILLERS)
+def test_filler_only_title_is_422(owner, blank):
+    client, _ = owner
+    assert client.post("/api/notes", json={"title": blank}).status_code == 422
+
+
+@pytest.mark.parametrize("blank", ["\u200b", "\u3164"])
+def test_invisible_only_company_name_is_422(new_client, blank):
+    r = new_client().post("/api/auth/signup", json={"company_name": blank, "email": "co@example.com", "password": PASSWORD})
+    assert r.status_code == 422
+
+
+def test_json_invalid_detected_by_type_not_by_loc_shape():
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from pydantic import BaseModel
+
+    from app import errors
+
+    class Item(BaseModel):
+        n: int
+
+    app = FastAPI()
+    errors.install(app)
+
+    @app.post("/items")
+    def items(body: list[Item]):
+        return {"ok": True}
+
+    client = TestClient(app)
+    # A genuine item error at index 1 has loc ("body", 1, "n"): it keeps its own message, not "not valid JSON".
+    bad_item = client.post("/items", json=[{"n": 1}, {"n": "x"}])
+    assert bad_item.status_code == 422
+    assert "not valid JSON" not in bad_item.json()["fields"][0]["problem"]
+    assert bad_item.json()["fields"][0]["field"] == "1.n"
+    # A real syntax error still reads as malformed JSON.
+    broken = client.post("/items", content='[{"n": ', headers={"content-type": "application/json"})
+    assert broken.json()["fields"][0]["problem"] == "The request body is not valid JSON."
 
 
 def test_real_text_keeps_its_zwj_and_format_characters(owner):

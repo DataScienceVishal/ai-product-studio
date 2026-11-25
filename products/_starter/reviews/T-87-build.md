@@ -23,3 +23,18 @@ Branch `p/_starter/T-87-leftovers` (from main, not merged). Code commit: 429d69d
 ## Risk for the reviewer
 - Whitespace-only note body is now refused (behaviour change in 4).
 - Not run: browser e2e (Playwright), the production `vite build`.
+
+## Round 2 (reviewer CHANGES R1, S1 to S4)
+
+Changes:
+- R1: `NoteBody` now uses a `BeforeValidator` that turns a whitespace/invisible-only body into `""` (201 on POST, 200 on PUT); real text is untouched. `_not_invisible` removed. Tests now expect 201 and body `""` for the INVISIBLE list plus `"   "`, `"\n"`, U+200B.
+- S1: `navigate(to, replace=false)` in `ui.tsx`; the signed-in `/login`,`/signup` redirect and the signed-out `/login` redirect use `replaceState`. Tests assert `pushState` is not called.
+- S2: signed-in user on `/login?next=/billing` goes to `safeNext()` (tests: `/billing`, and unsafe `//evil.com` falls back to `/`).
+- S4: `errors.py` detects malformed JSON by `type == "json_invalid"` only. Test uses a `list[Item]` body app: item error at index 1 keeps field `1.n`; a real syntax error still says not valid JSON.
+- S3: U+115F, U+1160, U+3164, U+FFA0, U+2800 count as blank in `_invisible` (titles, bodies). Signup company name uses the same check. Tests added for both.
+
+Results on the final tree:
+- Backend `pytest` (local Postgres 16): `604 passed, 1 warning in 85.66s` (no skips this run).
+- Frontend `npm test`: `Test Files 7 passed (7)`, `Tests 190 passed (190)`.
+- `npx tsc --noEmit`: exit 0.
+- `npm run build`: `dist/assets/index-BiEA8UW7.js 252.64 kB │ gzip: 77.73 kB`, `✓ built in 214ms`.

@@ -20,10 +20,14 @@ def _check(bad: re.Pattern, message: str):
     return check
 
 
+# Not Cf and not whitespace, but they render as nothing: Hangul fillers, ideographic-looking blank, braille blank.
+_FILLERS = frozenset("\u115f\u1160\u3164\uffa0\u2800")
+
+
 def _invisible(value: str) -> bool:
-    """True when the text is only whitespace and invisible format characters (category Cf: zero-width space,
-    joiner, word joiner, BOM, ...). Such text shows as nothing, so it counts as blank."""
-    return all(ch.isspace() or unicodedata.category(ch) == "Cf" for ch in value)
+    """True when the text is only whitespace, invisible format characters (category Cf: zero-width space,
+    joiner, word joiner, BOM, ...) and a few known filler characters. Such text shows as nothing, so it counts as blank."""
+    return all(ch.isspace() or ch in _FILLERS or unicodedata.category(ch) == "Cf" for ch in value)
 
 
 def _strip(value):
@@ -42,12 +46,10 @@ SafeText = Annotated[str, AfterValidator(_check(_TEXT_BAD, "Remove control chara
 StrippedLine = Annotated[str, BeforeValidator(_strip), AfterValidator(_check(LINE_BAD, "Remove control characters."))]
 
 
-def _not_invisible(value: str) -> str:
-    if value and _invisible(value):
-        raise ValueError("Write something other than blank space.")
-    return value
+def _blank_to_empty(value):
+    return "" if isinstance(value, str) and _invisible(value) else value
 
 
-# Note bodies: empty is allowed (a title-only note), but a body of only whitespace and invisible characters
-# is refused, like an empty title is. Real text keeps its characters untouched.
-NoteBody = Annotated[str, AfterValidator(_check(_TEXT_BAD, "Remove control characters.")), AfterValidator(_not_invisible)]
+# Note bodies: optional, so a body of only whitespace and invisible characters is normalised to "" (nothing
+# typed) instead of refused. Real text keeps its characters untouched (ZWJ in emoji, ZWNJ in Persian).
+NoteBody = Annotated[str, BeforeValidator(_blank_to_empty), AfterValidator(_check(_TEXT_BAD, "Remove control characters."))]

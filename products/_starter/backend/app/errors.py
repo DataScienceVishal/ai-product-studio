@@ -40,7 +40,7 @@ def install(app: FastAPI) -> None:
         fields = []
         for e in exc.errors():
             loc = e.get("loc", ())
-            if e.get("type") == "json_invalid" or (len(loc) == 2 and loc[0] == "body" and isinstance(loc[1], int)):
+            if e.get("type") == "json_invalid":
                 # A JSON syntax error: the parser's byte offset is not a field name.
                 fields.append({"field": "", "problem": "The request body is not valid JSON."})
                 continue
