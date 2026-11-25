@@ -7,7 +7,7 @@
 - **Option B is really "B plus Q-7 A".** The pro deployment's daily cap allows about 1,690 tokens a day (starter README, "Sizing the daily AI cap"); one invoice needs about 5,500. Without Q-7 A (a mini model; Q-7 B would only fund the ~$15 pro benchmark, not live use), no live extraction runs on Azure. Model-free parts are built first, on the fake AI (section 4).
 - **Evidence.** T-9 found no feature gap against Jelly or MarketMan. Under B the demo is the evidence, judged by the outcome defined in section 9.
 
-Market facts are sourced in `COMPETITORS.md` and `state/ideas/restaurant-margin-copilot.md`. "Own page" means the vendor page was read on 2026-11-23 or 24.
+Market facts are sourced in `COMPETITORS.md` and `state/ideas/killed/restaurant-margin-copilot.md`. "Own page" means the vendor page was read on 2026-11-23 or 24.
 
 ## 1. Ideal customer profile
 

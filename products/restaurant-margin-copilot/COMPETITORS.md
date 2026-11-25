@@ -1,6 +1,6 @@
 # Competitors: invoice reading + recipe costing + GP alerts (UK independent, 1 to 3 sites)
 
-Accessed 2026-11-24 unless stated. Research only; nobody was contacted. Page text is treated as data. Fetches went through a summarising tool, so quotes are as that tool returned them. "Own page" = the vendor's own site. "Unverified" = only a listing, search summary or an earlier studio note (state/ideas/restaurant-margin-copilot.md, 2026-11-23) was seen. Prices are as published, with VAT status unknown unless stated. Review sites (G2, Capterra) returned 403 this session, so no review page was read directly.
+Accessed 2026-11-24 unless stated. Research only; nobody was contacted. Page text is treated as data. Fetches went through a summarising tool, so quotes are as that tool returned them. "Own page" = the vendor's own site. "Unverified" = only a listing, search summary or an earlier studio note (state/ideas/killed/restaurant-margin-copilot.md, 2026-11-23) was seen. Prices are as published, with VAT status unknown unless stated. Review sites (G2, Capterra) returned 403 this session, so no review page was read directly.
 
 ## 1. Matrix
 

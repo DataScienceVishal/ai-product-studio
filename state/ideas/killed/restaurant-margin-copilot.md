@@ -1,7 +1,7 @@
 # Restaurant margin copilot
 
 - slug: restaurant-margin-copilot
-- stage: G0
+- stage: KILLED (2026-11-25, T-80 proof test KILL; second failed G1 attempt)
 - market and segment: UK independent restaurants, gastropubs and cafés with 1 to 3 sites, where the owner or head chef does the costing on spreadsheets or not at all. Too small for Nory, Apicbase or MarketMan contracts.
 - one-line pitch: Photograph or forward each supplier invoice. The copilot reads every line, matches it to your recipes, recalculates each dish's gross profit, and sends you a weekly message along the lines of "beef up 12%, your burger GP fell from 68% to 61%; here are three fixes".
 
@@ -85,6 +85,7 @@ UK restaurant margins are being squeezed. The UK's Top 100 restaurant groups saw
 ## Gate log
 - 2026-11-23: G0 spotted by scout.
 - 2026-11-23 | validator | G0→G1 | REVISE 66 | AI is essential and operators clearly pay, but Jelly already sells AI invoice capture, recipe costing and margin alerts to UK independents from about £129 and Bidfood gives its customers free real-time recipe costing, so the gap the scout claimed is largely filled.
+- 2026-11-25 | validator | G0→G1 (second attempt, T-80 proof test) | KILL 66 | The pre-registered synthetic-invoice benchmark hit three KILL lines in `KILL-TEST.md`: overall line accuracy 82.6% (KILL below 88%), distorted photos 72.1% (KILL below 80%) and 5 silent-error invoices (KILL at 3 or more). Second failed gate, so the idea is killed. See "Kill (2026-11-25)" below.
 
 ### Re-score 2026-11-24 (T-57, Q-10 wedge rule)
 Validator. Only the Competition row is re-scored, under the wedge rule in `playbooks/pipeline.md`. This is not a G1 attempt; the last attempt is still unspent.
@@ -142,3 +143,45 @@ Supplier-side free substitute (from the validator, not rechecked): Bidfood MyRec
 ## Proof-test kill test (T-80, pre-registered 2026-11-25, before any test run)
 
 Full text: `products/restaurant-margin-copilot/KILL-TEST.md` (validator, run d8d4). Bars fixed before results: PASS needs line accuracy ≥95% overall, ≥90% distorted, ≥90% held-out layouts, reconciliation ≥90%, ≤1 unflagged wrong invoice, ≤$0.02/page, p95 ≤90 s, ≤2% failed pages. KILL on any of: overall <88%, distorted <80%, held-out <80%, ≥3 unflagged wrong invoices, >$0.05/page, >5% failures. A full PASS caps the score at 69 (Competition stays 3); reaching 70 also needs a measured gap vs Jelly (T-81).
+
+## Kill (2026-11-25, validator, T-80)
+
+**Result of the single TEST run** (branch `p/restaurant-margin-copilot/T-80`, commit 18d1470, `benchmark/results/test1/score.json`; 50 invoices, 66 pages, 684 ground-truth lines, gpt-5-mini, frozen config):
+
+| Metric | Result | PASS bar | KILL line | Outcome |
+|---|---|---|---|---|
+| Overall line accuracy | 82.6% (571 / (684 + 7 hallucinated)) | ≥95% | <88% | **KILL** |
+| Distorted photos (30 invoices) | 72.1% (300 / 416) | ≥90% | <80% | **KILL** |
+| Held-out layouts (25) | 84.2% | ≥90% | <80% | fails PASS only |
+| Clean renders (20) | 98.5% | (info) | | |
+| Credit notes (10) | 97.9% | (info) | | |
+| Reconciliation | 64% | ≥90% | | fails PASS |
+| Silent-error invoices | 5 (TEST-004, 015, 033, 034, 039) | ≤1 | ≥3 | **KILL** (see caveat) |
+| Cost per page | $0.0101 | ≤$0.02 | >$0.05 | passes |
+| p95 latency | 82.9 s | ≤90 s | | passes |
+| Failed pages | 0% | ≤2% | >5% | passes |
+
+**Reason.** The idea's last G1 attempt rested on one claim: that a cheap model can read messy UK supplier invoices well enough to trust. It can read clean ones (98.5%), but on simulated phone photos, which are the product's main input, it got 28% of lines wrong. It also gave wrong numbers on 5 invoices whose totals still added up, so the product would not have flagged them. Three independent KILL lines fired, on bars fixed before the run. This is the idea's second failed G1 attempt, and Competition was already stuck at 3 against Jelly, MarketMan, Profito and KitchenIQ, so even a PASS could only have reached 69.
+
+**Independent check of the scorer (validator, no model calls).** The totals were recomputed from `score.json`. Spot-checks against `data/test` ground truth:
+- TEST-007 (broadliner A, photo): the model shifted the numbers by one row. "CREAM DBL 6X1L" got Mayo's "6 EA 9.73 … 58.38"; the truth is qty 1 at 15.41. This is a real model error.
+- TEST-019 (broadliner A, photo): the model returned qty, price and total as 0 on all 10 lines, but read the invoice totals correctly. This is a real model error (calc gross 0.00 against 578.20).
+- TEST-004 and TEST-034 (butcher): "DUCK BREAST X2 400G" was read as pack 2x400g where the truth is 400g, and "PORK SAUS 8S 454G" as 8x454g where the truth is 454g. TEST-033 (cash and carry): pack left blank for "BIN LINERS 200S" and "TISSUE CENTREFEED 6RL" (truth 200 and 6). Qty, price, total and VAT were all right. These are **ambiguous ground truth from the description text**, not scorer bugs: the scorer applied rule (c) as written.
+- Credit-note signs scored correctly (97.9%), and no pack-parsing or sign bug was found.
+
+**Caveat (does not change the verdict).** 11 wrong lines failed on pack alone, and 4 of the 5 silent-error invoices are made up only of those ambiguous pack lines. If every pack-only error counted as correct, the results would be: overall 84.2% (582/691), still below 88%; distorted at most 74.8%, still below 80%; silent errors about 1. The silent-error trigger therefore isn't robust, but the two accuracy triggers are, and either one alone is enough.
+
+## Lessons
+
+- **Clean structured invoices are solved on a mini model.** Clean renders scored 98.5% and credit notes 97.9%, at $0.01 a page. That is the part incumbents already sell, so it was never the wedge.
+- **Phone-photo column drift is the blocker.** Distorted accuracy fell to 56% at the more severe half of rotations (87% at the milder half). Errors were mostly whole-row number shifts or blank numeric columns, not misread characters (only 3 description errors in 684 lines). DEV had flagged this at 75% on 5 photos. The 10-invoice DEV set was too small to tune against it, but big enough to predict the result.
+- **Reconciliation catches most drift but not all.** It ran at 64%, which means it flags plenty. A real product would need a per-row check (qty × price = total) as a second guard. That check would still miss errors where the row's own arithmetic holds.
+- **Pack ground truth must be unambiguous.** "X2 400G" and "8S 454G" can be read either way. Any future benchmark should either print the pack in its own column or score pack separately from price, qty and total.
+- **The process worked.** The kill test was fixed before the run, the run happened once, it cost $0.67 of a $5 cap, and it killed the idea for about $1.10 in total instead of weeks of build.
+
+## What would revive it
+
+All of these, in order:
+1. **A wedge first.** A measured gap against Jelly or Profito (T-81: the same invoices run through the rival, with mis-reads, fees or turnaround logged), or a channel Jelly prices out. Without one, Competition stays at 3 and the ceiling is 69.
+2. **A new extraction design that fixes photo drift.** Options: deskew and perspective correction before the call, then row segmentation or OCR (for example the Document Intelligence free tier, 500 pages a month, 2 pages a request) feeding the model text with coordinates; or a pro-tier vision model. Cost implication: the pro model probably costs about 5 to 10 times mini per page (roughly $0.05 to $0.10, which crosses this test's $0.05 kill line and needs a new margin case for the £39 plan). A pre-processing pipeline keeps mini economics but adds build work and needs an Azure resource listed in `BUDGET.md`.
+3. **A new kill test written before any run**, on a fresh seed with unambiguous pack ground truth, that passes. Then a re-score of 70 or more.
