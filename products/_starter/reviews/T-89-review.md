@@ -40,3 +40,40 @@ None.
 
 - When the dashboard heading text changes, this test must change with it. That is acceptable, and it is the point of the stricter check.
 - S5 from T-87 still applies when merging: keep both sides of `state/DECISIONS.md`.
+
+## Round 2: head c7bc6dc
+
+My Round 1 PASS at 1b154b1 was wrong. I did not run `tests/test_spa.py`, and it fails there. `test_client_routes_match_the_frontend_router` (`backend/tests/test_spa.py:567-573`) reads the client routes out of the `path === '/x'` comparisons in `App.tsx`, and it rejects any other kind of path check, such as `.has(path)`. Lesson: I will run `test_spa.py` on any change to `App.tsx` routing, even when no backend files changed.
+
+### Verdict: PASS
+
+### What changed since 1b154b1
+
+- **`App.tsx:36-37`.** This goes back to `path === "/login" || path === "/signup"`. The comment says to keep it in step with `SIGN_IN_PAGES` and gives the reason for using `===`.
+  - This is the exact behaviour `main` had.
+  - The `SIGN_IN_PAGES` import is removed from `App.tsx`.
+- **`App.test.tsx:144-150`.** A new `it.each([...SIGN_IN_PAGES])` checks each page. For each one, a signed-in user must end up on `/`, and the "Your notes" heading must render.
+  - This replaces the shared constant as the guard against the list and `App.tsx` drifting apart.
+- **`SIGN_IN_PAGES` stays exported from `pages/auth.tsx:6`.** It is still used by `safeNext`.
+
+### Evidence (separate worktree, detached at c7bc6dc)
+
+| Check | Result |
+|---|---|
+| `npm ci` | exit 0 |
+| `npm test` | `Test Files 7 passed (7)`, `Tests 203 passed (203)` (201 plus the 2 new drift cases) |
+| `npx tsc --noEmit` | exit 0 |
+| `npm run build` | `built in 192ms`, exit 0 |
+| Backend `pytest -q -o addopts="" tests/test_spa.py`, using the main checkout's `.venv` and local Postgres | `115 passed, 1 warning in 7.24s`. I confirmed that `app` imported from the worktree, and the test reads the worktree's `App.tsx` through `Path(__file__)`. |
+| Mutation: add `/forgot-password` to `SIGN_IN_PAGES` only | 1 test fails: `sends a signed-in user away from /forgot-password (App.tsx signInPage matches SIGN_IN_PAGES)`. The drift test catches it. I reverted the change and the tree was clean afterwards. |
+
+I did not run the full backend suite. The lead reports `604 passed` at this head.
+
+### Critical issues
+
+None.
+
+### Suggestions (not blocking)
+
+- **The drift test catches only one direction.** It fails when `SIGN_IN_PAGES` gains a page that `App.tsx` lacks. It does not fail when `App.tsx` gains a sign-in page that `SIGN_IN_PAGES` lacks. In that case `safeNext` could return that page. That would cost one extra redirect hop, not a blank page: the new URL has no `?next=`, so the second `safeNext()` returns `/`. This is acceptable; it is noted here for when a third auth page is added.
+- **The branch has a copy of this review file committed.** The copy at c7bc6dc holds Round 1 only. When merging, use the main checkout's version, which includes this Round 2 section.
