@@ -1,0 +1,126 @@
+{
+ "page_id": "TEST-008_p2",
+ "invoice_id": "TEST-008",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2272,
+   "output_tokens": 2307,
+   "latency_s": 18.6,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 18.6,
+ "input_tokens": 2272,
+ "output_tokens": 2307,
+ "cost_usd": 0.005182,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "U/M",
+   "PRODUCT DESCRIPTION",
+   "SIZE",
+   "PRICE",
+   "DISC %",
+   "VAT",
+   "NET VALUE"
+  ],
+  "supplier_name": "Calder Valley Catering Supplies plc",
+  "invoice_number": "Ref CN8694",
+  "invoice_date": "2026-10-28",
+  "is_credit_note": true,
+  "lines": [
+   {
+    "row_text": "-8 EA CLING FILM 450MM X 300M  9.78  S  -78.24",
+    "description": "CLING FILM 450MM X 300M",
+    "pack_size": "",
+    "unit": "each",
+    "qty": -8,
+    "unit_price": 9.78,
+    "line_total": -78.24,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "-4 EA GRAVY GRANULES BEEF 2KG  2kg  9.43  Z  -37.72",
+    "description": "GRAVY GRANULES BEEF 2KG",
+    "pack_size": "2kg",
+    "unit": "each",
+    "qty": -4,
+    "unit_price": 9.43,
+    "line_total": -37.72,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-5 EA CHEESE CHEDDAR MED 5KG  5kg  33.41  Z  -167.05",
+    "description": "CHEESE CHEDDAR MED 5KG",
+    "pack_size": "5kg",
+    "unit": "each",
+    "qty": -5,
+    "unit_price": 33.41,
+    "line_total": -167.05,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-1 EA LPG PROPANE CYL 19KG REFILL  19kg  40.38  R  -40.38",
+    "description": "LPG PROPANE CYL 19KG REFILL",
+    "pack_size": "19kg",
+    "unit": "each",
+    "qty": -1,
+    "unit_price": 40.38,
+    "line_total": -40.38,
+    "vat_rate": 5
+   },
+   {
+    "row_text": "-6 CS MILK WHOLE 12X1L  12x1L  8.03  Z  -48.18",
+    "description": "MILK WHOLE 12X1L",
+    "pack_size": "12x1L",
+    "unit": "case",
+    "qty": -6,
+    "unit_price": 8.03,
+    "line_total": -48.18,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-5 EA PEPPER WHITE GRND 1KG  1kg  19.05  Z  -95.25",
+    "description": "PEPPER WHITE GRND 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": -5,
+    "unit_price": 19.05,
+    "line_total": -95.25,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-8 CS SPAGHETTI DRY 6X500G  6x500g  5.12  Z  -40.96",
+    "description": "SPAGHETTI DRY 6X500G",
+    "pack_size": "6x500g",
+    "unit": "case",
+    "qty": -8,
+    "unit_price": 5.12,
+    "line_total": -40.96,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-1 EA RICE LONG GRAIN 20KG  20kg  22.28  Z  -22.28",
+    "description": "RICE LONG GRAIN 20KG",
+    "pack_size": "20kg",
+    "unit": "each",
+    "qty": -1,
+    "unit_price": 22.28,
+    "line_total": -22.28,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": -1113.51,
+   "vat": -37.62,
+   "gross": -1151.13
+  }
+ },
+ "retries": 0
+}

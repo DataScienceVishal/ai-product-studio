@@ -1,0 +1,184 @@
+{
+ "page_id": "TEST-018_p1",
+ "invoice_id": "TEST-018",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2272,
+   "output_tokens": 3599,
+   "latency_s": 29.17,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 29.17,
+ "input_tokens": 2272,
+ "output_tokens": 3599,
+ "cost_usd": 0.007766,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "PRODUCT",
+   "SIZE",
+   "QTY",
+   "PRICE",
+   "VAT",
+   "LINE VALUE"
+  ],
+  "supplier_name": "TIDEWATER DAIRY & DRINKS",
+  "invoice_number": "CN3813",
+  "invoice_date": "2026-09-15",
+  "is_credit_note": true,
+  "lines": [
+   {
+    "row_text": "BUTTER SALTED 40X250G 40x250g -6 75.30 Z -451.80",
+    "description": "BUTTER SALTED 40X250G",
+    "pack_size": "40x250g",
+    "unit": "case",
+    "qty": -6,
+    "unit_price": 75.3,
+    "line_total": -451.8,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "COLA CLASSIC 24X330ML 24x330ml -1 12.11 S -12.11",
+    "description": "COLA CLASSIC 24X330ML",
+    "pack_size": "24x330ml",
+    "unit": "case",
+    "qty": -1,
+    "unit_price": 12.11,
+    "line_total": -12.11,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "WATER SPARKLING 12X75CL 12x75cl -1 11.25 S -11.25",
+    "description": "WATER SPARKLING 12X75CL",
+    "pack_size": "12x75cl",
+    "unit": "case",
+    "qty": -1,
+    "unit_price": 11.25,
+    "line_total": -11.25,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "COFFEE BEANS ESPRESSO 1KG 1kg -2 14.21 Z -28.42",
+    "description": "COFFEE BEANS ESPRESSO 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": -2,
+    "unit_price": 14.21,
+    "line_total": -28.42,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "LAGER PREMIUM 4.2% 24X500ML 24x500ml -4 36.79 S -147.16",
+    "description": "LAGER PREMIUM 4.2% 24X500ML",
+    "pack_size": "24x500ml",
+    "unit": "case",
+    "qty": -4,
+    "unit_price": 36.79,
+    "line_total": -147.16,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "MILK FULL FAT 6X2L 6x2L -3 7.11 Z -21.33",
+    "description": "MILK FULL FAT 6X2L",
+    "pack_size": "6x2L",
+    "unit": "case",
+    "qty": -3,
+    "unit_price": 7.11,
+    "line_total": -21.33,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "TONIC SLIM 24X200ML 24x200ml -8 10.37 S -82.96",
+    "description": "TONIC SLIM 24X200ML",
+    "pack_size": "24x200ml",
+    "unit": "case",
+    "qty": -8,
+    "unit_price": 10.37,
+    "line_total": -82.96,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "WINE WHITE PINOT 6X75CL 6x75cl -6 43.76 S -262.56",
+    "description": "WINE WHITE PINOT 6X75CL",
+    "pack_size": "6x75cl",
+    "unit": "case",
+    "qty": -6,
+    "unit_price": 43.76,
+    "line_total": -262.56,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "EGGS FREE RANGE 15 DOZEN 180 -5 26.31 Z -131.55",
+    "description": "EGGS FREE RANGE 15 DOZEN",
+    "pack_size": "180",
+    "unit": "each",
+    "qty": -5,
+    "unit_price": 26.31,
+    "line_total": -131.55,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "YOGHURT NATURAL 6X1KG 6x1kg -1 13.58 Z -13.58",
+    "description": "YOGHURT NATURAL 6X1KG",
+    "pack_size": "6x1kg",
+    "unit": "case",
+    "qty": -1,
+    "unit_price": 13.58,
+    "line_total": -13.58,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CIDER KEG 50L 50L -6 106.18 S -637.08",
+    "description": "CIDER KEG 50L",
+    "pack_size": "50L",
+    "unit": "each",
+    "qty": -6,
+    "unit_price": 106.18,
+    "line_total": -637.08,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "GINGER BEER 12X200ML 12x200ml -8 9.76 S -78.08",
+    "description": "GINGER BEER 12X200ML",
+    "pack_size": "12x200ml",
+    "unit": "case",
+    "qty": -8,
+    "unit_price": 9.76,
+    "line_total": -78.08,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "TEA BAGS BREAKFAST 1100 1100 -2 16.06 Z -32.12",
+    "description": "TEA BAGS BREAKFAST 1100",
+    "pack_size": "1100",
+    "unit": "each",
+    "qty": -2,
+    "unit_price": 16.06,
+    "line_total": -32.12,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "DELIVERY CHARGE  -1 8.14 S -8.14",
+    "description": "DELIVERY CHARGE",
+    "pack_size": "",
+    "unit": "each",
+    "qty": -1,
+    "unit_price": 8.14,
+    "line_total": -8.14,
+    "vat_rate": 20
+   }
+  ],
+  "totals": {
+   "net": null,
+   "vat": null,
+   "gross": null
+  }
+ },
+ "retries": 0
+}

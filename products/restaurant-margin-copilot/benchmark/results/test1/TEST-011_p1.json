@@ -1,0 +1,202 @@
+{
+ "page_id": "TEST-011_p1",
+ "invoice_id": "TEST-011",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 7344,
+   "latency_s": 58.49,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 58.49,
+ "input_tokens": 2243,
+ "output_tokens": 7344,
+ "cost_usd": 0.015249,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "ITEM",
+   "PRICE",
+   "AMOUNT"
+  ],
+  "supplier_name": "MARROW LANE GREENGROCERS",
+  "invoice_number": "DELIVERY NOTE 55903",
+  "invoice_date": "2026-09-09",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "3 CELERY HEAD 1.38 ea 4.14",
+    "description": "CELERY HEAD",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 3,
+    "unit_price": 1.38,
+    "line_total": 4.14,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 AVOCADO RIPE 12S 13.61 ea 13.61",
+    "description": "AVOCADO RIPE 12S",
+    "pack_size": "12s",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 13.61,
+    "line_total": 13.61,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "7.91 BROCCOLI 2.51/kg 19.85",
+    "description": "BROCCOLI",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 7.91,
+    "unit_price": 2.51,
+    "line_total": 19.85,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "3 PEPPERS RED MIXED 5KG 13.20 ea 39.60",
+    "description": "PEPPERS RED MIXED 5KG",
+    "pack_size": "5kg",
+    "unit": "each",
+    "qty": 3,
+    "unit_price": 13.2,
+    "line_total": 39.6,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "8 LETTUCE COS 1.38 ea 11.04",
+    "description": "LETTUCE COS",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 1.38,
+    "line_total": 11.04,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 RASPBERRIES 12X125G 13.20 ea 13.20",
+    "description": "RASPBERRIES 12X125G",
+    "pack_size": "12x125g",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 13.2,
+    "line_total": 13.2,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "8 EGGS FREE RANGE DOZEN 3.43 ea 27.44",
+    "description": "EGGS FREE RANGE DOZEN",
+    "pack_size": "dozen",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 3.43,
+    "line_total": 27.44,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "4 POTATO MARIS PIPER 25KG 15.34 ea 61.36",
+    "description": "POTATO MARIS PIPER 25KG",
+    "pack_size": "25kg",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 15.34,
+    "line_total": 61.36,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 MUSHROOM CHESTNUT 3KG 16.05 ea 16.05",
+    "description": "MUSHROOM CHESTNUT 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 16.05,
+    "line_total": 16.05,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "4 CARROT LOOSE 20KG 3.43 ea 13.72",
+    "description": "CARROT LOOSE 20KG",
+    "pack_size": "20kg",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 3.43,
+    "line_total": 13.72,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 PARSLEY FLAT BUNCH 9.86 ea 9.86",
+    "description": "PARSLEY FLAT BUNCH",
+    "pack_size": "bunch",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 9.86,
+    "line_total": 9.86,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "0.95 SPINACH BABY 500G 12.32 ea 11.70",
+    "description": "SPINACH BABY 500G",
+    "pack_size": "500g",
+    "unit": "each",
+    "qty": 0.95,
+    "unit_price": 12.32,
+    "line_total": 11.7,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "5 GARLIC WHITE 0.90 ea 4.50",
+    "description": "GARLIC WHITE",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 0.9,
+    "line_total": 4.5,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 BASIL POT LIVING 3.15 ea 3.15",
+    "description": "BASIL POT LIVING",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 3.15,
+    "line_total": 3.15,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 CARRIER BAGS 100 6.49 ea 6.49",
+    "description": "CARRIER BAGS 100",
+    "pack_size": "100",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 6.49,
+    "line_total": 6.49,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 TOMATOES VINE 6KG BOX 3.29 ea 3.29*",
+    "description": "TOMATOES VINE 6KG BOX",
+    "pack_size": "6kg box",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 3.29,
+    "line_total": 3.29,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": null,
+   "vat": null,
+   "gross": null
+  }
+ },
+ "retries": 0
+}

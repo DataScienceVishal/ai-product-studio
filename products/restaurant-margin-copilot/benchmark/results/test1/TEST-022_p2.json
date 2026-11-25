@@ -1,0 +1,113 @@
+{
+ "page_id": "TEST-022_p2",
+ "invoice_id": "TEST-022",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 5882,
+   "latency_s": 43.68,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 43.68,
+ "input_tokens": 2243,
+ "output_tokens": 5882,
+ "cost_usd": 0.012325,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "ITEM",
+   "WEIGHT / QTY",
+   "PRICE",
+   "V",
+   "AMOUNT"
+  ],
+  "supplier_name": "HARKER & SONS",
+  "invoice_number": "Invoice no. 39283",
+  "invoice_date": "2026-09-26",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "PORK BELLY RIND ON    4.60 kg    6.49/kg    Z    29.85",
+    "description": "PORK BELLY RIND ON",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 4.6,
+    "unit_price": 6.49,
+    "line_total": 29.85,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PORK SHOULDER DICED    5.67 kg    6.92/kg    Z    39.24",
+    "description": "PORK SHOULDER DICED",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 5.67,
+    "unit_price": 6.92,
+    "line_total": 39.24,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PORK SAUS 8S 454G    2 x    3.48 ea    Z    6.96",
+    "description": "PORK SAUS 8S 454G",
+    "pack_size": "8x454g",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 3.48,
+    "line_total": 6.96,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "RUMP STEAK TRIMMED    7.49 kg    14.82/kg    Z    111.00",
+    "description": "RUMP STEAK TRIMMED",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 7.49,
+    "unit_price": 14.82,
+    "line_total": 111.0,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BEEF MARROW BONES    4.49 kg    2.16/kg    Z    9.70",
+    "description": "BEEF MARROW BONES",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 4.49,
+    "unit_price": 2.16,
+    "line_total": 9.7,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "LAMB SHOULDER BONE IN    4.73 kg    9.97/kg    Z    47.16",
+    "description": "LAMB SHOULDER BONE IN",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 4.73,
+    "unit_price": 9.97,
+    "line_total": 47.16,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PORK SAUSAGE DOZEN    3 x    3.89 ea    Z    11.67",
+    "description": "PORK SAUSAGE DOZEN",
+    "pack_size": "dozen",
+    "unit": "each",
+    "qty": 3,
+    "unit_price": 3.89,
+    "line_total": 11.67,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 898.86,
+   "vat": 9.62,
+   "gross": 908.48
+  }
+ },
+ "retries": 0
+}

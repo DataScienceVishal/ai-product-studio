@@ -1,0 +1,147 @@
+{
+ "page_id": "TEST-019_p1",
+ "invoice_id": "TEST-019",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 5646,
+   "latency_s": 48.86,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 48.86,
+ "input_tokens": 2243,
+ "output_tokens": 5646,
+ "cost_usd": 0.011853,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "Code",
+   "Description",
+   "Pack",
+   "Qty",
+   "UoM",
+   "Price",
+   "Disc%",
+   "VAT",
+   "Net"
+  ],
+  "supplier_name": "Fenwick & Dale Foodservice Ltd",
+  "invoice_number": "97176",
+  "invoice_date": "2026-09-06",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "FD87766    BACON SMKD RINDLESS 2KG    2kg",
+    "description": "BACON SMKD RINDLESS 2KG",
+    "pack_size": "2kg",
+    "unit": "each",
+    "qty": 0,
+    "unit_price": 0,
+    "line_total": 0,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD22681    CLNG FLUID MULTI SURF 5L    5L",
+    "description": "CLNG FLUID MULTI SURF 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 0,
+    "unit_price": 0,
+    "line_total": 0,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD42391    BUTTER UNSLTD 20X250G    20x250g",
+    "description": "BUTTER UNSLTD 20X250G",
+    "pack_size": "20x250g",
+    "unit": "case",
+    "qty": 0,
+    "unit_price": 0,
+    "line_total": 0,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD99425    MAYO CATERING 5L    5L",
+    "description": "MAYO CATERING 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 0,
+    "unit_price": 0,
+    "line_total": 0,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD08998    NAPKIN 2PLY WHT 2000    2000",
+    "description": "NAPKIN 2PLY WHT 2000",
+    "pack_size": "2000",
+    "unit": "each",
+    "qty": 0,
+    "unit_price": 0,
+    "line_total": 0,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD45842    PASTA PENNE DRY 3KG    3kg",
+    "description": "PASTA PENNE DRY 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": 0,
+    "unit_price": 0,
+    "line_total": 0,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD23515    CHICKEN BREAST FIL SKLS 2.5KG    2.5kg",
+    "description": "CHICKEN BREAST FIL SKLS 2.5KG",
+    "pack_size": "2.5kg",
+    "unit": "each",
+    "qty": 0,
+    "unit_price": 0,
+    "line_total": 0,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD53906    GLOVE NITRILE BLU L X100    100",
+    "description": "GLOVE NITRILE BLU L X100",
+    "pack_size": "100",
+    "unit": "each",
+    "qty": 0,
+    "unit_price": 0,
+    "line_total": 0,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD21825    SUGAR GRAN 15KG    15kg",
+    "description": "SUGAR GRAN 15KG",
+    "pack_size": "15kg",
+    "unit": "case",
+    "qty": 0,
+    "unit_price": 0,
+    "line_total": 0,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD11329    BIN LINER HD BLK 200S    200",
+    "description": "BIN LINER HD BLK 200S",
+    "pack_size": "200",
+    "unit": "each",
+    "qty": 0,
+    "unit_price": 0,
+    "line_total": 0,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 549.24,
+   "vat": 28.96,
+   "gross": 578.2
+  }
+ },
+ "retries": 0
+}

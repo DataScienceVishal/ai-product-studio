@@ -1,0 +1,167 @@
+{
+ "page_id": "TEST-021_p1",
+ "invoice_id": "TEST-021",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 3078,
+   "output_tokens": 3784,
+   "latency_s": 27.83,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 27.83,
+ "input_tokens": 3078,
+ "output_tokens": 3784,
+ "cost_usd": 0.008337,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [],
+  "supplier_name": "BULKBUY CASH & CARRY",
+  "invoice_number": "SALE REF 23096",
+  "invoice_date": "2026-09-27",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "ONION BROWN LOOSE 5.840 kg @ 1.07/kg 6.25 B",
+    "description": "ONION BROWN LOOSE",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 5.84,
+    "unit_price": 1.07,
+    "line_total": 6.25,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FRYING FAT 4X12.5KG 2 x 84.46 168.92 B",
+    "description": "FRYING FAT 4X12.5KG",
+    "pack_size": "4x12.5kg",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 84.46,
+    "line_total": 168.92,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BREAD ROLL WHT 12PK 1 x 2.37 2.37 B",
+    "description": "BREAD ROLL WHT 12PK",
+    "pack_size": "12pk",
+    "unit": "pack",
+    "qty": 1,
+    "unit_price": 2.37,
+    "line_total": 2.37,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PAPER TOWEL ROLL 6PK 5 x 6.77 33.85 A",
+    "description": "PAPER TOWEL ROLL 6PK",
+    "pack_size": "6pk",
+    "unit": "pack",
+    "qty": 5,
+    "unit_price": 6.77,
+    "line_total": 33.85,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "MILK WHL 4PT 1 x 1.77 1.77 B",
+    "description": "MILK WHL 4PT",
+    "pack_size": "4pt",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 1.77,
+    "line_total": 1.77,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SUNFLWR OIL 5L 8 x 10.12 80.96 B",
+    "description": "SUNFLWR OIL 5L",
+    "pack_size": "5l",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 10.12,
+    "line_total": 80.96,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CHILLI SAUCE 6X1L 5 x 16.83 84.15 B",
+    "description": "CHILLI SAUCE 6X1L",
+    "pack_size": "6x1l",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 16.83,
+    "line_total": 84.15,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SPONGE SCOURER 10PK 3 x 2.34 7.02 A",
+    "description": "SPONGE SCOURER 10PK",
+    "pack_size": "10pk",
+    "unit": "pack",
+    "qty": 3,
+    "unit_price": 2.34,
+    "line_total": 7.02,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "BIN LINERS 200S 3 x 13.82 41.46 A",
+    "description": "BIN LINERS 200S",
+    "pack_size": "200s",
+    "unit": "pack",
+    "qty": 3,
+    "unit_price": 13.82,
+    "line_total": 41.46,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "SMKD SALMON SLICED 1KG 6 x 22.61 135.66 B",
+    "description": "SMKD SALMON SLICED 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 22.61,
+    "line_total": 135.66,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "TOMATO PASSATA 6X700G 8 x 6.92 55.36 B",
+    "description": "TOMATO PASSATA 6X700G",
+    "pack_size": "6x700g",
+    "unit": "case",
+    "qty": 8,
+    "unit_price": 6.92,
+    "line_total": 55.36,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "COOKING OIL VEG 20L 4 x 32.62 130.48 B",
+    "description": "COOKING OIL VEG 20L",
+    "pack_size": "20l",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 32.62,
+    "line_total": 130.48,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BIN BAGS BLACK ROLL 100 8 x 8.52 68.16 A",
+    "description": "BIN BAGS BLACK ROLL 100",
+    "pack_size": "100",
+    "unit": "pack",
+    "qty": 8,
+    "unit_price": 8.52,
+    "line_total": 68.16,
+    "vat_rate": 20
+   }
+  ],
+  "totals": {
+   "net": 816.41,
+   "vat": 30.1,
+   "gross": 846.51
+  }
+ },
+ "retries": 0
+}

@@ -1,0 +1,156 @@
+{
+ "page_id": "TEST-008_p1",
+ "invoice_id": "TEST-008",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2272,
+   "output_tokens": 2509,
+   "latency_s": 19.17,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 19.17,
+ "input_tokens": 2272,
+ "output_tokens": 2509,
+ "cost_usd": 0.005586,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "U/M",
+   "PRODUCT DESCRIPTION",
+   "SIZE",
+   "PRICE",
+   "DISC %",
+   "VAT",
+   "NET VALUE"
+  ],
+  "supplier_name": "Calder Valley Catering Supplies plc",
+  "invoice_number": "CN8694",
+  "invoice_date": "2026-10-28",
+  "is_credit_note": true,
+  "lines": [
+   {
+    "row_text": "-3 EA SEA SALT COARSE 1.5KG 1.5kg 1.62 Z -4.86",
+    "description": "SEA SALT COARSE 1.5KG",
+    "pack_size": "1.5kg",
+    "unit": "each",
+    "qty": -3,
+    "unit_price": 1.62,
+    "line_total": -4.86,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-5 EA MARGARINE CATERING 10KG 10kg 17.10 Z -85.50",
+    "description": "MARGARINE CATERING 10KG",
+    "pack_size": "10kg",
+    "unit": "each",
+    "qty": -5,
+    "unit_price": 17.1,
+    "line_total": -85.5,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-5 CS HONEY SQUEEZY 12X340G 12x340g 24.93 Z -124.65",
+    "description": "HONEY SQUEEZY 12X340G",
+    "pack_size": "12x340g",
+    "unit": "case",
+    "qty": -5,
+    "unit_price": 24.93,
+    "line_total": -124.65,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-1 CS CREAM SNGL 12X500ML 12x500ml 17.55 Z -17.55",
+    "description": "CREAM SNGL 12X500ML",
+    "pack_size": "12x500ml",
+    "unit": "case",
+    "qty": -1,
+    "unit_price": 17.55,
+    "line_total": -17.55,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-6 EA DEGREASER HD SPRAY 750ML 750ml 3.46 S -20.76",
+    "description": "DEGREASER HD SPRAY 750ML",
+    "pack_size": "750ml",
+    "unit": "each",
+    "qty": -6,
+    "unit_price": 3.46,
+    "line_total": -20.76,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "-2 EA OIL SUNFLWR 20 LTR JERRY 20L 34.51 Z -69.02",
+    "description": "OIL SUNFLWR 20 LTR JERRY",
+    "pack_size": "20L",
+    "unit": "each",
+    "qty": -2,
+    "unit_price": 34.51,
+    "line_total": -69.02,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-8 CS SYRUP GOLDEN 6X680G 6x680g 15.16 Z -121.28",
+    "description": "SYRUP GOLDEN 6X680G",
+    "pack_size": "6x680g",
+    "unit": "case",
+    "qty": -8,
+    "unit_price": 15.16,
+    "line_total": -121.28,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-5 BX CONTAINER FOIL 1/2 GN X50 50 15.80 S -79.00",
+    "description": "CONTAINER FOIL 1/2 GN X50",
+    "pack_size": "50",
+    "unit": "box",
+    "qty": -5,
+    "unit_price": 15.8,
+    "line_total": -79.0,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "-1 EA YOG GREEK STYLE 10KG 10kg 17.09 Z -17.09",
+    "description": "YOG GREEK STYLE 10KG",
+    "pack_size": "10kg",
+    "unit": "each",
+    "qty": -1,
+    "unit_price": 17.09,
+    "line_total": -17.09,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-4 EA VINEGAR BREWED 5 LTR 5L 4.75 Z -19.00",
+    "description": "VINEGAR BREWED 5 LTR",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": -4,
+    "unit_price": 4.75,
+    "line_total": -19.0,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-1 CS EGGS LARGE FR 15 DOZEN 180 24.74 Z -24.74",
+    "description": "EGGS LARGE FR 15 DOZEN",
+    "pack_size": "180",
+    "unit": "case",
+    "qty": -1,
+    "unit_price": 24.74,
+    "line_total": -24.74,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": null,
+   "vat": null,
+   "gross": null
+  }
+ },
+ "retries": 0
+}

@@ -1,0 +1,174 @@
+{
+ "page_id": "TEST-012_p1",
+ "invoice_id": "TEST-012",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 6987,
+   "latency_s": 132.53,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 132.53,
+ "input_tokens": 2243,
+ "output_tokens": 6987,
+ "cost_usd": 0.014535,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "PRODUCT",
+   "SIZE",
+   "QTY",
+   "PRICE",
+   "VAT",
+   "LINE VALUE"
+  ],
+  "supplier_name": "TIDEWATER DAIRY & DRINKS",
+  "invoice_number": "33108",
+  "invoice_date": "2026-09-12",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "CREAM DOUBLE 6X1L 6x1L 2 18.17 Z 36.34",
+    "description": "CREAM DOUBLE 6X1L",
+    "pack_size": "6x1L",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 18.17,
+    "line_total": 36.34,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "ICE CREAM VANILLA 4L 4L 4 9.91 Z 39.64",
+    "description": "ICE CREAM VANILLA 4L",
+    "pack_size": "4L",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 9.91,
+    "line_total": 39.64,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "GINGER BEER 12X200ML 12x200ml 1 11.21 S 11.21",
+    "description": "GINGER BEER 12X200ML",
+    "pack_size": "12x200ml",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 11.21,
+    "line_total": 11.21,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "CIDER KEG 50L 50L 5 111.03 S 555.15",
+    "description": "CIDER KEG 50L",
+    "pack_size": "50L",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 111.03,
+    "line_total": 555.15,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "JUICE APPLE 12X1L 12x1L 1 15.88 Z 15.88",
+    "description": "JUICE APPLE 12X1L",
+    "pack_size": "12x1L",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 15.88,
+    "line_total": 15.88,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "DELIVERY CHARGE 8 12.62 S 100.96",
+    "description": "DELIVERY CHARGE",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 12.62,
+    "line_total": 100.96,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "MILK FULL FAT 6X2L 6x2L 2 9.52 Z 19.04",
+    "description": "MILK FULL FAT 6X2L",
+    "pack_size": "6x2L",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 9.52,
+    "line_total": 19.04,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "WATER SPARKLING 12X75CL 12x75cl 5 10.12 S 50.60",
+    "description": "WATER SPARKLING 12X75CL",
+    "pack_size": "12x75cl",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 10.12,
+    "line_total": 50.6,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "PROSECCO DOC 6X75CL 6x75cl 5 43.84 S 219.20",
+    "description": "PROSECCO DOC 6X75CL",
+    "pack_size": "6x75cl",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 43.84,
+    "line_total": 219.2,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "COFFEE BEANS ESPRESSO 1KG 1kg 1 12.27 S 12.27",
+    "description": "COFFEE BEANS ESPRESSO 1KG",
+    "pack_size": "1kg",
+    "unit": "kg",
+    "qty": 1,
+    "unit_price": 12.27,
+    "line_total": 12.27,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "WINE WHITE PINOT 6X75CL 6x75cl 4 36.01 S 144.04",
+    "description": "WINE WHITE PINOT 6X75CL",
+    "pack_size": "6x75cl",
+    "unit": "case",
+    "qty": 4,
+    "unit_price": 36.01,
+    "line_total": 144.04,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "JUICE ORANGE 12X1L 12x1L 1 13.94 S 13.94",
+    "description": "JUICE ORANGE 12X1L",
+    "pack_size": "12x1L",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 13.94,
+    "line_total": 13.94,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "MILK SEMI 12X1L 12x1L 1 9.18 Z 9.18",
+    "description": "MILK SEMI 12X1L",
+    "pack_size": "12x1L",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 9.18,
+    "line_total": 9.18,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 1227.45,
+   "vat": 222.2,
+   "gross": 1449.65
+  }
+ },
+ "retries": 0
+}

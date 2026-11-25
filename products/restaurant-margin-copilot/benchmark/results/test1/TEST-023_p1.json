@@ -1,0 +1,172 @@
+{
+ "page_id": "TEST-023_p1",
+ "invoice_id": "TEST-023",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2301,
+   "output_tokens": 3668,
+   "latency_s": 28.18,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 28.18,
+ "input_tokens": 2301,
+ "output_tokens": 3668,
+ "cost_usd": 0.007911,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "ITEM",
+   "PRICE",
+   "AMOUNT"
+  ],
+  "supplier_name": "MARROW LANE GREENGROCERS",
+  "invoice_number": "CN3038",
+  "invoice_date": "2026-10-08",
+  "is_credit_note": true,
+  "lines": [
+   {
+    "row_text": "-1  CELERY HEAD                          0.95 ea                             -0.95",
+    "description": "CELERY HEAD",
+    "pack_size": "",
+    "unit": "each",
+    "qty": -1,
+    "unit_price": 0.95,
+    "line_total": -0.95,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-4  POTATO MARIS PIPER 25KG              19.20 ea                            -76.80",
+    "description": "POTATO MARIS PIPER 25KG",
+    "pack_size": "25kg",
+    "unit": "each",
+    "qty": -4,
+    "unit_price": 19.2,
+    "line_total": -76.8,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-2  SPINACH BABY 500G                    3.52 ea                             -7.04",
+    "description": "SPINACH BABY 500G",
+    "pack_size": "500g",
+    "unit": "each",
+    "qty": -2,
+    "unit_price": 3.52,
+    "line_total": -7.04,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-4  RASPBERRIES 12X125G                  17.89 ea                            -71.56",
+    "description": "RASPBERRIES 12X125G",
+    "pack_size": "12x125g",
+    "unit": "each",
+    "qty": -4,
+    "unit_price": 17.89,
+    "line_total": -71.56,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-6  CARROT LOOSE 20KG                    12.29 ea                            -73.74",
+    "description": "CARROT LOOSE 20KG",
+    "pack_size": "20kg",
+    "unit": "each",
+    "qty": -6,
+    "unit_price": 12.29,
+    "line_total": -73.74,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-2  MUSHROOM CHESTNUT 3KG                10.25 ea                            -20.50",
+    "description": "MUSHROOM CHESTNUT 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": -2,
+    "unit_price": 10.25,
+    "line_total": -20.5,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-6.42  COURGETTE                          1.95/kg                             -12.52",
+    "description": "COURGETTE",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": -6.42,
+    "unit_price": 1.95,
+    "line_total": -12.52,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-5  PARSLEY FLAT BUNCH                   0.97 ea                             -4.85",
+    "description": "PARSLEY FLAT BUNCH",
+    "pack_size": "",
+    "unit": "each",
+    "qty": -5,
+    "unit_price": 0.97,
+    "line_total": -4.85,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-2.37  GARLIC WHITE                       6.85/kg                             -16.23",
+    "description": "GARLIC WHITE",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": -2.37,
+    "unit_price": 6.85,
+    "line_total": -16.23,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-5  AVOCADO RIPE 12S                     16.21 ea                            -81.05",
+    "description": "AVOCADO RIPE 12S",
+    "pack_size": "12",
+    "unit": "each",
+    "qty": -5,
+    "unit_price": 16.21,
+    "line_total": -81.05,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-4  BASIL POT LIVING                     1.23 ea                             -4.92",
+    "description": "BASIL POT LIVING",
+    "pack_size": "",
+    "unit": "each",
+    "qty": -4,
+    "unit_price": 1.23,
+    "line_total": -4.92,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-2  ONION BROWN 10KG                     7.09 ea                             -14.18",
+    "description": "ONION BROWN 10KG",
+    "pack_size": "10kg",
+    "unit": "each",
+    "qty": -2,
+    "unit_price": 7.09,
+    "line_total": -14.18,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-4  TOMATOES VINE 6KG BOX               13.87 ea                            -55.48",
+    "description": "TOMATOES VINE 6KG BOX",
+    "pack_size": "6kg",
+    "unit": "each",
+    "qty": -4,
+    "unit_price": 13.87,
+    "line_total": -55.48,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": -439.82,
+   "vat": 0.0,
+   "gross": -439.82
+  }
+ },
+ "retries": 0
+}

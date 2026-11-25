@@ -1,0 +1,146 @@
+{
+ "page_id": "TEST-014_p1",
+ "invoice_id": "TEST-014",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 3481,
+   "latency_s": 27.48,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 27.48,
+ "input_tokens": 2243,
+ "output_tokens": 3481,
+ "cost_usd": 0.007523,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "U/M",
+   "PRODUCT DESCRIPTION",
+   "SIZE",
+   "PRICE",
+   "DISC %",
+   "VAT",
+   "NET VALUE"
+  ],
+  "supplier_name": "Calder Valley Catering Supplies plc",
+  "invoice_number": "Ref 25161",
+  "invoice_date": "2026-09-13",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "1 EA CHEESE CHEDDAR MED 5KG 5kg 26.13 Z 26.13",
+    "description": "CHEESE CHEDDAR MED 5KG",
+    "pack_size": "5kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 26.13,
+    "line_total": 26.13,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "8 BX GLOVES VINYL CLR M 100 100 3.82 S 30.56",
+    "description": "GLOVES VINYL CLR M 100",
+    "pack_size": "100",
+    "unit": "box",
+    "qty": 8,
+    "unit_price": 3.82,
+    "line_total": 30.56,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "4 BX CONTAINER FOIL 1/2 GN X50 50 19.94 S 79.76",
+    "description": "CONTAINER FOIL 1/2 GN X50",
+    "pack_size": "50",
+    "unit": "box",
+    "qty": 4,
+    "unit_price": 19.94,
+    "line_total": 79.76,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "1 EA MARGARINE CATERING 10KG 10kg 17.76 Z 17.76",
+    "description": "MARGARINE CATERING 10KG",
+    "pack_size": "10kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 17.76,
+    "line_total": 17.76,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "5 EA MAYONNAISE LT 10 LTR 10L 14.24 Z 71.20",
+    "description": "MAYONNAISE LT 10 LTR",
+    "pack_size": "10L",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 14.24,
+    "line_total": 71.2,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 EA PEPPER WHITE GRND 1KG 1kg 17.09 Z 34.18",
+    "description": "PEPPER WHITE GRND 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 17.09,
+    "line_total": 34.18,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 EA LPG PROPANE CYL 19KG REFILL 19kg 36.03 R 72.06",
+    "description": "LPG PROPANE CYL 19KG REFILL",
+    "pack_size": "19kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 36.03,
+    "line_total": 72.06,
+    "vat_rate": 5
+   },
+   {
+    "row_text": "1 EA CLING FILM 450MM X 300M 7.86 S 7.86",
+    "description": "CLING FILM 450MM X 300M",
+    "pack_size": "450MM X 300M",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 7.86,
+    "line_total": 7.86,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "6 CS EGG LIQUID PAST 5X1L 5x1L 12.63 Z 75.78",
+    "description": "EGG LIQUID PAST 5X1L",
+    "pack_size": "5x1L",
+    "unit": "case",
+    "qty": 6,
+    "unit_price": 12.63,
+    "line_total": 75.78,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "4 EA FLR STRONG WHT BREAD 16KG 16kg 13.80 Z 55.20",
+    "description": "FLR STRONG WHT BREAD 16KG",
+    "pack_size": "16kg",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 13.8,
+    "line_total": 55.2,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 470.49,
+   "vat": 27.24,
+   "gross": 497.73
+  }
+ },
+ "retries": 0
+}

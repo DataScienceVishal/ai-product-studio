@@ -1,0 +1,94 @@
+{
+ "page_id": "TEST-018_p2",
+ "invoice_id": "TEST-018",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2272,
+   "output_tokens": 1787,
+   "latency_s": 15.63,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 15.63,
+ "input_tokens": 2272,
+ "output_tokens": 1787,
+ "cost_usd": 0.004142,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "PRODUCT",
+   "SIZE",
+   "QTY",
+   "PRICE",
+   "VAT",
+   "LINE VALUE"
+  ],
+  "supplier_name": "TIDEWATER DAIRY & DRINKS",
+  "invoice_number": "CN3813",
+  "invoice_date": "2026-09-15",
+  "is_credit_note": true,
+  "lines": [
+   {
+    "row_text": "GIN LONDON DRY 6X70CL 6x70cl -4 106.11 S -424.44",
+    "description": "GIN LONDON DRY 6X70CL",
+    "pack_size": "6x70cl",
+    "unit": "case",
+    "qty": -4,
+    "unit_price": 106.11,
+    "line_total": -424.44,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "WINE RED MERLOT 6X75CL 6x75cl -1 43.29 S -43.29",
+    "description": "WINE RED MERLOT 6X75CL",
+    "pack_size": "6x75cl",
+    "unit": "case",
+    "qty": -1,
+    "unit_price": 43.29,
+    "line_total": -43.29,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "CHEESE CHEDDAR 5KG BLOCK 5kg -4 26.24 Z -104.96",
+    "description": "CHEESE CHEDDAR 5KG BLOCK",
+    "pack_size": "5kg",
+    "unit": "each",
+    "qty": -4,
+    "unit_price": 26.24,
+    "line_total": -104.96,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "JUICE ORANGE 12X1L 12x1L -1 15.50 S -15.50",
+    "description": "JUICE ORANGE 12X1L",
+    "pack_size": "12x1L",
+    "unit": "case",
+    "qty": -1,
+    "unit_price": 15.5,
+    "line_total": -15.5,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "PROSECCO DOC 6X75CL 6x75cl -1 43.37 S -43.37",
+    "description": "PROSECCO DOC 6X75CL",
+    "pack_size": "6x75cl",
+    "unit": "case",
+    "qty": -1,
+    "unit_price": 43.37,
+    "line_total": -43.37,
+    "vat_rate": 20
+   }
+  ],
+  "totals": {
+   "net": -2549.7,
+   "vat": -353.19,
+   "gross": -2902.89
+  }
+ },
+ "retries": 0
+}

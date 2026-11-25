@@ -1,0 +1,177 @@
+{
+ "page_id": "TEST-015_p1",
+ "invoice_id": "TEST-015",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2905,
+   "output_tokens": 3781,
+   "latency_s": 38.8,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 38.8,
+ "input_tokens": 2905,
+ "output_tokens": 3781,
+ "cost_usd": 0.008288,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [],
+  "supplier_name": "BULKBUY CASH & CARRY",
+  "invoice_number": "SALE REF 52598",
+  "invoice_date": "2026-09-28",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "BREAD ROLL WHT 12PK 5 x 1.60 8.00 B",
+    "description": "BREAD ROLL WHT 12PK",
+    "pack_size": "12PK",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 1.6,
+    "line_total": 8.0,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SUNFLWR OIL 5L 5 x 8.51 42.55 B",
+    "description": "SUNFLWR OIL 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 8.51,
+    "line_total": 42.55,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "MINCED BEEF 5% 2KG 2 x 14.88 29.76 B",
+    "description": "MINCED BEEF 5% 2KG",
+    "pack_size": "2KG",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 14.88,
+    "line_total": 29.76,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SOFT DRINK COLA 24X330ML 2 x 9.69 19.38 A",
+    "description": "SOFT DRINK COLA 24X330ML",
+    "pack_size": "24X330ML",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 9.69,
+    "line_total": 19.38,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "SPONGE SCOURER 10PK 2 x 2.78 5.56 A",
+    "description": "SPONGE SCOURER 10PK",
+    "pack_size": "10PK",
+    "unit": "pack",
+    "qty": 2,
+    "unit_price": 2.78,
+    "line_total": 5.56,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FRYING FAT 4X12.5KG 1 x 77.30 77.30 B",
+    "description": "FRYING FAT 4X12.5KG",
+    "pack_size": "4X12.5KG",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 77.3,
+    "line_total": 77.3,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CHKN WHOLE FR 1.8KG 4 x 5.56 22.24 B",
+    "description": "CHKN WHOLE FR 1.8KG",
+    "pack_size": "1.8KG",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 5.56,
+    "line_total": 22.24,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CHILLI SAUCE 6X1L 5 x 18.02 90.10 B",
+    "description": "CHILLI SAUCE 6X1L",
+    "pack_size": "6X1L",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 18.02,
+    "line_total": 90.1,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "TOMATO PASSATA 6X700G 1 x 6.94 6.94 B",
+    "description": "TOMATO PASSATA 6X700G",
+    "pack_size": "6X700G",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 6.94,
+    "line_total": 6.94,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "WASHING UP LIQ 5L 3 x 3.35 10.05 A",
+    "description": "WASHING UP LIQ 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 3,
+    "unit_price": 3.35,
+    "line_total": 10.05,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "TISSUE CENTREFEED 6RL 1 x 10.50 10.50 A",
+    "description": "TISSUE CENTREFEED 6RL",
+    "pack_size": "6RL",
+    "unit": "pack",
+    "qty": 1,
+    "unit_price": 10.5,
+    "line_total": 10.5,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "ONION BROWN LOOSE 8.990 kg @ 0.75/kg 6.74 B",
+    "description": "ONION BROWN LOOSE",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 8.99,
+    "unit_price": 0.75,
+    "line_total": 6.74,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BIN BAGS BLACK ROLL 100 1 x 6.09 6.09 A",
+    "description": "BIN BAGS BLACK ROLL 100",
+    "pack_size": "100",
+    "unit": "pack",
+    "qty": 1,
+    "unit_price": 6.09,
+    "line_total": 6.09,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "SALAD CREAM 5L 1 x 6.61 6.61 B",
+    "description": "SALAD CREAM 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 6.61,
+    "line_total": 6.61,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": null,
+   "vat": null,
+   "gross": null
+  }
+ },
+ "retries": 0
+}

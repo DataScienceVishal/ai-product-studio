@@ -1,0 +1,152 @@
+{
+ "page_id": "TEST-005_p1",
+ "invoice_id": "TEST-005",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2301,
+   "output_tokens": 2558,
+   "latency_s": 20.44,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 20.44,
+ "input_tokens": 2301,
+ "output_tokens": 2558,
+ "cost_usd": 0.005691,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "ITEM",
+   "PRICE",
+   "AMOUNT"
+  ],
+  "supplier_name": "MARROW LANE GREENGROCERS",
+  "invoice_number": "DELIVERY NOTE 95659",
+  "invoice_date": "2026-09-20",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "1 AVOCADO RIPE 12S 15.04 ea 15.04",
+    "description": "AVOCADO RIPE 12S",
+    "pack_size": "12s",
+    "unit": "each",
+    "qty": 1.0,
+    "unit_price": 15.04,
+    "line_total": 15.04,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "3 LEMONS 15CT BOX 5.82 ea 17.46",
+    "description": "LEMONS 15CT BOX",
+    "pack_size": "15ct",
+    "unit": "each",
+    "qty": 3.0,
+    "unit_price": 5.82,
+    "line_total": 17.46,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1.89 COURGETTE 2.29/kg 4.33",
+    "description": "COURGETTE",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 1.89,
+    "unit_price": 2.29,
+    "line_total": 4.33,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "5 CELERY HEAD 1.05 ea 5.25",
+    "description": "CELERY HEAD",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 5.0,
+    "unit_price": 1.05,
+    "line_total": 5.25,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "6 EGGS FREE RANGE DOZEN 2.63 ea 15.78",
+    "description": "EGGS FREE RANGE DOZEN",
+    "pack_size": "dozen",
+    "unit": "each",
+    "qty": 6.0,
+    "unit_price": 2.63,
+    "line_total": 15.78,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 CARROT LOOSE 20KG 11.69 ea 23.38",
+    "description": "CARROT LOOSE 20KG",
+    "pack_size": "20kg",
+    "unit": "each",
+    "qty": 2.0,
+    "unit_price": 11.69,
+    "line_total": 23.38,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "3 TOMATOES VINE 6KG BOX 17.90 ea 53.70",
+    "description": "TOMATOES VINE 6KG BOX",
+    "pack_size": "6kg",
+    "unit": "each",
+    "qty": 3.0,
+    "unit_price": 17.9,
+    "line_total": 53.7,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 SPINACH BABY 500G 3.19 ea 3.19",
+    "description": "SPINACH BABY 500G",
+    "pack_size": "500g",
+    "unit": "each",
+    "qty": 1.0,
+    "unit_price": 3.19,
+    "line_total": 3.19,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "4.59 BROCCOLI 2.95/kg 13.54",
+    "description": "BROCCOLI",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 4.59,
+    "unit_price": 2.95,
+    "line_total": 13.54,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 CAULIFLOWER 1.85 ea 1.85",
+    "description": "CAULIFLOWER",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 1.0,
+    "unit_price": 1.85,
+    "line_total": 1.85,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 PARSLEY FLAT BUNCH 1.07 ea 2.14",
+    "description": "PARSLEY FLAT BUNCH",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 2.0,
+    "unit_price": 1.07,
+    "line_total": 2.14,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 155.66,
+   "vat": 0.0,
+   "gross": 155.66
+  }
+ },
+ "retries": 0
+}

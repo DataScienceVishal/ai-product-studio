@@ -1,0 +1,146 @@
+{
+ "page_id": "TEST-020_p1",
+ "invoice_id": "TEST-020",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2272,
+   "output_tokens": 3185,
+   "latency_s": 26.51,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 26.51,
+ "input_tokens": 2272,
+ "output_tokens": 3185,
+ "cost_usd": 0.006938,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "U/M",
+   "PRODUCT DESCRIPTION",
+   "SIZE",
+   "PRICE",
+   "DISC %",
+   "VAT",
+   "NET VALUE"
+  ],
+  "supplier_name": "Calder Valley Catering Supplies plc",
+  "invoice_number": "Ref 61932",
+  "invoice_date": "2026-10-09",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "1 CS MILK WHOLE 12X1L 12x1L 9.77 Z 9.77",
+    "description": "MILK WHOLE 12X1L",
+    "pack_size": "12x1L",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 9.77,
+    "line_total": 9.77,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "3 EA YOG GREEK STYLE 10KG 10kg 19.36 Z 58.08",
+    "description": "YOG GREEK STYLE 10KG",
+    "pack_size": "10kg",
+    "unit": "each",
+    "qty": 3,
+    "unit_price": 19.36,
+    "line_total": 58.08,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "4 BX GLOVES VINYL CLR M 100 100 3.83 S 15.32",
+    "description": "GLOVES VINYL CLR M 100",
+    "pack_size": "100",
+    "unit": "box",
+    "qty": 4,
+    "unit_price": 3.83,
+    "line_total": 15.32,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "4 CS HONEY SQUEEZY 12X340G 12x340g 25.25 Z 101.00",
+    "description": "HONEY SQUEEZY 12X340G",
+    "pack_size": "12x340g",
+    "unit": "case",
+    "qty": 4,
+    "unit_price": 25.25,
+    "line_total": 101.0,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 EA LPG PROPANE CYL 19KG REFILL 19kg 40.46 R 40.46",
+    "description": "LPG PROPANE CYL 19KG REFILL",
+    "pack_size": "19kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 40.46,
+    "line_total": 40.46,
+    "vat_rate": 5
+   },
+   {
+    "row_text": "2 EA TABLE ROLL WHT 40CM X 100M 7.90 S 15.80",
+    "description": "TABLE ROLL WHT 40CM X 100M",
+    "pack_size": "40CM X 100M",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 7.9,
+    "line_total": 15.8,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "4 EA CHEESE CHEDDAR MED 5KG 5kg 31.08 Z 124.32",
+    "description": "CHEESE CHEDDAR MED 5KG",
+    "pack_size": "5kg",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 31.08,
+    "line_total": 124.32,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "1 EA OIL SUNFLWR 20 LTR JERRY 20L 31.78 Z 31.78",
+    "description": "OIL SUNFLWR 20 LTR JERRY",
+    "pack_size": "20L",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 31.78,
+    "line_total": 31.78,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "4 CS EGGS LARGE FR 15 DOZEN 180 22.80 Z 91.20",
+    "description": "EGGS LARGE FR 15 DOZEN",
+    "pack_size": "180",
+    "unit": "case",
+    "qty": 4,
+    "unit_price": 22.8,
+    "line_total": 91.2,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 EA HAM COOKED SLCD 1KG 1kg 8.84 Z 17.68",
+    "description": "HAM COOKED SLCD 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 8.84,
+    "line_total": 17.68,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 505.41,
+   "vat": 8.24,
+   "gross": 513.65
+  }
+ },
+ "retries": 0
+}

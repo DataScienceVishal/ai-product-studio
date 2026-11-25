@@ -1,0 +1,167 @@
+{
+ "page_id": "TEST-009_p1",
+ "invoice_id": "TEST-009",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2963,
+   "output_tokens": 5675,
+   "latency_s": 42.59,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 42.59,
+ "input_tokens": 2963,
+ "output_tokens": 5675,
+ "cost_usd": 0.012091,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [],
+  "supplier_name": "BULKBUY CASH & CARRY",
+  "invoice_number": "SALE REF 36356",
+  "invoice_date": "2026-10-03",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "BIN LINERS 200S                          4 x 13.86                        55.44 A",
+    "description": "BIN LINERS 200S",
+    "pack_size": "200S",
+    "unit": "case",
+    "qty": 4,
+    "unit_price": 13.86,
+    "line_total": 55.44,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "MILK WHL 4PT                             1 x 1.84                         1.84 B",
+    "description": "MILK WHL 4PT",
+    "pack_size": "4PT",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 1.84,
+    "line_total": 1.84,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CHEDDAR MATURE 5KG                       2 x 27.36                        54.72 B",
+    "description": "CHEDDAR MATURE 5KG",
+    "pack_size": "5kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 27.36,
+    "line_total": 54.72,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "POTATO BAKING LOOSE                      4.450 kg @ 1.25/kg               5.56 B",
+    "description": "POTATO BAKING LOOSE",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 4.45,
+    "unit_price": 1.25,
+    "line_total": 5.56,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SOFT DRINK LEMON 24X330ML               2 x 12.04                        24.08 A",
+    "description": "SOFT DRINK LEMON 24X330ML",
+    "pack_size": "24x330ml",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 12.04,
+    "line_total": 24.08,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FRYING FAT 4X12.5KG                      2 x 77.63                        155.26 B",
+    "description": "FRYING FAT 4X12.5KG",
+    "pack_size": "4x12.5kg",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 77.63,
+    "line_total": 155.26,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SALAD CREAM 5L                           2 x 7.27                         14.54 B",
+    "description": "SALAD CREAM 5L",
+    "pack_size": "5l",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 7.27,
+    "line_total": 14.54,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "COOKING OIL VEG 20L                      6 x 31.26                        187.56 B",
+    "description": "COOKING OIL VEG 20L",
+    "pack_size": "20l",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 31.26,
+    "line_total": 187.56,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SMKD SALMON SLICED 1KG                   1 x 18.32                        18.32 B",
+    "description": "SMKD SALMON SLICED 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 18.32,
+    "line_total": 18.32,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SOFT DRINK COLA 24X330ML                 1 x 11.49                        11.49 A",
+    "description": "SOFT DRINK COLA 24X330ML",
+    "pack_size": "24x330ml",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 11.49,
+    "line_total": 11.49,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "BANANAS LOOSE                             0.810 kg @ 1.21/kg               0.98 B",
+    "description": "BANANAS LOOSE",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 0.81,
+    "unit_price": 1.21,
+    "line_total": 0.98,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BREAD ROLL WHT 12PK                       6 x 1.63                         9.78 B",
+    "description": "BREAD ROLL WHT 12PK",
+    "pack_size": "12pk",
+    "unit": "pack",
+    "qty": 6,
+    "unit_price": 1.63,
+    "line_total": 9.78,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SPONGE SCOURER 10PK                       3 x 2.09                         6.27 A",
+    "description": "SPONGE SCOURER 10PK",
+    "pack_size": "10pk",
+    "unit": "pack",
+    "qty": 3,
+    "unit_price": 2.09,
+    "line_total": 6.27,
+    "vat_rate": 20
+   }
+  ],
+  "totals": {
+   "net": 545.84,
+   "vat": 19.46,
+   "gross": 565.3
+  }
+ },
+ "retries": 0
+}

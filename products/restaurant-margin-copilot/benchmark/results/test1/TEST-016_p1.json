@@ -1,0 +1,163 @@
+{
+ "page_id": "TEST-016_p1",
+ "invoice_id": "TEST-016",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 9416,
+   "latency_s": 69.21,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 69.21,
+ "input_tokens": 2243,
+ "output_tokens": 9416,
+ "cost_usd": 0.019393,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "ITEM",
+   "WEIGHT / QTY",
+   "PRICE",
+   "V",
+   "AMOUNT"
+  ],
+  "supplier_name": "HARKER & SONS",
+  "invoice_number": "Invoice no. 75658",
+  "invoice_date": "2026-10-06",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "PORK SHOULDER DICED 3.19 kg 8.43/kg Z 26.89",
+    "description": "PORK SHOULDER DICED",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 3.19,
+    "unit_price": 8.43,
+    "line_total": 26.89,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PORK SAUS 8S 454G 1 x 3.11 ea Z 3.11",
+    "description": "PORK SAUS 8S 454G",
+    "pack_size": "8x454g",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 3.11,
+    "line_total": 3.11,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BUTCHERS STRING 500G 8 x 4.03 ea S 32.24",
+    "description": "BUTCHERS STRING 500G",
+    "pack_size": "8x500g",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 4.03,
+    "line_total": 32.24,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "PORK SAUS 8S 454G 1 x 28.23 ea Z 28.23",
+    "description": "PORK SAUS 8S 454G",
+    "pack_size": "454g",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 28.23,
+    "line_total": 28.23,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CHICKEN THIGH BONE IN 10KG 5.97 kg 16.73/kg Z 99.88",
+    "description": "CHICKEN THIGH BONE IN 10KG",
+    "pack_size": "10kg",
+    "unit": "kg",
+    "qty": 5.97,
+    "unit_price": 16.73,
+    "line_total": 99.88,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "RUMP STEAK TRIMMED 6.82 kg 31.94/kg Z 217.83",
+    "description": "RUMP STEAK TRIMMED",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 6.82,
+    "unit_price": 31.94,
+    "line_total": 217.83,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "LAMB RACK FRENCH TRIM 1 x 7.46 ea S 7.46",
+    "description": "LAMB RACK FRENCH TRIM",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 7.46,
+    "line_total": 7.46,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "DISPOSABLE GLOVES BLU X100 8.53 kg 7.49/kg Z 63.89",
+    "description": "DISPOSABLE GLOVES BLU X100",
+    "pack_size": "100",
+    "unit": "kg",
+    "qty": 8.53,
+    "unit_price": 7.49,
+    "line_total": 63.89,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PORK BELLY RIND ON 1.81 kg 12.82/kg Z 23.20",
+    "description": "PORK BELLY RIND ON",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 1.81,
+    "unit_price": 12.82,
+    "line_total": 23.2,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "LAMB SHOULDER BONE IN 4 x 6.77 ea Z 27.08",
+    "description": "LAMB SHOULDER BONE IN",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 6.77,
+    "line_total": 27.08,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BLACK PUDDING 1KG 2 x 7.85 ea Z 15.70",
+    "description": "BLACK PUDDING 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 7.85,
+    "line_total": 15.7,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CHICKEN WHOLE FR 1.8KG 2 x 7.85 ea Z 15.70",
+    "description": "CHICKEN WHOLE FR 1.8KG",
+    "pack_size": "1.8kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 7.85,
+    "line_total": 15.7,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 545.51,
+   "vat": 7.94,
+   "gross": 553.45
+  }
+ },
+ "retries": 0
+}

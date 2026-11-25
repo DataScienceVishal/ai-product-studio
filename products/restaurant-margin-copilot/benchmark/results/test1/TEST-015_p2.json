@@ -1,0 +1,167 @@
+{
+ "page_id": "TEST-015_p2",
+ "invoice_id": "TEST-015",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2905,
+   "output_tokens": 3576,
+   "latency_s": 26.09,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 26.09,
+ "input_tokens": 2905,
+ "output_tokens": 3576,
+ "cost_usd": 0.007878,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [],
+  "supplier_name": "BULKBUY CASH & CARRY",
+  "invoice_number": "SALE REF 52598",
+  "invoice_date": "2026-09-28",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "COOKING OIL VEG 20L\n1 x 32.75                          32.75 B",
+    "description": "COOKING OIL VEG 20L",
+    "pack_size": "20l",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 32.75,
+    "line_total": 32.75,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "COFFEE JAR INST 750G\n2 x 14.25                          28.50 B",
+    "description": "COFFEE JAR INST 750G",
+    "pack_size": "750g",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 14.25,
+    "line_total": 28.5,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BANANAS LOOSE\n7.790 kg @ 1.18/kg                 9.19 B",
+    "description": "BANANAS LOOSE",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 7.79,
+    "unit_price": 1.18,
+    "line_total": 9.19,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PAPER TOWEL ROLL 6PK\n2 x 7.51                           15.02 A",
+    "description": "PAPER TOWEL ROLL 6PK",
+    "pack_size": "6pk",
+    "unit": "pack",
+    "qty": 2,
+    "unit_price": 7.51,
+    "line_total": 15.02,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "KETCHUP SACHET 1000\n5 x 15.59                          77.95 B",
+    "description": "KETCHUP SACHET 1000",
+    "pack_size": "1000",
+    "unit": "case",
+    "qty": 5,
+    "unit_price": 15.59,
+    "line_total": 77.95,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BIN LINERS 200S\n8 x 9.10                           72.80 A",
+    "description": "BIN LINERS 200S",
+    "pack_size": "200s",
+    "unit": "case",
+    "qty": 8,
+    "unit_price": 9.1,
+    "line_total": 72.8,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "CHIPS 2.5KG X4\n2 x 14.79                          29.58 B",
+    "description": "CHIPS 2.5KG X4",
+    "pack_size": "4x2.5kg",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 14.79,
+    "line_total": 29.58,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SOFT DRINK LEMON 24X330ML\n8 x 12.39                          99.12 A",
+    "description": "SOFT DRINK LEMON 24X330ML",
+    "pack_size": "24x330ml",
+    "unit": "case",
+    "qty": 8,
+    "unit_price": 12.39,
+    "line_total": 99.12,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "SMKD SALMON SLICED 1KG\n1 x 18.10                          18.10 B",
+    "description": "SMKD SALMON SLICED 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 18.1,
+    "line_total": 18.1,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "POTATO BAKING LOOSE\n8.000 kg @ 1.12/kg                 8.96 B",
+    "description": "POTATO BAKING LOOSE",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 8,
+    "unit_price": 1.12,
+    "line_total": 8.96,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "EGGS LRG FR 30\n1 x 5.81                           5.81 B",
+    "description": "EGGS LRG FR 30",
+    "pack_size": "30",
+    "unit": "pack",
+    "qty": 1,
+    "unit_price": 5.81,
+    "line_total": 5.81,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "MILK WHL 4PT\n5 x 1.91                           9.55 B",
+    "description": "MILK WHL 4PT",
+    "pack_size": "4pt",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 1.91,
+    "line_total": 9.55,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CHEDDAR MATURE 5KG\n5 x 30.92                          154.60 B",
+    "description": "CHEDDAR MATURE 5KG",
+    "pack_size": "5kg",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 30.92,
+    "line_total": 154.6,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 903.75,
+   "vat": 47.7,
+   "gross": 951.45
+  }
+ },
+ "retries": 0
+}

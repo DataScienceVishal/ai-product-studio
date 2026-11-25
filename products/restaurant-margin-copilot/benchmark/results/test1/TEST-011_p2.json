@@ -1,0 +1,62 @@
+{
+ "page_id": "TEST-011_p2",
+ "invoice_id": "TEST-011",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 1345,
+   "latency_s": 13.74,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 13.74,
+ "input_tokens": 2243,
+ "output_tokens": 1345,
+ "cost_usd": 0.003251,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "ITEM",
+   "PRICE",
+   "AMOUNT"
+  ],
+  "supplier_name": "MARROW LANE GREENGROCERS",
+  "invoice_number": "DELIVERY NOTE 55903",
+  "invoice_date": "2026-09-09",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "2 ONION BROWN 10KG 8.50 ea 17.00",
+    "description": "ONION BROWN 10KG",
+    "pack_size": "10kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 8.5,
+    "line_total": 17,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "-1 CR POTATO MARIS PIPER 25KG DAM 15.34 ea -15.34",
+    "description": "CR POTATO MARIS PIPER 25KG DAM",
+    "pack_size": "25kg",
+    "unit": "each",
+    "qty": -1,
+    "unit_price": 15.34,
+    "line_total": -15.34,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 289.4,
+   "vat": 0.66,
+   "gross": 290.06
+  }
+ },
+ "retries": 0
+}
