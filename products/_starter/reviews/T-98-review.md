@@ -51,3 +51,14 @@ None. The checker is a build-output tripwire for Vite's `index.html`, not a sani
 ## Verdict
 
 **PASS**
+
+## Re-review: 1b1c61e (`git diff 112fb8e..HEAD`)
+
+Changes: attributes are now filled with `setdefault`, so the first duplicate wins. URL values have every char <= 0x20 and 0x7f removed before the `javascript:` check. The docstring and the `ok` message mention `javascript:` URLs. Two new fail cases were added.
+
+- `pytest tests/test_spa.py`: **137 passed**. Checker on `frontend/dist/index.html`: `ok`, rc=0.
+- Probes: `type="module" type="application/json"` is now flagged. `type="application/json" type="module"` now passes, which matches the browser (first wins, so it is a data block). A leading `\x01javascript:` is flagged. Entity-encoded and whitespace cases still behave as before.
+- Nit: browsers strip C0 and space only at the ends and tab/LF/CR anywhere. They do not remove DEL or other controls mid-string, so `java\x01script:` is now flagged even though a browser would not treat it as `javascript:`. That is a false positive, so it is safe; no change needed. The edited docstring line is longer than the lines around it (cosmetic).
+- srcdoc and `object data` are left out on purpose. I agree: Vite output cannot reach them.
+
+**Verdict: PASS**
