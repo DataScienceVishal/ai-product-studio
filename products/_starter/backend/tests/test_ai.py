@@ -1050,3 +1050,215 @@ def test_pending_is_a_sql_literal_so_the_partial_index_survives_generic_plans():
         compiled = stmt.compile(dialect=postgresql.dialect())
         assert "model = 'pending'" in str(compiled)
         assert "pending" not in str(compiled.params.values())
+
+
+# --- T-100 M1: the cost guard prices the model Azure reports, not the deployment name -------------------------------
+
+from app.aicost import reported_model_price  # noqa: E402
+from app.main import create_app  # noqa: E402
+
+
+def _reply(model="gpt-5-mini", **extra):
+    body = {"choices": [{"message": {"content": "A summary."}, "finish_reason": "stop"}],
+            "usage": {"prompt_tokens": 12, "completion_tokens": 7}, **extra}
+    if model is not None:
+        body["model"] = model
+    return httpx.Response(200, json=body)
+
+
+def _guarded_app(settings, outbox, reported, *, deployment="gpt-5-mini", explicit=None):
+    from app.billing import MockBilling  # local: only these tests build an Azure-backed app
+    provider = AzureOpenAI("https://res.openai.azure.com/", deployment, "k", retries=0,
+                           client=httpx.Client(transport=httpx.MockTransport(lambda _: _reply(reported))),
+                           checked_price=explicit or {"gpt-5-mini": 2.0}.get(deployment),
+                           price_explicit=explicit is not None)
+    return create_app(settings, ai=provider, email=outbox,
+                      billing_provider=MockBilling(settings.billing_webhook_secret, settings.app_base_url))
+
+
+def _two_summaries(app, new_client, outbox):
+    from fastapi.testclient import TestClient
+    from tests.conftest import sign_up, verify_email
+    with TestClient(app, base_url="https://testserver", headers={"X-Requested-With": "test"}) as client:
+        sign_up(client)
+        verify_email(client, outbox)
+        note = _note(client)
+        first = client.post(f"/api/notes/{note['id']}/summarize")
+        second = client.post(f"/api/notes/{note['id']}/summarize")
+    return first, second
+
+
+@pytest.mark.parametrize("model", ["gpt-5-mini", "gpt-5-mini-2025-08-07", "gpt-5-nano", "GPT-5-NANO-2025-08-07"])
+def test_reported_model_at_or_below_the_checked_price_keeps_ai_on(settings, outbox, new_client, database, model):
+    app = _guarded_app(settings, outbox, model)
+    try:
+        first, second = _two_summaries(app, new_client, outbox)
+    finally:
+        app.state.db.dispose()
+    assert (first.status_code, second.status_code) == (200, 200)
+    assert app.state.ai.disabled is False
+
+
+def test_dearer_reported_model_keeps_first_call_then_refuses_the_rest(settings, outbox, new_client, database):
+    import logging
+    records: list[logging.LogRecord] = []
+
+    class Grab(logging.Handler):  # the app's logging setup may not propagate to caplog
+        def emit(self, record):
+            records.append(record)
+
+    handler = Grab(logging.ERROR)
+    ai_module.log.addHandler(handler)
+    app = _guarded_app(settings, outbox, "gpt-5.4-pro-2026-03-05")
+    try:
+        first, second = _two_summaries(app, new_client, outbox)
+    finally:
+        ai_module.log.removeHandler(handler)
+        app.state.db.dispose()
+    assert first.status_code == 200  # the call already ran and was billed: kept
+    assert second.status_code == 503 and second.json()["error"] == "ai_budget_reached"
+    with database.sessions() as db:
+        rows = db.scalars(select(AIUsage)).all()
+    assert [(r.feature, r.model, r.input_tokens, r.output_tokens) for r in rows] == \
+        [("note_summary", "gpt-5.4-pro-2026-03-05", 12, 7)]  # no reservation left behind by the refusal
+    errors = [r for r in records if r.levelname == "ERROR" and "switched off" in r.getMessage()]
+    assert len(errors) == 1 and "gpt-5.4-pro-2026-03-05" in errors[0].getMessage()
+    assert "Our supplier" not in errors[0].getMessage()
+
+
+@pytest.mark.parametrize("reported", ["some-new-model", None, "gpt-5.4"])
+def test_unknown_or_missing_reported_model_without_explicit_price_refuses_after_first(settings, outbox, new_client,
+                                                                                      database, reported):
+    app = _guarded_app(settings, outbox, reported)
+    try:
+        first, second = _two_summaries(app, new_client, outbox)
+    finally:
+        app.state.db.dispose()
+    assert first.status_code == 200
+    assert second.status_code == 503 and second.json()["error"] == "ai_budget_reached"
+    assert app.state.ai.disabled is True
+    with database.sessions() as db:
+        assert db.scalar(select(AIUsage.model)) == (reported or "unknown")
+
+
+def test_unknown_reported_model_with_an_explicit_price_is_accepted(settings, outbox, new_client, database):
+    """The explicit price is the operator's declared cost of this deployment, and it is what the startup check used."""
+    app = _guarded_app(settings, outbox, "some-new-model", deployment="chat", explicit=2.0)
+    try:
+        first, second = _two_summaries(app, new_client, outbox)
+    finally:
+        app.state.db.dispose()
+    assert (first.status_code, second.status_code) == (200, 200)
+
+
+def test_known_dearer_model_is_refused_even_with_an_explicit_price(settings, outbox, new_client, database):
+    app = _guarded_app(settings, outbox, "gpt-5-pro", deployment="chat", explicit=2.0)
+    try:
+        first, second = _two_summaries(app, new_client, outbox)
+    finally:
+        app.state.db.dispose()
+    assert (first.status_code, second.status_code) == (200, 503)
+
+
+def test_disabled_provider_refuses_without_calling_azure():
+    calls = []
+    provider = AzureOpenAI("https://res.openai.azure.com/", "gpt-5-mini", "k", retries=0, checked_price=2.0,
+                           client=httpx.Client(transport=httpx.MockTransport(lambda r: calls.append(r) or _reply("gpt-5-pro"))))
+    provider.complete("s", "u")
+    with pytest.raises(AppError) as error:
+        provider.complete("s", "u")
+    assert error.value.code == "ai_budget_reached" and len(calls) == 1
+
+
+def test_fake_provider_is_never_disabled(owner, ai):
+    client, _ = owner
+    note = _note(client)
+    assert [client.post(f"/api/notes/{note['id']}/summarize").status_code for _ in range(2)] == [200, 200]
+
+
+def test_reported_model_price_lookup():
+    assert reported_model_price("gpt-5.4-pro-2026-03-05") == 180.0
+    assert reported_model_price("gpt-5-mini-20250807") == 2.0
+    assert reported_model_price("GPT-5") == 10.0
+    assert reported_model_price("gpt-5-pro-2025-10-06") == 120.0  # longest prefix wins over gpt-5
+    assert reported_model_price("gpt-5.4") is None and reported_model_price("gpt-50") is None
+    assert reported_model_price(None) is None and reported_model_price("") is None
+
+
+# --- T-101 review: B1 and nits ---------------------------------------------------------------------------------------
+
+def _no_answer_provider(model, api="chat", calls=None, checked=2.0):
+    def handler(request):
+        if calls is not None:
+            calls.append(request)
+        if api == "responses":
+            return httpx.Response(200, json={"model": model, "status": "incomplete",
+                                             "incomplete_details": {"reason": "max_output_tokens"}, "output": [],
+                                             "usage": {"input_tokens": 300, "output_tokens": 1200}})
+        return httpx.Response(200, json={"model": model, "choices": [{"message": {"content": ""},
+                                                                      "finish_reason": "length"}],
+                                         "usage": {"prompt_tokens": 300, "completion_tokens": 1200}})
+    url = "https://res.openai.azure.com/openai/v1/responses" if api == "responses" else "https://res.openai.azure.com/"
+    return AzureOpenAI(url, "gpt-5-mini", "k", retries=0, api=api, checked_price=checked,
+                       client=httpx.Client(transport=httpx.MockTransport(handler)))
+
+
+@pytest.mark.parametrize("api", ["chat", "responses"])
+def test_billed_no_answer_reply_from_a_dearer_model_still_trips_the_guard(api):
+    calls = []
+    provider = _no_answer_provider("gpt-5-pro-2025-10-06", api, calls)
+    with pytest.raises(AIUnavailable) as failed:
+        provider.complete("s", "u")
+    assert (failed.value.input_tokens, failed.value.output_tokens) == (300, 1200)  # still billed and recorded
+    assert provider.disabled is True
+    with pytest.raises(AppError) as refused:
+        provider.complete("s", "u")
+    assert refused.value.code == "ai_budget_reached" and len(calls) == 1
+
+
+@pytest.mark.parametrize("api", ["chat", "responses"])
+def test_responses_and_chat_replies_both_report_the_model(api):
+    provider = _no_answer_provider("gpt-5-mini", api)
+    with pytest.raises(AIUnavailable):
+        provider.complete("s", "u")
+    assert provider.disabled is False  # same model: no trip
+
+
+def test_responses_shaped_success_from_a_dearer_model_trips_the_guard():
+    body = {"model": "gpt-5.4-pro-2026-03-05", "status": "completed",
+            "output": [{"type": "message", "content": [{"type": "output_text", "text": "ok"}]}],
+            "usage": {"input_tokens": 5, "output_tokens": 3}}
+    provider = AzureOpenAI("https://res.openai.azure.com/openai/v1/responses", "gpt-5-mini", "k", retries=0,
+                           api="responses", checked_price=2.0,
+                           client=httpx.Client(transport=httpx.MockTransport(lambda _: httpx.Response(200, json=body))))
+    assert provider.complete("s", "u").text == "ok" and provider.disabled is True
+
+
+def test_disabled_message_is_not_the_until_tomorrow_text_but_keeps_the_code():
+    provider = _no_answer_provider("gpt-5-pro")
+    with pytest.raises(AIUnavailable):
+        provider.complete("s", "u")
+    with pytest.raises(AppError) as refused:
+        provider.complete("s", "u")
+    assert refused.value.code == "ai_budget_reached" and "tomorrow" not in refused.value.message
+
+
+def test_request_refused_after_reserving_releases_its_reservation(settings, outbox, new_client, database):
+    """Another request disables the provider between this one's route check and its call: the reservation settles 0/0."""
+    app = _guarded_app(settings, outbox, "gpt-5-mini")
+    real = app.state.ai.complete
+
+    def disable_then_call(*args, **kwargs):
+        app.state.ai.disabled = True
+        return real(*args, **kwargs)
+
+    app.state.ai.complete = disable_then_call
+    try:
+        first, _ = _two_summaries(app, new_client, outbox)
+    finally:
+        app.state.db.dispose()
+    assert first.status_code == 503 and first.json()["error"] == "ai_budget_reached"
+    with database.sessions() as db:
+        rows = db.scalars(select(AIUsage)).all()
+    assert [(r.model, r.input_tokens, r.output_tokens) for r in rows] == [("unknown", 0, 0)]
+    assert not any(r.model == "pending" for r in rows)
