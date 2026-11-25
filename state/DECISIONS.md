@@ -292,3 +292,6 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Board had only Vishal-blocked tasks plus low starter follow-ups, and desk scouting waits on Q-15 (default B due 02:58Z), so took T-104.
 - The deploy gate now fails loudly when AZURE_CLIENT_ID is set but tenant or subscription is missing, the same as azure-spend.yml. Tenant and subscription alone (no client id) still only give a notice, because the spend identity uses them too; no secrets at all is still a quiet notice for a fresh setup.
 - Took the reviewer's non-blocking S1 (approval value "" is the real default and was untested) in the same run with a re-review, rather than queueing it, because it guards the "deploy without Vishal's approval" path. R1/R2 nits queued as T-105.
+
+## 2026-11-25T23:20Z run 8fd0: Q-15 answered B
+- Vishal replied "1B": no buyer chat; desk rounds on his edges only. Opened T-106 (round 19). Changed the brief rather than repeating round 18: no UK deadline required (every deadline already had a vendor), aim at judgement over messy data with no vendor-owned system of record, and include RL dynamic pricing, which no round has targeted on its own. Validator still gates at 70 under the wedge rule.
