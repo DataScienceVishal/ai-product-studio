@@ -240,3 +240,7 @@ Reviewer PASS on p/_starter/T-78-mock-portal-scheme (9ca11e6); merged. Two cosme
 - Per KILL-TEST.md this is the second failed G1 attempt: idea moved to state/ideas/killed/ with lessons; T-81 and T-40 closed. No INCONCLUSIVE second run (only allowed for INCONCLUSIVE).
 - Benchmark branch p/restaurant-margin-copilot/T-80 kept unmerged as the evidence record (no product to merge into); the harness is reusable for any future invoice-extraction idea.
 - Process note: switched branches in the main checkout while the run read data files (about one second, no effect: all pages ok, manifests verified identical after). Long runs now use a separate worktree for state commits.
+
+## 2026-11-25T11:23Z, run 8f52: T-82 round 18 (edges-only), 0 written
+- Ran Q-13's fallback C once restaurant was killed: one desk round aimed only at Vishal's finance/tax and data edges, each candidate needing a dated 2026-2028 UK forcing function and a self-run proof test. Every deadline tested already has an incumbent or is built into payroll/accounts software; 0 idea files, so no validator pass was needed.
+- No further desk rounds queued. Queued Q-15 (buyer chat with the friend, recommended A; default B = edges-only desk rounds continue). Until it is answered, idea runs should only re-check parked ideas (holiday-pay monthly) and runs otherwise work the Always-On list.
