@@ -58,7 +58,7 @@ def _get(db: Session, me: Current, note_id: uuid.UUID) -> Note:
 @router.get("")
 def list_notes(me: Current = Depends(current), db: Session = Depends(get_db),
                limit: int = Query(50, ge=1, le=100), offset: int = Query(0, ge=0, le=100_000)):
-    rows = db.scalars(_scoped(me).order_by(Note.created_at.desc()).limit(limit).offset(offset)).all()
+    rows = db.scalars(_scoped(me).order_by(Note.created_at.desc(), Note.id.desc()).limit(limit).offset(offset)).all()
     total = db.scalar(select(func.count()).select_from(Note).where(Note.tenant_id == me.tenant.id))
     return {"items": [_out(n) for n in rows], "total": total}
 
