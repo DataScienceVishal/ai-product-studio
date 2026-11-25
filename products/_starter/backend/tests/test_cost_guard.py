@@ -54,8 +54,10 @@ def test_bad_values_fail_closed(tmp_path, tokens, price, words):
     assert code == 1 and words in out
 
 
-def test_one_parameter_or_no_default_fails(tmp_path):
-    assert run(tmp_path, {"aiGlobalDailyTokens": {"type": "int", "defaultValue": 5}})[0] == 1
+def test_cap_without_default_fails_and_price_is_optional(tmp_path):
+    # the price may be empty now (the table decides, T-91); the cap must still have a default to be checked
+    assert run(tmp_path, {"aiGlobalDailyTokens": {"type": "int", "defaultValue": 5}})[0] == 0
+    assert run(tmp_path, {"aiGlobalDailyTokens": {"type": "int", "defaultValue": 5}}, env_extra={"AI_PROVIDER": "azure"})[0] == 1  # unknown deployment ''
     assert run(tmp_path, {"aiGlobalDailyTokens": {"type": "int"}, "aiPricePerMillionTokens": {"type": "string"}})[0] == 1
 
 

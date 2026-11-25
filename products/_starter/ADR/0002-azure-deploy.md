@@ -408,6 +408,15 @@ nobody. That decides what `require_email_verification` does in a deployed demo:
 - Stripe test-mode demos: R17 is fixed (Stripe plans use the trial pool), but they still need a Stripe test
   account, which is ask-first.
 
+## AI cost guard tied to the deployed model (T-91)
+
+The token cap only bounds money at a given price, and the deployment comes from the `AZURE_OPENAI_DEPLOYMENT` secret, which
+`state/BUDGET.md` says is gpt-5.4-pro. One rule (`backend/app/aicost.py`, stdlib only): `AI_GLOBAL_DAILY_TOKENS` x 30 x price
+must be at most `AI_MONTHLY_BUDGET_USD` (6.10). The price is the explicit `AI_PRICE_PER_MILLION_TOKENS` if set, else a small table by
+deployment name (estimates, conservative: output prices), else the check fails. The app applies it at startup with `AI_PROVIDER=azure`
+(the fake provider costs nothing and needs no price); `infra/cost-guard.sh` runs the same file in the workflow's check job with the
+deployment the release will use, before any Azure sign-in. Only the global cap is used because every call is reserved against it.
+
 ## Monthly cost
 
 Estimates, uksouth, one demo product plus the shared pieces.

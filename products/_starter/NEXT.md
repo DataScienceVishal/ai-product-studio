@@ -1,3 +1,14 @@
+# T-91 AI cost guard status (branch p/_starter/T-91-cost-guard)
+
+Done: `backend/app/aicost.py` (price table, one budget rule, CLI), `Settings` refuses to start with `AI_PROVIDER=azure` when
+`AI_GLOBAL_DAILY_TOKENS` x 30 x price is over `AI_MONTHLY_BUDGET_USD` (default 6.10); `AI_PRICE_PER_MILLION_TOKENS` is now optional and
+really read (blank = unset; nan, inf, <= 0 rejected); `infra/cost-guard.sh` uses the same rule with `AI_PROVIDER`,
+`AZURE_OPENAI_DEPLOYMENT` (secret, never printed) and the optional repo variable `AI_PRICE_PER_MILLION_TOKENS`; Bicep
+`aiPricePerMillionTokens` defaults to empty and is passed to the app only when set. Tests: `tests/test_aicost.py`, extended
+`tests/test_cost_guard.py`; mutation-checked (budget comparison loosened, unknown-model check dropped, startup check disabled: each failed a test).
+Heads-up: with the default gpt-5.4-pro secret, an `ai_provider=azure` deploy now FAILS at the check job until `aiGlobalDailyTokens` is lowered
+to about 1,100 or the budget is raised (Vishal). Not done: Bicep not compiled here (no `az`); the workflow change is untested on GitHub.
+
 # T-76 portal follow-ups status (branch p/_starter/T-76-portal-followups)
 
 Done (T-75 review suggestions 1-3): `MockPortal` page at `/billing/mock-portal` (route in App.tsx and in `spa.py` client routes);
