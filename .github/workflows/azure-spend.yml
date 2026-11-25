@@ -39,6 +39,7 @@ jobs:
       HAS_SPEND: ${{ secrets.AZURE_SPEND_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' && secrets.AZURE_SUBSCRIPTION_ID != '' }}
       HAS_SPEND_ID: ${{ secrets.AZURE_SPEND_CLIENT_ID != '' }}
       HAS_OIDC: ${{ secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' && secrets.AZURE_SUBSCRIPTION_ID != '' }}
+      HAS_DEPLOY_ID: ${{ secrets.AZURE_CLIENT_ID != '' }}
       HAS_COST_SP: ${{ secrets.AZURE_COST_CREDENTIALS != '' }}
       HAS_TELEGRAM: ${{ secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != '' }}
       ON_MAIN: ${{ github.ref == 'refs/heads/main' }}
@@ -56,6 +57,9 @@ jobs:
         run: |
           if [ "$HAS_SPEND_ID" = "true" ] && [ "$HAS_SPEND" != "true" ]; then
             echo "::error::AZURE_SPEND_CLIENT_ID is set but AZURE_TENANT_ID or AZURE_SUBSCRIPTION_ID is missing, so the spend identity can't sign in. Add both secrets (SETUP.md step 3)."
+            exit 1
+          elif [ "$HAS_DEPLOY_ID" = "true" ] && [ "$HAS_OIDC" != "true" ]; then
+            echo "::error::AZURE_CLIENT_ID is set but AZURE_TENANT_ID or AZURE_SUBSCRIPTION_ID is missing, so the deploy identity can't sign in. Add both secrets (SETUP.md step 3)."
             exit 1
           elif [ "$HAS_SPEND" = "true" ] && [ "$ON_MAIN" = "true" ]; then mode=spend
           elif [ "$HAS_OIDC" = "true" ] && [ "$ON_MAIN" = "true" ]; then mode=oidc
