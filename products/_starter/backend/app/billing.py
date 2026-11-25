@@ -280,11 +280,13 @@ class StripeBilling:
         try:
             body = self._call("POST", "/checkout/sessions", form, idempotency_key=f"checkout-{uuid.uuid4().hex}")
         except AppError as error:
-            # A 4xx (billing_rejected) may mean the cached coupon was deleted or archived: re-check it next time.
+            # billing_rejected (any non-429 4xx, or an unparseable 2xx) may mean the cached coupon was deleted or archived:
+            # re-check it next time.
             # An outage (billing_unavailable) says nothing about the coupon, so keep it cached.
             if coupon_id and error.code == "billing_rejected":
                 self._coupons.discard(coupon_id)
             raise
+        # Keep this outside the try: the request succeeded, so the coupon is fine and must stay cached.
         if not body.get("id") or not body.get("url"):
             raise AppError(502, "billing_rejected", "The payment provider sent an incomplete reply.")
         return Checkout(body["id"], body["url"])

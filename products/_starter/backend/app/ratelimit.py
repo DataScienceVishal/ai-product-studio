@@ -162,11 +162,25 @@ class RateLimiter:
             if state["withdrawn"]:
                 fut.cancel()
                 self._trip_breaker("queue timeout")
-                fallback = contextvars.copy_context()
-                fallback.run(_skip_redis.set, True)
-                fallback.run(fn)
+                # Defence in depth: the breaker was just tripped, so _redis_hit would answer _FALLBACK anyway. This
+                # only matters if the breaker window ended between the trip and the call. Do not "simplify" it away.
+                self._answer_in_memory(fn)
+                return
+        if fut.cancelled():
+            # shutdown(cancel_futures=True) dropped this queued job. If our own task is being cancelled, let that
+            # propagate; otherwise the request is still alive and must get an answer, so use the in-memory check.
+            task = asyncio.current_task()
+            if task is None or task.cancelling() == 0:
+                self._answer_in_memory(fn)
                 return
         await fut  # finished, or already running (bounded by the Redis socket timeouts)
+
+    @staticmethod
+    def _answer_in_memory(fn) -> None:
+        """Run the gate inline in a fresh context copy with Redis skipped (the caller's context is never touched)."""
+        fallback = contextvars.copy_context()
+        fallback.run(_skip_redis.set, True)
+        fallback.run(fn)
 
     def shutdown(self) -> None:
         """Stop the Redis pool (queued checks are dropped, running ones finish) and close the client. Idempotent.
@@ -174,6 +188,8 @@ class RateLimiter:
         with self._executor_lock:
             executor, self._executor = self._executor, None
         if executor is not None:
+            # A run_blocking racing with this call creates a fresh pool that nothing shuts down. That is benign: its
+            # idle workers exit when the executor is collected or at interpreter exit.
             executor.shutdown(wait=False, cancel_futures=True)
         if self._redis is not None:
             try:
