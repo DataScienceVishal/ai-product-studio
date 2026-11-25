@@ -76,6 +76,25 @@ describe("Billing", () => {
     render(<Billing me={makeMe()} refresh={vi.fn()} />);
     expect(await screen.findByText("£49.00")).toBeTruthy();
     expect(screen.getByText(/1,000,000 AI tokens a month/)).toBeTruthy();
+    expect(screen.queryByTestId("trial-sized-allowance")).toBeNull();  // older API without ai_allowance: no label
+  });
+
+  it("labels plan allowances as trial-sized while billing is in test mode (T-94)", async () => {
+    fetchMock.mockResolvedValue(reply(200, { ...PLANS,
+      ai_allowance: { trial_sized: true, monthly_tokens: 100000, daily_tokens: 30000 } }));
+    render(<Billing me={makeMe()} refresh={vi.fn()} />);
+    const note = await screen.findByTestId("trial-sized-allowance");
+    expect(note.textContent).toContain("every plan uses the free-trial AI allowance: 100,000 tokens a month and 30,000 a day.");
+    expect(screen.getByText(/1,000,000 AI tokens a month\s+once live billing starts/)).toBeTruthy();
+  });
+
+  it("shows the plan's own allowance without a label once billing is live", async () => {
+    fetchMock.mockResolvedValue(reply(200, { ...PLANS,
+      ai_allowance: { trial_sized: false, monthly_tokens: 100000, daily_tokens: 30000 } }));
+    render(<Billing me={makeMe()} refresh={vi.fn()} />);
+    expect(await screen.findByText(/1,000,000 AI tokens a month/)).toBeTruthy();
+    expect(screen.queryByTestId("trial-sized-allowance")).toBeNull();
+    expect(screen.queryByText(/once live billing starts/)).toBeNull();
   });
 
   it("only owners can choose a plan", async () => {

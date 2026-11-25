@@ -84,7 +84,7 @@ Assume local or demo settings: `AI_PROVIDER=fake`, `BILLING_PROVIDER=mock`, `MOC
 
 Two things in this example surprise people:
 
-1. **Upgrading does not raise the AI allowance yet.** In `notes.py`, `limited = sub.status == "trialing" or sub.provider in LIMITED_PROVIDERS` and `LIMITED_PROVIDERS = {"mock","stripe"}`. Mock and Stripe-test plans therefore use the *trial* allowance (30,000 tokens a day, 100,000 a month; `PLANS["trial"]` in `billing.py`). The comment says why: until `unlock selling` those plans cost nothing, so they must not unlock paid-sized AI spend. Remove `"stripe"` from that set in the same change that allows live keys.
+1. **Upgrading does not raise the AI allowance yet.** In `notes.py`, `limited = sub.status == "trialing" or sub.provider in LIMITED_PROVIDERS`, with `LIMITED_PROVIDERS = {"mock","stripe"}` in `billing.py`. The Billing page says so under the plans (T-94). Mock and Stripe-test plans therefore use the *trial* allowance (30,000 tokens a day, 100,000 a month; `PLANS["trial"]` in `billing.py`). The comment says why: until `unlock selling` those plans cost nothing, so they must not unlock paid-sized AI spend. Remove `"stripe"` from that set in the same change that allows live keys.
 2. **The "plan limit" in step 5 is the trial ending.** The AI-allowance limits are separate and return 429s: `ai_daily_cap_reached`, `ai_cap_reached` (monthly), `ai_in_progress` (more than 2 calls at once), and 503s `ai_trial_pool_reached` and `ai_budget_reached` (`ai.py` `reserve`). Section 4.4 explains them.
 
 ## 4. How each part works
@@ -262,7 +262,7 @@ Not done, with where each is tracked:
 
 1. In `auth_sessions.token_hash`, the SHA-256 of the random token. The cookie holds the token itself; a hash cannot be turned back into it (`models.py`, `security.py`, ADR 0001 decision 1).
 2. `X-Requested-With`. `POST /api/billing/webhook` is exempt; its HMAC signature protects it (`main.py` `CsrfGuard`, `CSRF_EXEMPT`).
-3. `LIMITED_PROVIDERS = {"mock","stripe"}` in `routes/notes.py` makes those plans draw on the trial allowance (30,000 a day) until live billing is unlocked. Paying only restores access after the 14-day trial ends.
+3. `LIMITED_PROVIDERS = {"mock","stripe"}` in `billing.py` (used by `routes/notes.py`) makes those plans draw on the trial allowance (30,000 a day) until live billing is unlocked. Paying only restores access after the 14-day trial ends.
 4. 429: `ai_in_progress`, `ai_cap_reached`, `ai_daily_cap_reached`. 503: `ai_trial_pool_reached`, `ai_budget_reached` (`ai.py` `reserve`). Also `ai_busy` (503) is about concurrency, not budget.
 5. `config.py` requires a 2 s margin. A call the browser has abandoned is still billed, so the server would rather not start than let that happen silently.
 6. Add the path to `CLIENT_ROUTES` in `backend/app/spa.py` (and the router in `App.tsx`). If you forget, opening or refreshing that page returns 404; a test compares the two lists.

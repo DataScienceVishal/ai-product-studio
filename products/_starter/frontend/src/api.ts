@@ -8,6 +8,8 @@ export type Me = {
 
 export type Note = { id: string; title: string; body: string; summary: string | null; created_at: string; updated_at: string };
 export type Plan = { id: string; name: string; price_pence: number; currency: string; interval: string; ai_monthly_tokens: number };
+/** T-94: while billing is mock or Stripe test mode, every plan uses the free-trial AI allowance. */
+export type AiAllowance = { trial_sized: boolean; monthly_tokens: number; daily_tokens: number | null };
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string, public fields: { field: string; problem: string }[] = []) {

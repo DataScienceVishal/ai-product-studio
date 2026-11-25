@@ -23,6 +23,30 @@ def test_plans_are_public_and_exclude_trial(new_client):
     assert body["offers"][0]["code"] == "EARLY50"
 
 
+def test_plans_say_allowances_are_trial_sized_while_billing_is_limited(new_client):
+    # T-94: mock and Stripe-test plans are capped at the trial allowance (routes/notes.py), so the page is told.
+    from app.billing import LIMITED_PROVIDERS, PLANS
+    body = new_client().get("/api/billing/plans").json()
+    assert "mock" in LIMITED_PROVIDERS and "stripe" in LIMITED_PROVIDERS
+    assert body["ai_allowance"] == {"trial_sized": True, "monthly_tokens": PLANS["trial"].ai_monthly_tokens,
+                                    "daily_tokens": PLANS["trial"].ai_daily_tokens}
+
+
+def test_plans_stop_saying_trial_sized_once_the_provider_is_not_limited(new_client, monkeypatch):
+    # The day a selling ADR removes a provider from LIMITED_PROVIDERS, the label goes with it.
+    import app.routes.billing as billing_routes
+    monkeypatch.setattr(billing_routes, "LIMITED_PROVIDERS", set())
+    assert new_client().get("/api/billing/plans").json()["ai_allowance"]["trial_sized"] is False
+
+
+def test_the_ai_cap_and_the_plans_label_share_one_limited_set():
+    import app.billing
+    import app.routes.billing
+    import app.routes.notes
+    assert app.routes.notes.LIMITED_PROVIDERS is app.billing.LIMITED_PROVIDERS
+    assert app.routes.billing.LIMITED_PROVIDERS is app.billing.LIMITED_PROVIDERS
+
+
 def test_checkout_then_mock_payment_activates_plan_with_offer(owner):
     client, _ = owner
     checkout = client.post("/api/billing/checkout", json={"plan": "pro", "offer_code": "early50"})

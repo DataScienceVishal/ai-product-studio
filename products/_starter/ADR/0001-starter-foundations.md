@@ -31,9 +31,9 @@ cost control, logs and health checks. It must run within $80 of Azure credit in 
    is `auto`, `responses` or `chat`). Caps are now layered: a monthly token cap per plan, a daily cap for trials,
    a shared daily pool for all trials, and a studio-wide daily cap on all tenants. At most a few calls per tenant
    can be in flight at once (`ai_calls_per_tenant_at_once`). Free trials and the `mock` and `stripe` billing
-   providers are all treated as limited (`LIMITED_PROVIDERS` in `routes/notes.py`). A startup cost guard
-   (`app/aicost.py`) refuses to start if the studio-wide daily cap, priced at the configured deployment's rate,
-   would exceed the monthly AI budget.
+   providers are all treated as limited (`LIMITED_PROVIDERS` in `app/billing.py`; the Billing page labels plan
+   allowances as trial-sized meanwhile). A startup cost guard (`app/aicost.py`) refuses to start if the
+   studio-wide daily cap, priced at the configured deployment's rate, would exceed the monthly AI budget.
 7. **Billing behind a provider interface.** `MockBilling` is the default and signs its webhooks the same way
    Stripe does. `StripeBilling` refuses any key that isn't a test-mode key. Webhooks are idempotent (event ids
    are stored). Live payments stay locked until `unlock selling`.

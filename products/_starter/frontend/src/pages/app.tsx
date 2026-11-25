@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { api, ApiError, formatPrice, isMockBilling, type Me, type Note, type Plan } from "../api";
+import { api, ApiError, formatPrice, isMockBilling, type AiAllowance, type Me, type Note, type Plan } from "../api";
 import { Alert, Button, Card, Field, Link, navigate } from "../ui";
 import { BAD_REDIRECT, safeRedirect } from "../redirect";
 
@@ -201,13 +201,17 @@ function mockPortalPath(url: string): string | null {
 
 export function Billing({ me, refresh }: { me: Me; refresh: () => Promise<void> }) {
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [allowance, setAllowance] = useState<AiAllowance | null>(null);
   const [offer, setOffer] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [portalBusy, setPortalBusy] = useState(false);
   const isOwner = me.user.role === "owner";
   useEffect(() => {
-    api<{ plans: Plan[] }>("/api/billing/plans").then((r) => setPlans(r.plans)).catch((e) => setError(errorText(e)));
+    api<{ plans: Plan[]; ai_allowance?: AiAllowance }>("/api/billing/plans").then((r) => {
+      setPlans(r.plans);
+      setAllowance(r.ai_allowance ?? null);
+    }).catch((e) => setError(errorText(e)));
   }, []);
 
   const choose = async (plan: string) => {
@@ -275,13 +279,20 @@ export function Billing({ me, refresh }: { me: Me; refresh: () => Promise<void> 
             <div key={plan.id} className="rounded-md border border-slate-200 p-4">
               <h3 className="font-semibold">{plan.name}</h3>
               <p className="text-2xl font-bold">{formatPrice(plan.price_pence, plan.currency)}<span className="text-sm font-normal"> / {plan.interval}</span></p>
-              <p className="text-sm text-slate-600">{plan.ai_monthly_tokens.toLocaleString("en-GB")} AI tokens a month</p>
+              <p className="text-sm text-slate-600">{plan.ai_monthly_tokens.toLocaleString("en-GB")} AI tokens a month
+                {allowance?.trial_sized && " once live billing starts"}</p>
               <Button className="mt-3" busy={busy === plan.id} onClick={() => choose(plan.id)}
                 disabled={!isOwner || blocked}>Choose {plan.name}</Button>
             </div>
           ))}
         </div>
         <p className="mt-4 text-sm text-slate-600">Test mode: no real payment is taken.</p>
+        {allowance?.trial_sized && (
+          <p className="mt-1 text-sm text-slate-600" data-testid="trial-sized-allowance">
+            While billing is in test mode, every plan uses the free-trial AI allowance:{" "}
+            {allowance.monthly_tokens.toLocaleString("en-GB")} tokens a month
+            {allowance.daily_tokens != null && <> and {allowance.daily_tokens.toLocaleString("en-GB")} a day</>}.</p>
+        )}
       </Card>
     </div>
   );

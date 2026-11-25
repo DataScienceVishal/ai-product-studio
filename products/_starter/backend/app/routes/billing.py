@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
-from ..billing import OFFERS, PLANS, BillingUpdate, MockBilling, sign
+from ..billing import LIMITED_PROVIDERS, OFFERS, PLANS, BillingUpdate, MockBilling, sign
 from ..db import get_db
 from ..deps import Current, owner, subscription_of, verified_owner
 from ..errors import AppError
@@ -26,12 +26,17 @@ class CheckoutIn(BaseModel):
 
 
 @router.get("/plans")
-def plans():
+def plans(request: Request):
+    trial = PLANS["trial"]
     return {
         "plans": [{"id": p.id, "name": p.name, "price_pence": p.price_pence, "currency": p.currency,
                    "interval": p.interval, "ai_monthly_tokens": p.ai_monthly_tokens}
                   for p in PLANS.values() if p.id != "trial"],
         "offers": [{"code": o.code, "description": o.description} for o in OFFERS.values()],
+        # T-94: while the provider is in LIMITED_PROVIDERS every plan's AI use is capped at the trial allowance
+        # (routes/notes.py), so the page must not promise the plan's own allowance yet.
+        "ai_allowance": {"trial_sized": request.app.state.settings.billing_provider in LIMITED_PROVIDERS,
+                         "monthly_tokens": trial.ai_monthly_tokens, "daily_tokens": trial.ai_daily_tokens},
     }
 
 

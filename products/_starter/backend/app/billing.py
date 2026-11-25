@@ -54,6 +54,12 @@ PLANS: dict[str, Plan] = {
     "starter": Plan("starter", "Starter", 2900, ai_monthly_tokens=500_000),
     "pro": Plan("pro", "Pro", 7900, ai_monthly_tokens=2_000_000),
 }
+
+# Providers whose plans get the free-trial AI allowance, whatever plan was bought: mock is a demo and Stripe is
+# test-mode only until `unlock selling`, so neither plan has been paid for yet. Remove "stripe" in the same change
+# that allows live keys (a selling ADR). Used by the AI cap (routes/notes.py) and the plans list (routes/billing.py).
+LIMITED_PROVIDERS = {"mock", "stripe"}
+
 OFFERS: dict[str, Offer] = {
     "EARLY50": Offer("EARLY50", 50, 3, "Early customers: 50% off for the first 3 months"),
 }
