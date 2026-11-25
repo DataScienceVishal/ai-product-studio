@@ -211,3 +211,6 @@ Append only. One line per decision:
 
 ## 2026-11-25T06:34Z, run f784: T-75 merged
 Reviewer PASS on p/_starter/T-75-billing-followups; merged to main. Mock-portal page and https-only redirect deferred to T-76 (non-blocking review suggestions; demo-relevant before G4).
+
+## 2026-11-25T06:55Z, run f784: T-76 merged
+Reviewer PASS on p/_starter/T-76-portal-followups; merged to main. Allowing any https redirect host accepted for now (URL only comes from our own authenticated endpoint); allowlist and test-accuracy fixes queued as T-77.
