@@ -1,0 +1,22 @@
+🧪 <b>Studio update</b> · Wed 25 Nov, 19:30
+🟢 Running normally · 🔒 Selling locked · 💷 Azure spend not reported yet
+
+<b>✨ What's new</b>
+• Found a ~$540-a-month AI cost risk before any deploy; now blocked
+• Plain-English guide to the starter app ready, with a quiz
+• A security check that never ran now runs on every build
+• Privacy text corrected: servers are in France (EU), not UK
+
+<b>🙋 Need your call</b>
+<b>1. Will you have the 15-minute chat with your friend?</b>
+A Yes, this week ⭐ · B No, desk rounds only · C Pause ideas, polish starter
+<i>No reply → B at 03:00.</i>
+
+Tap a button, or just reply <b>1A</b>.
+
+<b>⚠️ One problem</b>
+• Desk runs sometimes save off main; add this to both Desk routines:
+<i>Commit and push everything to main before ending (never to a session branch).</i>
+
+<b>🧭 Next</b>
+• Tightening the new security check, then more starter app polish

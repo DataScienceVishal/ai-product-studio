@@ -123,7 +123,7 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - If no answer: nothing changes (Contributor stays); it waits for you because only an Owner can apply it. The studio carries on with other work.
 - Answer: A (Telegram "2A", 2026-11-25T09:04:24Z). Vishal applies the deploy role at his next deploy; T-65 waits on that, then the studio watches the next deploy for a missing action.
 
-## Q-15 (status: sent 2026-11-25T14:58Z as 1)
+## Q-15 (status: sent 2026-11-25T14:58Z as 1; re-sent 2026-11-25T19:33Z as 1, default B still due 2026-11-26T02:58Z)
 - Decision: Restaurant failed its proof test, so no idea is near the 70 bar. Will you have the 15-minute chat with your UK-business friend now?
 - Context: 54 ideas scored from public pages, 0 passed; both proof tests (pEPR, restaurant) were close but failed. The studio is running one last desk round aimed at your edges (T-82, finance/tax and data work) meanwhile. The question list is in state/ideas/BUYER-INTERVIEW.md.
 - Options: A) Yes, chat this week and send the notes by Telegram; each money-backed pain gets a proof test (recommended) B) No chat; keep desk rounds on your edges only C) Pause idea work and spend runs on the shared starter until December
