@@ -259,6 +259,22 @@ Caveat: search finds only what is indexed. A small bureau tool or a Big Four int
 - Items 4 and 5 are not touched by this pass. Armstrong Watson's data-gap point suggests Build and AI scoring should assume joining HR leave data, so Build may fall rather than rise.
 - Net: a re-score now would not reach 70. Worth re-checking when the government response is published and the FWA calculator scope is known; those two events decide whether urgency is real and whether the gap survives.
 
+## Evidence re-check (2026-11-25)
+
+Scout, Always-On item 6, run 20261125T001943Z-run-cf06. Score not changed by the scout.
+
+| URL | Accessed | What it shows |
+|---|---|---|
+| https://www.gov.uk/government/consultations/make-work-pay-holiday-pay-compliance-and-enforcement | 2026-11-25 | Still "Closed consultation", "We are analysing your feedback", "Visit this page again soon to download the outcome". No response and no commencement date. |
+| https://www.gov.uk/government/publications/fair-work-agency-delivery-plan-for-2026-to-2027/fair-work-agency-delivery-plan-2026-to-2027 | 2026-11-25 | Still "Updated 21 August 2026". Lists "a holiday pay calculator" among simpler tools, no launch date, no scope. "Holiday pay enforcement is expected to begin in 2027"; "processes in place to begin enforcement during 2027". (Fetch-tool quotes; unchanged from 2026-11-23.) |
+| Web search "Fair Work Agency holiday pay calculator launched" and "holiday pay consultation government response November 2026" | 2026-11-25 | No UK FWA calculator found (only Australian Fair Work Ombudsman tools and the one-worker gov.uk entitlement calculator). No government response surfaced. Search is indexed content only. |
+| https://www.fairworksolutions.co.uk/ | 2026-11-25 | Still NMW only: upload, pay codes, shortfalls per worker and pay period, monitoring. No holiday pay look-back. Nothing marked as new. |
+| https://iris.co.uk/blog/payroll/staffology-payroll-summer-2026-software-update/ | 2026-11-25 | Search summary only, page not read: Staffology summer 2026 update adds daily-basis average holiday pay and import of history of previously paid amounts. Forward averaging input, not an arrears or look-back report. Undated in the summary. Worth reading for item 6. |
+| Web search for BrightPay, Xero, Sage, Moneysoft holiday pay audit or look-back launches | 2026-11-25 | None of the four appeared. No look-back or audit feature found. |
+| https://www.cipp.org.uk/resources/news.html | 2026-11-25 | No holiday pay or FWA item visible; most items undated. |
+
+Bottom line: nothing new since 2026-11-24. The government response is still unpublished, there is no commencement date beyond "2027", and no FWA holiday pay calculator or scope has appeared, so the evidence that would move Competition (to 8-9 or to 2) has not arrived. No vendor in the named set has launched a look-back or audit feature; the only movement is Staffology's summer 2026 update, which adds history import and daily-basis averaging (forward calculation, read from a search summary only). The park decision stands, T-24 and T-25 stay blocked, and nothing justifies a re-score. Next re-check on publication of the response or the FWA calculator, otherwise monthly.
+
 ## Gate log
 - 2026-11-23 scout round 3 (T-22): G0 drafted. Job-ad signal missing, flagged.
 - 2026-11-23 | validator | G0→G1 | REVISE 63 | Best of round 3, and the first idea with an incumbent gap confirmed on the vendors' own pages: BrightPay, Xero, Moneysoft and Sage 50 don't calculate holiday pay amounts, and no product documents a whole-workforce look-back. But FWA enforcement has no start date, the FWA is building its own free holiday pay calculator, and its look-back starts only at 18 Dec 2025. The core is a deterministic engine, and holding workers' pay and absence data cuts Risk to 5.
