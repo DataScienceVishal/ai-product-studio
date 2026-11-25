@@ -59,7 +59,7 @@ def checkout(data: CheckoutIn, request: Request, me: Current = Depends(verified_
 def apply_update(db: Session, update: BillingUpdate, provider: str) -> bool:
     """Apply a provider event once, in order. Returns False if this event id was already applied.
     An event older than the last one applied is recorded as seen but changes nothing."""
-    if update.status == "active" and update.plan is not None and update.plan not in PLANS:
+    if update.status == "active" and update.plan is not None and (update.plan not in PLANS or update.plan == "trial"):
         # Wrong provider metadata would otherwise activate the subscription on whatever plan the tenant had
         # (a free upgrade). Refuse before recording the event id, so a redelivery works once the catalogue or
         # the metadata is fixed. The webhook answers 400, like any event we cannot read.
@@ -82,8 +82,9 @@ def apply_update(db: Session, update: BillingUpdate, provider: str) -> bool:
     # customer's next, strictly newer, event). Cancel arriving after an activation at the same second still applies.
     # A different subscription id means a different subscription: never the "reactivation" of the cancelled one.
     other_sub = bool(update.provider_ref and sub.provider_ref and update.provider_ref != sub.provider_ref)
-    if other_sub and update.status != "active":
-        # An old subscription's cancel/past_due must not touch the customer's current subscription.
+    if other_sub and not update.starts_subscription:
+        # Only an event that starts a subscription may replace the current one. Anything else about another id
+        # (cancel, past_due, or an old subscription becoming active again) must not touch the current subscription.
         db.commit()
         log.info("event for a different subscription ignored")
         return True

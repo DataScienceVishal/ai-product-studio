@@ -77,6 +77,9 @@ class BillingUpdate:
     customer_ref: str | None = None
     current_period_end: datetime | None = None
     occurred_at: datetime | None = None  # when the provider created the event, to ignore stale ones
+    # True only for events that begin a subscription (checkout completed, subscription created). Only those may
+    # replace the tenant's current provider_ref; an update for another id (an old subscription recovering) may not.
+    starts_subscription: bool = False
 
 
 class InvalidSignature(AppError):
@@ -179,7 +182,8 @@ class MockBilling:
                              offer=data.get("offer"), provider_ref=data.get("subscription"),
                              customer_ref=data.get("customer"),
                              current_period_end=datetime.fromtimestamp(end, timezone.utc) if end else None,
-                             occurred_at=_when(event.get("created")))
+                             occurred_at=_when(event.get("created")),
+                             starts_subscription=event.get("type") == "checkout.completed")
 
     def close(self, customer_ref, subscription_ref) -> None:
         self.closed.append((customer_ref, subscription_ref))
@@ -321,7 +325,8 @@ class StripeBilling:
                 return None
             return BillingUpdate(str(event["id"]), tenant, "active", plan=meta.get("plan") or None,
                                  offer=meta.get("offer") or None, provider_ref=obj.get("subscription"),
-                                 customer_ref=obj.get("customer"), occurred_at=_when(event.get("created")))
+                                 customer_ref=obj.get("customer"), occurred_at=_when(event.get("created")),
+                                 starts_subscription=True)
         if kind in ("customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"):
             tenant = _tenant(meta.get("tenant_id"))
             status = "canceled" if kind.endswith("deleted") else {
@@ -332,7 +337,8 @@ class StripeBilling:
             return BillingUpdate(str(event["id"]), tenant, status, plan=meta.get("plan") or None,
                                  offer=meta.get("offer") or None, provider_ref=obj.get("id"),
                                  customer_ref=obj.get("customer"), current_period_end=self._period_end(obj),
-                                 occurred_at=_when(event.get("created")))
+                                 occurred_at=_when(event.get("created")),
+                                 starts_subscription=kind.endswith("created"))
         return None
 
 

@@ -27,3 +27,16 @@ first four fail on main's code; the fifth is the control.
 OSError comment; `_CONTROL` removed (auth imports `textsafe.LINE_BAD`); out-of-range-created test asserts 400 and
 is renamed; invalid-JSON test renamed; blank-title tests now use values the old model accepted ("   ", NBSP, EM
 space) and the strip test checks create, edit and list; company-name test pins the resulting names.
+
+## Review round 2 (reviewer CHANGES, C1)
+- C1 FIXED: `BillingUpdate.starts_subscription` (true only for mock `checkout.completed`, Stripe
+  `checkout.session.completed` and `customer.subscription.created`). Only those may replace `provider_ref`/plan or skip the
+  same-second tie-break; any other event for a non-current subscription id (cancel, past_due, an old sub becoming
+  active again) is ignored. Tests: the reviewer's 5-step scenario in Stripe payload shape (fails with the old rule,
+  checked), Stripe old-sub deleted plus replay returning applied false, `subscription.created` for a new id takes over.
+- S7 done: an active event with plan `trial` is refused (`unknown_plan`).
+- S4/M6: `reserve` docstring states it commits on refusal; new test fails if `refuse` goes back to `rollback` (checked).
+- S6: test that a call settling after being swept restores its real cost.
+- Noted follow-ups, not done: S1 (checkout while past_due can create a second paid subscription: refuse with 409 or
+  close the old ref), S5 (partial index for the sweep when volume grows).
+- Suite: 541 passed, 1 skipped.

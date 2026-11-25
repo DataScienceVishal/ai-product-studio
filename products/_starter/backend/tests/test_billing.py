@@ -525,3 +525,70 @@ def test_cancel_with_unknown_plan_still_cancels(owner, app):
     _sub_event(client, app, "e1", "checkout.completed", now - 10, "s1")
     assert _sub_event(client, app, "e2", "subscription.canceled", now, "s1", plan="legacy").status_code == 200
     assert _status(client) == "canceled"
+
+
+# --- T-72 review fixes: only an event that starts a subscription may replace the current one ---
+
+def _stripe_apply(database, tenant_id, eid, kind, created, sub_id, status="active", plan="starter"):
+    """A real-shaped Stripe event, parsed by StripeBilling and applied the way the webhook route does."""
+    from app.routes.billing import apply_update
+    if kind == "checkout.session.completed":
+        obj = {"client_reference_id": tenant_id, "subscription": sub_id, "customer": "cus_1",
+               "metadata": {"tenant_id": tenant_id, "plan": plan}}
+    else:
+        obj = {"id": sub_id, "status": status, "customer": "cus_1", "metadata": {"tenant_id": tenant_id, "plan": plan}}
+    payload = json.dumps({"id": eid, "type": kind, "created": created, "livemode": False,
+                          "data": {"object": obj}}).encode()
+    update = stripe_provider().parse_webhook(payload, sign(payload, SECRET))
+    with database.sessions() as db:
+        return apply_update(db, update, "stripe")
+
+
+def _stripe_sub(database, tenant_id):
+    from sqlalchemy import select
+    from app.models import Subscription
+    with database.sessions() as db:
+        sub = db.scalar(select(Subscription).where(Subscription.tenant_id == uuid.UUID(tenant_id)))
+        return sub.status, sub.plan, sub.provider_ref
+
+
+def test_old_subscription_recovering_does_not_take_over_then_cancel_the_customer(owner, database):
+    """Reviewer's scenario: s1 past_due, customer buys s2 (pro), s1's retry succeeds (updated/active), s1 deleted."""
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    _stripe_apply(database, t, "e1", "checkout.session.completed", now - 500, "sub_1", plan="starter")
+    _stripe_apply(database, t, "e2", "customer.subscription.updated", now - 400, "sub_1", "past_due")
+    _stripe_apply(database, t, "e3", "checkout.session.completed", now - 300, "sub_2", plan="pro")
+    assert _stripe_sub(database, t) == ("active", "pro", "sub_2")
+    assert _stripe_apply(database, t, "e4", "customer.subscription.updated", now - 200, "sub_1", "active") is True
+    assert _stripe_sub(database, t) == ("active", "pro", "sub_2")  # ref and plan unchanged
+    _stripe_apply(database, t, "e5", "customer.subscription.deleted", now - 100, "sub_1", "canceled")
+    assert _stripe_sub(database, t) == ("active", "pro", "sub_2")
+
+
+def test_stripe_old_subscription_deleted_after_new_checkout_keeps_customer(owner, database):
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    _stripe_apply(database, t, "e1", "checkout.session.completed", now - 300, "sub_1")
+    _stripe_apply(database, t, "e2", "checkout.session.completed", now - 200, "sub_2", plan="pro")
+    assert _stripe_apply(database, t, "e3", "customer.subscription.deleted", now, "sub_1", "canceled") is True
+    assert _stripe_sub(database, t) == ("active", "pro", "sub_2")
+    # redelivery of the ignored event is an idempotent no-op
+    assert _stripe_apply(database, t, "e3", "customer.subscription.deleted", now, "sub_1", "canceled") is False
+    # the current subscription's own deletion still cancels
+    _stripe_apply(database, t, "e4", "customer.subscription.deleted", now + 1, "sub_2", "canceled")
+    assert _stripe_sub(database, t)[0] == "canceled"
+
+
+def test_subscription_created_for_a_new_id_does_take_over(owner, database):
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    _stripe_apply(database, t, "e1", "checkout.session.completed", now - 300, "sub_1")
+    _stripe_apply(database, t, "e2", "customer.subscription.created", now - 200, "sub_2", plan="pro")
+    assert _stripe_sub(database, t) == ("active", "pro", "sub_2")
+
+
+def test_webhook_refuses_the_trial_plan_on_an_active_event(owner, app):
+    client, _ = owner
+    r = _sub_event(client, app, "e_trial", "checkout.completed", int(time.time()), "s1", plan="trial")
+    assert r.status_code == 400 and r.json()["error"] == "unknown_plan"

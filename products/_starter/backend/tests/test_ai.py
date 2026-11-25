@@ -1013,3 +1013,30 @@ def test_failed_ai_call_leaves_no_pending_row(owner, database, app):
     with database.sessions() as db:
         row = db.scalar(select(AIUsage))
         assert row.model == "unknown" and row.feature == "note_summary:failed" and row.input_tokens == 0
+
+
+def test_refusal_keeps_the_stale_reservation_sweep(owner, database):
+    """`refuse` commits (not rolls back), so a 429 still keeps the sweep of abandoned reservations."""
+    client, _ = owner
+    note = _note(client)
+    _stale_pending(database, 10, timedelta(hours=1))
+    with database.sessions() as db:
+        tenant = db.scalar(select(Tenant))
+        db.add(AIUsage(tenant_id=tenant.id, feature="x", model="fake", input_tokens=100_000, output_tokens=0))
+        db.commit()
+    assert client.post(f"/api/notes/{note['id']}/summarize").json()["error"] == "ai_cap_reached"
+    with database.sessions() as db:
+        assert db.scalar(select(AIUsage).where(AIUsage.model == "pending")) is None
+        assert db.scalar(select(AIUsage).where(AIUsage.model == "abandoned")) is not None
+
+
+def test_a_call_that_settles_after_being_swept_restores_its_real_cost(owner, database):
+    from app.ai import release_stale_reservations, settle
+    _stale_pending(database, 500, timedelta(hours=1))
+    with database.sessions() as db:
+        row = db.scalar(select(AIUsage))
+        rid = row.id
+        assert release_stale_reservations(db) == 1
+        db.commit()
+        settle(db, rid, "note_summary", 300, 40, "m")
+        assert db.get(AIUsage, rid).input_tokens == 300 and db.get(AIUsage, rid).model == "m"

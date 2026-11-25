@@ -479,7 +479,8 @@ def reserve(db: Session, tenant_id: uuid.UUID, cap: int, estimate: int, feature:
     """Reserve an upper-bound estimate before calling the model, under Postgres advisory locks, so concurrent
     calls see each other's reservations. A call is refused if it *would* cross any cap: the plan's monthly
     allowance, a daily cap (trials), or the studio-wide daily budget. At most `max_in_flight` calls per tenant
-    run at once. Commits, so no transaction stays open during the AI call."""
+    run at once. Commits (also when it refuses, which keeps the stale-reservation sweep), so no transaction stays
+    open during the AI call and the caller must not have uncommitted writes of its own when it calls this."""
     db.execute(text("SELECT pg_advisory_xact_lock(CAST(:key AS bigint))"), {"key": _tenant_lock(tenant_id)})
     if global_daily_cap is not None:
         db.execute(text("SELECT pg_advisory_xact_lock(CAST(:key AS bigint))"), {"key": GLOBAL_LOCK})
