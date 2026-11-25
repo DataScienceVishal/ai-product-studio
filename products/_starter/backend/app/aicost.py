@@ -3,7 +3,7 @@
 Used in two places with one rule: the app refuses to start (config.py) and `infra/cost-guard.sh` refuses to deploy
 (it runs this file: `python3 -I aicost.py check ...`) when
 
-    worst-case monthly cost = AI_GLOBAL_DAILY_TOKENS x 30 x price per million tokens / 1,000,000
+    worst-case monthly cost = AI_GLOBAL_DAILY_TOKENS x 31 x price per million tokens / 1,000,000
 
 is above AI_MONTHLY_BUDGET_USD. Only AI_GLOBAL_DAILY_TOKENS is used: every call is checked against it before it runs
 (ai.py, reserve), so it bounds all tenants together, whatever the per-tenant caps add up to.
@@ -17,13 +17,14 @@ import argparse
 import math
 import sys
 
-# The Azure OpenAI line in state/BUDGET.md ($6.10 a month) is the default. The studio's whole Azure credit is $80
+# The Azure OpenAI line in state/BUDGET.md (at most about $6 a month: 100,000 tokens x $2.00 per million x 31 days =
+# $6.20) is the default. The studio's whole Azure credit is $80
 # (CLAUDE.md section 10); raising this needs Vishal's approval.
-DEFAULT_MONTHLY_BUDGET_USD = 6.10
-DAYS_PER_MONTH = 30
+DEFAULT_MONTHLY_BUDGET_USD = 6.20
+DAYS_PER_MONTH = 31  # the longest month, so the figure is a true worst case
 
 # Blended USD per million tokens, by deployment name (lower case, exact match). These are ESTIMATES, checked
-# 2026-11-25, from the vendors' list prices as recorded in state/BUDGET.md (OpenAI model pages, Microsoft Foundry
+# 2026-11-25 (Global deployments; Data Zone and Regional ones list about 10% higher, not modelled), from the vendors' list prices as recorded in state/BUDGET.md (OpenAI model pages, Microsoft Foundry
 # launch posts). Each figure is the OUTPUT price, which is what a capped token costs at worst (reasoning tokens
 # bill as output), so the blend is conservative. gpt-5.4-pro is $30 in / $180 out: 180 is the conservative figure.
 # An agreement or a different region can change real prices; the Azure spend report is the final word. A deployment
@@ -50,14 +51,19 @@ def parse_price(value: object) -> float:
 
 
 def resolve_price(deployment: str, explicit_price: object = None) -> float:
-    """The explicit price if given (it wins over the table), else the table's, else ValueError."""
+    """For a deployment in the table: the larger of the table price and the explicit price, so an explicit setting
+    can raise the price but never lower it (lowering needs a reviewed change to the table). For an unknown
+    deployment: the explicit price, or ValueError."""
+    explicit = None
     if explicit_price is not None and str(explicit_price).strip() != "":
-        return parse_price(explicit_price)
+        explicit = parse_price(explicit_price)
     known = MODEL_PRICES_PER_MILLION.get((deployment or "").strip().lower())
-    if known is None:
-        raise ValueError("the AI deployment is not in the price table (app/aicost.py): set AI_PRICE_PER_MILLION_TOKENS "
-                         "to its blended USD price per million tokens, using its output price to be safe")
-    return known
+    if known is not None:
+        return known if explicit is None else max(known, explicit)
+    if explicit is not None:
+        return explicit
+    raise ValueError("the AI deployment is not in the price table (app/aicost.py): set AI_PRICE_PER_MILLION_TOKENS "
+                     "to its blended USD price per million tokens, using its output price to be safe")
 
 
 def monthly_cost(daily_tokens: int, price: float) -> float:

@@ -10,15 +10,15 @@
 #     hour, and an expression (a parameter) can't be checked here;
 #   - a custom network for the environment (vnetConfiguration, infrastructureSubnetId): about $25.55 a month;
 #   - any Microsoft.Network resource, private endpoint or planned maintenance window ($0.10 an hour each);
-#   - a template with an aiGlobalDailyTokens parameter whose default gives tokens a day x price per million x 30
-#     above AI_MONTHLY_BUDGET_USD (default 6.10, the Azure OpenAI line in state/BUDGET.md). The price is the
-#     explicit AI_PRICE_PER_MILLION_TOKENS / aiPricePerMillionTokens if set, else the table price of the deployment
+#   - a template with an aiGlobalDailyTokens parameter whose default gives tokens a day x price per million x 31
+#     above AI_MONTHLY_BUDGET_USD (default 6.20, the Azure OpenAI line in state/BUDGET.md). The price is the
+#     explicit AI_PRICE_PER_MILLION_TOKENS / aiPricePerMillionTokens (it can only raise a table price), else the table price of the deployment
 #     in AZURE_OPENAI_DEPLOYMENT (backend/app/aicost.py); with AI_PROVIDER=azure an unknown deployment and no
 #     explicit price is refused. The deploy workflow passes AI_PROVIDER, AZURE_OPENAI_DEPLOYMENT and the optional
 #     AI_PRICE_PER_MILLION_TOKENS; none of them is printed.
 set -euo pipefail
 
-AI_MONTHLY_BUDGET_USD="${AI_MONTHLY_BUDGET_USD:-6.10}"
+AI_MONTHLY_BUDGET_USD="${AI_MONTHLY_BUDGET_USD:-6.20}"
 AICOST="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../backend/app/aicost.py"
 command -v python3 >/dev/null 2>&1 || { echo "::error::cost-guard: python3 is needed for the AI cost rule" >&2; exit 2; }
 [ -f "$AICOST" ] || { echo "::error::cost-guard: backend/app/aicost.py is missing" >&2; exit 2; }
@@ -45,7 +45,7 @@ for template in "$@"; do
   types=$(jq -r '[.. | objects | select((.type | type) == "string") | .type | select(test("^Microsoft\\.Network/|maintenanceConfigurations|privateEndpoint"; "i"))] | unique | join(", ")' "$template")
   [ -z "$types" ] || report "$name" "billable resource type: $types"
 
-  # Tokens a day x price per million x 30 must stay within the monthly AI budget. The rule lives in one place,
+  # Tokens a day x price per million x 31 must stay within the monthly AI budget. The rule lives in one place,
   # backend/app/aicost.py (the app enforces it at startup too). The price is, in order: AI_PRICE_PER_MILLION_TOKENS
   # from the environment, the template's aiPricePerMillionTokens default, or the price table's entry for the
   # deployment the workflow deploys (AZURE_OPENAI_DEPLOYMENT, else the template default). With AI_PROVIDER=azure
@@ -61,7 +61,7 @@ for template in "$@"; do
     if [ -z "$tokens" ]; then
       report "$name" "aiGlobalDailyTokens must exist with a default to check the AI budget"
     elif [ -n "$price" ] || [ "${AI_PROVIDER:-}" = azure ]; then
-      if ! out=$(python3 -I "$AICOST" check --deployment "$deployment" --price "$price" --tokens "$tokens" --budget "$AI_MONTHLY_BUDGET_USD" 2>&1); then
+      if ! out=$(python3 -I "$AICOST" check --deployment="$deployment" --price="$price" --tokens="$tokens" --budget="$AI_MONTHLY_BUDGET_USD" 2>&1); then
         report "$name" "$out"
       fi
     fi

@@ -33,8 +33,8 @@ def test_no_ai_parameters_pass(tmp_path):
 
 
 @pytest.mark.parametrize("tokens, price, budget, code", [
-    (101666, "2.00", None, 0), (101667, "2.00", None, 1), (100000, "120", None, 1), (1690, "120", None, 0),
-    (1700, "120", None, 1), (100000, "2.00", "1", 1), (100000, "2.00", "20", 0),
+    (100000, "2.00", None, 0), (100001, "2.00", None, 1), (100000, "120", None, 1), (1666, "120", None, 0),
+    (1667, "120", None, 1), (100000, "2.00", "1", 1), (100000, "2.00", "20", 0),
 ])
 def test_budget_boundary(tmp_path, tokens, price, budget, code):
     assert run(tmp_path, ai(tokens, price), budget=budget)[0] == code
@@ -42,7 +42,7 @@ def test_budget_boundary(tmp_path, tokens, price, budget, code):
 
 def test_over_budget_message_shows_two_decimals(tmp_path):
     code, out = run(tmp_path, ai(100000, "120"))
-    assert code == 1 and "$360.00 a month" in out and "$6.10 AI budget" in out
+    assert code == 1 and "$372.00 a month" in out and "$6.20 AI budget" in out
 
 
 @pytest.mark.parametrize("tokens, price, words", [
@@ -92,7 +92,7 @@ AZURE = {"AI_PROVIDER": "azure"}
 
 def test_pro_deployment_from_env_fails_at_default_cap_without_printing_it(tmp_path):
     code, out = run(tmp_path, table_ai(), env_extra={**AZURE, "AZURE_OPENAI_DEPLOYMENT": "gpt-5.4-pro"})
-    assert code == 1 and "$540.00 a month" in out and "gpt-5.4-pro" not in out
+    assert code == 1 and "$558.00 a month" in out and "gpt-5.4-pro" not in out
 
 
 def test_known_cheap_deployment_passes(tmp_path):
@@ -109,11 +109,19 @@ def test_unknown_deployment_with_explicit_env_price_passes(tmp_path):
     assert run(tmp_path, table_ai(), env_extra=env)[0] == 0
 
 
-def test_explicit_env_price_overrides_table_in_both_directions(tmp_path):
+def test_explicit_env_price_can_only_raise_a_table_price(tmp_path):
     over = {**AZURE, "AZURE_OPENAI_DEPLOYMENT": "gpt-5-mini", "AI_PRICE_PER_MILLION_TOKENS": "180"}
     assert run(tmp_path, table_ai(), env_extra=over)[0] == 1
-    under = {**AZURE, "AZURE_OPENAI_DEPLOYMENT": "gpt-5.4-pro", "AI_PRICE_PER_MILLION_TOKENS": "2.00"}
-    assert run(tmp_path, table_ai(), env_extra=under)[0] == 0
+    low = {**AZURE, "AZURE_OPENAI_DEPLOYMENT": "gpt-5.4-pro", "AI_PRICE_PER_MILLION_TOKENS": "0.0001"}
+    assert run(tmp_path, table_ai(), env_extra=low)[0] == 1  # the bypass the review found
+    assert run(tmp_path, table_ai(price="0.0001"), env_extra={**AZURE, "AZURE_OPENAI_DEPLOYMENT": "gpt-5.4-pro"})[0] == 1
+
+
+def test_dash_deployment_name_is_a_value_and_nothing_leaks(tmp_path):
+    code, out = run(tmp_path, table_ai(), env_extra={**AZURE, "AZURE_OPENAI_DEPLOYMENT": "--secret-name",
+                                                      "AZURE_OPENAI_API_KEY": "SUPERSECRETKEY123"})
+    assert code == 1 and "price table" in out and "usage:" not in out
+    assert "secret-name" not in out and "SUPERSECRETKEY123" not in out
 
 
 @pytest.mark.parametrize("price", ["nan", "inf", "0", "-3", "abc"])

@@ -19,7 +19,8 @@ MAX_TIMEOUT_SECONDS = 600.0  # the frontend also clamps to this (a larger setTim
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # hide_input_in_errors: a validation error must never echo the settings (API key, deployment name) into the logs
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
 
     env: Literal["dev", "test", "prod"] = "dev"
     app_name: str = "starter"
@@ -93,7 +94,7 @@ class Settings(BaseSettings):
     # price table in aicost.py"; an unknown deployment then needs this set. Set, it overrides the table. Only checked
     # with AI_PROVIDER=azure: the fake provider costs nothing.
     ai_price_per_million_tokens: float | None = Field(default=None, gt=0, allow_inf_nan=False)
-    # The app refuses to start when ai_global_daily_tokens x 30 x the price is above this (aicost.py). 6.10 is the
+    # The app refuses to start when ai_global_daily_tokens x 31 x the price is above this (aicost.py). 6.20 is the
     # Azure OpenAI line in state/BUDGET.md, inside the studio's $80 credit. Raising it needs Vishal's approval.
     ai_monthly_budget_usd: float = Field(default=DEFAULT_MONTHLY_BUDGET_USD, gt=0, allow_inf_nan=False)
     ai_trial_share: float = 0.5  # all free trials together may use at most this share of the global budget
