@@ -135,8 +135,12 @@ def test_shipped_defaults_match_and_fit_the_approved_budget():
     assert aicost.DEFAULT_MONTHLY_BUDGET_USD <= 6.10
     bicep = (Path(__file__).resolve().parents[2] / "infra" / "main.bicep").read_text()
     bicep_cap = int(re.search(r"^param aiGlobalDailyTokens int = (\d+)$", bicep, re.M).group(1))
+    bicep_deployment = re.search(r"^param azureOpenAiDeployment string = '([^']+)'$", bicep, re.M).group(1)
     app_cap = Settings.model_fields["ai_global_daily_tokens"].default
     assert bicep_cap == app_cap
-    assert check_ai_budget("gpt-5-mini", None, app_cap, aicost.DEFAULT_MONTHLY_BUDGET_USD) <= 6.10
+    assert check_ai_budget(bicep_deployment, None, app_cap, aicost.DEFAULT_MONTHLY_BUDGET_USD) <= 6.10
+    env_example = (Path(__file__).resolve().parents[2] / ".env.example").read_text()
+    assert re.search(r"^AI_GLOBAL_DAILY_TOKENS=(\d+)$", env_example, re.M).group(1) == str(app_cap)
+    assert f"# AI_MONTHLY_BUDGET_USD={aicost.DEFAULT_MONTHLY_BUDGET_USD:.2f}" in env_example
     guard = (Path(__file__).resolve().parents[2] / "infra" / "cost-guard.sh").read_text()
     assert f'AI_MONTHLY_BUDGET_USD:-{aicost.DEFAULT_MONTHLY_BUDGET_USD:.2f}' in guard

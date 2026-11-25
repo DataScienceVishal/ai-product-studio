@@ -7,7 +7,7 @@ really read (blank = unset; nan, inf, <= 0 rejected); `infra/cost-guard.sh` uses
 `aiPricePerMillionTokens` defaults to empty and is passed to the app only when set. Tests: `tests/test_aicost.py`, extended
 `tests/test_cost_guard.py`; mutation-checked (budget comparison loosened, unknown-model check dropped, startup check disabled: each failed a test).
 Heads-up: with the default gpt-5.4-pro secret, an `ai_provider=azure` deploy now FAILS at the check job until `aiGlobalDailyTokens` is lowered
-to about 1,100 (which allows zero calls: the smallest reservation is 1,504 tokens), i.e. AI is effectively off, or a cheaper deployment is used, or Vishal raises the budget. Not done: Bicep not compiled here (no `az`); the workflow change is untested on GitHub.
+to about 1,093 since T-95 (which allows zero calls: the smallest reservation is 1,504 tokens), i.e. AI is effectively off, or a cheaper deployment is used, or Vishal raises the budget. Not done: Bicep not compiled here (no `az`); the workflow change is untested on GitHub.
 
 # T-76 portal follow-ups status (branch p/_starter/T-76-portal-followups)
 

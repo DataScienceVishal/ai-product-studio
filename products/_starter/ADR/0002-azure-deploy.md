@@ -226,7 +226,7 @@ needs Vishal's approval.
   is spent until someone chooses `azure`. Even then `AI_GLOBAL_DAILY_TOKENS=98000` bounds the spend: every
   call reserves its upper-bound estimate and is refused if it would cross the budget, and since the R14 fix a
   call that was sent is never retried, so the tokens counted are the tokens billed. 98,000 tokens cost at
-  most $0.20 a day even if every one were output ($2.00 per million). Trials together get half.
+  most $0.196 a day even if every one were output ($2.00 per million). Trials together get half.
 - **Built (T-17), not yet switched on:** `AZURE_OPENAI_AUTH=managed_identity` (default `key`) makes `ai.py` fetch
   a bearer token from the Container Apps identity endpoint (`IDENTITY_ENDPOINT` with `X-IDENTITY-HEADER`,
   api-version 2019-08-01, `AZURE_CLIENT_ID` for a user-assigned identity) and send `Authorization: Bearer`
