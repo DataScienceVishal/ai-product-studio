@@ -137,3 +137,8 @@ Supplier-side free substitute (from the validator, not rechecked): Bidfood MyRec
 - The "£30 to £50 for independents" wedge is unsupported and sits at or below Profito's entry tier.
 - Not done: the validator's item 4 (a 50-invoice synthetic accuracy benchmark). That is build work, not desk research.
 - Scout's view: a re-score is unlikely to move Competition above about 3 and so unlikely to reach the pass bar. Spending the idea's last attempt looks poor value unless a new angle appears, for example a channel Jelly does not serve or an accountant-led offer. None was found.
+
+
+## Proof-test kill test (T-80, pre-registered 2026-11-25, before any test run)
+
+Full text: `products/restaurant-margin-copilot/KILL-TEST.md` (validator, run d8d4). Bars fixed before results: PASS needs line accuracy ≥95% overall, ≥90% distorted, ≥90% held-out layouts, reconciliation ≥90%, ≤1 unflagged wrong invoice, ≤$0.02/page, p95 ≤90 s, ≤2% failed pages. KILL on any of: overall <88%, distorted <80%, held-out <80%, ≥3 unflagged wrong invoices, >$0.05/page, >5% failures. A full PASS caps the score at 69 (Competition stays 3); reaching 70 also needs a measured gap vs Jelly (T-81).
