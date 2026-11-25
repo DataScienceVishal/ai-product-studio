@@ -156,8 +156,8 @@ Postgres firewall rule. `bash infra/test-deploy-role.sh` checks all this without
   `rg-ai-studio`; SETUP.md step 3) when `AZURE_SPEND_CLIENT_ID` is set. Until then it falls back to the deploy
   identity, then to the `AZURE_COST_CREDENTIALS` service principal, which this role does not cover. Removing that
   fallback is the follow-up after one green run with the spend identity.
-- Once the spend identity is live, `Microsoft.CostManagement/query/read` in `deploy-role.bicep` can be dropped
-  (the deploy identity no longer runs the cost query). Not changed yet.
+- Once the spend identity is live, both `Microsoft.CostManagement/query/action` and `Microsoft.CostManagement/query/read`
+  in `deploy-role.bicep` can be dropped (the deploy identity no longer runs the cost query). Not changed yet.
 
 ### Rolling back
 
