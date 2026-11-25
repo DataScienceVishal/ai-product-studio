@@ -261,3 +261,5 @@ Reviewer PASS on p/_starter/T-78-mock-portal-scheme (9ca11e6); merged. Two cosme
 - IDN email policy (T-86 bug 5): the starter accepts ASCII-only email addresses at signup and invitations, with a clear 422. Reason: deliverability, and no NFC/NFD duplicate accounts. Reversible: a product with non-ASCII buyers can relax it with normalisation.
 - Trailing-slash URLs: redirect_slashes off, so `/api/notes/` gives 404 rather than a 307 to an absolute http URL. Signed-in /login redirects to the dashboard; unknown paths get a 404 page.
 - 2026-11-25T14:58Z run e652: T-87 merged (7f0918d) after re-review PASS. A note body that is only whitespace or invisible characters is saved as "" rather than refused (reviewer R1: the form gives no field-level error). Signed-in /login honours a safe ?next=. The blank-page edge case on /login?next=/login is queued as T-88 instead of being fixed without review.
+
+- 2026-11-25T15:26Z run b795 (T-88): fixed S7 inside safeNext() rather than only in the App effect, so every post-sign-in navigate refuses /login and /signup and falls back to "/". Reviewer nits queued as a new low task.
