@@ -24,8 +24,12 @@ from .conftest import PASSWORD, TEST_DB, sign_up
 @pytest.fixture
 def selling_unlocked(monkeypatch):
     """Simulates the configuration after `unlock selling`: live Stripe plans are paid, so not trial-limited."""
+    import app.billing as billing
+    import app.routes.billing as billing_routes
     import app.routes.notes as notes
-    monkeypatch.setattr(notes, "LIMITED_PROVIDERS", {"mock"})
+    unlocked = {"mock"}  # every module that reads the set sees the same unlocked value (T-99)
+    for module in (billing, billing_routes, notes):
+        monkeypatch.setattr(module, "LIMITED_PROVIDERS", unlocked)
 
 
 # --- C1: no pooled connection is held while the AI works ----------------------------------------
