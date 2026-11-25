@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { api, ApiError, formatPrice, type Me, type Note, type Plan } from "../api";
 import { Alert, Button, Card, Field, Link, navigate } from "../ui";
+import { BAD_REDIRECT, safeRedirect } from "../redirect";
 
 const SAMPLE_NOTES = [
   { title: "Supplier price rise", body: "Our flour supplier is raising prices by 8% from next month. Bread and pastry margins drop from 68% to 63% unless we change prices or find another supplier." },
@@ -171,7 +172,7 @@ export function Billing({ me, refresh }: { me: Me; refresh: () => Promise<void> 
       if (checkout.checkout_id.startsWith("mock_")) {
         navigate(`/billing/mock-checkout?session=${encodeURIComponent(checkout.checkout_id)}`);
       } else {
-        window.location.assign(checkout.url);
+        if (!safeRedirect(checkout.url)) setError(BAD_REDIRECT);
       }
     } catch (err) {
       setError(errorText(err));
@@ -180,12 +181,16 @@ export function Billing({ me, refresh }: { me: Me; refresh: () => Promise<void> 
     }
   };
 
+  const verified = me.user.email_verified;
   const openPortal = async () => {
     setPortalBusy(true);
     setError(null);
     try {
       const portal = await api<{ url: string }>("/api/billing/portal", { method: "POST" });
-      window.location.assign(portal.url);
+      if (!safeRedirect(portal.url)) {
+        setError(BAD_REDIRECT);
+        setPortalBusy(false);
+      }
     } catch (err) {
       setError(errorText(err));
       setPortalBusy(false);  // on success the page navigates away, so the button stays disabled until then
@@ -203,7 +208,9 @@ export function Billing({ me, refresh }: { me: Me; refresh: () => Promise<void> 
         )}
         <div className="mt-3 flex flex-wrap gap-2">
           <Button variant="secondary" onClick={() => void refresh()}>Refresh</Button>
-          {isOwner && <Button variant="secondary" busy={portalBusy} onClick={() => void openPortal()}>Manage billing</Button>}
+          {isOwner && <Button variant="secondary" busy={portalBusy} disabled={!verified}
+            onClick={() => void openPortal()}>Manage billing</Button>}
+          {isOwner && !verified && <span className="self-center text-sm text-slate-600">Verify your email to manage billing</span>}
         </div>
       </Card>
       {error && <Alert>{error}</Alert>}
@@ -252,6 +259,17 @@ export function MockCheckout({ refresh }: { refresh: () => Promise<void> }) {
         <Button busy={busy} onClick={pay}>Pay (test)</Button>
         <Button variant="secondary" onClick={() => navigate("/billing")}>Cancel</Button>
       </div>
+    </Card>
+  );
+}
+
+export function MockPortal() {
+  const customer = new URLSearchParams(window.location.search).get("customer") ?? "";
+  return (
+    <Card title="Mock billing portal">
+      <p className="mb-2 text-slate-700">This is the mock billing portal used in demos and development. With Stripe, the real customer portal opens here instead.</p>
+      <p className="mb-4 text-sm text-slate-600">Customer ref: <code>{customer || "(none)"}</code></p>
+      <Link to="/billing">Back to billing</Link>
     </Card>
   );
 }

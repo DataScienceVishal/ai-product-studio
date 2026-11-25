@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { reply, stubFetch, makeMe } from "../test-utils";
-import { Billing, BillingDone, MockCheckout } from "./app";
+import { Billing, BillingDone, MockCheckout, MockPortal } from "./app";
 
 const PLANS = { plans: [{ id: "pro", name: "Pro", price_pence: 4900, currency: "gbp", interval: "month", ai_monthly_tokens: 1000000 }] };
 
@@ -151,6 +151,60 @@ describe("MockCheckout (billing return)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Pay (test)" }));
     expect((await screen.findByRole("alert")).textContent).toBe("Unknown checkout.");
     expect(window.location.pathname).toBe("/billing/mock-checkout");
+  });
+});
+
+describe("MockPortal (/billing/mock-portal)", () => {
+  it("says it is the mock portal, shows the customer ref and links back to billing", () => {
+    window.history.replaceState({}, "", "/billing/mock-portal?customer=mock_cus_42");
+    render(<MockPortal />);
+    expect(screen.getByRole("heading", { name: "Mock billing portal" })).toBeTruthy();
+    expect(screen.getByText("mock_cus_42")).toBeTruthy();
+    const link = screen.getByRole("link", { name: "Back to billing" });
+    fireEvent.click(link);
+    expect(window.location.pathname).toBe("/billing");
+  });
+});
+
+describe("Billing: unsafe redirects and unverified owners", () => {
+  it("refuses a javascript: portal url, shows an error and re-enables the button", async () => {
+    const assign = vi.fn();
+    vi.stubGlobal("location", { ...window.location, assign });
+    fetchMock.mockResolvedValueOnce(reply(200, PLANS));
+    fetchMock.mockResolvedValueOnce(reply(200, { url: "javascript:alert(1)" }));
+    render(<Billing me={makeMe()} refresh={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Manage billing" }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/unexpected billing link/i);
+    expect(assign).not.toHaveBeenCalled();
+    expect((screen.getByRole("button", { name: "Manage billing" }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("refuses an http://evil checkout url", async () => {
+    const assign = vi.fn();
+    vi.stubGlobal("location", { ...window.location, assign });
+    fetchMock.mockResolvedValueOnce(reply(200, PLANS));
+    fetchMock.mockResolvedValueOnce(reply(200, { checkout_id: "cs_1", url: "http://evil.example/pay" }));
+    render(<Billing me={makeMe()} refresh={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Choose Pro" }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/unexpected billing link/i);
+    expect(assign).not.toHaveBeenCalled();
+  });
+
+  it("disables Manage billing with a hint when the owner's email is unverified", async () => {
+    fetchMock.mockResolvedValueOnce(reply(200, PLANS));
+    const me = makeMe();
+    me.user.email_verified = false;
+    render(<Billing me={me} refresh={vi.fn()} />);
+    const button = (await screen.findByRole("button", { name: "Manage billing" })) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(screen.getByText("Verify your email to manage billing")).toBeTruthy();
+  });
+
+  it("shows no hint for a verified owner", async () => {
+    fetchMock.mockResolvedValueOnce(reply(200, PLANS));
+    render(<Billing me={makeMe()} refresh={vi.fn()} />);
+    await screen.findByRole("button", { name: "Manage billing" });
+    expect(screen.queryByText(/verify your email/i)).toBeNull();
   });
 });
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { api, ApiError, SESSION_ENDED, type Me } from "./api";
-import { Billing, BillingDone, Dashboard, Help, MockCheckout, Settings } from "./pages/app";
+import { Billing, BillingDone, Dashboard, Help, MockCheckout, MockPortal, Settings } from "./pages/app";
 import { Privacy, Terms } from "./pages/legal";
 import { ForgotPassword, ResetPassword, SignIn, SignUp, VerifyEmail } from "./pages/auth";
 import { AcceptInvite, Team } from "./pages/team";
@@ -62,6 +62,7 @@ export default function App() {
       {path === "/billing" ? <Billing me={me} refresh={refresh} />
         : path === "/billing/done" ? <BillingDone me={me} refresh={refresh} />
         : path === "/billing/mock-checkout" ? <MockCheckout refresh={refresh} />
+        : path === "/billing/mock-portal" ? <MockPortal />
         : path === "/settings" ? <Settings me={me} onDeleted={() => setMe(null)} />
         : path === "/team" ? <Team me={me} />
         : path === "/help" ? <Help />

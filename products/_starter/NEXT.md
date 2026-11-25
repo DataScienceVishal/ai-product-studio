@@ -1,3 +1,11 @@
+# T-76 portal follow-ups status (branch p/_starter/T-76-portal-followups)
+
+Done (T-75 review suggestions 1-3): `MockPortal` page at `/billing/mock-portal` (route in App.tsx and in `spa.py` client routes);
+`frontend/src/redirect.ts` `safeRedirect()` used for both checkout and portal (https: or same-origin only, else a visible error and no
+navigation; vitest incl. javascript:, http://evil, //evil; mutation-checked by removing the guard: 6 tests failed);
+"Manage billing" disabled with "Verify your email to manage billing" for unverified owners (uses `me.user.email_verified`, already in /api/auth/me).
+Not done: review suggestion 4 (tests/dbutil.py). Checkout "Choose" buttons are not disabled for unverified owners (server still returns 403).
+
 # T-75 billing follow-ups status (branch p/_starter/T-75-billing-followups, on top of T-74)
 
 Done: T-73 review S1 (past_due refusal only for this provider's own ref), S2 (message names the portal; `POST /api/billing/portal`
