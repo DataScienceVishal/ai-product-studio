@@ -199,3 +199,7 @@ Append only. One line per decision:
 - Signed but malformed billing events return 400 (not 200-and-log): a real Stripe event always parses, so failure means our parser is wrong, and Stripe's ~3-day retries let a fix still apply the event. Reviewer agreed.
 - On equal event timestamps a cancellation already applied wins over a later activation: wrongly reactivating costs money, a wrongly kept cancellation is fixed by the next newer event.
 - Reviewer's one behavioural nit (strip login/reset emails before the control-char check) applied by the Studio Lead without a second review, as it was the reviewer's exact suggested edit, with a test that fails without it and a green full suite.
+
+## 2026-11-25T04:44Z run 8e83: T-72 subscription ref rules
+- Only events that start a subscription (checkout completed, subscription created) may replace a tenant's subscription id; every other event for a non-current id is ignored. Reason: an old subscription's late cancel, past_due or recovery must never change a customer who has moved to a new one (reviewer reproduced the recovery case).
+- Active events with an unknown or trial plan get 400 before the event id is recorded, so Stripe's retry applies the event once our plan map is fixed. Pending AI reservations older than 15 minutes count as abandoned (a killed process's cost stops counting after 15 min; a late settle restores the real cost).
