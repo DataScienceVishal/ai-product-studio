@@ -10,7 +10,7 @@
   Nothing is created until Vishal approves the costs. Products inherit this design. Change it only with a
   new ADR.
 - Files: `infra/` (Bicep, SQL, scripts, runbook) and `.github/workflows/_starter-deploy.yml`.
-- Prices are estimates for uksouth, read on 2026-11-23 from Microsoft's Retail Prices API and pricing docs
+- Prices are estimates read for uksouth (the resource group region; resources are in francecentral, see "Region (T-61)"), read on 2026-11-23 from Microsoft's Retail Prices API and pricing docs
   (sources at the end). They change; the daily spend report (T-2) shows what is really billed.
 
 ## The picture
@@ -19,7 +19,7 @@
             GitHub Actions (_starter-deploy.yml, manual)                     the browser
             build ─► scan ─► push ─► deploy ─► migrate ─► smoke ─► traffic ─► purge job  │ https only
                                │        │         │                                      ▼
-  rg-ai-studio (uksouth)       ▼        ▼         ▼                       ┌──────────────────────────┐
+  rg-ai-studio (meta uksouth)▼        ▼         ▼                       ┌──────────────────────────┐
   ┌──────────────────┐   ┌──────────────────────────────────────────┐   │ ca-starter (one origin)   │
   │ acrstudioznp96r  │◄──┤ cae-studio: Container Apps environment     │   │  /api, /livez, /healthz   │
   │ registry, Basic  │   │ Consumption profile only, scale to zero    ├──►│  (+ the built SPA after   │
@@ -421,7 +421,7 @@ deployment the release will use, before any Azure sign-in. Only the global cap i
 
 ## Monthly cost
 
-Estimates, uksouth, one demo product plus the shared pieces.
+Estimates (figures read for uksouth, checked against francecentral), one demo product plus the shared pieces.
 
 | Resource | Settings | $ a month | Worked out from |
 |---|---|---|---|
@@ -523,7 +523,7 @@ OpenAI through a managed identity), T-18 (passwordless Postgres, which ends deci
 - Log destinations and categories: https://learn.microsoft.com/en-us/azure/container-apps/log-options; the HTTP log table: https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/containerapphttplogs; retention: https://learn.microsoft.com/en-us/azure/azure-monitor/logs/data-retention-configure
 - Container Apps October 2026 updates (meter renames, logging destination): https://github.com/microsoft/azure-container-apps/issues/1886; maintenance-window charge report: https://learn.microsoft.com/en-us/answers/questions/6066720/is-a-planned-maintenance-window-honored-and-billed
 - Outbound IP list incomplete (user report, May 2026): https://learn.microsoft.com/en-us/answers/questions/5879132/azure-container-app-outbound-address
-- Prices: Azure Retail Prices API (https://prices.azure.com/api/retail/prices, documented at https://learn.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices), uksouth, queried 2026-11-23. The pricing pages at azure.microsoft.com/pricing didn't render figures
+- Prices: Azure Retail Prices API (https://prices.azure.com/api/retail/prices, documented at https://learn.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices), read for uksouth (resources are in francecentral; see "Region (T-61)"), queried 2026-11-23. The pricing pages at azure.microsoft.com/pricing didn't render figures
 - Azure for Students free services and terms: https://azure.microsoft.com/en-us/free/students/, https://azure.microsoft.com/en-us/pricing/offers/ms-azr-0170p/, https://learn.microsoft.com/en-us/azure/education-hub/about-azure-for-students
 - Postgres firewall ("Allow Azure services" warning): https://learn.microsoft.com/en-us/azure/postgresql/security/security-firewall-rules
 - Postgres TLS (verify-full, root CAs, TLS 1.3): https://learn.microsoft.com/en-us/azure/postgresql/security/security-tls
