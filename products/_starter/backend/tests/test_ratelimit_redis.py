@@ -301,7 +301,6 @@ def test_second_lifespan_on_the_same_app_works(app, monkeypatch):
         with TestClient(new_app) as c:
             r = c.post("/api/auth/login", json={"email": "nobody@b.test", "password": "x" * 12}, headers=HDRS)
             assert r.status_code == 401, r.text
-            assert threading.active_count() >= 1
 
 
 def test_request_id_is_visible_inside_the_pool_thread(server):
@@ -401,7 +400,7 @@ def test_queue_wait_is_bounded_and_late_waiters_use_the_memory_check(server, cap
     assert any("queue timeout" in r.getMessage() for r in caplog.records)
     assert leaked == [False] * n  # the fallback ran in a copied context; no caller's context is marked
     time.sleep(0.7)  # let the running job end; withdrawn ones must not run later
-    assert calls == ["k0"] or len(calls) == 1, calls  # only the job that was already running touched Redis
+    assert len(calls) == 1, calls  # only the job that was already running touched Redis
     limiter.shutdown()
 
 
@@ -456,3 +455,56 @@ def test_open_breaker_skips_the_pool(server):
     asyncio.run(go())
     assert seen == [threading.main_thread()] and limiter._executor is None
     assert leaked == [False]  # the caller's context is not left marked as "Redis is down"
+
+
+def _queue_two_then_shutdown(limiter, hold=0.4):
+    """Returns coroutine pieces: gate "a" occupies the only thread, gate "b" is queued, then shutdown cancels "b"."""
+    async def start():
+        first = asyncio.ensure_future(ratelimit.off_loop(_req(limiter), lambda: limiter.check("a", 5)))
+        await asyncio.sleep(0.05)
+        second = asyncio.ensure_future(ratelimit.off_loop(_req(limiter), lambda: limiter.check("b", 5)))
+        await asyncio.sleep(0.05)
+        limiter.shutdown()  # cancel_futures=True drops the queued job of "b"
+        return first, second
+    return start
+
+
+def test_shutdown_while_gate_is_queued_answers_from_memory_not_cancelled(server):
+    """S3: pool shutdown cancels the queued future, but the request task is alive: it gets the in-memory answer."""
+    calls: list[str] = []
+    limiter = _slow_gate_limiter(server, calls, delay=0.4, timeout=5)
+
+    async def go():
+        first, second = await _queue_two_then_shutdown(limiter)()
+        await second  # must not raise CancelledError
+        assert "b" in limiter._hits  # counted by the in-memory limiter
+        await first
+
+    asyncio.run(go())
+    assert calls == ["a"]  # "b" never touched Redis
+    assert ratelimit._skip_redis.get() is False
+
+
+def test_cancelled_request_task_still_gets_cancelled_error_when_future_is_cancelled(server, monkeypatch):
+    """S3: if the request task is itself being cancelled, CancelledError propagates and no fallback gate runs."""
+    calls: list[str] = []
+    limiter = _slow_gate_limiter(server, calls, delay=0.4, timeout=5)
+    real_wait = asyncio.wait
+
+    async def wait_then_cancel_self(fs, timeout=None):
+        result = await real_wait(fs, timeout=timeout)
+        if all(f.cancelled() for f in result[0]):
+            asyncio.current_task().cancel()  # the task is now cancelling, as if cancelled just as the pool shut down
+        return result
+
+    monkeypatch.setattr(ratelimit.asyncio, "wait", wait_then_cancel_self)
+
+    async def go():
+        first, second = await _queue_two_then_shutdown(limiter)()
+        with pytest.raises(asyncio.CancelledError):
+            await second
+        assert second.cancelled()
+        assert "b" not in limiter._hits  # no fallback answer for a cancelled request
+        await first
+
+    asyncio.run(go())

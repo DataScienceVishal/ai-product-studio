@@ -307,8 +307,9 @@ def test_failed_checkout_drops_the_cached_coupon_so_the_next_one_rechecks_it():
     assert OFFERS["EARLY50"].coupon_id in stripe._coupons
 
 
-def test_checkout_outage_keeps_the_cached_coupon(monkeypatch):
-    """A 503 says nothing about the coupon: it stays cached and the next checkout makes no coupon call."""
+@pytest.mark.parametrize("status", [503, 429])
+def test_checkout_outage_keeps_the_cached_coupon(monkeypatch, status):
+    """A 503 or 429 says nothing about the coupon: it stays cached and the next checkout makes no coupon call."""
     monkeypatch.setattr("app.billing.time.sleep", lambda _s: None)
     state = {"down": False}
     calls = []
@@ -318,7 +319,7 @@ def test_checkout_outage_keeps_the_cached_coupon(monkeypatch):
         if request.url.path.startswith("/v1/coupons"):
             return httpx.Response(200, json={"id": "c"})
         if state["down"]:
-            return httpx.Response(503)
+            return httpx.Response(status)
         return httpx.Response(200, json={"id": "cs_test_1", "url": "https://checkout.stripe.com/c/cs_test_1"})
 
     stripe = StripeBilling("sk_test_x", SECRET, client=httpx.Client(transport=httpx.MockTransport(handler)))
