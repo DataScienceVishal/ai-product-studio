@@ -15,6 +15,7 @@ from ..db import get_db
 from ..deps import Current, current, subscription_of
 from ..errors import AppError
 from ..models import Note
+from ..textsafe import SafeText, StrippedLine
 
 router = APIRouter(prefix="/api/notes", tags=["notes"])
 
@@ -34,8 +35,8 @@ def _as_data(text: str) -> str:
 
 
 class NoteIn(BaseModel):
-    title: str = Field(min_length=1, max_length=200)
-    body: str = Field(default="", max_length=20_000)
+    title: StrippedLine = Field(min_length=1, max_length=200)  # stripped first, so "   " is a 422
+    body: SafeText = Field(default="", max_length=20_000)
 
 
 def _out(note: Note) -> dict:

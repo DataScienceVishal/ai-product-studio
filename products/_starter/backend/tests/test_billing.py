@@ -378,3 +378,71 @@ def test_coupon_name_is_capped_at_stripes_40_characters():
     name = calls[0][2]["name"]
     assert calls[0][:2] == ("POST", "/v1/coupons") and len(name) == 40
     assert name == "A-VERY-LONG-EARLY-CUSTOMER-OFFER-CODE 50% off for 3 months"[:40]
+
+
+# --- T-71 regression tests: malformed webhooks and same-second ordering ---
+
+def _hook(client, app, event, raw: bytes | None = None):
+    payload = raw if raw is not None else json.dumps(event).encode()
+    return client.post("/api/billing/webhook", content=payload,
+                       headers={"x-billing-signature": sign(payload, app.state.settings.billing_webhook_secret)})
+
+
+def _tenant_id(client) -> str:
+    return client.get("/api/auth/me").json()["tenant"]["id"]
+
+
+@pytest.mark.parametrize("event", [
+    [],
+    "str",
+    {"type": "checkout.completed", "created": 1, "data": {"tenant_id": str(uuid.uuid4())}},  # no id
+    {"id": "e", "type": "checkout.completed", "data": {"tenant_id": str(uuid.uuid4()), "current_period_end": 10**18}},
+], ids=["array", "string", "no-id", "period-end-out-of-range"])
+def test_signed_but_malformed_webhook_is_a_400_not_a_500(owner, app, event):
+    client, _ = owner
+    if isinstance(event, dict) and "tenant_id" in event.get("data", {}):
+        event["data"]["tenant_id"] = _tenant_id(client)
+    response = _hook(client, app, event)
+    assert response.status_code == 400
+    assert response.json()["error"] == "bad_event"
+
+
+def test_webhook_with_out_of_range_created_is_not_a_500(owner, app):
+    client, _ = owner
+    event = {"id": "e_big", "type": "checkout.completed", "created": 10**18, "data": {"tenant_id": _tenant_id(client)}}
+    assert _hook(client, app, event).status_code in (200, 400)
+
+
+def test_webhook_invalid_json_and_bad_signature_behaviour_unchanged(owner, app):
+    client, _ = owner
+    assert _hook(client, app, None, raw=b"{not json").status_code == 400
+    assert client.post("/api/billing/webhook", content=b"{}", headers={"x-billing-signature": "t=1,v1=00"}
+                       ).json()["error"] == "invalid_signature"
+
+
+def _status(client) -> str:
+    return client.get("/api/auth/me").json()["subscription"]["status"]
+
+
+def _flow(client, app, order):
+    tid, now = _tenant_id(client), int(time.time())
+    events = {
+        "activate": {"id": "evt_act", "type": "checkout.completed", "created": now - 100,
+                     "data": {"tenant_id": tid, "plan": "starter", "subscription": "s1"}},
+        "cancel": {"id": "evt_can", "type": "subscription.canceled", "created": now, "data": {"tenant_id": tid}},
+        "checkout": {"id": "evt_chk", "type": "checkout.completed", "created": now,
+                     "data": {"tenant_id": tid, "plan": "starter", "subscription": "s1"}},
+    }
+    for name in order:
+        assert _hook(client, app, events[name]).status_code == 200
+    return _status(client)
+
+
+def test_same_second_checkout_after_cancel_does_not_reactivate(owner, app):
+    client, _ = owner
+    assert _flow(client, app, ["activate", "cancel", "checkout"]) == "canceled"
+
+
+def test_same_second_cancel_after_checkout_cancels(owner, app):
+    client, _ = owner
+    assert _flow(client, app, ["activate", "checkout", "cancel"]) == "canceled"
