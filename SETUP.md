@@ -83,14 +83,26 @@ az identity federated-credential create --resource-group rg-ai-studio --identity
 
 Optional: also add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` here as Actions secrets (the values from step 2). The daily `azure-spend` workflow then pings you when spend first passes 50%, 75% and 95% of the $80 cap, and when the report fails. Without them, alerts still reach you through the next digest.
 
-The daily spend report signs in as the same identity. Contributor on the group is enough to list resources; the Cost Management query may also need the **Cost Management Reader** role on the subscription or group. If the report says cost data is unavailable, add it:
+The daily spend report has its own read-only identity, `id-github-spend`, so a scheduled job never holds deploy rights. Create it in the same Cloud Shell (it reuses `$SUB` from above; run `SUB=$(az account show --query id -o tsv)` first if you opened a new shell). Its federated credential uses the same subject as `id-github-deploy` above, including the immutable IDs (`DataScienceVishal@102427114`, `@1468636475`), and trusts `main` only:
 
 ```bash
-az role assignment create --assignee-object-id $PRINCIPAL --assignee-principal-type ServicePrincipal \
-  --role "Cost Management Reader" --scope /subscriptions/$SUB/resourceGroups/rg-ai-studio
+az identity create --resource-group rg-ai-studio --name id-github-spend --location francecentral
+SPEND_PRINCIPAL=$(az identity show -g rg-ai-studio -n id-github-spend --query principalId -o tsv)
+az identity federated-credential create --resource-group rg-ai-studio --identity-name id-github-spend \
+  --name github-main \
+  --issuer https://token.actions.githubusercontent.com \
+  --subject repo:DataScienceVishal@102427114/ai-product-studio@1468636475:ref:refs/heads/main \
+  --audiences api://AzureADTokenExchange
+for ROLE in "Reader" "Cost Management Reader"; do
+  az role assignment create --assignee-object-id $SPEND_PRINCIPAL --assignee-principal-type ServicePrincipal \
+    --role "$ROLE" --scope /subscriptions/$SUB/resourceGroups/rg-ai-studio
+done
+az identity show -g rg-ai-studio -n id-github-spend --query clientId -o tsv   # the value for AZURE_SPEND_CLIENT_ID
 ```
 
-Temporary fallback, only if you already created one: an Actions secret `AZURE_COST_CREDENTIALS` (service principal JSON) is used when the OIDC secrets are missing. Once OIDC works, delete it, and delete the old `AZURE_CREDENTIALS` secret and its client secret (`sp-ai-studio-deployer`) too.
+Add that client id as one more Actions secret, `AZURE_SPEND_CLIENT_ID`. The tenant and subscription secrets are shared. Both roles are scoped to `rg-ai-studio` only. Once the secret and the shared tenant and subscription secrets are set, `azure-spend` signs in as `id-github-spend` and never uses the deploy identity. Until then it falls back to `id-github-deploy`.
+
+Temporary fallback, only if you already created one: an Actions secret `AZURE_COST_CREDENTIALS` (service principal JSON) is used only when no OIDC secrets are set. Once `id-github-spend` works (one green azure-spend run), delete it, and delete the old `AZURE_CREDENTIALS` secret and its client secret (`sp-ai-studio-deployer`) too.
 
 Put your Azure OpenAI resource in `rg-ai-studio` (or move it there), so its token spend counts in the daily report. The report covers that resource group only.
 

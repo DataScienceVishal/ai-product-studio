@@ -3,10 +3,15 @@
 # state/BUDGET.md on main. Every outcome is written to BUDGET.md, including "unavailable" (for example if
 # Cost Management doesn't support this subscription's offer), so the studio never mistakes silence for $0.
 #
-# Credentials: OIDC as the managed identity id-github-deploy (secrets AZURE_CLIENT_ID, AZURE_TENANT_ID,
-# AZURE_SUBSCRIPTION_ID; SETUP.md step 3). Its federated credential trusts refs/heads/main only, so the sign-in
-# runs only from main (the schedule always does) and the job must not use `environment:`. Temporary fallback:
-# the AZURE_COST_CREDENTIALS secret (a service principal JSON) if the OIDC secrets aren't set.
+# Credentials, in order of preference (the sign-in step logs which identity was used, never an ID):
+#   1. spend: OIDC as the read-only managed identity id-github-spend (Reader + Cost Management Reader on
+#      rg-ai-studio; secrets AZURE_SPEND_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID; SETUP.md step 3).
+#      When AZURE_SPEND_CLIENT_ID is set, the deploy identity is never used.
+#   2. oidc: OIDC as id-github-deploy (secret AZURE_CLIENT_ID). Temporary fallback until the spend identity exists.
+#   3. sp: the AZURE_COST_CREDENTIALS secret (a service principal JSON). Temporary; remove after one green run
+#      with the spend identity.
+# Both federated credentials trust refs/heads/main only, so the sign-in runs only from main (the schedule always
+# does) and the job must not use `environment:`.
 # Optional: TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID as Actions secrets for alerts and failure pings.
 # Alerts also go to state/DIGEST_NOTES.md, so the next digest carries them even without Telegram.
 name: azure-spend
@@ -31,6 +36,7 @@ jobs:
       contents: write # commits state/BUDGET.md
       id-token: write # OIDC token for azure/login
     env:
+      HAS_SPEND: ${{ secrets.AZURE_SPEND_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' && secrets.AZURE_SUBSCRIPTION_ID != '' }}
       HAS_OIDC: ${{ secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' && secrets.AZURE_SUBSCRIPTION_ID != '' }}
       HAS_COST_SP: ${{ secrets.AZURE_COST_CREDENTIALS != '' }}
       HAS_TELEGRAM: ${{ secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != '' }}
@@ -47,12 +53,18 @@ jobs:
 
       - name: Work out the Azure sign-in
         run: |
-          if [ "$HAS_OIDC" = "true" ] && [ "$ON_MAIN" = "true" ]; then mode=oidc
-          elif [ "$HAS_OIDC" = "true" ]; then
+          if [ "$HAS_SPEND" = "true" ] && [ "$ON_MAIN" = "true" ]; then mode=spend
+          elif [ "$HAS_OIDC" = "true" ] && [ "$ON_MAIN" = "true" ] && [ "$HAS_SPEND" != "true" ]; then mode=oidc
+          elif [ "$HAS_SPEND" = "true" ] || [ "$HAS_OIDC" = "true" ]; then
             echo "::error::The Azure identity's federated credential trusts refs/heads/main only. This run is on $GITHUB_REF. Re-run it from main."
             exit 1
           elif [ "$HAS_COST_SP" = "true" ]; then mode=sp
           else mode=none; fi
+          case "$mode" in
+            spend) echo "::notice::Signing in as the read-only spend identity (id-github-spend)." ;;
+            oidc) echo "::notice::Signing in as the deploy identity (id-github-deploy): temporary, until AZURE_SPEND_CLIENT_ID is set." ;;
+            sp) echo "::notice::Signing in with the AZURE_COST_CREDENTIALS service principal: temporary fallback." ;;
+          esac
           echo "AZURE_MODE=$mode" >> "$GITHUB_ENV"
           echo "HAS_AZURE=$([ "$mode" = none ] && echo false || echo true)" >> "$GITHUB_ENV"
 
@@ -60,7 +72,15 @@ jobs:
         if: env.HAS_AZURE != 'true'
         run: echo "::notice::No Azure credentials are set, so no spend report today (SETUP.md step 3)."
 
-      - name: Sign in to Azure (OIDC)
+      - name: Sign in to Azure (read-only spend identity)
+        if: env.AZURE_MODE == 'spend'
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ secrets.AZURE_SPEND_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sign in to Azure (deploy identity, temporary fallback)
         if: env.AZURE_MODE == 'oidc'
         uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
