@@ -1,0 +1,119 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Colour                                                              White"
+     }
+    ],
+    "status": "present",
+    "value": "white"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "closure": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "status": "missing"
+    },
+    "sleeve": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Material                                                            HDPE"
+     }
+    ],
+    "status": "present",
+    "value": "HDPE"
+   },
+   "name": "bottle",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Weight                                                              38.0 g"
+     }
+    ],
+    "status": "present",
+    "value": 38.0
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 2,
+      "quote": "Couleur                                                             transparent"
+     }
+    ],
+    "status": "present",
+    "value": "clear"
+   },
+   "features": {
+    "ink_coating": {
+     "status": "missing"
+    },
+    "liner": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 2,
+      "quote": "Mati\u00e8re                                                             PP"
+     }
+    ],
+    "status": "present",
+    "value": "PP"
+   },
+   "name": "cap",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 2,
+      "quote": "Poids net                                                           2.6 g"
+     }
+    ],
+    "status": "present",
+    "value": 2.6
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 126,
+   "input": "layout_text",
+   "page": 1
+  },
+  {
+   "chars": 133,
+   "input": "layout_text",
+   "page": 2
+  }
+ ],
+ "sheet_id": "S811",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2007,
+  "model": "gpt-5-mini",
+  "output_tokens": 1279,
+  "price_model": "gpt-5-mini",
+  "usd": 0.00306
+ },
+ "warnings": []
+}

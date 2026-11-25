@@ -1,0 +1,114 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Natural"
+     }
+    ],
+    "status": "present",
+    "value": "natural"
+   },
+   "features": {
+    "ink_coating": {
+     "status": "missing"
+    },
+    "liner": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "HDPE"
+     }
+    ],
+    "status": "present",
+    "value": "HDPE"
+   },
+   "name": "cap",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Weight (g) | 4.9"
+     }
+    ],
+    "status": "present",
+    "value": 4.9
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Amber"
+     }
+    ],
+    "status": "present",
+    "value": "amber"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "closure": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "status": "missing"
+    },
+    "sleeve": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PET"
+     }
+    ],
+    "status": "present",
+    "value": "PET"
+   },
+   "name": "bottle",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Unit weight (gms) | 52.0"
+     }
+    ],
+    "status": "present",
+    "value": 52.0
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 217,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S802",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 1980,
+  "model": "gpt-5-mini",
+  "output_tokens": 2797,
+  "price_model": "gpt-5-mini",
+  "usd": 0.006089
+ },
+ "warnings": []
+}

@@ -1,0 +1,72 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Clear"
+     }
+    ],
+    "status": "present",
+    "value": "clear"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "closure": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "status": "missing"
+    },
+    "sleeve": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PET"
+     }
+    ],
+    "status": "present",
+    "value": "PET"
+   },
+   "name": "bottle",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "34.9 g"
+     }
+    ],
+    "status": "present",
+    "value": 34.9
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 446,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S806",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 2151,
+  "model": "gpt-5-mini",
+  "output_tokens": 1108,
+  "price_model": "gpt-5-mini",
+  "usd": 0.002754
+ },
+ "warnings": []
+}

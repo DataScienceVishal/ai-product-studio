@@ -1,0 +1,117 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Clear"
+     }
+    ],
+    "status": "present",
+    "value": "clear"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "closure": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "status": "missing"
+    },
+    "sleeve": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "rPET 30% + PET 70%"
+     }
+    ],
+    "status": "present",
+    "value": "PET"
+   },
+   "name": "bottle",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "39.5 g"
+     }
+    ],
+    "status": "present",
+    "value": 39.5
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Black"
+     }
+    ],
+    "status": "present",
+    "value": "black"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "50% rPET / 50% PET"
+     }
+    ],
+    "status": "present",
+    "value": "PET"
+   },
+   "name": "tray",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "21.6 g"
+     }
+    ],
+    "status": "present",
+    "value": 21.6
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 195,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S803",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 1967,
+  "model": "gpt-5-mini",
+  "output_tokens": 1947,
+  "price_model": "gpt-5-mini",
+  "usd": 0.004386
+ },
+ "warnings": []
+}

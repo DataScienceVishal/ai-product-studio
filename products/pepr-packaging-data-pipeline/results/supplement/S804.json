@@ -1,0 +1,104 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Finish                                                             Clear"
+     }
+    ],
+    "status": "present",
+    "value": "clear"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Material                                                           rPET (PCR 100%)"
+     }
+    ],
+    "status": "present",
+    "value": "rPET"
+   },
+   "name": "tray",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Weight                                                             14.1 g"
+     }
+    ],
+    "status": "present",
+    "value": 14.1
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "adhesive": {
+     "status": "missing"
+    },
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Material                                                           minimum of 25% PCR kraft paper"
+     }
+    ],
+    "status": "present",
+    "value": "kraft paper"
+   },
+   "name": "outer carton",
+   "ram_category": "paper_board",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Weight                                                             62.3 g"
+     }
+    ],
+    "status": "present",
+    "value": 62.3
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 274,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S804",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 1990,
+  "model": "gpt-5-mini",
+  "output_tokens": 2011,
+  "price_model": "gpt-5-mini",
+  "usd": 0.00452
+ },
+ "warnings": []
+}

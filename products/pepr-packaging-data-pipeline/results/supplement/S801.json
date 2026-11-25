@@ -1,0 +1,124 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Clear"
+     }
+    ],
+    "status": "present",
+    "value": "clear"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "closure": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "permanent paper label"
+      }
+     ],
+     "status": "present",
+     "value": "paper label, permanent"
+    },
+    "sleeve": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PET"
+     }
+    ],
+    "status": "present",
+    "value": "PET"
+   },
+   "name": "bottle",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "41.56gm \u00b1 2.00gm"
+     }
+    ],
+    "status": "present",
+    "value": 41.56
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "White"
+     }
+    ],
+    "status": "present",
+    "value": "white"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "PS"
+     }
+    ],
+    "status": "present",
+    "value": "PS"
+   },
+   "name": "tray",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "1.36 oz (+/- 0.04 oz)"
+     }
+    ],
+    "status": "present",
+    "value": 38.55532
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 279,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S801",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 1991,
+  "model": "gpt-5-mini",
+  "output_tokens": 1696,
+  "price_model": "gpt-5-mini",
+  "usd": 0.00389
+ },
+ "warnings": []
+}

@@ -1,0 +1,131 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Colour                                                             Amber"
+     }
+    ],
+    "status": "present",
+    "value": "amber"
+   },
+   "features": {
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "closure": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    },
+    "label": {
+     "status": "missing"
+    },
+    "sleeve": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Material                                                           PET"
+     }
+    ],
+    "status": "present",
+    "value": "PET"
+   },
+   "name": "bottle",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Weight                                                             41.3 g"
+     }
+    ],
+    "status": "present",
+    "value": 41.3
+   }
+  },
+  {
+   "colour": {
+    "status": "missing"
+   },
+   "features": {
+    "ink_coating": {
+     "status": "missing"
+    },
+    "liner": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "status": "missing"
+   },
+   "name": "cap",
+   "ram_category": "missing",
+   "weight_g": {
+    "status": "missing"
+   }
+  },
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Outer box                                                          brown cardboard box"
+     }
+    ],
+    "status": "present",
+    "value": "brown"
+   },
+   "features": {
+    "adhesive": {
+     "status": "missing"
+    },
+    "barrier_layer": {
+     "status": "missing"
+    },
+    "ink_coating": {
+     "status": "missing"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Outer box                                                          brown cardboard box"
+     }
+    ],
+    "status": "present",
+    "value": "corrugated board"
+   },
+   "name": "outer carton",
+   "ram_category": "paper_board",
+   "weight_g": {
+    "status": "missing"
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 247,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S807",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 1970,
+  "model": "gpt-5-mini",
+  "output_tokens": 3494,
+  "price_model": "gpt-5-mini",
+  "usd": 0.007481
+ },
+ "warnings": []
+}

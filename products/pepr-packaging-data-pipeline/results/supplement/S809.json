@@ -1,0 +1,77 @@
+{
+ "components": [
+  {
+   "colour": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Blue"
+     }
+    ],
+    "status": "present",
+    "value": "blue"
+   },
+   "features": {
+    "ink_coating": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "no print, no coating"
+      }
+     ],
+     "status": "present",
+     "value": "no ink or coating"
+    },
+    "liner": {
+     "refs": [
+      {
+       "page": 1,
+       "quote": "polyethylene liner"
+      }
+     ],
+     "status": "present",
+     "value": "PE liner"
+    }
+   },
+   "material": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "polypropylene"
+     }
+    ],
+    "status": "present",
+    "value": "PP"
+   },
+   "name": "cap",
+   "ram_category": "plastic",
+   "weight_g": {
+    "refs": [
+     {
+      "page": 1,
+      "quote": "Net weight                                             6.3 g"
+     }
+    ],
+    "status": "present",
+    "value": 6.3
+   }
+  }
+ ],
+ "pages": [
+  {
+   "chars": 170,
+   "input": "layout_text",
+   "page": 1
+  }
+ ],
+ "sheet_id": "S809",
+ "usage": {
+  "deployment": "gpt-5-mini",
+  "input_tokens": 1948,
+  "model": "gpt-5-mini",
+  "output_tokens": 1462,
+  "price_model": "gpt-5-mini",
+  "usd": 0.003411
+ },
+ "warnings": []
+}
