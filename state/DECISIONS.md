@@ -287,3 +287,8 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 ## 2026-11-25T21:27Z run fcce (T-63, T-102)
 - Board had only Vishal-blocked tasks and desk scouting is paused (round 18, meta-review), so took T-63 prep: a read-only spend identity `id-github-spend` (Reader + Cost Management Reader on rg-ai-studio). Kept the AZURE_COST_CREDENTIALS and deploy-identity fallbacks for now, because Q-8 is unconfirmed and they may be the only working sign-in; removal follows one green spend run.
 - T-102: a half-set spend identity (client id without tenant/subscription) now fails the run loudly instead of quietly reporting "no credentials" and leaving BUDGET.md stale. The workflow test now runs the real sign-in script over a 32-row truth table instead of grepping its text.
+
+## 2026-11-25T22:25Z run e951 (T-104)
+- Board had only Vishal-blocked tasks plus low starter follow-ups, and desk scouting waits on Q-15 (default B due 02:58Z), so took T-104.
+- The deploy gate now fails loudly when AZURE_CLIENT_ID is set but tenant or subscription is missing, the same as azure-spend.yml. Tenant and subscription alone (no client id) still only give a notice, because the spend identity uses them too; no secrets at all is still a quiet notice for a fresh setup.
+- Took the reviewer's non-blocking S1 (approval value "" is the real default and was untested) in the same run with a re-review, rather than queueing it, because it guards the "deploy without Vishal's approval" path. R1/R2 nits queued as T-105.
