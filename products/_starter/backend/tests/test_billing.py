@@ -407,13 +407,13 @@ def test_signed_but_malformed_webhook_is_a_400_not_a_500(owner, app, event):
     assert response.json()["error"] == "bad_event"
 
 
-def test_webhook_with_out_of_range_created_is_not_a_500(owner, app):
+def test_webhook_with_out_of_range_created_is_a_400(owner, app):
     client, _ = owner
     event = {"id": "e_big", "type": "checkout.completed", "created": 10**18, "data": {"tenant_id": _tenant_id(client)}}
-    assert _hook(client, app, event).status_code in (200, 400)
+    assert _hook(client, app, event).status_code == 400
 
 
-def test_webhook_invalid_json_and_bad_signature_behaviour_unchanged(owner, app):
+def test_webhook_invalid_json_is_a_400_and_bad_signature_is_rejected(owner, app):
     client, _ = owner
     assert _hook(client, app, None, raw=b"{not json").status_code == 400
     assert client.post("/api/billing/webhook", content=b"{}", headers={"x-billing-signature": "t=1,v1=00"}
@@ -446,3 +446,82 @@ def test_same_second_checkout_after_cancel_does_not_reactivate(owner, app):
 def test_same_second_cancel_after_checkout_cancels(owner, app):
     client, _ = owner
     assert _flow(client, app, ["activate", "checkout", "cancel"]) == "canceled"
+
+
+# --- T-72: events for an old subscription must not touch the current one ---
+
+def _sub_event(client, app, eid, kind, created, ref, plan="starter"):
+    return _hook(client, app, {"id": eid, "type": kind, "created": created,
+                               "data": {"tenant_id": _tenant_id(client), "plan": plan, "subscription": ref}})
+
+
+def _plan(client) -> str:
+    return client.get("/api/auth/me").json()["subscription"]["plan"]
+
+
+def test_old_subscription_cancel_after_new_checkout_keeps_customer_active(owner, app):
+    client, _ = owner
+    now = int(time.time())
+    _sub_event(client, app, "e1", "checkout.completed", now - 100, "s1")
+    _sub_event(client, app, "e2", "checkout.completed", now - 50, "s2", plan="pro")
+    # s1's deletion arrives late and is strictly newer than s2's checkout
+    assert _sub_event(client, app, "e3", "subscription.canceled", now, "s1").status_code == 200
+    assert _status(client) == "active" and _plan(client) == "pro"
+
+
+def test_old_subscription_past_due_does_not_downgrade_current(owner, app):
+    client, _ = owner
+    now = int(time.time())
+    _sub_event(client, app, "e1", "checkout.completed", now - 100, "s1")
+    _sub_event(client, app, "e2", "checkout.completed", now - 50, "s2")
+    _sub_event(client, app, "e3", "subscription.past_due", now, "s1")
+    assert _status(client) == "active"
+
+
+def test_same_second_old_cancel_then_new_activation_ends_active(owner, app):
+    client, _ = owner
+    now = int(time.time())
+    _sub_event(client, app, "e1", "checkout.completed", now - 100, "s1")
+    _sub_event(client, app, "e2", "subscription.canceled", now, "s1")  # applies: s1 is current
+    assert _status(client) == "canceled"
+    _sub_event(client, app, "e3", "checkout.completed", now, "s2", plan="pro")  # a new subscription, same second
+    assert _status(client) == "active" and _plan(client) == "pro"
+
+
+def test_same_second_new_activation_then_old_cancel_ends_active(owner, app):
+    client, _ = owner
+    now = int(time.time())
+    _sub_event(client, app, "e1", "checkout.completed", now - 100, "s1")
+    _sub_event(client, app, "e2", "checkout.completed", now, "s2")
+    _sub_event(client, app, "e3", "subscription.canceled", now, "s1")
+    assert _status(client) == "active"
+
+
+def test_cancel_of_the_current_subscription_still_works(owner, app):
+    client, _ = owner
+    now = int(time.time())
+    _sub_event(client, app, "e1", "checkout.completed", now - 100, "s1")
+    _sub_event(client, app, "e2", "checkout.completed", now - 50, "s2")
+    _sub_event(client, app, "e3", "subscription.canceled", now, "s2")
+    assert _status(client) == "canceled"
+
+
+# --- T-72: an active event with an unknown plan is refused, not applied to the old plan ---
+
+def test_active_event_with_unknown_plan_is_refused_and_can_be_redelivered(owner, app):
+    client, _ = owner
+    now = int(time.time())
+    response = _sub_event(client, app, "e_plan", "checkout.completed", now, "s1", plan="enterprise-free")
+    assert response.status_code == 400 and response.json()["error"] == "unknown_plan"
+    assert _status(client) == "trialing"
+    # the event id was not consumed, so a corrected redelivery with the same id applies
+    assert _sub_event(client, app, "e_plan", "checkout.completed", now, "s1", plan="pro").json()["applied"] is True
+    assert _status(client) == "active" and _plan(client) == "pro"
+
+
+def test_cancel_with_unknown_plan_still_cancels(owner, app):
+    client, _ = owner
+    now = int(time.time())
+    _sub_event(client, app, "e1", "checkout.completed", now - 10, "s1")
+    assert _sub_event(client, app, "e2", "subscription.canceled", now, "s1", plan="legacy").status_code == 200
+    assert _status(client) == "canceled"
