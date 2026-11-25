@@ -15,7 +15,7 @@ def ok_body(lines=1, status="completed"):
     page = {"supplier_name": None, "invoice_number": None, "invoice_date": None, "is_credit_note": None,
             "lines": [{"description": f"X{i}", "pack_size": "", "unit": "each", "qty": 1, "unit_price": 1.0, "line_total": 1.0,
                        "vat_rate": 0} for i in range(lines)], "totals": {"net": None, "vat": None, "gross": None}}
-    return {"status": status, "output": [{"type": "message", "content": [{"type": "output_text", "text": json.dumps(page)}]}],
+    return {"status": status, "model": "gpt-5-mini", "output": [{"type": "message", "content": [{"type": "output_text", "text": json.dumps(page)}]}],
             "usage": {"input_tokens": 1500, "output_tokens": 700}}
 
 
@@ -67,7 +67,7 @@ def test_length_stop_retries_once_at_32k(tmp_path):
 
 
 def test_invalid_json_then_failure_is_recorded_not_dropped(tmp_path):
-    bad = (200, {"status": "completed", "output": [{"type": "message", "content": [{"type": "output_text", "text": "{nope"}]}],
+    bad = (200, {"status": "completed", "model": "gpt-5-mini", "output": [{"type": "message", "content": [{"type": "output_text", "text": "{nope"}]}],
                  "usage": {"input_tokens": 1500, "output_tokens": 300}})
     rec, prov, _ = run([bad, bad], tmp_path)
     assert rec["status"] == "failed" and rec["reason"] == "invalid_json" and prov.calls == 2 and rec["data"] is None

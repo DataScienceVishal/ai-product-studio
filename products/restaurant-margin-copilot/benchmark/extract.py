@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+from datetime import datetime, timezone
 import io
 import json
 import os
@@ -245,7 +246,9 @@ def extract_page(image_path: Path, meta: dict, provider, bud: budget_mod.Budget)
                 att["input_tokens"], att["output_tokens"] = used_in, used_out
                 rec["cost_usd"] += e["usd"]
                 rec["model"] = data.get("model")
-                if why is not None:
+                if not str(rec["model"] or "").startswith(ALLOWED_MODELS):
+                    att["outcome"] = "wrong_model"  # billed at mini prices; never accept another model's answer
+                elif why is not None:
                     att["outcome"] = "length" if why == "max_output_tokens" else why
                 else:
                     try:
@@ -304,6 +307,9 @@ def page_jobs(set_dir: Path):
             yield {"invoice_id": t["id"], "page_no": n, "page_id": f"{t['id']}_p{n}", "truth_dir": str(set_dir)}, set_dir / fname
 
 
+ALLOWED_MODELS = ("gpt-5-mini", "fake-mini")  # fake-mini is the offline FakeProvider
+
+
 def check_test_allowed() -> None:
     """The test set needs: KILL-TEST.md committed, a frozen prompt+config whose hash matches, and the test data."""
     kill = HERE.parent / "KILL-TEST.md"
@@ -332,12 +338,20 @@ def main(argv=None) -> int:
     ap.add_argument("--max-usd", type=float, default=budget_mod.MAX_USD)
     a = ap.parse_args(argv)
     out = Path(a.out)
-    out.mkdir(parents=True, exist_ok=True)
     try:
+        if a.max_usd > budget_mod.MAX_USD:
+            raise FatalError(f"refused: --max-usd {a.max_usd} is above the hard cap of USD {budget_mod.MAX_USD:.2f}")
+        if a.max_usd <= 0:
+            raise FatalError("refused: --max-usd must be positive")
         if a.set == "test":
             check_test_allowed()
+            if a.only or a.limit_pages is not None:
+                raise FatalError("refused: --only and --limit-pages are not allowed on the test set (run all pages, once)")
+            if out.exists() and not a.resume:
+                raise FatalError(f"refused: {out} already exists; the test set runs once (use --resume to finish an interrupted run)")
             if a.reasoning_effort:
                 raise FatalError("refused: --reasoning-effort is not allowed on the test set; it is frozen")
+        out.mkdir(parents=True, exist_ok=True)
         provider = AzureProvider(a.reasoning_effort) if a.provider == "azure" else FakeProvider(effort=a.reasoning_effort)
         ledger = Path(a.ledger) if a.ledger else (DEFAULT_LEDGER if a.provider == "azure" else out / "ledger.jsonl")
         bud = budget_mod.Budget(ledger, cfg.CONFIG["price_model"], a.max_usd)
@@ -345,13 +359,14 @@ def main(argv=None) -> int:
         print(e, file=sys.stderr)
         return 2
     run_info = {"set": a.set, "provider": a.provider, "deployment": provider.deployment, "config_sha256": cfg.frozen_hash(),
-                "reasoning_effort": provider.effort, "config": cfg.CONFIG, "max_usd": a.max_usd}
+                "reasoning_effort": provider.effort, "config": cfg.CONFIG, "max_usd": a.max_usd, "workers": a.workers,
+                "started_utc": datetime.now(timezone.utc).isoformat(timespec="seconds")}
     (out / "run.json").write_text(json.dumps(run_info, indent=1) + "\n")
     jobs = []
     for meta, path in page_jobs(DATA / a.set):
         if a.only and meta["page_id"] not in a.only:
             continue
-        if a.resume and (out / f"{meta['page_id']}.json").exists():
+        if (a.resume or a.set == "test") and (out / f"{meta['page_id']}.json").exists():
             continue
         jobs.append((meta, path))
     if a.limit_pages is not None:
@@ -359,6 +374,9 @@ def main(argv=None) -> int:
 
     def work(job):
         meta, path = job
+        dest = out / f"{meta['page_id']}.json"
+        if a.set == "test" and dest.exists():  # never overwrite a test page result
+            return
         rec = extract_page(path, meta, provider, bud)
         (out / f"{meta['page_id']}.json").write_text(json.dumps(rec, indent=1) + "\n")
         print(f"{meta['page_id']}: {rec['status']} in {rec['latency_s']}s, {rec['input_tokens']} in / {rec['output_tokens']} out, "

@@ -226,7 +226,7 @@ def verdict(m: dict) -> dict:
     return {"result": result, "kill_triggers": [k for k, x in kill.items() if x], "pass_checks": passed}
 
 
-def score_set(set_dir: Path, ext_dir: Path) -> dict:
+def score_set(set_dir: Path, ext_dir: Path, ledger: Path | None = None) -> dict:
     truths = {}
     for tj in sorted(set_dir.glob("*.json")):
         if tj.name != "MANIFEST.json":
@@ -241,8 +241,18 @@ def score_set(set_dir: Path, ext_dir: Path) -> dict:
     all_recs = [r for rs in recs.values() for r in rs]
     total_pages = sum(t["pages"] for t in truths.values())
     failed = sum(1 for r in all_recs if r["status"] != "ok")
-    unscored = total_pages - len(all_recs)
+    unscored = max(total_pages - len(all_recs), 0)
     cost = sum(r["cost_usd"] for r in all_recs)
+    record_cost = cost
+    if ledger is not None and truths and all(k.startswith("TEST-") for k in truths):
+        # metric of record (KILL-TEST s2): billed USD incl. retries, from the ledger rows labelled with TEST page ids
+        cost = 0.0
+        if Path(ledger).exists():
+            for line in Path(ledger).read_text().splitlines():
+                if line.strip():
+                    row = json.loads(line)
+                    if str(row.get("label", "")).startswith("TEST-"):
+                        cost += float(row["usd"])
     subsets = {"clean": [r for r in rows if not r["distorted"]], "distorted": [r for r in rows if r["distorted"]],
                "heldout": [r for r in rows if r["heldout"]], "dev_layouts": [r for r in rows if not r["heldout"]],
                "credit_notes": [r for r in rows if r["credit_note"]], "multipage": [r for r in rows if r["multipage"]]}
@@ -257,6 +267,7 @@ def score_set(set_dir: Path, ext_dir: Path) -> dict:
         "pages_failed_after_retry": failed, "pages_unscored_no_result": unscored,
         "failure_rate": (failed + unscored) / total_pages if total_pages else 0.0,
         "cost_total_usd": round(cost, 4),
+        "cost_from_page_records_usd": round(record_cost, 4),
         # cost over pages that have a result; unscored pages (budget stop) have no cost, so a partial run shows a partial total
         "cost_per_page_usd": round(cost / total_pages, 5) if total_pages else 0.0,
         "p95_latency_s": p95([r["latency_s"] for r in all_recs]),
@@ -326,8 +337,12 @@ def main(argv=None) -> int:
     ap.add_argument("--extractions", required=True)
     ap.add_argument("--out")
     ap.add_argument("--report")
+    ap.add_argument("--ledger", help="spend ledger for the test-set cost (default <extractions>/ledger.jsonl if present, else results/ledger.jsonl)")
     a = ap.parse_args(argv)
-    res = score_set(HERE / "data" / a.set, Path(a.extractions))
+    ledger = Path(a.ledger) if a.ledger else (Path(a.extractions) / "ledger.jsonl")
+    if not ledger.exists() and not a.ledger:
+        ledger = extract.DEFAULT_LEDGER
+    res = score_set(HERE / "data" / a.set, Path(a.extractions), ledger)
     out = Path(a.out) if a.out else Path(a.extractions) / "score.json"
     out.write_text(json.dumps(res, indent=1) + "\n")
     rep = Path(a.report) if a.report else Path(a.extractions) / "REPORT.md"
