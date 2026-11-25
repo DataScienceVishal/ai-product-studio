@@ -62,7 +62,7 @@ check(not any(a.lower().endswith("/listcredentials/action") or a.lower().endswit
       "no listCredentials or listKeys (nothing reads secrets)")
 # Secret-reading and remote-exec actions, by pattern (security review M5): none may appear.
 deny_patterns = ("listkeys", "listcredentials", "listsecrets", "getsecret", "secrets/", "sharedkeys",
-                 "getauthtoken", "/exec/", "regeneratekey", "listadminkeys", "listconnectionstrings", "generatetoken")
+                 "getauthtoken", "/exec/", "regeneratekey", "listadminkeys", "listconnectionstrings", "generatetoken", "/list/action")
 denied = [a for a in actions if any(p in a.lower() for p in deny_patterns)]
 check(not denied, "no secret-reading or exec action (found %s)" % denied)
 deletes = sorted(a for a in actions if a.lower().endswith("/delete"))

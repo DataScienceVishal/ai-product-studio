@@ -80,3 +80,34 @@ The Microsoft.App async polling names (`locations/*OperationResults|OperationSta
   - caught: roleAssignments write (3 FAIL), `jobs/*` (2 FAIL), dataActions (1), subscription scope (1), FIC write (1), jobs/start removed (1), notActions auth write removed (1), containerApps/delete (1);
   - not caught (64/64 pass): listSecrets, Key Vault getSecret, sharedKeys, getAuthToken.
 - Every `az` call in `_starter-deploy.yml` was mapped to an action, along with azure_spend.py (cost query and resource list) and every `resource` in main.bicep, shared.bicep and modules/postgres.bicep. Only H1 has no action.
+
+## Re-review (f6b9bd4)
+
+Reviewer: security. Date: 2026-11-25. Scope: diff 1bc05f9..f6b9bd4 on branch p/_starter/T-65-deploy-role.
+
+**Verdict: PASS.** OK to merge to main as written but not applied.
+
+| Finding | Status | Evidence |
+|---|---|---|
+| H1 `resourceGroups/resources/read` missing | Fixed | Added to `deploy-role.bicep` and to the test's `extra` list. Test line: `ok workflow step action present: Microsoft.Resources/subscriptions/resourceGroups/resources/read` |
+| M1 deploy identity can assign itself | Accepted residual risk, documented | infra/README.md "Residual risks" and SECURITY.md; follow-up T-69 is on main `state/BOARD.md:77` |
+| M2 Postgres server/admin/firewall writes needed only for shared deploy | Accepted residual risk, documented | Same places, T-69 (split a shared-deploy role behind the reviewed environment) |
+| M3 `containerApps/write` and `jobs/write` can run any image | Accepted residual risk, documented | Control is T-62 (reviewed `production` environment and workflow ruleset) |
+| M4 README told you to test with both roles; no `--include-inherited` | Fixed | README now says not to test with both roles and uses `az role assignment list --all --include-inherited` |
+| M5 test missed secret/exec actions and listed templates by name | Fixed | Pattern denylist added; templates found with `rglob("*.bicep")` |
+
+Why accepting M1 to M3 is fine: the role is not assigned yet. Today the identity has Contributor, which already allows all of M1 to M3 and a lot more (any resource type, `listKeys`, deletes). The custom role is strictly narrower. Writing down the risks plus T-69 is the right way to handle it.
+
+Test run: `bash products/_starter/infra/test-deploy-role.sh` gave **67 passed, 0 failed, exit 0**.
+
+Mutation checks (on a copy of infra/, the repo files were not changed):
+- Add `Microsoft.KeyVault/vaults/secrets/getSecret/action`: exit 1 (caught)
+- Add `Microsoft.App/containerApps/listSecrets/action`: exit 1 (caught)
+- Add `Microsoft.Authorization/roleAssignments/write`: exit 1 (caught)
+- Add a new `modules/extra.bicep` that declares a storage account: exit 1, with 2 failures (caught, so rglob works)
+- Add `Microsoft.Web/sites/config/list/action`: exit 0 (missed)
+- Add `Microsoft.Storage/storageAccounts/write`, an action no template uses: exit 0 (missed)
+
+Advisory (Low, does not block the merge; can be folded into T-69):
+- L-a: the denylist misses the generic `/config/list/action` and `/list/action` forms. Add `"/list/action"` to `deny_patterns` and make an exception for any action a template really needs.
+- L-b: the test proves the role covers what the templates need, but it doesn't fail on actions nobody needs. Turning the action list into an exact allowlist (`set(actions) == needed | extra`) would make the role grow only on purpose.
