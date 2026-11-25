@@ -15,6 +15,8 @@ param liveRevisionName = readEnvironmentVariable('LIVE_REVISION', '')
 param aiProvider = readEnvironmentVariable('AI_PROVIDER', 'fake')
 param azureOpenAiEndpoint = readEnvironmentVariable('AZURE_OPENAI_ENDPOINT', '')
 param azureOpenAiDeployment = readEnvironmentVariable('AZURE_OPENAI_DEPLOYMENT', 'gpt-5-mini')
+// Optional explicit price (USD per million tokens); empty uses the price table in backend/app/aicost.py.
+param aiPricePerMillionTokens = readEnvironmentVariable('AI_PRICE_PER_MILLION_TOKENS', '')
 param billingProvider = readEnvironmentVariable('BILLING_PROVIDER', 'mock')
 param mockCheckoutEnabled = readEnvironmentVariable('MOCK_CHECKOUT_ENABLED', 'false') == 'true'
 param requireEmailVerification = readEnvironmentVariable('REQUIRE_EMAIL_VERIFICATION', 'true') == 'true'

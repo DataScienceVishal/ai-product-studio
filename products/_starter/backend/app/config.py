@@ -5,9 +5,10 @@ import secrets
 from typing import Literal
 from urllib.parse import urlparse
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from .aicost import DEFAULT_MONTHLY_BUDGET_USD, check_ai_budget
 from .dbauth import validate_entra_url
 
 MIN_WEBHOOK_SECRET = 32
@@ -18,7 +19,8 @@ MAX_TIMEOUT_SECONDS = 600.0  # the frontend also clamps to this (a larger setTim
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # hide_input_in_errors: a validation error must never echo the settings (API key, deployment name) into the logs
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
 
     env: Literal["dev", "test", "prod"] = "dev"
     app_name: str = "starter"
@@ -88,9 +90,13 @@ class Settings(BaseSettings):
     ai_rate_limit_per_minute: int = Field(default=20, ge=1)
     # All tenants together, per UTC day. Protects the studio's $80 of Azure credit from farmed free trials.
     ai_global_daily_tokens: int = 100_000
-    # Blended price in USD per million tokens (input and output together) of the configured deployment. The default
-    # is the gpt-5-mini assumption. A bigger model needs a much smaller ai_global_daily_tokens (README).
-    ai_price_per_million_tokens: float = 2.00
+    # Blended USD per million tokens of the configured deployment. Unset (empty) means "look the deployment up in the
+    # price table in aicost.py"; an unknown deployment then needs this set. Set, it overrides the table. Only checked
+    # with AI_PROVIDER=azure: the fake provider costs nothing.
+    ai_price_per_million_tokens: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    # The app refuses to start when ai_global_daily_tokens x 31 x the price is above this (aicost.py). 6.20 is the
+    # Azure OpenAI line in state/BUDGET.md, inside the studio's $80 credit. Raising it needs Vishal's approval.
+    ai_monthly_budget_usd: float = Field(default=DEFAULT_MONTHLY_BUDGET_USD, gt=0, allow_inf_nan=False)
     ai_trial_share: float = 0.5  # all free trials together may use at most this share of the global budget
     ai_concurrent_calls: int = 8  # in-process cap, so slow AI calls can't take every request thread
     ai_calls_per_tenant_at_once: int = 2
@@ -107,6 +113,11 @@ class Settings(BaseSettings):
     trial_days: int = 14
 
     log_level: str = "INFO"
+
+    @field_validator("ai_price_per_million_tokens", mode="before")
+    @classmethod
+    def _blank_price_is_unset(cls, value: object) -> object:
+        return None if isinstance(value, str) and not value.strip() else value  # Bicep passes "" for "use the table"
 
     @model_validator(mode="after")
     def _safe_settings(self) -> "Settings":
@@ -126,6 +137,12 @@ class Settings(BaseSettings):
             raise ValueError("BILLING_WEBHOOK_SECRET must be the Stripe endpoint secret (whsec_...) with BILLING_PROVIDER=stripe")
         if not self.require_email_verification and self.email_provider != "outbox":
             raise ValueError("REQUIRE_EMAIL_VERIFICATION can only be false while no real email is sent")
+        if self.ai_provider == "azure":
+            try:
+                check_ai_budget(self.azure_openai_deployment, self.ai_price_per_million_tokens,
+                                self.ai_global_daily_tokens, self.ai_monthly_budget_usd)
+            except ValueError as exc:
+                raise ValueError(f"AI cost guard: {exc}") from None
         if self.db_auth == "entra":
             validate_entra_url(self.database_url)  # a ValueError subclass; never echoes the URL
         if "*" in self.cors_origins:
