@@ -335,6 +335,32 @@ def test_checkout_outage_keeps_the_cached_coupon(monkeypatch, status):
     assert calls.count(("POST", "/v1/coupons")) == 1  # no extra coupon call
 
 
+def test_incomplete_200_reply_keeps_the_cached_coupon():
+    """A 200 with an empty body is rejected as incomplete, but the request succeeded, so the coupon stays cached."""
+    state = {"empty": False}
+    calls = []
+
+    def handler(request: httpx.Request):
+        calls.append((request.method, request.url.path))
+        if request.url.path.startswith("/v1/coupons"):
+            return httpx.Response(200, json={"id": "c"})
+        if state["empty"]:
+            return httpx.Response(200, json={})
+        return httpx.Response(200, json={"id": "cs_test_1", "url": "https://checkout.stripe.com/c/cs_test_1"})
+
+    stripe = StripeBilling("sk_test_x", SECRET, client=httpx.Client(transport=httpx.MockTransport(handler)))
+    args = (uuid.uuid4(), PLANS["pro"], OFFERS["EARLY50"], "https://a/ok", "https://a/no")
+    stripe.create_checkout(*args)
+    state["empty"] = True
+    with pytest.raises(AppError) as failed:
+        stripe.create_checkout(*args)
+    assert failed.value.code == "billing_rejected"
+    assert OFFERS["EARLY50"].coupon_id in stripe._coupons
+    state["empty"] = False
+    stripe.create_checkout(*args)
+    assert calls.count(("POST", "/v1/coupons")) == 1  # no extra coupon call
+
+
 def test_failed_checkout_without_offer_leaves_the_coupon_cache_alone():
     stripe, _ = coupon_stripe()
     stripe.create_checkout(uuid.uuid4(), PLANS["pro"], OFFERS["EARLY50"], "https://a/ok", "https://a/no")
