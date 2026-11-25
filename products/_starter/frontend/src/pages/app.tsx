@@ -19,13 +19,32 @@ export function Dashboard({ me }: { me: Me }) {
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
 
+  const [total, setTotal] = useState(0);
+  const [loadFailed, setLoadFailed] = useState(false);
+
   const load = useCallback(async () => {
     try {
-      setNotes((await api<{ items: Note[] }>("/api/notes")).items);
+      const page = await api<{ items: Note[]; total: number }>("/api/notes");
+      setNotes(page.items);
+      setTotal(page.total);
+      setLoadFailed(false);
     } catch (err) {
+      setLoadFailed(true);
       setError(errorText(err));
     }
   }, []);
+  const loadMore = async () => { // the API returns 50 at a time; without this, note 51 onwards is unreachable
+    setBusy("more");
+    try {
+      const page = await api<{ items: Note[]; total: number }>(`/api/notes?offset=${notes?.length ?? 0}`);
+      setNotes((current) => [...(current ?? []), ...page.items.filter((n) => !current?.some((c) => c.id === n.id))]);
+      setTotal(page.total);
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(null);
+    }
+  };
   useEffect(() => { void load(); }, [load]);
 
   const create = async (event: FormEvent) => {
@@ -96,7 +115,10 @@ export function Dashboard({ me }: { me: Me }) {
       </Card>
       <Card title="Your notes">
         {notes === null ? (
-          <p className="text-slate-600">Loading…</p>
+          loadFailed
+            ? <div className="space-y-3"><p className="text-slate-700">We couldn't load your notes.</p>
+                <Button variant="secondary" onClick={() => { setError(null); void load(); }}>Try again</Button></div>
+            : <p className="text-slate-600">Loading…</p>
         ) : notes.length === 0 ? (
           <div className="space-y-3 text-slate-700">
             <p><strong>No notes yet.</strong> Write your first one above, then press <em>Summarise</em> to see the AI at work.</p>
@@ -106,10 +128,10 @@ export function Dashboard({ me }: { me: Me }) {
           <ul className="divide-y divide-slate-200">
             {notes.map((note) => (
               <li key={note.id} className="py-4">
-                <h3 className="font-semibold">{note.title}</h3>
-                {note.body && <p className="mt-1 whitespace-pre-wrap text-slate-700">{note.body}</p>}
+                <h3 className="break-words font-semibold">{note.title}</h3>
+                {note.body && <p className="mt-1 whitespace-pre-wrap break-words text-slate-700">{note.body}</p>}
                 {note.summary && (
-                  <p className="mt-2 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-950" data-testid="summary">{note.summary}</p>
+                  <p className="mt-2 break-words rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-950" data-testid="summary">{note.summary}</p>
                 )}
                 <div className="mt-3 flex gap-2">
                   <Button variant="secondary" busy={busy === note.id} onClick={() => summarize(note.id)}>Summarise</Button>
@@ -118,6 +140,9 @@ export function Dashboard({ me }: { me: Me }) {
               </li>
             ))}
           </ul>
+        )}
+        {notes !== null && notes.length < total && (
+          <div className="mt-4"><Button variant="secondary" busy={busy === "more"} onClick={loadMore}>Show more notes ({notes.length} of {total})</Button></div>
         )}
       </Card>
     </div>
