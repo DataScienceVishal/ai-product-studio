@@ -17,7 +17,7 @@ Month-to-date spend: see the spend report below (spend unknown (no_data), update
 | `caj-starter-migrate` (job, one run per release) | _starter | - | 0 (inside the free grant) | planned (approved by Vishal, Q-5 A; create at first G3) |
 | `caj-starter-purge` (scheduled job, daily) | _starter | - | 0 (inside the free grant) | planned (approved by Vishal, Q-5 A; create at first G3) |
 | `id-starter-app`, `id-starter-migrate` (user-assigned managed identities for Entra database sign-in, ADR 0003) | _starter | - | 0 | planned (T-18; created with the starter release) |
-| (Azure OpenAI tokens for ca-starter, existing deployment) | _starter | - | 0 with ai_provider=fake (the default); at most 6.10 with azure and the 100,000-token daily cap | planned (approved by Vishal, Q-5 A; create at first G3) |
+| (Azure OpenAI tokens for ca-starter, existing deployment) | _starter | - | 0 with ai_provider=fake (the default); at most 6.10 with azure and the 98,000-token daily cap ($6.08 at gpt-5-mini prices; with the gpt-5.4-pro deployment the cost guard allows only ~1,093 tokens a day, so AI is effectively off until a mini deployment or a bigger budget) | planned (approved by Vishal, Q-5 A; create at first G3) |
 
 Planned for T-7: `products/_starter/ADR/0002-azure-deploy.md` has the sources and options. Projected: $23.20 a
 month if the student free allowance doesn't cover Postgres (the $80 then lasts about 3.4 months), $5.07 if it does.
