@@ -191,6 +191,13 @@ describe("loadClientConfig: billing_provider", () => {
     expect(isMockBilling()).toBe(false);
   });
 
+  it.each([["Mock"], ["MOCK"], [" mock"], ["mock "], ["mockery"], ["not-mock"], [""]])("treats a near-miss string billing_provider (%j) as not mock (exact match only)", async (value) => {
+    setBillingProviderForTest("mock");
+    fetchMock.mockResolvedValueOnce(reply(200, { billing_provider: value }));
+    await loadClientConfig();
+    expect(isMockBilling()).toBe(false);
+  });
+
   it.each([[true], [1], [["mock"]], [{ name: "mock" }], [null]])("treats a non-string billing_provider (%j) as not mock", async (value) => {
     setBillingProviderForTest("mock");
     fetchMock.mockResolvedValueOnce(reply(200, { billing_provider: value }));
