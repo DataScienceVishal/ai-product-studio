@@ -18,6 +18,7 @@ import base64
 from datetime import datetime, timezone
 import io
 import json
+import math
 import os
 import random
 import sys
@@ -339,10 +340,10 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     out = Path(a.out)
     try:
+        if not math.isfinite(a.max_usd) or a.max_usd <= 0:
+            raise FatalError("refused: --max-usd must be a finite positive number")
         if a.max_usd > budget_mod.MAX_USD:
             raise FatalError(f"refused: --max-usd {a.max_usd} is above the hard cap of USD {budget_mod.MAX_USD:.2f}")
-        if a.max_usd <= 0:
-            raise FatalError("refused: --max-usd must be positive")
         if a.set == "test":
             check_test_allowed()
             if a.only or a.limit_pages is not None:
@@ -361,7 +362,16 @@ def main(argv=None) -> int:
     run_info = {"set": a.set, "provider": a.provider, "deployment": provider.deployment, "config_sha256": cfg.frozen_hash(),
                 "reasoning_effort": provider.effort, "config": cfg.CONFIG, "max_usd": a.max_usd, "workers": a.workers,
                 "started_utc": datetime.now(timezone.utc).isoformat(timespec="seconds")}
-    (out / "run.json").write_text(json.dumps(run_info, indent=1) + "\n")
+    run_file = out / "run.json"
+    if run_file.exists() and (a.resume or a.set == "test"):
+        try:
+            prev = json.loads(run_file.read_text())
+        except (OSError, ValueError):
+            prev = {}
+        if prev.get("started_utc"):
+            run_info["started_utc"] = prev["started_utc"]
+            run_info["resumed_utc"] = prev.get("resumed_utc", []) + [datetime.now(timezone.utc).isoformat(timespec="seconds")]
+    run_file.write_text(json.dumps(run_info, indent=1) + "\n")
     jobs = []
     for meta, path in page_jobs(DATA / a.set):
         if a.only and meta["page_id"] not in a.only:

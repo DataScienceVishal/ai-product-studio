@@ -10,6 +10,7 @@ dev and test one after the other.
 from __future__ import annotations
 
 import json
+import math
 import os
 import threading
 from pathlib import Path
@@ -43,6 +44,9 @@ def usd(input_tokens: int, output_tokens: int, model: str) -> float:
 class Budget:
     def __init__(self, ledger, model: str = "gpt-5-mini", max_usd: float = MAX_USD):
         price_for(model)
+        max_usd = float(max_usd)
+        if not math.isfinite(max_usd) or not 0 < max_usd <= MAX_USD:
+            raise ValueError(f"max_usd must be finite and in (0, {MAX_USD}]")
         self.model, self.max_usd = model, max_usd
         self.ledger = Path(ledger)
         self.spent_usd = 0.0

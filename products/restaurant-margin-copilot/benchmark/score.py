@@ -247,12 +247,13 @@ def score_set(set_dir: Path, ext_dir: Path, ledger: Path | None = None) -> dict:
     if ledger is not None and truths and all(k.startswith("TEST-") for k in truths):
         # metric of record (KILL-TEST s2): billed USD incl. retries, from the ledger rows labelled with TEST page ids
         cost = 0.0
-        if Path(ledger).exists():
-            for line in Path(ledger).read_text().splitlines():
-                if line.strip():
-                    row = json.loads(line)
-                    if str(row.get("label", "")).startswith("TEST-"):
-                        cost += float(row["usd"])
+        if not Path(ledger).exists():
+            raise FileNotFoundError(f"test-set cost of record needs the spend ledger, not found: {ledger}")
+        for line in Path(ledger).read_text().splitlines():
+            if line.strip():
+                row = json.loads(line)
+                if str(row.get("label", "")).startswith("TEST-"):
+                    cost += float(row["usd"])
     subsets = {"clean": [r for r in rows if not r["distorted"]], "distorted": [r for r in rows if r["distorted"]],
                "heldout": [r for r in rows if r["heldout"]], "dev_layouts": [r for r in rows if not r["heldout"]],
                "credit_notes": [r for r in rows if r["credit_note"]], "multipage": [r for r in rows if r["multipage"]]}

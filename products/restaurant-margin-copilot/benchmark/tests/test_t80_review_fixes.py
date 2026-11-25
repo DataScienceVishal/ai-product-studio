@@ -89,3 +89,37 @@ def test_test_set_cost_comes_from_ledger_test_rows(tmp_path):
     assert m["cost_total_usd"] == pytest.approx(1.16)
     assert m["cost_per_page_usd"] == pytest.approx(1.16 / 66, abs=1e-5)
     assert m["cost_from_page_records_usd"] == 99.0
+
+
+@pytest.mark.parametrize("bad", ["nan", "inf", "-inf", "0", "-1"])
+def test_max_usd_non_finite_or_non_positive_is_refused(tmp_path, capsys, bad):
+    rc = e.main(["--set", "dev", "--provider", "fake", "--out", str(tmp_path / "o"), f"--max-usd={bad}", "--limit-pages", "1"])
+    assert rc == 2
+    assert "finite positive" in capsys.readouterr().err
+    assert not (tmp_path / "o").exists()
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), 0.0, -1.0, 5.01])
+def test_budget_rejects_bad_cap(tmp_path, bad):
+    import budget as b
+    with pytest.raises(ValueError):
+        b.Budget(tmp_path / "l.jsonl", max_usd=bad)
+
+
+def test_resume_keeps_first_started_utc(tmp_path, monkeypatch):
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "run.json").write_text(json.dumps({"started_utc": "2026-01-01T00:00:00+00:00"}))
+    monkeypatch.setattr(e, "extract_page", lambda path, meta, prov, bud: {
+        "page_id": meta["page_id"], "status": "failed", "latency_s": 0, "input_tokens": 0, "output_tokens": 0, "cost_usd": 0, "retries": 0})
+    assert e.main(test_args(tmp_path, "--resume")) == 0
+    info = json.loads((out / "run.json").read_text())
+    assert info["started_utc"] == "2026-01-01T00:00:00+00:00"
+    assert len(info["resumed_utc"]) == 1
+
+
+def test_test_set_cost_missing_ledger_is_an_error(tmp_path):
+    ext = tmp_path / "ext"
+    ext.mkdir()
+    with pytest.raises(FileNotFoundError):
+        s.score_set(BENCH / "data" / "test", ext, tmp_path / "missing.jsonl")
