@@ -1,6 +1,7 @@
 # Refresh job for supply-chain pins (T-19). Dependabot opens pull requests; a human or reviewer merges them.
 # Docker PRs run _starter-ci (image build and smoke test). Action bumps outside the starter's workflow
-# file get no automatic CI, so check them by hand before merging.
+# file are linted by workflow-lint.yml (actionlint, runs on any change under .github/); that checks syntax,
+# not behaviour, so skim the release notes of an action bump before merging.
 version: 2
 updates:
   - package-ecosystem: docker
