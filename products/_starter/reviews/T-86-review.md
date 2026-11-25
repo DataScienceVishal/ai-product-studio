@@ -45,3 +45,44 @@ The three fixes are mostly right and the retry and wrap fixes are clean. One bug
 ## Bug-hunt report
 
 `reviews/T-86-bughunt.md` is thorough and honest about what was not run. The open items 4 to 8 are reasonable to queue. Its test count (169) is from before the origin/main merge; the merged branch has 176.
+
+---
+
+# Re-review at da5d327: PASS
+
+Re-reviewed `git diff 209e0fe..da5d327`: `app.tsx`, `dashboard.test.tsx`, `backend/app/routes/notes.py` and `backend/tests/test_tenancy.py`.
+
+## Evidence
+
+- Frontend: `npx vitest run` gives **182 passed (182)** across 7 files. `npm run build` built OK.
+- Backend: `pytest` on the full suite gives **566 tests, 0 failures, 0 errors, 0 skipped** (read from the junit XML; exit code 0).
+- Frontend mutants, each run against `dashboard.test.tsx` and then reverted:
+
+| Mutant | Result |
+|---|---|
+| Show-more never rendered / offset always 0 | killed (4 tests fail) |
+| loadMore does not set total (previously survived) | killed ("trusts the total from the latest page") |
+| id de-dup removed (previously survived) | killed ("shows a note once") |
+| summary loses break-words (previously survived) | killed ("lets a long summary wrap") |
+| loadFailed never set / Try again does nothing | killed |
+| title or body loses break-words | killed |
+| remove() does not decrement total (C1) | killed ("hides Show more after deleting") |
+| Show-more `busy` forced false (#2) | killed ("keeps Show more disabled while it loads") |
+| stale-page check removed / generation never bumped (#3) | killed ("drops a load-more response…") |
+| `loadingMoreRef` early return removed | survived. Expected: the disabled button already blocks re-clicks in jsdom, and the ref only matters for two clicks inside one tick before React re-renders. Harmless defence in depth. |
+
+- Backend mutant: dropping the `Note.id.desc()` tie-breaker makes `test_notes_with_the_same_timestamp_page_in_a_stable_order` fail (killed).
+
+## Findings
+
+- C1 is fixed. `remove()` now calls `setTotal((t) => Math.max(0, t - 1))`, and a regression test pins it.
+- #2 is fixed. Load-more has its own `loadingMore` state, separate from `busy`, so Summarise and Delete no longer re-enable Show more while it is loading.
+- #3 is fixed. `load()` bumps `generation`, and a load-more response from an older generation is dropped. The button then reappears with the correct offset.
+- #4 is done: all three mutants that survived before are now killed.
+- #6 is fixed: the backend orders by `created_at DESC, id DESC`, so paging is stable.
+- Security: no new surface. The backend change only alters the ORDER BY of a query that is already scoped to the tenant.
+
+## Remaining (non-blocking)
+
+- Narrow window: a load-more that starts after `load()` has begun but before it resolves captures the new generation, so it is not dropped. It would use the old `notes.length` as its offset. The cause is the same as #3 and the window is much smaller. It could be closed by also disabling Show more while `load()` is in flight.
+- Item 5 is unchanged: Save note collapses the list back to the first 50. Acceptable for the starter.
