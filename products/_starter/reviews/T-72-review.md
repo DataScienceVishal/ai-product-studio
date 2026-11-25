@@ -99,3 +99,38 @@ the double subscription from forming at all.
 - Purge sweep runs in the same transaction as the other purges, and concurrent sweeps are serialised by row locks.
 - Invite triage tests and T-71 nits (`LINE_BAD` shared, tighter asserts, renamed tests): correct and behavioural.
 - Security: no new endpoints, and the logs don't leak secrets or personal data (the plan string is truncated to 40 characters).
+
+---
+
+# Re-review at d293e64 (2026-11-25)
+
+**Verdict: PASS.** C1 is closed. S4 and S7 are addressed.
+
+## What changed (`1fac495..d293e64`)
+- `app/billing.py:80-82` adds `BillingUpdate.starts_subscription` (default False). It is True for mock `checkout.completed`
+  (line 186) and Stripe `checkout.session.completed` (line 329). For `customer.subscription.*` it is True only on
+  `created` (line 341).
+- `app/routes/billing.py:85`: a different-ref event is ignored unless `starts_subscription` is set. The tie-break
+  exemption at line 92 can now only be reached by such an event.
+- `routes/billing.py:62`: an active webhook with `plan="trial"` is refused with `unknown_plan`.
+- `ai.py:482-483`: the docstring now states the commit-on-refusal contract, and a test pins it.
+
+## Evidence
+- Full backend suite: **541 passed, 1 skipped in 65.6 s**.
+- My C1 repro (s1 checkout, s1 past_due, s2 checkout on pro, s1 cancel) passes. The builder's Stripe-shape test
+  `test_old_subscription_recovering_does_not_take_over_then_cancel_the_customer` covers the `updated`/active step.
+- Mutations (each reverted):
+
+| Mutation | Result |
+|---|---|
+| Stripe `starts_subscription=True` for every `subscription.*` kind | 2 tests fail (recovery and Stripe old-sub deletion) |
+| Guard back to `other_sub and status != "active"` | recovery test fails |
+| Mock never sets `starts_subscription` | 5 tests fail |
+| Trial-plan refusal removed | `test_webhook_refuses_the_trial_plan_on_an_active_event` fails |
+| `refuse` back to `rollback()` (old M6) | `test_refusal_keeps_the_stale_reservation_sweep` fails (killed) |
+
+## Remaining notes (non-blocking, carried from the first review)
+- S1: checkout during `past_due` still creates a second Stripe subscription, so the customer is billed twice.
+  Webhook state now stays correct, but this belongs on the board before `unlock selling`.
+- S5: add a partial index for `pending` rows when volume grows.
+- S6: no test yet for "sweep, then settle restores the real cost".
