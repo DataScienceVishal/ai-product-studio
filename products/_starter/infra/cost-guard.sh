@@ -10,12 +10,18 @@
 #     hour, and an expression (a parameter) can't be checked here;
 #   - a custom network for the environment (vnetConfiguration, infrastructureSubnetId): about $25.55 a month;
 #   - any Microsoft.Network resource, private endpoint or planned maintenance window ($0.10 an hour each);
-#   - a template with aiGlobalDailyTokens and aiPricePerMillionTokens parameters whose defaults give
-#     tokens a day x price per million x 30 above AI_MONTHLY_BUDGET_USD (default 6.10, the Azure OpenAI line in
-#     state/BUDGET.md). The deploy workflow doesn't override either parameter (see main.bicepparam).
+#   - a template with an aiGlobalDailyTokens parameter whose default gives tokens a day x price per million x 30
+#     above AI_MONTHLY_BUDGET_USD (default 6.10, the Azure OpenAI line in state/BUDGET.md). The price is the
+#     explicit AI_PRICE_PER_MILLION_TOKENS / aiPricePerMillionTokens if set, else the table price of the deployment
+#     in AZURE_OPENAI_DEPLOYMENT (backend/app/aicost.py); with AI_PROVIDER=azure an unknown deployment and no
+#     explicit price is refused. The deploy workflow passes AI_PROVIDER, AZURE_OPENAI_DEPLOYMENT and the optional
+#     AI_PRICE_PER_MILLION_TOKENS; none of them is printed.
 set -euo pipefail
 
 AI_MONTHLY_BUDGET_USD="${AI_MONTHLY_BUDGET_USD:-6.10}"
+AICOST="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../backend/app/aicost.py"
+command -v python3 >/dev/null 2>&1 || { echo "::error::cost-guard: python3 is needed for the AI cost rule" >&2; exit 2; }
+[ -f "$AICOST" ] || { echo "::error::cost-guard: backend/app/aicost.py is missing" >&2; exit 2; }
 
 jq -en --arg b "$AI_MONTHLY_BUDGET_USD" '($b | tonumber? // null) | . != null and . > 0' >/dev/null 2>&1 \
   || { echo "::error::cost-guard: AI_MONTHLY_BUDGET_USD must be a number above 0, got: $AI_MONTHLY_BUDGET_USD" >&2; exit 2; }
@@ -39,27 +45,25 @@ for template in "$@"; do
   types=$(jq -r '[.. | objects | select((.type | type) == "string") | .type | select(test("^Microsoft\\.Network/|maintenanceConfigurations|privateEndpoint"; "i"))] | unique | join(", ")' "$template")
   [ -z "$types" ] || report "$name" "billable resource type: $types"
 
-  # Tokens a day x price per million x 30 must stay within the monthly AI budget (jq does the arithmetic).
+  # Tokens a day x price per million x 30 must stay within the monthly AI budget. The rule lives in one place,
+  # backend/app/aicost.py (the app enforces it at startup too). The price is, in order: AI_PRICE_PER_MILLION_TOKENS
+  # from the environment, the template's aiPricePerMillionTokens default, or the price table's entry for the
+  # deployment the workflow deploys (AZURE_OPENAI_DEPLOYMENT, else the template default). With AI_PROVIDER=azure
+  # an unknown deployment and no explicit price fails; with any other provider and no explicit price nothing is
+  # spent, so nothing is checked. The deployment name comes from a secret: it is never printed.
   tokens=$(jq -r '.parameters.aiGlobalDailyTokens.defaultValue // empty' "$template")
-  price=$(jq -r '.parameters.aiPricePerMillionTokens.defaultValue // empty' "$template")
+  tpl_price=$(jq -r '.parameters.aiPricePerMillionTokens.defaultValue // empty' "$template")
+  tpl_deployment=$(jq -r '.parameters.azureOpenAiDeployment.defaultValue // empty' "$template")
   has_params=$(jq -r '(.parameters // {}) | if has("aiGlobalDailyTokens") or has("aiPricePerMillionTokens") then "yes" else "no" end' "$template")
   if [ "$has_params" = yes ]; then
-    if [ -z "$tokens" ] || [ -z "$price" ]; then
-      report "$name" "aiGlobalDailyTokens and aiPricePerMillionTokens must both exist with defaults to check the AI budget"
-    else
-      # prints bad, nonpositive, "ok <monthly cost>" or "over <monthly cost>" (cost rounded to 2 decimals)
-      verdict=$(jq -rn --arg t "$tokens" --arg p "$price" --argjson b "$AI_MONTHLY_BUDGET_USD" '
-        (($t | tonumber? // null) as $tk | ($p | tonumber? // null) as $pr
-         | if $tk == null or $pr == null then "bad"
-           elif $tk <= 0 or $pr <= 0 then "nonpositive"
-           else ($tk * $pr * 30 / 1000000) as $m
-             | (if $m > $b then "over " else "ok " end) + ($m | tostring) end)' 2>/dev/null) || verdict=bad
-      case "$verdict" in
-        bad) report "$name" "AI cap or price is not a number: tokens=$tokens price=$price" ;;
-        nonpositive) report "$name" "AI cap and price must both be above 0: tokens=$tokens price=$price" ;;
-        over*) cost=$(printf '%.2f' "${verdict#over }")
-               report "$name" "$tokens tokens a day x \$$price per million x 30 = \$$cost a month, over the \$$(printf '%.2f' "$AI_MONTHLY_BUDGET_USD") AI budget" ;;
-      esac
+    price="${AI_PRICE_PER_MILLION_TOKENS:-$tpl_price}"
+    deployment="${AZURE_OPENAI_DEPLOYMENT:-$tpl_deployment}"
+    if [ -z "$tokens" ]; then
+      report "$name" "aiGlobalDailyTokens must exist with a default to check the AI budget"
+    elif [ -n "$price" ] || [ "${AI_PROVIDER:-}" = azure ]; then
+      if ! out=$(python3 -I "$AICOST" check --deployment "$deployment" --price "$price" --tokens "$tokens" --budget "$AI_MONTHLY_BUDGET_USD" 2>&1); then
+        report "$name" "$out"
+      fi
     fi
   fi
 done

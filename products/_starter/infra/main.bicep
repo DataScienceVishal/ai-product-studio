@@ -55,10 +55,10 @@ param azureOpenAiDeployment string = 'gpt-5-mini'
 ])
 param azureOpenAiApi string = 'auto'
 
-@description('Blended price in USD per million tokens of the deployment in azureOpenAiDeployment. 2.00 is the gpt-5-mini assumption; a pro model costs far more, so lower aiGlobalDailyTokens with it. cost-guard.sh checks tokens a day x price x 30 against the $6.10 monthly AI budget.')
-param aiPricePerMillionTokens string = '2.00'
+@description('Optional explicit blended price in USD per million tokens of the deployment in azureOpenAiDeployment. Empty (the default) means the app and cost-guard.sh use the price table in backend/app/aicost.py (gpt-5.4-pro is estimated at 180); a deployment not in the table needs this set. An explicit value overrides the table. cost-guard.sh and the app refuse tokens a day x price x 30 above the $6.10 monthly AI budget.')
+param aiPricePerMillionTokens string = ''
 
-@description('Tokens recorded for all tenants together per UTC day. Every call is checked against it with its upper-bound estimate, so the total stays under it. At the default price 100,000 tokens cost at most $0.20 a day (about $6.00 a month), the budget in state/BUDGET.md. Valid only for the price above: size it as 6.10 / (30 x price) x 1,000,000. Trials share half.')
+@description('Tokens recorded for all tenants together per UTC day. Every call is checked against it with its upper-bound estimate, so the total stays under it. At the gpt-5-mini price (2.00 per million) 100,000 tokens cost at most $0.20 a day (about $6.00 a month), the budget in state/BUDGET.md. A pricier deployment needs a lower cap: size it as 6.10 / (30 x price) x 1,000,000; the app and cost-guard.sh refuse a cap that costs more. Trials share half.')
 // Sizing: a call reserves 287 + note bytes + 17 + 1,200 (+1,500 on the Responses API only) before it runs, then settles to actual use,
 // so cap / reservation is a floor on calls, not a daily limit. Until selling is unlocked all tenants share the trial half. See README, "Sizing the daily AI cap".
 param aiGlobalDailyTokens int = 100000
@@ -309,10 +309,6 @@ var webSettings = [
     value: string(aiGlobalDailyTokens)
   }
   {
-    name: 'AI_PRICE_PER_MILLION_TOKENS'
-    value: aiPricePerMillionTokens
-  }
-  {
     name: 'BILLING_PROVIDER'
     value: useStripe ? 'stripe' : 'mock'
   }
@@ -353,7 +349,14 @@ var stripeEnv = useStripe ? [
   }
 ] : []
 
-var webEnv = concat(commonEnv, webSettings, emailEnv, aiEnv, stripeEnv, appDbAuthEnv)
+// Only an explicit price is passed; empty means the app looks the deployment up in its price table (app/aicost.py).
+var aiPriceEnv = empty(aiPricePerMillionTokens) ? [] : [
+  {
+    name: 'AI_PRICE_PER_MILLION_TOKENS'
+    value: aiPricePerMillionTokens
+  }
+]
+var webEnv = concat(commonEnv, webSettings, emailEnv, aiEnv, aiPriceEnv, stripeEnv, appDbAuthEnv)
 
 // Every secret is always defined, so no release removes one that an older revision still references
 // (Microsoft: deactivate every revision that uses a secret before deleting it). Unused ones hold a placeholder.

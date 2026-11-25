@@ -106,7 +106,13 @@ jobs:
           az bicep build-params --file main.bicepparam --outfile "$RUNNER_TEMP/main.parameters.json"
           for script in *.sh; do bash -n "$script"; done
 
-      - name: No features with a fixed charge
+      - name: No features with a fixed charge, and an AI cap the real model can afford
+        env:
+          # The same values the deploy job uses, so the AI cost rule (backend/app/aicost.py) sees the model that is
+          # actually deployed. cost-guard.sh never prints them.
+          AI_PROVIDER: ${{ inputs.ai_provider }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT || 'gpt-5-mini' }}
+          AI_PRICE_PER_MILLION_TOKENS: ${{ vars.AI_PRICE_PER_MILLION_TOKENS }}
         run: |
           # The compiled templates are what Azure gets, so values from parameters and modules count too.
           bash "$PRODUCT_DIR/infra/cost-guard.sh" "$RUNNER_TEMP/shared.json" "$RUNNER_TEMP/main.json"
@@ -151,6 +157,8 @@ jobs:
       # The only provider today. A real one needs approval, and then require_email_verification must be on:
       # the app refuses to start otherwise.
       EMAIL_PROVIDER: outbox
+      # Optional repository variable: explicit USD per million tokens for a deployment missing from the price table.
+      AI_PRICE_PER_MILLION_TOKENS: ${{ vars.AI_PRICE_PER_MILLION_TOKENS }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
