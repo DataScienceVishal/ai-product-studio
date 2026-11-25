@@ -147,7 +147,7 @@ describe("App routing when signed in (T-87)", () => {
       render(<App />);
       await waitFor(() => expect(window.location.pathname).toBe("/"));
       expect(window.location.search).toBe("");
-      expect((await screen.findAllByText(/note/i)).length).toBeGreaterThan(0); // the dashboard renders, not a blank page
+      expect(await screen.findByRole("heading", { name: "Your notes" })).toBeTruthy(); // the dashboard renders, not a blank page
     });
 
   it("shows Page not found with a link home for an unknown path, and keeps the URL", async () => {
