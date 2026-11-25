@@ -42,6 +42,11 @@ def checkout(data: CheckoutIn, request: Request, me: Current = Depends(verified_
     db.commit()  # don't hold a transaction while the payment provider is called
     if sub.status == "active" and sub.provider_ref and sub.provider == request.app.state.billing.name:
         raise AppError(409, "already_subscribed", "You already have an active plan. To change it, contact support.")
+    if sub.status == "past_due":
+        # A second checkout would start a new subscription next to the unpaid one: the customer pays twice.
+        raise AppError(409, "subscription_past_due",
+                       "Your last payment failed. Update your payment method to keep your current plan; "
+                       "a new checkout would start a second subscription. Contact support if you need help.")
     plan = PLANS.get(data.plan)
     if plan is None or plan.id == "trial":
         raise AppError(422, "unknown_plan", "Choose one of the listed plans.")
