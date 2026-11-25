@@ -424,7 +424,10 @@ reports (`AzureOpenAI._check_reported_model`, table lookup by longest prefix wit
 A dearer model, or an unknown or missing one when no explicit price was set, logs one error (model name only) and sets the provider's
 `disabled` flag for the process. The call that exposed it is recorded as normal; later summarise calls get 503 `ai_budget_reached`
 (the exhausted-budget code the frontend already handles) until the config is fixed and the app restarts. An unknown model with an explicit
-price is accepted, since that price is what the operator declared and the startup check used. The deploy-time check stays name-based.
+price is accepted, since that price is what the operator declared and the startup check used. The check runs on every reply that parses to a JSON object, including billed replies with no usable answer (a dearer reasoning model
+that burns its budget is the likeliest case). The refusal keeps the code but says the AI is switched off until the config is fixed.
+Known limitation: a model name that starts with a table name plus `-` (say `gpt-5-ultra`) is priced as that table entry, so a future dearer
+sibling of `gpt-5` could slip through; add it to the table when a new model family is deployed. The deploy-time check stays name-based.
 
 ## Monthly cost
 

@@ -75,7 +75,8 @@ class AIUnavailable(AppError):
 def ensure_ai_enabled(provider) -> None:
     """Refuse like an exhausted budget when the provider switched itself off (reported model too dear, T-100 M1)."""
     if getattr(provider, "disabled", False):
-        raise AppError(503, "ai_budget_reached", "The AI is resting until tomorrow. Everything else still works.")
+        raise AppError(503, "ai_budget_reached", getattr(provider, "disabled_message", None)
+                       or "The AI is resting until tomorrow. Everything else still works.")
 
 
 class AIProvider(Protocol):
@@ -90,6 +91,7 @@ class FakeAI:
     name = "fake"
     output_headroom = 0
     disabled = False
+    disabled_message = None
 
     def complete(self, system: str, user: str, max_output_tokens: int = 1200) -> AIResult:
         words = [w for w in user.split() if not (w.startswith("<") and w.endswith(">"))]  # drop delimiters
@@ -290,6 +292,8 @@ class AzureOpenAI:
         # explicitly. `disabled` flips once, for the life of the process, when a reply reports a dearer model.
         self.checked_price, self.price_explicit = checked_price, price_explicit
         self.disabled = False
+        self.disabled_message = ("The AI is switched off until the team fixes its configuration. "
+                                 "Everything else still works.")
 
     def _check_reported_model(self, reported: object) -> None:
         """Compare the model Azure says it ran with the price the startup check assumed. Dearer, or unknown with no
@@ -373,6 +377,8 @@ class AzureOpenAI:
                 billed_in += estimate_tokens(system, user, 0)
                 billed_out += max_output_tokens
                 raise fail() from None
+            reported = data.get("model")
+            self._check_reported_model(reported)  # before any failure branch: a billed no-answer reply still counts
             try:
                 used_in, used_out, text, why = self._parse(data)
             except (TypeError, ValueError, AttributeError, OverflowError):  # malformed body: it ran, so bill what we can't read
@@ -384,8 +390,6 @@ class AzureOpenAI:
             if why is not None or not text:
                 log.warning("ai returned no usable answer", extra={"finish_reason": why})
                 raise fail(_NO_ANSWER.get(why, _NO_ANSWER[None]))
-            reported = data.get("model")
-            self._check_reported_model(reported)
             return AIResult(text=text, input_tokens=billed_in, output_tokens=billed_out,
                             model=reported if isinstance(reported, str) and reported else "unknown")
         raise fail()

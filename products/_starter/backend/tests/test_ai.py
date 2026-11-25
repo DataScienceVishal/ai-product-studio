@@ -1183,3 +1183,82 @@ def test_reported_model_price_lookup():
     assert reported_model_price("gpt-5-pro-2025-10-06") == 120.0  # longest prefix wins over gpt-5
     assert reported_model_price("gpt-5.4") is None and reported_model_price("gpt-50") is None
     assert reported_model_price(None) is None and reported_model_price("") is None
+
+
+# --- T-101 review: B1 and nits ---------------------------------------------------------------------------------------
+
+def _no_answer_provider(model, api="chat", calls=None, checked=2.0):
+    def handler(request):
+        if calls is not None:
+            calls.append(request)
+        if api == "responses":
+            return httpx.Response(200, json={"model": model, "status": "incomplete",
+                                             "incomplete_details": {"reason": "max_output_tokens"}, "output": [],
+                                             "usage": {"input_tokens": 300, "output_tokens": 1200}})
+        return httpx.Response(200, json={"model": model, "choices": [{"message": {"content": ""},
+                                                                      "finish_reason": "length"}],
+                                         "usage": {"prompt_tokens": 300, "completion_tokens": 1200}})
+    url = "https://res.openai.azure.com/openai/v1/responses" if api == "responses" else "https://res.openai.azure.com/"
+    return AzureOpenAI(url, "gpt-5-mini", "k", retries=0, api=api, checked_price=checked,
+                       client=httpx.Client(transport=httpx.MockTransport(handler)))
+
+
+@pytest.mark.parametrize("api", ["chat", "responses"])
+def test_billed_no_answer_reply_from_a_dearer_model_still_trips_the_guard(api):
+    calls = []
+    provider = _no_answer_provider("gpt-5-pro-2025-10-06", api, calls)
+    with pytest.raises(AIUnavailable) as failed:
+        provider.complete("s", "u")
+    assert (failed.value.input_tokens, failed.value.output_tokens) == (300, 1200)  # still billed and recorded
+    assert provider.disabled is True
+    with pytest.raises(AppError) as refused:
+        provider.complete("s", "u")
+    assert refused.value.code == "ai_budget_reached" and len(calls) == 1
+
+
+@pytest.mark.parametrize("api", ["chat", "responses"])
+def test_responses_and_chat_replies_both_report_the_model(api):
+    provider = _no_answer_provider("gpt-5-mini", api)
+    with pytest.raises(AIUnavailable):
+        provider.complete("s", "u")
+    assert provider.disabled is False  # same model: no trip
+
+
+def test_responses_shaped_success_from_a_dearer_model_trips_the_guard():
+    body = {"model": "gpt-5.4-pro-2026-03-05", "status": "completed",
+            "output": [{"type": "message", "content": [{"type": "output_text", "text": "ok"}]}],
+            "usage": {"input_tokens": 5, "output_tokens": 3}}
+    provider = AzureOpenAI("https://res.openai.azure.com/openai/v1/responses", "gpt-5-mini", "k", retries=0,
+                           api="responses", checked_price=2.0,
+                           client=httpx.Client(transport=httpx.MockTransport(lambda _: httpx.Response(200, json=body))))
+    assert provider.complete("s", "u").text == "ok" and provider.disabled is True
+
+
+def test_disabled_message_is_not_the_until_tomorrow_text_but_keeps_the_code():
+    provider = _no_answer_provider("gpt-5-pro")
+    with pytest.raises(AIUnavailable):
+        provider.complete("s", "u")
+    with pytest.raises(AppError) as refused:
+        provider.complete("s", "u")
+    assert refused.value.code == "ai_budget_reached" and "tomorrow" not in refused.value.message
+
+
+def test_request_refused_after_reserving_releases_its_reservation(settings, outbox, new_client, database):
+    """Another request disables the provider between this one's route check and its call: the reservation settles 0/0."""
+    app = _guarded_app(settings, outbox, "gpt-5-mini")
+    real = app.state.ai.complete
+
+    def disable_then_call(*args, **kwargs):
+        app.state.ai.disabled = True
+        return real(*args, **kwargs)
+
+    app.state.ai.complete = disable_then_call
+    try:
+        first, _ = _two_summaries(app, new_client, outbox)
+    finally:
+        app.state.db.dispose()
+    assert first.status_code == 503 and first.json()["error"] == "ai_budget_reached"
+    with database.sessions() as db:
+        rows = db.scalars(select(AIUsage)).all()
+    assert [(r.model, r.input_tokens, r.output_tokens) for r in rows] == [("unknown", 0, 0)]
+    assert not any(r.model == "pending" for r in rows)
