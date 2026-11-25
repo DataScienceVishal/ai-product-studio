@@ -31,6 +31,7 @@ import httpx
 from sqlalchemy import func, literal_column, select, text, update
 from sqlalchemy.orm import Session
 
+from .aicost import reported_model_price, resolve_price
 from .config import REASONING_EFFORTS
 from .errors import AppError
 from .models import AIUsage
@@ -71,6 +72,12 @@ class AIUnavailable(AppError):
         self.input_tokens, self.output_tokens = input_tokens, output_tokens
 
 
+def ensure_ai_enabled(provider) -> None:
+    """Refuse like an exhausted budget when the provider switched itself off (reported model too dear, T-100 M1)."""
+    if getattr(provider, "disabled", False):
+        raise AppError(503, "ai_budget_reached", "The AI is resting until tomorrow. Everything else still works.")
+
+
 class AIProvider(Protocol):
     name: str
     output_headroom: int  # extra output tokens the provider may add to a call's budget (reasoning); reserve them too
@@ -82,6 +89,7 @@ class FakeAI:
     """Deterministic stand-in: no network, no cost. Used in dev and tests."""
     name = "fake"
     output_headroom = 0
+    disabled = False
 
     def complete(self, system: str, user: str, max_output_tokens: int = 1200) -> AIResult:
         words = [w for w in user.split() if not (w.startswith("<") and w.endswith(">"))]  # drop delimiters
@@ -256,7 +264,8 @@ class AzureOpenAI:
     def __init__(self, endpoint: str, deployment: str, api_key: str, timeout: float = 20.0, deadline: float = 25.0,
                  retries: int = 1, client: httpx.Client | None = None, sleep=time.sleep, clock=time.monotonic,
                  token_provider: ManagedIdentityToken | None = None, api: str = "auto",
-                 reasoning_headroom: int = 0, reasoning_effort: str = ""):
+                 reasoning_headroom: int = 0, reasoning_effort: str = "",
+                 checked_price: float | None = None, price_explicit: bool = False):
         if not endpoint:
             raise ValueError("AZURE_OPENAI_ENDPOINT is not set")
         if api not in ("auto", "chat", "responses"):
@@ -277,8 +286,34 @@ class AzureOpenAI:
         self.client = client or httpx.Client(timeout=timeout)
         self.timeout, self.deadline, self.retries = timeout, deadline, retries
         self.sleep, self.clock = sleep, clock
+        # Cost guard (T-100 M1): the price the startup check used (None: no guard) and whether the operator set it
+        # explicitly. `disabled` flips once, for the life of the process, when a reply reports a dearer model.
+        self.checked_price, self.price_explicit = checked_price, price_explicit
+        self.disabled = False
+
+    def _check_reported_model(self, reported: object) -> None:
+        """Compare the model Azure says it ran with the price the startup check assumed. Dearer, or unknown with no
+        explicit price (a missing field counts as unknown): switch AI off. Logs the model name only: no tenant data,
+        prompt text or secrets. An unknown model WITH an explicit price is accepted: that price is what the operator
+        declared the deployment costs, and it is what the check used."""
+        if self.checked_price is None or self.disabled:
+            return
+        price = reported_model_price(reported)
+        if price is None:
+            if self.price_explicit:
+                return
+            reason = "is not in the price table"
+        elif price > self.checked_price:
+            reason = f"costs ${price:g} per million tokens, above the ${self.checked_price:g} the startup check used"
+        else:
+            return
+        self.disabled = True
+        shown = reported[:80] if isinstance(reported, str) else "(missing)"
+        log.error("AI switched off: the model Azure reported (%s) %s. Fix AZURE_OPENAI_DEPLOYMENT or the price "
+                  "settings and restart.", shown, reason)
 
     def complete(self, system: str, user: str, max_output_tokens: int = 1200) -> AIResult:
+        ensure_ai_enabled(self)
         if self.api == "responses":  # reasoning tokens count inside max_output_tokens
             max_output_tokens += self.output_headroom  # the wanted answer length is then still available
             payload = {"model": self.deployment, "instructions": system, "max_output_tokens": max_output_tokens,
@@ -349,8 +384,10 @@ class AzureOpenAI:
             if why is not None or not text:
                 log.warning("ai returned no usable answer", extra={"finish_reason": why})
                 raise fail(_NO_ANSWER.get(why, _NO_ANSWER[None]))
+            reported = data.get("model")
+            self._check_reported_model(reported)
             return AIResult(text=text, input_tokens=billed_in, output_tokens=billed_out,
-                            model=data.get("model", self.deployment))
+                            model=reported if isinstance(reported, str) and reported else "unknown")
         raise fail()
 
     def _parse(self, data: dict) -> tuple[int, int, str, str | None]:
@@ -401,13 +438,19 @@ class AzureOpenAI:
 
 def build_provider(settings) -> AIProvider:
     if settings.ai_provider == "azure":
+        explicit = getattr(settings, "ai_price_per_million_tokens", None)
+        try:
+            checked = resolve_price(settings.azure_openai_deployment, explicit)
+        except ValueError:  # Settings already refused to start in this case; no guard then
+            checked = None
         token = ManagedIdentityToken(settings.azure_client_id) if settings.azure_openai_auth == "managed_identity" else None
         return AzureOpenAI(settings.azure_openai_endpoint, settings.azure_openai_deployment,
                            settings.azure_openai_api_key, timeout=settings.ai_timeout_seconds,
                            deadline=settings.ai_deadline_seconds, retries=settings.ai_retries,
                            token_provider=token, api=settings.azure_openai_api,
                            reasoning_headroom=settings.ai_reasoning_headroom,
-                           reasoning_effort=settings.azure_openai_reasoning_effort)
+                           reasoning_effort=settings.azure_openai_reasoning_effort, checked_price=checked,
+                           price_explicit=explicit is not None)
     return FakeAI()
 
 

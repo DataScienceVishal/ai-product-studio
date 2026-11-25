@@ -419,6 +419,13 @@ draw on one credit and one OpenAI deployment, so the product lines in `state/BUD
 (the fake provider costs nothing and needs no price); `infra/cost-guard.sh` runs the same file in the workflow's check job with the
 deployment the release will use, before any Azure sign-in. Only the global cap is used because every call is reserved against it.
 
+The name-based check can be wrong, because deployment names are free text (T-100 M1). So the app also checks the model each reply
+reports (`AzureOpenAI._check_reported_model`, table lookup by longest prefix with the date suffix dropped, `aicost.reported_model_price`).
+A dearer model, or an unknown or missing one when no explicit price was set, logs one error (model name only) and sets the provider's
+`disabled` flag for the process. The call that exposed it is recorded as normal; later summarise calls get 503 `ai_budget_reached`
+(the exhausted-budget code the frontend already handles) until the config is fixed and the app restarts. An unknown model with an explicit
+price is accepted, since that price is what the operator declared and the startup check used. The deploy-time check stays name-based.
+
 ## Monthly cost
 
 Estimates (figures read for uksouth, checked against francecentral), one demo product plus the shared pieces.
