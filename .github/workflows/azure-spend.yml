@@ -10,6 +10,8 @@
 #   2. oidc: OIDC as id-github-deploy (secret AZURE_CLIENT_ID). Temporary fallback until the spend identity exists.
 #   3. sp: the AZURE_COST_CREDENTIALS secret (a service principal JSON). Temporary; remove after one green run
 #      with the spend identity.
+# A client id (AZURE_SPEND_CLIENT_ID or AZURE_CLIENT_ID) set without AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID
+# fails the run with an error rather than falling through to the next option.
 # Both federated credentials trust refs/heads/main only, so the sign-in runs only from main (the schedule always
 # does) and the job must not use `environment:`.
 # Optional: TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID as Actions secrets for alerts and failure pings.
