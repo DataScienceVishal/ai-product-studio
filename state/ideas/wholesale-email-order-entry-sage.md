@@ -1,3 +1,5 @@
+Merged into inbound-order-entry-desk.md on 2026-11-25 (T-79).
+
 # Email order entry for Sage wholesalers
 
 - slug: wholesale-email-order-entry-sage
