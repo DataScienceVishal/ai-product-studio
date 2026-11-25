@@ -189,6 +189,11 @@ sp="$(dirname "$wf")/azure-spend.yml"
 if [ -f "$sp" ]; then
   grep -vE '^[[:space:]]*#' "$sp" | grep -qE 'AZURE_CREDENTIALS' && bad "azure-spend: no AZURE_CREDENTIALS" || ok "azure-spend: no AZURE_CREDENTIALS"
   grep -q 'client-id: \${{ secrets.AZURE_CLIENT_ID }}' "$sp" && ok "azure-spend: signs in by OIDC" || bad "azure-spend: signs in by OIDC"
+  grep -q 'client-id: \${{ secrets.AZURE_SPEND_CLIENT_ID }}' "$sp" && ok "azure-spend: spend sign-in uses AZURE_SPEND_CLIENT_ID" || bad "azure-spend: spend sign-in uses AZURE_SPEND_CLIENT_ID"
+  grep -q "if: env.AZURE_MODE == 'spend'" "$sp" && ok "azure-spend: the spend sign-in is conditional on its mode" || bad "azure-spend: the spend sign-in is conditional on its mode"
+  ms=$(grep -n 'mode=spend' "$sp" | head -1 | cut -d: -f1); mo=$(grep -n 'mode=oidc' "$sp" | head -1 | cut -d: -f1)
+  [ -n "$ms" ] && [ -n "$mo" ] && [ "$ms" -lt "$mo" ] && ok "azure-spend: spend mode is chosen before oidc" || bad "azure-spend: spend mode is chosen before oidc"
+  grep 'mode=oidc' "$sp" | grep -q 'HAS_SPEND.*!=.*true' && ok "azure-spend: the deploy identity is never used when the spend secret is set" || bad "azure-spend: the deploy identity is never used when the spend secret is set"
   [ "$(grep -c 'creds:' "$sp")" = 1 ] && grep -q 'creds: \${{ secrets.AZURE_COST_CREDENTIALS }}' "$sp" && ok "azure-spend: the only creds: is the temporary AZURE_COST_CREDENTIALS fallback" || bad "azure-spend: the only creds: is the temporary AZURE_COST_CREDENTIALS fallback"
   grep -q "if: env.AZURE_MODE == 'oidc'" "$sp" && grep -q "if: env.AZURE_MODE == 'sp'" "$sp" && ok "azure-spend: each sign-in is conditional on its mode" || bad "azure-spend: each sign-in is conditional on its mode"
   awk '/^permissions:/{f=1;next} f&&/^[^ ]/{exit} f' "$sp" | grep -q 'id-token' && bad "azure-spend: id-token not at workflow level" || ok "azure-spend: id-token not at workflow level"

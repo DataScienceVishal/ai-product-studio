@@ -152,7 +152,12 @@ Postgres firewall rule. `bash infra/test-deploy-role.sh` checks all this without
   Contributor allows the same today. Fix later (T-69): move `id-github-deploy` to its own resource group.
 - `flexibleServers/write`, `administrators/write` and firewall rules are only needed for the shared deploy
   (`deploy_shared`). T-69 splits them into a separate shared role behind the reviewed environment.
-- The spend report's `AZURE_COST_CREDENTIALS` fallback identity is not covered by this role (T-63 removes it).
+- The spend report uses its own read-only identity `id-github-spend` (Reader + Cost Management Reader on
+  `rg-ai-studio`; SETUP.md step 3) when `AZURE_SPEND_CLIENT_ID` is set. Until then it falls back to the deploy
+  identity, then to the `AZURE_COST_CREDENTIALS` service principal, which this role does not cover. Removing that
+  fallback is the follow-up after one green run with the spend identity.
+- Once the spend identity is live, `Microsoft.CostManagement/query/read` in `deploy-role.bicep` can be dropped
+  (the deploy identity no longer runs the cost query). Not changed yet.
 
 ### Rolling back
 
