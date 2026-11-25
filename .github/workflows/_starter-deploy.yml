@@ -4,8 +4,8 @@
 #
 # Manual only, for now. Every run compiles the Bicep and checks the compiled templates for features with a
 # fixed charge. It deploys only when all three hold; otherwise it stops with a notice:
-#   - the AZURE_CLIENT_ID, AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID secrets exist (AZURE_CLIENT_ID set without
-#     the other two fails the run instead of stopping with a notice). They name the user-assigned
+#   - the AZURE_CLIENT_ID, AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID secrets exist (AZURE_CLIENT_ID set while
+#     either of the other two is missing fails the run instead of stopping with a notice). They name the user-assigned
 #     managed identity id-github-deploy (Contributor on rg-ai-studio only), which GitHub signs in as through
 #     OIDC: no stored password. Its federated credential trusts only
 #     repo:DataScienceVishal@102427114/ai-product-studio@1468636475:ref:refs/heads/main, so Azure sign-in works only from main. Don't
