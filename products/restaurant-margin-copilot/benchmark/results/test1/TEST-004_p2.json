@@ -1,0 +1,73 @@
+{
+ "page_id": "TEST-004_p2",
+ "invoice_id": "TEST-004",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2243,
+   "output_tokens": 1433,
+   "latency_s": 12.44,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 12.44,
+ "input_tokens": 2243,
+ "output_tokens": 1433,
+ "cost_usd": 0.003427,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "ITEM",
+   "WEIGHT / QTY",
+   "PRICE",
+   "V",
+   "AMOUNT"
+  ],
+  "supplier_name": "HARKER & SONS",
+  "invoice_number": "11271",
+  "invoice_date": "2026-10-15",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "DUCK BREAST X2 400G 2 x 7.41 ea Z 14.82",
+    "description": "DUCK BREAST X2 400G",
+    "pack_size": "2x400g",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 7.41,
+    "line_total": 14.82,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "PORK SHOULDER DICED 3.86 kg 6.44/kg Z 24.86",
+    "description": "PORK SHOULDER DICED",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": 3.86,
+    "unit_price": 6.44,
+    "line_total": 24.86,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "BUTCHERS STRING 500G 1 x 3.25 ea S 3.25",
+    "description": "BUTCHERS STRING 500G",
+    "pack_size": "500g",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 3.25,
+    "line_total": 3.25,
+    "vat_rate": 20
+   }
+  ],
+  "totals": {
+   "net": 565.11,
+   "vat": 2.02,
+   "gross": 567.13
+  }
+ },
+ "retries": 0
+}

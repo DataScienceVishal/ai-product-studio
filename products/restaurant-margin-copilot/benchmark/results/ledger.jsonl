@@ -71,3 +71,9 @@
 {"label": "DEV-006_p1", "input_tokens": 3021, "output_tokens": 5682, "usd": 0.012119, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "estimated": false, "note": ""}
 {"label": "DEV-009_p1", "input_tokens": 2283, "output_tokens": 7976, "usd": 0.016523, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "estimated": false, "note": ""}
 {"label": "DEV-002_p1", "input_tokens": 2283, "output_tokens": 8146, "usd": 0.016863, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "estimated": false, "note": ""}
+{"label": "TEST-001_p1", "input_tokens": 2283, "output_tokens": 4627, "usd": 0.009825, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "estimated": false, "note": ""}
+{"label": "TEST-001_p3", "input_tokens": 2283, "output_tokens": 5089, "usd": 0.010749, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "estimated": false, "note": ""}
+{"label": "TEST-001_p2", "input_tokens": 2283, "output_tokens": 6660, "usd": 0.013891, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "estimated": false, "note": ""}
+{"label": "TEST-003_p1", "input_tokens": 2905, "output_tokens": 3376, "usd": 0.007478, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "estimated": false, "note": ""}
+{"label": "TEST-002_p1", "input_tokens": 2283, "output_tokens": 4916, "usd": 0.010403, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "estimated": false, "note": ""}
+{"label": "TEST-004_p2", "input_tokens": 2243, "output_tokens": 1433, "usd": 0.003427, "price_in": 0.25, "price_out": 2.0, "model": "gpt-5-mini", "estimated": false, "note": ""}

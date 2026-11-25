@@ -1,0 +1,146 @@
+{
+ "page_id": "TEST-002_p1",
+ "invoice_id": "TEST-002",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2283,
+   "output_tokens": 4916,
+   "latency_s": 37.28,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 37.28,
+ "input_tokens": 2283,
+ "output_tokens": 4916,
+ "cost_usd": 0.010403,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "QTY",
+   "U/M",
+   "PRODUCT DESCRIPTION",
+   "SIZE",
+   "PRICE",
+   "DISC %",
+   "VAT",
+   "NET VALUE"
+  ],
+  "supplier_name": "Calder Valley Catering Supplies plc",
+  "invoice_number": "Ref 56867",
+  "invoice_date": "2026-09-04",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "1 CS EGG LIQUID PAST 5X1L 5x1L 12.92 Z 12.92",
+    "description": "EGG LIQUID PAST 5X1L",
+    "pack_size": "5x1L",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 12.92,
+    "line_total": 12.92,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "8 BX CONTAINER FOIL 1/2 GN X50 50 14.48 S 115.84",
+    "description": "CONTAINER FOIL 1/2 GN X50",
+    "pack_size": "50",
+    "unit": "box",
+    "qty": 8,
+    "unit_price": 14.48,
+    "line_total": 115.84,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "8 EA CHEESE CHEDDAR MED 5KG 5kg 26.97 Z 215.76",
+    "description": "CHEESE CHEDDAR MED 5KG",
+    "pack_size": "5kg",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 26.97,
+    "line_total": 215.76,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "8 EA PEPPER WHITE GRND 1KG 1kg 19.72 S 157.76",
+    "description": "PEPPER WHITE GRND 1KG",
+    "pack_size": "1kg",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 19.72,
+    "line_total": 157.76,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "2 EA VINEGAR BREWED 5 LTR 5L 5.04 Z 10.08",
+    "description": "VINEGAR BREWED 5 LTR",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 5.04,
+    "line_total": 10.08,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 CS CREAM SNGL 12X500ML 12x500ml 16.16 Z 32.32",
+    "description": "CREAM SNGL 12X500ML",
+    "pack_size": "12x500ml",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 16.16,
+    "line_total": 32.32,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "4 EA MAYONNAISE LT 10 LTR 10L 17.34 Z 69.36",
+    "description": "MAYONNAISE LT 10 LTR",
+    "pack_size": "10L",
+    "unit": "each",
+    "qty": 4,
+    "unit_price": 17.34,
+    "line_total": 69.36,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "2 CS MILK WHOLE 12X1L 12x1L 10.25 Z 20.50",
+    "description": "MILK WHOLE 12X1L",
+    "pack_size": "12x1L",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 10.25,
+    "line_total": 20.5,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "3 CS SYRUP GOLDEN 6X680G 6x680g 14.19 Z 42.57",
+    "description": "SYRUP GOLDEN 6X680G",
+    "pack_size": "6x680g",
+    "unit": "case",
+    "qty": 3,
+    "unit_price": 14.19,
+    "line_total": 42.57,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "5 EA FLR STRONG WHT BREAD 16KG 16kg 16.13 Z 80.65",
+    "description": "FLR STRONG WHT BREAD 16KG",
+    "pack_size": "16kg",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 16.13,
+    "line_total": 80.65,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": 757.76,
+   "vat": 23.17,
+   "gross": 780.93
+  }
+ },
+ "retries": 0
+}

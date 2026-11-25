@@ -1,0 +1,137 @@
+{
+ "page_id": "TEST-003_p1",
+ "invoice_id": "TEST-003",
+ "page_no": 1,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2905,
+   "output_tokens": 3376,
+   "latency_s": 27.45,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 27.45,
+ "input_tokens": 2905,
+ "output_tokens": 3376,
+ "cost_usd": 0.007478,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [],
+  "supplier_name": "BULKBUY CASH & CARRY",
+  "invoice_number": "CN6187",
+  "invoice_date": "2026-10-17",
+  "is_credit_note": true,
+  "lines": [
+   {
+    "row_text": "BIN BAGS BLACK ROLL 100 4 x 8.84 -35.36 A",
+    "description": "BIN BAGS BLACK ROLL 100",
+    "pack_size": "100",
+    "unit": "pack",
+    "qty": -4,
+    "unit_price": 8.84,
+    "line_total": -35.36,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "PAPER TOWEL ROLL 6PK 1 x 8.82 -8.82 A",
+    "description": "PAPER TOWEL ROLL 6PK",
+    "pack_size": "6pk",
+    "unit": "pack",
+    "qty": -1,
+    "unit_price": 8.82,
+    "line_total": -8.82,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "SOFT DRINK LEMON 24X330ML 1 x 12.24 -12.24 A",
+    "description": "SOFT DRINK LEMON 24X330ML",
+    "pack_size": "24x330ml",
+    "unit": "case",
+    "qty": -1,
+    "unit_price": 12.24,
+    "line_total": -12.24,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "SOFT DRINK COLA 24X330ML 4 x 10.97 -43.88 A",
+    "description": "SOFT DRINK COLA 24X330ML",
+    "pack_size": "24x330ml",
+    "unit": "case",
+    "qty": -4,
+    "unit_price": 10.97,
+    "line_total": -43.88,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "EGGS LRG FR 30 1 x 4.51 -4.51 B",
+    "description": "EGGS LRG FR 30",
+    "pack_size": "30",
+    "unit": "pack",
+    "qty": -1,
+    "unit_price": 4.51,
+    "line_total": -4.51,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "POTATO BAKING LOOSE 7.040 kg @ 1.45/kg -10.21 B",
+    "description": "POTATO BAKING LOOSE",
+    "pack_size": "",
+    "unit": "kg",
+    "qty": -7.04,
+    "unit_price": 1.45,
+    "line_total": -10.21,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SUNFLWR OIL 5L 1 x 11.28 -11.28 B",
+    "description": "SUNFLWR OIL 5L",
+    "pack_size": "5l",
+    "unit": "each",
+    "qty": -1,
+    "unit_price": 11.28,
+    "line_total": -11.28,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "SALAD CREAM 5L 6 x 8.09 -48.54 B",
+    "description": "SALAD CREAM 5L",
+    "pack_size": "5l",
+    "unit": "each",
+    "qty": -6,
+    "unit_price": 8.09,
+    "line_total": -48.54,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "CHIPS 2.5KG X4 1 x 11.72 -11.72 B",
+    "description": "CHIPS 2.5KG X4",
+    "pack_size": "4x2.5kg",
+    "unit": "case",
+    "qty": -1,
+    "unit_price": 11.72,
+    "line_total": -11.72,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "COOKING OIL VEG 20L 1 x 31.39 -31.39 B",
+    "description": "COOKING OIL VEG 20L",
+    "pack_size": "20l",
+    "unit": "each",
+    "qty": -1,
+    "unit_price": 31.39,
+    "line_total": -31.39,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": -217.95,
+   "vat": -20.06,
+   "gross": -238.01
+  }
+ },
+ "retries": 0
+}

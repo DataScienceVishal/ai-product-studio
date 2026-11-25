@@ -1,0 +1,167 @@
+{
+ "page_id": "TEST-001_p2",
+ "invoice_id": "TEST-001",
+ "page_no": 2,
+ "status": "ok",
+ "reason": null,
+ "attempts": [
+  {
+   "max_output_tokens": 16000,
+   "input_tokens": 2283,
+   "output_tokens": 6660,
+   "latency_s": 54.88,
+   "outcome": "ok",
+   "http": 200
+  }
+ ],
+ "latency_s": 54.88,
+ "input_tokens": 2283,
+ "output_tokens": 6660,
+ "cost_usd": 0.013891,
+ "model": "gpt-5-mini",
+ "data": {
+  "column_headers": [
+   "Code",
+   "Description",
+   "Pack",
+   "Qty",
+   "UoM",
+   "Price",
+   "Disc%",
+   "VAT",
+   "Net"
+  ],
+  "supplier_name": "Fenwick & Dale Foodservice Ltd",
+  "invoice_number": "24887",
+  "invoice_date": "2026-10-26",
+  "is_credit_note": false,
+  "lines": [
+   {
+    "row_text": "FD29450 PLASTIC TAKEAWAY CNTR 500CC X250 250 2 CS 22.37 20% 44.74",
+    "description": "PLASTIC TAKEAWAY CNTR 500CC X250",
+    "pack_size": "250",
+    "unit": "case",
+    "qty": 2,
+    "unit_price": 22.37,
+    "line_total": 44.74,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD91777 GLOVE NITRILE BLU L X100 100 1 BX 5.05 20% 5.05",
+    "description": "GLOVE NITRILE BLU L X100",
+    "pack_size": "100",
+    "unit": "box",
+    "qty": 1,
+    "unit_price": 5.05,
+    "line_total": 5.05,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD84870 TOM CHOPPED IN JUICE 6X400G 6x400g 6 CS 8.43 0% 50.58",
+    "description": "TOM CHOPPED IN JUICE 6X400G",
+    "pack_size": "6x400g",
+    "unit": "case",
+    "qty": 6,
+    "unit_price": 8.43,
+    "line_total": 50.58,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD55003 OIL RAPESEED CATERING 20L 20L 1 EA 32.02 0% 32.02",
+    "description": "OIL RAPESEED CATERING 20L",
+    "pack_size": "20L",
+    "unit": "each",
+    "qty": 1,
+    "unit_price": 32.02,
+    "line_total": 32.02,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD76222 BACON SMKD RINDLESS 2KG 2kg 6 EA 14.23 0% 85.38",
+    "description": "BACON SMKD RINDLESS 2KG",
+    "pack_size": "2kg",
+    "unit": "each",
+    "qty": 6,
+    "unit_price": 14.23,
+    "line_total": 85.38,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD36838 MAYO CATERING 5L 5L 8 EA 9.63 5 0% 73.19",
+    "description": "MAYO CATERING 5L",
+    "pack_size": "5L",
+    "unit": "each",
+    "qty": 8,
+    "unit_price": 9.63,
+    "line_total": 73.19,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD85078 LPG CYLINDER REFILL 13KG 13kg 2 EA 24.86 5% 49.72",
+    "description": "LPG CYLINDER REFILL 13KG",
+    "pack_size": "13kg",
+    "unit": "each",
+    "qty": 2,
+    "unit_price": 24.86,
+    "line_total": 49.72,
+    "vat_rate": 5
+   },
+   {
+    "row_text": "FD35611 BUTTER UNSLTD 20X250G 20x250g 1 CS 41.10 10 0% 36.99",
+    "description": "BUTTER UNSLTD 20X250G",
+    "pack_size": "20x250g",
+    "unit": "case",
+    "qty": 1,
+    "unit_price": 41.1,
+    "line_total": 36.99,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD41276 EGGS FREE RANGE DOZEN dozen 3 EA 3.78 0% 11.34",
+    "description": "EGGS FREE RANGE DOZEN",
+    "pack_size": "dozen",
+    "unit": "each",
+    "qty": 3,
+    "unit_price": 3.78,
+    "line_total": 11.34,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD27889 PASTA PENNE DRY 3KG 3kg 3 EA 18.45 5 0% 52.58",
+    "description": "PASTA PENNE DRY 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": 3,
+    "unit_price": 18.45,
+    "line_total": 52.58,
+    "vat_rate": 0
+   },
+   {
+    "row_text": "FD89276 HONEY CLEAR 3KG 3kg 5 EA 12.96 5 20% 61.56",
+    "description": "HONEY CLEAR 3KG",
+    "pack_size": "3kg",
+    "unit": "each",
+    "qty": 5,
+    "unit_price": 12.96,
+    "line_total": 61.56,
+    "vat_rate": 20
+   },
+   {
+    "row_text": "FD41529 FOIL CATERING 450MMX90M",
+    "description": "FOIL CATERING 450MMX90M",
+    "pack_size": "",
+    "unit": "each",
+    "qty": 0,
+    "unit_price": 0,
+    "line_total": 0,
+    "vat_rate": 0
+   }
+  ],
+  "totals": {
+   "net": null,
+   "vat": null,
+   "gross": null
+  }
+ },
+ "retries": 0
+}
