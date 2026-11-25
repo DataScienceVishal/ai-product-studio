@@ -13,6 +13,61 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe("Billing: Manage billing", () => {
+  it("owner sees the button; click POSTs the portal endpoint and goes to the returned url", async () => {
+    const assign = vi.fn();
+    vi.stubGlobal("location", { ...window.location, assign });
+    fetchMock.mockResolvedValueOnce(reply(200, PLANS));
+    fetchMock.mockResolvedValueOnce(reply(200, { url: "https://billing.stripe.example/p/session_1" }));
+    render(<Billing me={makeMe()} refresh={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Manage billing" }));
+    await waitFor(() => expect(assign).toHaveBeenCalledWith("https://billing.stripe.example/p/session_1"));
+    const [path, init] = fetchMock.mock.calls[1];
+    expect(path).toBe("/api/billing/portal");
+    expect(init.method).toBe("POST");
+    expect(init.headers["X-Requested-With"]).toBe("fetch");  // the CSRF header, sent by the api helper
+  });
+
+  it("members do not see the button", async () => {
+    fetchMock.mockResolvedValue(reply(200, PLANS));
+    render(<Billing me={makeMe({}, "member")} refresh={vi.fn()} />);
+    await screen.findByText("£49.00");
+    expect(screen.queryByRole("button", { name: "Manage billing" })).toBeNull();
+  });
+
+  it("shows the server error and re-enables the button when the portal fails", async () => {
+    const assign = vi.fn();
+    vi.stubGlobal("location", { ...window.location, assign });
+    fetchMock.mockResolvedValueOnce(reply(200, PLANS));
+    fetchMock.mockResolvedValueOnce(reply(409, { error: "no_billing_customer", message: "No billing account yet." }));
+    render(<Billing me={makeMe()} refresh={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Manage billing" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("No billing account yet.");
+    expect(assign).not.toHaveBeenCalled();
+    expect((screen.getByRole("button", { name: "Manage billing" }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("is disabled while the request is pending", async () => {
+    vi.stubGlobal("location", { ...window.location, assign: vi.fn() });
+    fetchMock.mockResolvedValueOnce(reply(200, PLANS));
+    fetchMock.mockReturnValueOnce(new Promise(() => {}));
+    render(<Billing me={makeMe()} refresh={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Manage billing" }));
+    const busy = await screen.findByRole("button", { name: "Working…" });
+    expect((busy as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("past_due message points owners at the button and members at the owner", async () => {
+    fetchMock.mockImplementation(async () => reply(200, PLANS));  // a Response body can be read once
+    const { unmount } = render(<Billing me={makeMe({ status: "past_due" })} refresh={vi.fn()} />);
+    expect((await screen.findByRole("status")).textContent).toMatch(/Manage billing/);
+    expect(screen.getByRole("button", { name: "Manage billing" })).toBeTruthy();
+    unmount();
+    render(<Billing me={makeMe({ status: "past_due" }, "member")} refresh={vi.fn()} />);
+    expect((await screen.findByRole("status")).textContent).toMatch(/account owner/);
+  });
+});
+
 describe("Billing", () => {
   it("lists plans with formatted prices and token allowance", async () => {
     fetchMock.mockResolvedValue(reply(200, PLANS));

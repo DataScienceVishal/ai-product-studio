@@ -1,11 +1,15 @@
-# T-74 billing follow-ups status (branch p/_starter/T-74-billing-followups)
+# T-75 billing follow-ups status (branch p/_starter/T-75-billing-followups, on top of T-74)
 
 Done: T-73 review S1 (past_due refusal only for this provider's own ref), S2 (message names the portal; `POST /api/billing/portal`
 and `portal_session()` on the provider interface, mock and Stripe), S3 tests, partial index `ix_ai_usage_pending`
 (migration 0007, model `Index` with `postgresql_where`), Stripe dunning note (README "Billing"; must be "cancel", not "mark unpaid").
-Not done: frontend "Manage billing" button (no node_modules in this run, so it could not be tested). Add it to `Billing` in
-`frontend/src/pages/app.tsx`: owner-only button that POSTs `/api/billing/portal` and does `window.location.assign(url)`,
-plus a test in `billing.test.tsx`. The mock portal URL (`/billing/mock-portal`) has no page; it only matters for demos.
+T-75 (branch p/_starter/T-75-billing-followups) finished the T-74 review items: owner-only "Manage billing" button in `Billing`
+(POSTs `/api/billing/portal` through the `api` helper, then `location.assign`; error shown, disabled while pending; past_due
+notice and the 409 message point at it), 'pending' as a SQL literal in both pending-usage queries (EXPLAIN under
+force_generic_plan: Index Only Scan on ix_ai_usage_pending, bound parameter gave a bitmap scan on ix_ai_usage_tenant_created),
+README note on the saved Stripe Customer Portal configuration (test and live), test_migrations.py skips under
+TEST_DATABASE_SHARED=1 and uses the ephemeral name and marker, idempotency-key comment, dead `sqlite_where` dropped,
+CONCURRENTLY comment in migration 0007. Not done: the mock portal URL (`/billing/mock-portal`) still has no page (demo only).
 This branch also contains the T-73 branch (merged in), because T-73 was not on main yet.
 
 # T-15 coupon slice status (branch p/_starter/T-15-coupon)

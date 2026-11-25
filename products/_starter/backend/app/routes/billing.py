@@ -46,7 +46,7 @@ def checkout(data: CheckoutIn, request: Request, me: Current = Depends(verified_
         # A second checkout would start a new subscription next to the unpaid one: the customer pays twice.
         raise AppError(409, "subscription_past_due",
                        "Your last payment failed, so a new checkout would charge you twice. "
-                       "Update your card in the billing portal or contact support.")
+                       "Use \"Manage billing\" on the Billing page to update your card, or contact support.")
     plan = PLANS.get(data.plan)
     if plan is None or plan.id == "trial":
         raise AppError(422, "unknown_plan", "Choose one of the listed plans.")

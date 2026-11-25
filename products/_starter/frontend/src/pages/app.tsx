@@ -156,6 +156,8 @@ export function Billing({ me, refresh }: { me: Me; refresh: () => Promise<void> 
   const [offer, setOffer] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [portalBusy, setPortalBusy] = useState(false);
+  const isOwner = me.user.role === "owner";
   useEffect(() => {
     api<{ plans: Plan[] }>("/api/billing/plans").then((r) => setPlans(r.plans)).catch((e) => setError(errorText(e)));
   }, []);
@@ -178,12 +180,31 @@ export function Billing({ me, refresh }: { me: Me; refresh: () => Promise<void> 
     }
   };
 
+  const openPortal = async () => {
+    setPortalBusy(true);
+    setError(null);
+    try {
+      const portal = await api<{ url: string }>("/api/billing/portal", { method: "POST" });
+      window.location.assign(portal.url);
+    } catch (err) {
+      setError(errorText(err));
+      setPortalBusy(false);  // on success the page navigates away, so the button stays disabled until then
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card title="Your plan">
         <p>Plan: <strong>{me.subscription.plan}</strong> · Status: <strong>{me.subscription.status}</strong>
           {me.subscription.offer && <> · Offer: <strong>{me.subscription.offer}</strong></>}</p>
-        <Button variant="secondary" className="mt-3" onClick={() => void refresh()}>Refresh</Button>
+        {me.subscription.status === "past_due" && (
+          <Alert kind="info">Your last payment failed. {isOwner ? 'Choose "Manage billing" below to update your card.'
+            : "Ask the account owner to update the card under Billing."}</Alert>
+        )}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={() => void refresh()}>Refresh</Button>
+          {isOwner && <Button variant="secondary" busy={portalBusy} onClick={() => void openPortal()}>Manage billing</Button>}
+        </div>
       </Card>
       {error && <Alert>{error}</Alert>}
       <Card title="Plans">

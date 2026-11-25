@@ -33,7 +33,7 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 
 | What | Command | Where it runs |
 |---|---|---|
-| Backend unit and API tests (541 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
+| Backend unit and API tests (561 passed) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
 | Migrations match the models | `alembic upgrade head && alembic check` | every push |
 | Frontend type check and build | `cd frontend && npm run build` | every push (CI `frontend`) |
 | Browser end-to-end core flow | `./scripts/e2e.sh` | pushes to main and manual runs (CI `e2e`) |
@@ -121,6 +121,9 @@ AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
 - **Billing portal:** `POST /api/billing/portal` (owner only) returns a Stripe Customer Portal URL for the tenant's customer
   (409 `no_billing_customer` if there is none for the current provider). The return URL comes from `APP_BASE_URL`, never
   from request headers. A past_due tenant is refused a new checkout and pointed at the portal.
+- **Stripe portal setup:** Stripe refuses `POST /v1/billing_portal/sessions` (the app then shows 502 `billing_rejected`)
+  until a default Customer Portal configuration is saved in the Stripe dashboard (Settings, Billing, Customer portal).
+  Test mode and live mode are configured separately, so save it in both.
 - **Stripe dunning setting:** in the Stripe dashboard (Billing, Subscriptions and emails, "Manage failed payments") set the
   action after the last retry to **cancel the subscription**, not "mark the subscription as unpaid". Stripe `unpaid` maps to
   `past_due` here and never sends `customer.subscription.deleted`, so a tenant would stay blocked from checkout until
