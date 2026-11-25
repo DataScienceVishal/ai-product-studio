@@ -4,7 +4,7 @@ from sqlalchemy import update
 
 from app.models import Invitation
 
-from .conftest import link_token, sign_up
+from .conftest import PASSWORD, link_token, sign_up
 
 MEMBER_PASSWORD = "member passphrase 1"
 
@@ -119,3 +119,29 @@ def test_invite_email_link_and_weak_password(owner, new_client, outbox, settings
     assert f"{settings.app_base_url}/accept-invite?token=" in message.body
     weak = _accept(new_client(), token, password="short")
     assert weak.status_code == 422 and weak.json()["error"] == "weak_password"
+
+
+# --- T-72 triage of T-70 suspicion: a signed-in user accepting another tenant's invitation ---
+
+def test_signed_in_user_accepting_an_invite_does_not_orphan_their_own_tenant(owner, new_client, outbox):
+    """NOT a bug. Accept always creates a NEW user for the invited email; the signed-in user is never moved,
+    and an invite for an email that already has an account is refused (409), so no tenant loses its owner."""
+    owner_a, _ = owner
+    b = new_client()
+    sign_up(b, email="b@beta.test", company="Beta")
+    b.post("/api/notes", json={"title": "Beta note"})
+    _, token = _invite(owner_a, outbox, "other@acme.test")
+    joined = _accept(b, token)  # B is signed in on this client while accepting someone else's invite
+    assert joined.status_code == 201 and joined.json()["user"]["email"] == "other@acme.test"
+    # B's own account and tenant are untouched and still reachable by B's credentials
+    again = new_client()
+    login = again.post("/api/auth/login", json={"email": "b@beta.test", "password": PASSWORD})
+    assert login.status_code == 200, login.text
+    assert login.json()["tenant"]["name"] == "Beta" and login.json()["user"]["role"] == "owner"
+    assert [n["title"] for n in again.get("/api/notes").json()["items"]] == ["Beta note"]
+
+
+def test_invite_for_an_email_that_already_has_an_account_is_refused(owner, new_client):
+    owner_a, _ = owner
+    sign_up(new_client(), email="b@beta.test", company="Beta")
+    assert owner_a.post("/api/team/invitations", json={"email": "b@beta.test"}).status_code == 409

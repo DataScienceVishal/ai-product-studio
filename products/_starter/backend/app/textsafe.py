@@ -7,7 +7,7 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BeforeValidator
 
-_LINE_BAD = re.compile(r"[\x00-\x1f\x7f]")  # any control character, newlines included
+LINE_BAD = re.compile(r"[\x00-\x1f\x7f]")  # any control character, newlines included
 _TEXT_BAD = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")  # control characters except \t \n \r
 
 
@@ -24,8 +24,8 @@ def _strip(value):
 
 
 # One line of text (names, titles, emails): no control characters at all.
-SafeLine = Annotated[str, AfterValidator(_check(_LINE_BAD, "Remove control characters."))]
+SafeLine = Annotated[str, AfterValidator(_check(LINE_BAD, "Remove control characters."))]
 # Multi-line text (note bodies): tabs and newlines are fine.
 SafeText = Annotated[str, AfterValidator(_check(_TEXT_BAD, "Remove control characters."))]
 # A SafeLine stripped *before* length checks, so a blank value fails min_length.
-StrippedLine = Annotated[str, BeforeValidator(_strip), AfterValidator(_check(_LINE_BAD, "Remove control characters."))]
+StrippedLine = Annotated[str, BeforeValidator(_strip), AfterValidator(_check(LINE_BAD, "Remove control characters."))]

@@ -964,3 +964,79 @@ def test_config_endpoint_serves_the_configured_frontend_timeout(settings, ai, ou
             assert client.get("/api/config").json() == {"api_timeout_seconds": 60.0}
     finally:
         application.state.db.dispose()
+
+
+# --- T-72: abandoned reservations must not hold the cap forever ---
+
+def _stale_pending(database, tokens, age):
+    with database.sessions() as db:
+        tenant = db.scalar(select(Tenant))
+        db.add(AIUsage(tenant_id=tenant.id, feature="note_summary:reserved", model="pending", input_tokens=tokens,
+                       output_tokens=0, created_at=datetime.now(timezone.utc) - age))
+        db.commit()
+
+
+def test_abandoned_reservation_stops_counting_against_the_cap(owner, database):
+    client, _ = owner
+    note = _note(client)
+    _stale_pending(database, 100_000, timedelta(hours=1))  # a call whose process died: full allowance "reserved"
+    assert client.post(f"/api/notes/{note['id']}/summarize").status_code == 200
+    with database.sessions() as db:
+        assert db.scalar(select(AIUsage).where(AIUsage.model == "abandoned")).input_tokens == 0
+        assert db.scalar(select(AIUsage).where(AIUsage.model == "pending")) is None
+
+
+def test_a_recent_reservation_still_counts(owner, database):
+    client, _ = owner
+    note = _note(client)
+    _stale_pending(database, 100_000, timedelta(seconds=30))  # may still be running
+    assert client.post(f"/api/notes/{note['id']}/summarize").json()["error"] in ("ai_cap_reached", "ai_in_progress")
+
+
+def test_purge_releases_abandoned_reservations(owner, database):
+    from app.maintenance import purge
+    _stale_pending(database, 5_000, timedelta(hours=2))
+    with database.sessions() as db:
+        assert purge(db)["abandoned_ai_reservations"] == 1
+        assert db.scalar(select(AIUsage).where(AIUsage.model == "pending")) is None
+
+
+def test_failed_ai_call_leaves_no_pending_row(owner, database, app):
+    client, _ = owner
+    note = _note(client)
+
+    class Boom(ai_module.FakeAI):
+        def complete(self, *a, **k):
+            raise RuntimeError("provider exploded")
+    app.state.ai = Boom()
+    assert client.post(f"/api/notes/{note['id']}/summarize").status_code >= 500
+    with database.sessions() as db:
+        row = db.scalar(select(AIUsage))
+        assert row.model == "unknown" and row.feature == "note_summary:failed" and row.input_tokens == 0
+
+
+def test_refusal_keeps_the_stale_reservation_sweep(owner, database):
+    """`refuse` commits (not rolls back), so a 429 still keeps the sweep of abandoned reservations."""
+    client, _ = owner
+    note = _note(client)
+    _stale_pending(database, 10, timedelta(hours=1))
+    with database.sessions() as db:
+        tenant = db.scalar(select(Tenant))
+        db.add(AIUsage(tenant_id=tenant.id, feature="x", model="fake", input_tokens=100_000, output_tokens=0))
+        db.commit()
+    assert client.post(f"/api/notes/{note['id']}/summarize").json()["error"] == "ai_cap_reached"
+    with database.sessions() as db:
+        assert db.scalar(select(AIUsage).where(AIUsage.model == "pending")) is None
+        assert db.scalar(select(AIUsage).where(AIUsage.model == "abandoned")) is not None
+
+
+def test_a_call_that_settles_after_being_swept_restores_its_real_cost(owner, database):
+    from app.ai import release_stale_reservations, settle
+    _stale_pending(database, 500, timedelta(hours=1))
+    with database.sessions() as db:
+        row = db.scalar(select(AIUsage))
+        rid = row.id
+        assert release_stale_reservations(db) == 1
+        db.commit()
+        settle(db, rid, "note_summary", 300, 40, "m")
+        assert db.get(AIUsage, rid).input_tokens == 300 and db.get(AIUsage, rid).model == "m"

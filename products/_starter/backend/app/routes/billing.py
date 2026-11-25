@@ -59,6 +59,12 @@ def checkout(data: CheckoutIn, request: Request, me: Current = Depends(verified_
 def apply_update(db: Session, update: BillingUpdate, provider: str) -> bool:
     """Apply a provider event once, in order. Returns False if this event id was already applied.
     An event older than the last one applied is recorded as seen but changes nothing."""
+    if update.status == "active" and update.plan is not None and (update.plan not in PLANS or update.plan == "trial"):
+        # Wrong provider metadata would otherwise activate the subscription on whatever plan the tenant had
+        # (a free upgrade). Refuse before recording the event id, so a redelivery works once the catalogue or
+        # the metadata is fixed. The webhook answers 400, like any event we cannot read.
+        log.error("billing event names an unknown plan", extra={"plan": str(update.plan)[:40]})
+        raise AppError(400, "unknown_plan", "The event names a plan that does not exist.")
     db.add(BillingEvent(id=update.event_id))
     try:
         db.flush()
@@ -74,8 +80,16 @@ def apply_update(db: Session, update: BillingUpdate, provider: str) -> bool:
     # cancellation already applied wins over any later non-cancel event (we can't know their true order, and
     # wrongly reactivating a cancelled customer costs money while a wrongly kept cancellation is fixed by the
     # customer's next, strictly newer, event). Cancel arriving after an activation at the same second still applies.
+    # A different subscription id means a different subscription: never the "reactivation" of the cancelled one.
+    other_sub = bool(update.provider_ref and sub.provider_ref and update.provider_ref != sub.provider_ref)
+    if other_sub and not update.starts_subscription:
+        # Only an event that starts a subscription may replace the current one. Anything else about another id
+        # (cancel, past_due, or an old subscription becoming active again) must not touch the current subscription.
+        db.commit()
+        log.info("event for a different subscription ignored")
+        return True
     tie_after_cancel = (update.occurred_at is not None and update.occurred_at == sub.last_event_at
-                        and sub.status == "canceled" and update.status != "canceled")
+                        and sub.status == "canceled" and update.status != "canceled" and not other_sub)
     if update.occurred_at and sub.last_event_at and (update.occurred_at < sub.last_event_at or tie_after_cancel):
         db.commit()  # stale (arrived out of order): keep the event id, ignore its content
         log.info("stale billing event ignored")
@@ -127,7 +141,9 @@ async def webhook(request: Request, db: Session = Depends(get_db)):
         raise
     except (ValueError, KeyError, TypeError, AttributeError, OverflowError, OSError):
         # Correctly signed but malformed (not an object, no id, timestamp out of range): a 400 is a clear, final
-        # answer; a 500 would make the provider retry and fill the error log.
+        # answer; a 500 would make the provider retry and fill the error log. OSError is here for
+        # datetime.fromtimestamp on huge values: parse_webhook does no I/O, so keep this try block around
+        # parsing only (never widen it around database or network calls).
         log.warning("malformed billing webhook rejected", exc_info=True)
         raise AppError(400, "bad_event", "The event could not be read.")
     if update is None:

@@ -28,7 +28,7 @@ from datetime import datetime, timezone
 from typing import Protocol
 
 import httpx
-from sqlalchemy import func, select, text
+from sqlalchemy import func, select, text, update
 from sqlalchemy.orm import Session
 
 from .config import REASONING_EFFORTS
@@ -451,6 +451,27 @@ def tokens_today(db: Session, tenant_id: uuid.UUID) -> int:
     return int(used or 0)
 
 
+# A reservation is settled within the AI deadline (25 s by default, 300 s at most). A "pending" row older than
+# this belongs to a call whose process died before it could settle, so it no longer holds budget.
+STALE_RESERVATION = timedelta(minutes=15)
+
+
+def release_stale_reservations(db: Session, tenant_id: uuid.UUID | None = None,
+                               older_than: timedelta = STALE_RESERVATION) -> int:
+    """Turn abandoned reservations into zero-token "abandoned" rows (kept as a record, no longer counted).
+    The cost of a killed call is therefore bounded by one estimate, instead of blocking caps for the month.
+    Does not commit. `tenant_id=None` sweeps every tenant (used by the daily purge)."""
+    stmt = (update(AIUsage).where(AIUsage.model == "pending",
+                                  AIUsage.created_at < datetime.now(timezone.utc) - older_than)
+            .values(model="abandoned", input_tokens=0, output_tokens=0))
+    if tenant_id is not None:
+        stmt = stmt.where(AIUsage.tenant_id == tenant_id)
+    released = db.execute(stmt).rowcount
+    if released:
+        log.warning("abandoned AI reservations released", extra={"count": released})
+    return released
+
+
 def reserve(db: Session, tenant_id: uuid.UUID, cap: int, estimate: int, feature: str,
             global_daily_cap: int | None = None, daily_cap: int | None = None, max_in_flight: int | None = None,
             in_flight_window: timedelta = timedelta(minutes=2), trial: bool = False,
@@ -458,13 +479,16 @@ def reserve(db: Session, tenant_id: uuid.UUID, cap: int, estimate: int, feature:
     """Reserve an upper-bound estimate before calling the model, under Postgres advisory locks, so concurrent
     calls see each other's reservations. A call is refused if it *would* cross any cap: the plan's monthly
     allowance, a daily cap (trials), or the studio-wide daily budget. At most `max_in_flight` calls per tenant
-    run at once. Commits, so no transaction stays open during the AI call."""
+    run at once. Commits (also when it refuses, which keeps the stale-reservation sweep), so no transaction stays
+    open during the AI call and the caller must not have uncommitted writes of its own when it calls this."""
     db.execute(text("SELECT pg_advisory_xact_lock(CAST(:key AS bigint))"), {"key": _tenant_lock(tenant_id)})
     if global_daily_cap is not None:
         db.execute(text("SELECT pg_advisory_xact_lock(CAST(:key AS bigint))"), {"key": GLOBAL_LOCK})
 
+    release_stale_reservations(db, tenant_id)  # under the tenant lock; committed with our own row, or rolled back
+
     def refuse(status: int, code: str, message: str):
-        db.rollback()
+        db.commit()  # keeps the sweep (correct whatever happens to this request) and releases the locks
         raise AppError(status, code, message)
 
     if max_in_flight is not None:

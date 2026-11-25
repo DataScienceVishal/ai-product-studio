@@ -15,7 +15,7 @@ review before launch.
 | `notes` (example) | whatever users type | the product's core job | the user or the account deletes it | user; cascade |
 | `subscriptions` | provider customer and subscription ids | billing | account deletion (the provider customer is deleted first) | account deletion |
 | `billing_events` | provider event ids only | applying each webhook once | 400 days | purge job |
-| `ai_usage` | tenant id, token counts | per-customer caps, the studio-wide daily AI budget, cost | 400 days; on account deletion the tenant link is cleared but the counts stay, so the global budget still counts them | purge job |
+| `ai_usage` | tenant id, token counts | per-customer caps, the studio-wide daily AI budget, cost | 400 days; a reservation still "pending" after 15 minutes (process died mid-call) is zeroed by the purge job or the tenant's next call; on account deletion the tenant link is cleared but the counts stay, so the global budget still counts them | purge job |
 
 **AI provider:** the Azure OpenAI Responses API is called with `store=false`, so Azure does not store the response object
 for later retrieval. Azure's abuse monitoring is separate and may keep flagged content for human review (Microsoft
