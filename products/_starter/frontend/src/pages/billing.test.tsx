@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { reply, stubFetch, makeMe } from "../test-utils";
+import { setBillingProviderForTest } from "../api";
 import { Billing, BillingDone, MockCheckout, MockPortal } from "./app";
 
 const PLANS = { plans: [{ id: "pro", name: "Pro", price_pence: 4900, currency: "gbp", interval: "month", ai_monthly_tokens: 1000000 }] };
@@ -10,6 +11,7 @@ beforeEach(() => {
   fetchMock = stubFetch();
 });
 afterEach(() => {
+  setBillingProviderForTest("");
   vi.useRealTimers();
 });
 
@@ -155,6 +157,18 @@ describe("MockCheckout (billing return)", () => {
 });
 
 describe("MockPortal (/billing/mock-portal)", () => {
+  beforeEach(() => setBillingProviderForTest("mock"));
+
+  it.each(["stripe", ""])("renders no attacker text and no customer ref when billing is %j", (provider) => {
+    setBillingProviderForTest(provider);
+    const spoof = "Payment failed - call 0800 000 000";
+    window.history.replaceState({}, "", `/billing/mock-portal?customer=${encodeURIComponent(spoof)}`);
+    const { container } = render(<MockPortal />);
+    expect(container.textContent).not.toContain("0800");
+    expect(screen.queryByText(/Mock billing portal/)).toBeNull();
+    expect(screen.getByText("Page not found")).toBeTruthy();
+  });
+
   it("says it is the mock portal, shows the customer ref and links back to billing", () => {
     window.history.replaceState({}, "", "/billing/mock-portal?customer=mock_cus_42");
     render(<MockPortal />);

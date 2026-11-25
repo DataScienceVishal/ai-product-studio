@@ -768,3 +768,8 @@ def test_portal_route_builds_return_url_from_settings_not_headers(owner, databas
     r = client.post("/api/billing/portal", headers={"Host": "evil.test", "Origin": "https://evil.test"})
     assert r.status_code == 200
     assert calls[0][2]["return_url"] == ["https://app.test/billing"] and calls[0][2]["customer"] == ["cus_9"]
+
+
+def test_mock_portal_url_encodes_the_customer_ref():
+    url = MockBilling("secret", "https://app.test").portal_session("a b&x=1#z/é", "https://app.test/billing")
+    assert url == "https://app.test/billing/mock-portal?customer=a%20b%26x%3D1%23z%2F%C3%A9"

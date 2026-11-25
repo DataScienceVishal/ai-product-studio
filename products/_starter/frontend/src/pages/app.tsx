@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { api, ApiError, formatPrice, type Me, type Note, type Plan } from "../api";
+import { api, ApiError, formatPrice, isMockBilling, type Me, type Note, type Plan } from "../api";
 import { Alert, Button, Card, Field, Link, navigate } from "../ui";
 import { BAD_REDIRECT, safeRedirect } from "../redirect";
 
@@ -281,6 +281,9 @@ export function MockCheckout({ refresh }: { refresh: () => Promise<void> }) {
 }
 
 export function MockPortal() {
+  if (!isMockBilling()) {
+    return <Card title="Page not found"><p className="mb-4 text-slate-700">There is nothing here.</p><Link to="/billing">Back to billing</Link></Card>;
+  }
   const customer = new URLSearchParams(window.location.search).get("customer") ?? "";
   return (
     <Card title="Mock billing portal">
