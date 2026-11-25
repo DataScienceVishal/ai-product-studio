@@ -208,3 +208,6 @@ Append only. One line per decision:
 - T-73 was marked done on the board but its branch never reached main. The T-74 builder merged it into the T-74 branch, and both went to main in one merge after reviewer PASS. Lesson: a task is done only when `git merge-base --is-ancestor <branch> origin/main` holds.
 - Billing portal return_url comes only from APP_BASE_URL, never from request headers. The past_due checkout block applies only to the current provider's subscription, so mock-era state can't block real checkout.
 - Reviewer suggestions (none blocking) queued as one task rather than fixed now: the frontend button needs node_modules and a frontend test run.
+
+## 2026-11-25T06:34Z, run f784: T-75 merged
+Reviewer PASS on p/_starter/T-75-billing-followups; merged to main. Mock-portal page and https-only redirect deferred to T-76 (non-blocking review suggestions; demo-relevant before G4).

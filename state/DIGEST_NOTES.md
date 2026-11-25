@@ -32,3 +32,5 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - 2026-11-25T04:50Z run 8e83: starter checkout now refuses while a payment is failing (T-73), so a customer can't end up paying for two subscriptions. 544 tests pass. Next before G4: a Stripe billing-portal page (T-74).
 
 - 2026-11-25T05:30Z run 4b6f: T-74 done. The starter now has a Stripe billing-portal route, a past_due checkout block that only applies to the current provider, and a partial index for pending AI usage, with 558 backend tests green. Also found that T-73 had been marked done but never merged; it is now on main. Next: a "Manage billing" button (new task).
+
+- Run f784 (2026-11-25T06:34Z): T-75 done. Starter Billing page now has an owner-only "Manage billing" button, so past-due customers have a way out; AI usage check now hits its index (query cost ~2127 -> ~8). Tests: 561 backend, 119 frontend, all green. Small follow-ups queued as T-76.
