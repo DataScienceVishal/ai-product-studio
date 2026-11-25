@@ -223,9 +223,9 @@ needs Vishal's approval.
 ### 7. Azure OpenAI: a key for now, a managed identity next
 
 - **Now:** the key is a Container Apps secret (decision 6). Deploys default to `ai_provider=fake`, so nothing
-  is spent until someone chooses `azure`. Even then `AI_GLOBAL_DAILY_TOKENS=100000` bounds the spend: every
+  is spent until someone chooses `azure`. Even then `AI_GLOBAL_DAILY_TOKENS=98000` bounds the spend: every
   call reserves its upper-bound estimate and is refused if it would cross the budget, and since the R14 fix a
-  call that was sent is never retried, so the tokens counted are the tokens billed. 100,000 tokens cost at
+  call that was sent is never retried, so the tokens counted are the tokens billed. 98,000 tokens cost at
   most $0.20 a day even if every one were output ($2.00 per million). Trials together get half.
 - **Built (T-17), not yet switched on:** `AZURE_OPENAI_AUTH=managed_identity` (default `key`) makes `ai.py` fetch
   a bearer token from the Container Apps identity endpoint (`IDENTITY_ENDPOINT` with `X-IDENTITY-HEADER`,
@@ -412,9 +412,9 @@ nobody. That decides what `require_email_verification` does in a deployed demo:
 
 The token cap only bounds money at a given price, and the deployment comes from the `AZURE_OPENAI_DEPLOYMENT` secret, which
 `state/BUDGET.md` says is gpt-5.4-pro. One rule (`backend/app/aicost.py`, stdlib only): `AI_GLOBAL_DAILY_TOKENS` x 31 x price
-must be at most `AI_MONTHLY_BUDGET_USD` (6.20, the BUDGET.md line over a 31-day month). The price comes from a small table by
+must be at most `AI_MONTHLY_BUDGET_USD` (6.10, the approved BUDGET.md line, checked over a 31-day month). The price comes from a small table by
 deployment name (estimates, conservative: output prices); an explicit `AI_PRICE_PER_MILLION_TOKENS` can only raise a known
-deployment's price and is required for an unknown one. Each product copied from the starter gets its own 6.20 default, but all
+deployment's price and is required for an unknown one. Each product copied from the starter gets its own 6.10 default, but all
 draw on one credit and one OpenAI deployment, so the product lines in `state/BUDGET.md` must add up. The app applies it at startup with `AI_PROVIDER=azure`
 (the fake provider costs nothing and needs no price); `infra/cost-guard.sh` runs the same file in the workflow's check job with the
 deployment the release will use, before any Azure sign-in. Only the global cap is used because every call is reserved against it.
@@ -434,7 +434,7 @@ Estimates, uksouth, one demo product plus the shared pieces.
 | `log-studio` | 30 days, 0.1 GB a day cap | 0 | ingestion free to 5 GB a month, then $2.88 per GB |
 | `id-studio-acrpull` | | 0 | managed identities "at no extra cost" |
 | Data out | | 0 | first 100 GB a month free, then $0.08 per GB |
-| Azure OpenAI tokens | gpt-5-mini Global | 0 with `fake` (default); at most 6.10 with `azure` | 100,000 tokens a day × $2.00 per million, if every token were output |
+| Azure OpenAI tokens | gpt-5-mini Global | 0 with `fake` (default); at most 6.10 with `azure` | 98,000 tokens a day × $2.00 per million × 31 days = $6.08, if every token were output; with gpt-5.4-pro (BUDGET.md) the guard allows only about 1,093 tokens a day, below one call, so AI is effectively off |
 
 **Total: $5.07 a month with the student allowance, $23.20 without it** (plus at most $6.10 if real AI is on).
 At $23.20 a month, the $80 of credit lasts about 3.4 months. Each further product adds a web app and two

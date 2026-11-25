@@ -89,12 +89,12 @@ class Settings(BaseSettings):
     ai_reasoning_headroom: int = 1500
     ai_rate_limit_per_minute: int = Field(default=20, ge=1)
     # All tenants together, per UTC day. Protects the studio's $80 of Azure credit from farmed free trials.
-    ai_global_daily_tokens: int = 100_000
+    ai_global_daily_tokens: int = 98_000  # x 31 x $2.00/M (gpt-5-mini) = $6.08 <= $6.10
     # Blended USD per million tokens of the configured deployment. Unset (empty) means "look the deployment up in the
     # price table in aicost.py"; an unknown deployment then needs this set. Set, it overrides the table. Only checked
     # with AI_PROVIDER=azure: the fake provider costs nothing.
     ai_price_per_million_tokens: float | None = Field(default=None, gt=0, allow_inf_nan=False)
-    # The app refuses to start when ai_global_daily_tokens x 31 x the price is above this (aicost.py). 6.20 is the
+    # The app refuses to start when ai_global_daily_tokens x 31 x the price is above this (aicost.py). 6.10 is the
     # Azure OpenAI line in state/BUDGET.md, inside the studio's $80 credit. Raising it needs Vishal's approval.
     ai_monthly_budget_usd: float = Field(default=DEFAULT_MONTHLY_BUDGET_USD, gt=0, allow_inf_nan=False)
     ai_trial_share: float = 0.5  # all free trials together may use at most this share of the global budget

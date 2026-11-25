@@ -25,7 +25,7 @@ def ai(tokens, price):
 
 
 def test_shipped_defaults_pass(tmp_path):
-    assert run(tmp_path, ai(100000, "2.00"))[0] == 0
+    assert run(tmp_path, ai(98000, "2.00"))[0] == 0
 
 
 def test_no_ai_parameters_pass(tmp_path):
@@ -33,8 +33,8 @@ def test_no_ai_parameters_pass(tmp_path):
 
 
 @pytest.mark.parametrize("tokens, price, budget, code", [
-    (100000, "2.00", None, 0), (100001, "2.00", None, 1), (100000, "120", None, 1), (1666, "120", None, 0),
-    (1667, "120", None, 1), (100000, "2.00", "1", 1), (100000, "2.00", "20", 0),
+    (98387, "2.00", None, 0), (98388, "2.00", None, 1), (100000, "2.00", None, 1), (100000, "120", None, 1),
+    (1639, "120", None, 0), (1640, "120", None, 1), (98000, "2.00", "1", 1), (100000, "2.00", "20", 0),
 ])
 def test_budget_boundary(tmp_path, tokens, price, budget, code):
     assert run(tmp_path, ai(tokens, price), budget=budget)[0] == code
@@ -42,7 +42,7 @@ def test_budget_boundary(tmp_path, tokens, price, budget, code):
 
 def test_over_budget_message_shows_two_decimals(tmp_path):
     code, out = run(tmp_path, ai(100000, "120"))
-    assert code == 1 and "$372.00 a month" in out and "$6.20 AI budget" in out
+    assert code == 1 and "$372.00 a month" in out and "$6.10 AI budget" in out
 
 
 @pytest.mark.parametrize("tokens, price, words", [
@@ -81,7 +81,7 @@ def test_consumption_profile_passes(tmp_path):
 
 
 # T-91: the price comes from the deployed model, not a fixed number.
-def table_ai(tokens=100000, price="", deployment="gpt-5-mini"):
+def table_ai(tokens=98000, price="", deployment="gpt-5-mini"):
     p = ai(tokens, price)
     p["azureOpenAiDeployment"] = {"type": "string", "defaultValue": deployment}
     return p
@@ -92,7 +92,7 @@ AZURE = {"AI_PROVIDER": "azure"}
 
 def test_pro_deployment_from_env_fails_at_default_cap_without_printing_it(tmp_path):
     code, out = run(tmp_path, table_ai(), env_extra={**AZURE, "AZURE_OPENAI_DEPLOYMENT": "gpt-5.4-pro"})
-    assert code == 1 and "$558.00 a month" in out and "gpt-5.4-pro" not in out
+    assert code == 1 and "$546.84 a month" in out and "gpt-5.4-pro" not in out
 
 
 def test_known_cheap_deployment_passes(tmp_path):

@@ -1,7 +1,7 @@
 # T-91 AI cost guard status (branch p/_starter/T-91-cost-guard)
 
 Done: `backend/app/aicost.py` (price table, one budget rule, CLI), `Settings` refuses to start with `AI_PROVIDER=azure` when
-`AI_GLOBAL_DAILY_TOKENS` x 31 x price is over `AI_MONTHLY_BUDGET_USD` (default 6.20, = the 6.10 line over 31 days); `AI_PRICE_PER_MILLION_TOKENS` is now optional and
+`AI_GLOBAL_DAILY_TOKENS` x 31 x price is over `AI_MONTHLY_BUDGET_USD` (default 6.10 since T-95, Vishal's approved line; checked over 31 days); `AI_PRICE_PER_MILLION_TOKENS` is now optional and
 really read (blank = unset; nan, inf, <= 0 rejected); `infra/cost-guard.sh` uses the same rule with `AI_PROVIDER`,
 `AZURE_OPENAI_DEPLOYMENT` (secret, never printed) and the optional repo variable `AI_PRICE_PER_MILLION_TOKENS`; Bicep
 `aiPricePerMillionTokens` defaults to empty and is passed to the app only when set. Tests: `tests/test_aicost.py`, extended

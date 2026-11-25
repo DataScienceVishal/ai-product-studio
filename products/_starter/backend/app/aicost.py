@@ -17,10 +17,10 @@ import argparse
 import math
 import sys
 
-# The Azure OpenAI line in state/BUDGET.md (at most about $6 a month: 100,000 tokens x $2.00 per million x 31 days =
-# $6.20) is the default. The studio's whole Azure credit is $80
+# The Azure OpenAI line in state/BUDGET.md (Vishal approved at most $6.10 a month; the default 98,000 tokens x $2.00 per
+# million x 31 days = $6.08) is the default. The studio's whole Azure credit is $80
 # (CLAUDE.md section 10); raising this needs Vishal's approval.
-DEFAULT_MONTHLY_BUDGET_USD = 6.20
+DEFAULT_MONTHLY_BUDGET_USD = 6.10
 DAYS_PER_MONTH = 31  # the longest month, so the figure is a true worst case
 
 # Blended USD per million tokens, by deployment name (lower case, exact match). These are ESTIMATES, checked
