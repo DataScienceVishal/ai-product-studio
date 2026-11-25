@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api, ApiError, type Me } from "../api";
 import { Alert, AuthLayout, Button, Field, Link, navigate, normalise, takeToken } from "../ui";
 
-const SIGN_IN_PAGES = new Set(["/login", "/signup"]);
+/** The sign-in and sign-up forms: a signed-in user is sent on from these, so ?next= must never point at one. */
+export const SIGN_IN_PAGES: ReadonlySet<string> = new Set(["/login", "/signup"]);
 
 /** Where to go after signing in: a same-site path from ?next=, otherwise home. Never a sign-in page (a signed-in user there sees nothing). */
 export function safeNext(): string {

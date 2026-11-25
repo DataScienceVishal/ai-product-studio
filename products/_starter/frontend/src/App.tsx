@@ -33,13 +33,14 @@ export default function App() {
     if (me === null && !PUBLIC.has(path)) navigate("/login", true);
   }, [me, path]);
 
+  // Keep in step with SIGN_IN_PAGES in pages/auth.tsx (App.test.tsx checks it). Written as === so test_spa.py can read the routes.
   const signInPage = path === "/login" || path === "/signup";
   useEffect(() => {
     if (me && signInPage) navigate(safeNext(), true); // (honours ?next=) already signed in: the sign-in and sign-up forms have nothing to offer
   }, [me, signInPage]);
 
   if (me === undefined) return <p className="p-8 text-slate-600">Loading…</p>;
-  if (me && signInPage) return null;
+  if (me && signInPage) return null; // one frame only: the effect above replaces the URL, and safeNext() never returns a sign-in page
 
   if (path === "/signup") return <SignUp onSignedIn={setMe} />;
   if (path === "/login") return <SignIn onSignedIn={setMe} />;
