@@ -203,3 +203,8 @@ Append only. One line per decision:
 ## 2026-11-25T04:44Z run 8e83: T-72 subscription ref rules
 - Only events that start a subscription (checkout completed, subscription created) may replace a tenant's subscription id; every other event for a non-current id is ignored. Reason: an old subscription's late cancel, past_due or recovery must never change a customer who has moved to a new one (reviewer reproduced the recovery case).
 - Active events with an unknown or trial plan get 400 before the event id is recorded, so Stripe's retry applies the event once our plan map is fixed. Pending AI reservations older than 15 minutes count as abandoned (a killed process's cost stops counting after 15 min; a late settle restores the real cost).
+
+## 2026-11-25T05:30Z run 4b6f: T-74 merged, T-73 rescued
+- T-73 was marked done on the board but its branch never reached main. The T-74 builder merged it into the T-74 branch, and both went to main in one merge after reviewer PASS. Lesson: a task is done only when `git merge-base --is-ancestor <branch> origin/main` holds.
+- Billing portal return_url comes only from APP_BASE_URL, never from request headers. The past_due checkout block applies only to the current provider's subscription, so mock-era state can't block real checkout.
+- Reviewer suggestions (none blocking) queued as one task rather than fixed now: the frontend button needs node_modules and a frontend test run.

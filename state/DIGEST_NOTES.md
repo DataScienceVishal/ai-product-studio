@@ -30,3 +30,5 @@ Runs add one line per notable result. The Desk clears this back to the header af
 
 - 2026-11-25T04:44Z run 8e83: starter billing fix (T-72) merged: an old Stripe subscription can no longer cancel or downgrade a customer who has moved to a new one. Also: unknown plans are refused so Stripe retries them, and stuck AI usage rows clear after 15 minutes. 541 tests pass. No decisions needed.
 - 2026-11-25T04:50Z run 8e83: starter checkout now refuses while a payment is failing (T-73), so a customer can't end up paying for two subscriptions. 544 tests pass. Next before G4: a Stripe billing-portal page (T-74).
+
+- 2026-11-25T05:30Z run 4b6f: T-74 done. The starter now has a Stripe billing-portal route, a past_due checkout block that only applies to the current provider, and a partial index for pending AI usage, with 558 backend tests green. Also found that T-73 had been marked done but never merged; it is now on main. Next: a "Manage billing" button (new task).

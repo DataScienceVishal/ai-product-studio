@@ -42,3 +42,8 @@ One line per blocker:
 - What: the lead merged `FETCH_HEAD` meaning T-15 nits, but a reviewer working in parallel in the same clone had just run `git fetch`, so commit e22a16e (titled "merge T-15 nits") actually merged p/studio/T-30 before its re-review. Earlier the same run, a board claim commit landed on the builder's branch because both shared one checkout.
 - Impact: none lasting. The re-review passed with no code change; T-15 nits was merged separately (1fac53d) and the merged tree tested green.
 - Fix (rule for leads): never merge `FETCH_HEAD` while subagents are running; merge by explicit SHA. Give every parallel builder/reviewer its own `git worktree` and keep the main checkout on main.
+
+## 2026-11-25T05:31Z run 4b6f: a "done" task's branch was never merged (T-73)
+- What: T-73 was marked done on the board with reviewer PASS, but origin/p/_starter/T-73-past-due-checkout was not on main. It was found by chance and merged with T-74.
+- Risk: other tasks marked done may have the same gap. 35 old p/* branches are not ancestors of main. Most look superseded (merged via rebase or cherry-pick), but content diffs can't show that because main has moved on.
+- Recommended fix: when marking a product task done, record the merge commit SHA on the board line. Have a QA pass spot-check the done tasks since T-60 for their key change on main (as done here for T-73). Delete superseded remote branches only with Vishal's OK (deletion is on the ask-first list).
