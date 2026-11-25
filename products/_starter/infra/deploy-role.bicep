@@ -55,6 +55,8 @@ resource deployerRole 'Microsoft.Authorization/roleDefinitions@2022-04-01' = {
           'Microsoft.Resources/subscriptions/read'
           'Microsoft.Resources/subscriptions/resourceGroups/read'
           'Microsoft.Resources/subscriptions/resources/read'
+          // `az resource list --resource-group` (scripts/azure_spend.py inventory) reads resources under the group.
+          'Microsoft.Resources/subscriptions/resourceGroups/resources/read'
 
           // ---- Cost reads: azure-spend.yml / scripts/azure_spend.py POSTs a Cost Management query at RG scope ----------
           'Microsoft.CostManagement/query/action'

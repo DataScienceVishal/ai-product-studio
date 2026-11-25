@@ -1131,3 +1131,8 @@ workflow change to `main` has that power (ADR 0002, decision 8).
   deploy has run green under the new role. Status stays: L2 open, Low-Medium.
 - Not covered: the role has not been exercised against Azure, so the action list may miss one (a failed deploy naming
   the action, not an access hole).
+- **Residual risk even after the swap** (security review `reviews/T-65-security.md`): the role can still run any image
+  with the app identities (`containerApps/write`, `jobs/write`, unavoidable for a deploy role; the control is T-62's
+  reviewed `production` environment and workflow ruleset), can attach `id-github-deploy` itself to an app because it
+  lives in the same group, and holds Postgres server/admin/firewall writes that only the shared deploy needs. T-69 moves
+  the deploy identity to its own resource group and splits a shared-deploy role behind the reviewed environment.

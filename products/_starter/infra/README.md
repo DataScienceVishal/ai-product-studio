@@ -134,13 +134,25 @@ Postgres firewall rule. `bash infra/test-deploy-role.sh` checks all this without
    ```
 2. Prove the new role works before removing the old one: remove Contributor, then run the deploy workflow once
    from `main` (with `deploy_shared` ticked once, since that touches the most resource types), see "Risks" below
-   for what a failure looks like. If you prefer, run one release with both roles first, then remove Contributor.
+   for what a failure looks like. Don't test with both roles assigned: Contributor hides every missing action, so that run proves nothing.
    ```bash
    SCOPE=$(az group show -n rg-ai-studio --query id -o tsv)
    az role assignment delete --assignee "$PRINCIPAL" --role Contributor --scope "$SCOPE"
-   az role assignment list --assignee "$PRINCIPAL" --scope "$SCOPE" -o table   # only "Studio Deployer ..." should remain
+   az role assignment list --assignee "$PRINCIPAL" --all --include-inherited -o table   # only "Studio Deployer ..." should remain (also checks Contributor given higher up)
    ```
 3. Tell the studio it is applied, so ADR 0002, SECURITY.md and this section can drop "not applied".
+
+### Residual risks (security review T-65, accepted for now)
+
+- `containerApps/write` and `jobs/write` let the deployer run any image with the app's identities. That is what a
+  deploy role is for; the control is who can change workflows on `main` (T-62: `production` environment with a
+  required reviewer, ruleset on `.github/workflows/**`).
+- `userAssignedIdentities/assign/action` also covers `id-github-deploy` itself, because it lives in `rg-ai-studio`:
+  a malicious workflow could attach it to an app and keep deploy rights after the federated credential is removed.
+  Contributor allows the same today. Fix later (T-69): move `id-github-deploy` to its own resource group.
+- `flexibleServers/write`, `administrators/write` and firewall rules are only needed for the shared deploy
+  (`deploy_shared`). T-69 splits them into a separate shared role behind the reviewed environment.
+- The spend report's `AZURE_COST_CREDENTIALS` fallback identity is not covered by this role (T-63 removes it).
 
 ### Rolling back
 

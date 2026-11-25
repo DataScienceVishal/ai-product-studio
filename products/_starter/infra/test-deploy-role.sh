@@ -11,7 +11,7 @@ here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 dir="${1:-$here}"
 role="$dir/deploy-role.bicep"
 [ -f "$role" ] || { echo "no role file at $role"; exit 2; }
-for f in main.bicep shared.bicep modules/postgres.bicep; do [ -f "$dir/$f" ] || { echo "missing $dir/$f"; exit 2; }; done
+for f in main.bicep shared.bicep; do [ -f "$dir/$f" ] || { echo "missing $dir/$f"; exit 2; }; done
 
 python3 -I - "$dir" <<'PY'
 import re, sys, pathlib
@@ -60,6 +60,11 @@ check(not any("elevateaccess" in a.lower() for a in actions), "no elevateAccess 
 check(not any("federatedidentitycredentials" in a.lower() for a in actions), "no federatedIdentityCredentials in actions")
 check(not any(a.lower().endswith("/listcredentials/action") or a.lower().endswith("/listkeys/action") for a in actions),
       "no listCredentials or listKeys (nothing reads secrets)")
+# Secret-reading and remote-exec actions, by pattern (security review M5): none may appear.
+deny_patterns = ("listkeys", "listcredentials", "listsecrets", "getsecret", "secrets/", "sharedkeys",
+                 "getauthtoken", "/exec/", "regeneratekey", "listadminkeys", "listconnectionstrings", "generatetoken")
+denied = [a for a in actions if any(p in a.lower() for p in deny_patterns)]
+check(not denied, "no secret-reading or exec action (found %s)" % denied)
 deletes = sorted(a for a in actions if a.lower().endswith("/delete"))
 check(deletes == ["Microsoft.DBforPostgreSQL/flexibleServers/firewallRules/delete"],
       "the only delete is the runner firewall rule (found %s)" % deletes)
@@ -83,7 +88,9 @@ check("Contributor" not in role_code and "b24988ac-6180-42a0-ab88-20f7382dd24c" 
 decl = re.compile(r"^resource\s+\w+\s+'([^'@]+)@[^']+'\s*=\s*(existing\s*=\s*)?(?:if\b[^{]*)?\{", re.M)
 needs = {}  # type -> set of required verbs
 exempt = {"Microsoft.Authorization/roleAssignments"}  # shared.bicep pullRole, behind grantPullRole=false (Vishal grants AcrPull)
-for f in ("main.bicep", "shared.bicep", "modules/postgres.bicep"):
+bicep_files = sorted(str(p.relative_to(d)) for p in d.rglob("*.bicep") if p.name != "deploy-role.bicep")
+check("modules/postgres.bicep" in bicep_files, "templates found: %s" % bicep_files)
+for f in bicep_files:
     text = (d / f).read_text()
     text = "\n".join(l for l in text.splitlines() if not l.strip().startswith("//"))
     found = decl.findall(text)
@@ -107,6 +114,7 @@ extra = [
     "Microsoft.Resources/deployments/validate/action", "Microsoft.Resources/deployments/whatIf/action",
     "Microsoft.Resources/deployments/operationStatuses/read",
     "Microsoft.Resources/subscriptions/resourceGroups/read",
+    "Microsoft.Resources/subscriptions/resourceGroups/resources/read",
     "Microsoft.ContainerRegistry/registries/push/write", "Microsoft.ContainerRegistry/registries/pull/read",
     "Microsoft.App/jobs/start/action", "Microsoft.App/jobs/executions/read",
     "Microsoft.App/containerApps/revisions/read", "Microsoft.App/containerApps/revisions/activate/action",
