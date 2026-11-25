@@ -193,34 +193,50 @@ if [ -f "$sp" ]; then
   grep -q "if: env.AZURE_MODE == 'spend'" "$sp" && ok "azure-spend: the spend sign-in is conditional on its mode" || bad "azure-spend: the spend sign-in is conditional on its mode"
   ms=$(grep -n 'mode=spend' "$sp" | head -1 | cut -d: -f1); mo=$(grep -n 'mode=oidc' "$sp" | head -1 | cut -d: -f1)
   [ -n "$ms" ] && [ -n "$mo" ] && [ "$ms" -lt "$mo" ] && ok "azure-spend: spend mode is chosen before oidc" || bad "azure-spend: spend mode is chosen before oidc"
+  # The job-level flags the script reads must be built from the right secrets (the truth table below assumes these).
+  for expr in \
+    "HAS_SPEND: \${{ secrets.AZURE_SPEND_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' && secrets.AZURE_SUBSCRIPTION_ID != '' }}" \
+    "HAS_SPEND_ID: \${{ secrets.AZURE_SPEND_CLIENT_ID != '' }}" \
+    "HAS_OIDC: \${{ secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' && secrets.AZURE_SUBSCRIPTION_ID != '' }}" \
+    "HAS_DEPLOY_ID: \${{ secrets.AZURE_CLIENT_ID != '' }}" \
+    "HAS_COST_SP: \${{ secrets.AZURE_COST_CREDENTIALS != '' }}"; do
+    grep -qF "      $expr" "$sp" && ok "azure-spend: env ${expr%%:*} built from the right secrets" || bad "azure-spend: env ${expr%%:*} built from the right secrets"
+  done
   # Run the real sign-in choice script over every secret combination (truth table), not just grep its text.
   choose="$(mktemp)"
   awk '/- name: Work out the Azure sign-in/{f=1;next} f&&/run: \|/{r=1;next} r&&/^      - name:/{exit} r' "$sp" | sed 's/^          //' > "$choose"
-  want() { # spend_id tenant_sub deploy_id cost_sp on_main -> expected mode or "fail"
-    local env_file out rc
-    env_file="$(mktemp)"
-    hs=false; [ "$1" = 1 ] && [ "$2" = 1 ] && hs=true
-    ho=false; [ "$3" = 1 ] && [ "$2" = 1 ] && ho=true
-    out=$(HAS_SPEND_ID=$([ "$1" = 1 ] && echo true || echo false) HAS_SPEND=$hs HAS_OIDC=$ho \
-      HAS_COST_SP=$([ "$4" = 1 ] && echo true || echo false) ON_MAIN=$([ "$5" = 1 ] && echo true || echo false) \
-      GITHUB_REF=refs/heads/x GITHUB_ENV="$env_file" bash "$choose" 2>&1); rc=$?
-    if [ $rc -ne 0 ]; then echo fail; else sed -n 's/^AZURE_MODE=//p' "$env_file"; fi
-    rm -f "$env_file"
-  }
-  tt_bad=0; tt_n=0
-  for a in 0 1; do for t in 0 1; do for d in 0 1; do for c in 0 1; do for m in 0 1; do
-    tt_n=$((tt_n+1))
-    if [ $a = 1 ] && [ $t = 0 ]; then exp=fail
-    elif [ $a = 1 ] && [ $m = 1 ]; then exp=spend
-    elif [ $a = 0 ] && [ $d = 1 ] && [ $t = 1 ] && [ $m = 1 ]; then exp=oidc
-    elif { [ $a = 1 ] || { [ $d = 1 ] && [ $t = 1 ]; }; }; then exp=fail
-    elif [ $c = 1 ]; then exp=sp
-    else exp=none; fi
-    got=$(want $a $t $d $c $m)
-    [ "$got" = "$exp" ] || { tt_bad=$((tt_bad+1)); echo "  sign-in choice spend_id=$a tenant_sub=$t deploy_id=$d cost_sp=$c on_main=$m: want $exp, got $got"; }
-  done; done; done; done; done
+  if ! [ -s "$choose" ] || ! grep -q 'AZURE_MODE=' "$choose"; then
+    bad "azure-spend: could not extract the 'Work out the Azure sign-in' run block"
+  else
+    got_mode() { # spend_id tenant_sub deploy_id cost_sp on_main -> actual mode (+ ",azure" if HAS_AZURE=true) or "fail"
+      local env_file rc hs=false ho=false
+      env_file="$(mktemp)"
+      [ "$1" = 1 ] && [ "$2" = 1 ] && hs=true
+      [ "$3" = 1 ] && [ "$2" = 1 ] && ho=true
+      # Actions runs a bare run: step as `bash -e {0}`.
+      HAS_SPEND_ID=$([ "$1" = 1 ] && echo true || echo false) HAS_SPEND=$hs HAS_OIDC=$ho \
+        HAS_DEPLOY_ID=$([ "$3" = 1 ] && echo true || echo false) \
+        HAS_COST_SP=$([ "$4" = 1 ] && echo true || echo false) ON_MAIN=$([ "$5" = 1 ] && echo true || echo false) \
+        GITHUB_REF=refs/heads/x GITHUB_ENV="$env_file" bash -e "$choose" >/dev/null 2>&1; rc=$?
+      if [ $rc -ne 0 ]; then echo fail
+      else echo "$(sed -n 's/^AZURE_MODE=//p' "$env_file")$(grep -qx 'HAS_AZURE=true' "$env_file" && echo ,azure)"; fi
+      rm -f "$env_file"
+    }
+    tt_bad=0; tt_n=0
+    for a in 0 1; do for t in 0 1; do for d in 0 1; do for c in 0 1; do for m in 0 1; do
+      tt_n=$((tt_n+1))
+      if { [ $a = 1 ] || [ $d = 1 ]; } && [ $t = 0 ]; then exp=fail      # a client id without tenant/subscription
+      elif [ $a = 1 ] && [ $m = 1 ]; then exp=spend,azure
+      elif [ $d = 1 ] && [ $m = 1 ]; then exp=oidc,azure
+      elif [ $a = 1 ] || [ $d = 1 ]; then exp=fail                         # OIDC off main
+      elif [ $c = 1 ]; then exp=sp,azure
+      else exp=none; fi
+      got=$(got_mode $a $t $d $c $m)
+      [ "$got" = "$exp" ] || { tt_bad=$((tt_bad+1)); echo "  sign-in choice spend_id=$a tenant_sub=$t deploy_id=$d cost_sp=$c on_main=$m: want $exp, got $got"; }
+    done; done; done; done; done
+    [ "$tt_n" = 32 ] && [ "$tt_bad" = 0 ] && ok "azure-spend: sign-in choice matches the 32-row truth table (spend > oidc > sp > none, loud failures)" || bad "azure-spend: sign-in choice matches the 32-row truth table ($tt_bad wrong)"
+  fi
   rm -f "$choose"
-  [ "$tt_n" = 32 ] && [ "$tt_bad" = 0 ] && ok "azure-spend: sign-in choice matches the 32-row truth table (spend > oidc > sp > none, loud failures)" || bad "azure-spend: sign-in choice matches the 32-row truth table ($tt_bad wrong)"
   [ "$(grep -c 'creds:' "$sp")" = 1 ] && grep -q 'creds: \${{ secrets.AZURE_COST_CREDENTIALS }}' "$sp" && ok "azure-spend: the only creds: is the temporary AZURE_COST_CREDENTIALS fallback" || bad "azure-spend: the only creds: is the temporary AZURE_COST_CREDENTIALS fallback"
   grep -q "if: env.AZURE_MODE == 'oidc'" "$sp" && grep -q "if: env.AZURE_MODE == 'sp'" "$sp" && ok "azure-spend: each sign-in is conditional on its mode" || bad "azure-spend: each sign-in is conditional on its mode"
   awk '/^permissions:/{f=1;next} f&&/^[^ ]/{exit} f' "$sp" | grep -q 'id-token' && bad "azure-spend: id-token not at workflow level" || ok "azure-spend: id-token not at workflow level"
