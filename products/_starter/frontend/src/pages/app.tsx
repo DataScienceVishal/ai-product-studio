@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { api, ApiError, formatPrice, isMockBilling, type Me, type Note, type Plan } from "../api";
 import { Alert, Button, Card, Field, Link, navigate } from "../ui";
 import { BAD_REDIRECT, safeRedirect } from "../redirect";
@@ -21,8 +21,12 @@ export function Dashboard({ me }: { me: Me }) {
 
   const [total, setTotal] = useState(0);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const loadingMoreRef = useRef(false); // own in-flight guard: Summarise/Delete share `busy` and must not re-enable Show more
+  const generation = useRef(0); // bumped by every load(); a load-more that started before it is stale
 
   const load = useCallback(async () => {
+    generation.current += 1;
     try {
       const page = await api<{ items: Note[]; total: number }>("/api/notes");
       setNotes(page.items);
@@ -34,15 +38,20 @@ export function Dashboard({ me }: { me: Me }) {
     }
   }, []);
   const loadMore = async () => { // the API returns 50 at a time; without this, note 51 onwards is unreachable
-    setBusy("more");
+    if (loadingMoreRef.current) return;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    const started = generation.current;
     try {
       const page = await api<{ items: Note[]; total: number }>(`/api/notes?offset=${notes?.length ?? 0}`);
+      if (started !== generation.current) return; // the list was reloaded meanwhile: this page's offset is out of date
       setNotes((current) => [...(current ?? []), ...page.items.filter((n) => !current?.some((c) => c.id === n.id))]);
       setTotal(page.total);
     } catch (err) {
       setError(errorText(err));
     } finally {
-      setBusy(null);
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
     }
   };
   useEffect(() => { void load(); }, [load]);
@@ -94,6 +103,7 @@ export function Dashboard({ me }: { me: Me }) {
     try {
       await api(`/api/notes/${id}`, { method: "DELETE" });
       setNotes((current) => current?.filter((n) => n.id !== id) ?? null);
+      setTotal((t) => Math.max(0, t - 1));
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -142,7 +152,7 @@ export function Dashboard({ me }: { me: Me }) {
           </ul>
         )}
         {notes !== null && notes.length < total && (
-          <div className="mt-4"><Button variant="secondary" busy={busy === "more"} onClick={loadMore}>Show more notes ({notes.length} of {total})</Button></div>
+          <div className="mt-4"><Button variant="secondary" busy={loadingMore} onClick={loadMore}>Show more notes ({notes.length} of {total})</Button></div>
         )}
       </Card>
     </div>
