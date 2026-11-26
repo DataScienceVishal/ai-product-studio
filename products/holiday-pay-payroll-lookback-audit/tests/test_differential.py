@@ -11,7 +11,7 @@ Rules encoded in the oracle (see reviews/T-135-qa.md for which ones were learned
     The first 4.0 leave weeks are "normal pay", the rest "basic only"; a row that straddles 4.0 is split pro rata.
   * reference period: the 104 weeks before the leave week; the most recent 52 paid weeks inside it; no-pay weeks skipped.
   * normal pay (variable_hours): average over paid weeks of basic + regular_overtime + commission + allowance
-    (bonus_non_regular, expense_excluded, statutory, holiday_pay, rolled_up never count).
+    (bonus_non_regular, expense_excluded, excluded_week, holiday_pay, rolled_up never count).
   * basic only (variable_hours): average basic over the most recent 52 weeks that have basic pay > 0 (probed, DOC AMBIGUITY).
   * fixed_pay: contract basic + 52-paid-week average of the variable elements (normal part); contract basic (basic part).
   * due = amount * leave-weeks fraction; an exception is a |paid - due| > threshold (2dp, half-up).
@@ -127,7 +127,7 @@ def gen_worker(rng, wid, base, case_kind):
             continue
         if style == "sparse" and r < 0.5:
             continue
-        if r > 0.95:  # statutory only
+        if r > 0.95:  # excluded week only
             pay[d] = {"excluded_week": money(rng, 50, 120)}
             continue
         if r > 0.92:  # bonus only

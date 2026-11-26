@@ -147,7 +147,7 @@ def gen_fixed(rng, wid, base, mode):
             continue
         r_stat = rng.random()
         if r_stat < 0.05:
-            pay[d] = {"excluded_week": money(rng, 50, 120)}  # SSP/SMP only week: not a paid week, no basic
+            pay[d] = {"excluded_week": money(rng, 50, 120)}  # excluded-week-only week: not a paid week, no basic
             continue
         rec = {"basic": levels[i]}
         if r_stat < 0.12:
