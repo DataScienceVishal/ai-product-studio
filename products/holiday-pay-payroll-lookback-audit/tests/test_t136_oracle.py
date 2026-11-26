@@ -8,9 +8,11 @@ Part 1 rules (oracle):
   * workers.csv carries ONE contract_weekly_basic per worker; it cannot change over time (T136-F1).
   * contract given: normal rate = contract + 52-paid-week average of the variable elements; basic rate = contract, however
     the basic in the history moved (flag reference_week_basic_differs_from_contract when a reference week differs).
-  * contract blank: rate inferred (flag rate_inferred_no_contract_basic) as the MODE of the basic over the 8 calendar weeks before
-    the leave week, ties going to the value seen most recently (probed, T136-F2); if those 8 weeks hold no basic, the latest
-    basic before the leave week (probed, T136-F3).
+  * contract blank (T-137 rule, replaces the T-136 modal rule): rate inferred (flag rate_inferred_no_contract_basic) as the MOST
+    RECENT basic > 0 among non-statutory (no SSP/SMP) weeks in the 8 calendar weeks before the leave week; if those 8 weeks hold no
+    such basic, the latest NON-statutory basic > 0 anywhere before the leave week, then any basic > 0 (fallback). Flag rate_inferred_ambiguous when the 8-week window
+    holds more than one distinct basic, or the fallback was used; flag no_basic_pay_found when the rate is 0 (no basic anywhere).
+    A row with either of those two flags is ALWAYS an exception, even with difference 0 (direction "correct").
 Part 2 rules (oracle): FORMAT.md "irregular_rolled_up" section, rolled-up pay = 12.07% x (basic + overtime + commission + allowance),
   rounded half-up to the penny once.
 """
@@ -58,18 +60,16 @@ def window_weeks(pay, lw, n=104):
 
 
 def inferred_basic(pay, lw):
-    """Blank contract: mode of basic over the 8 weeks before lw (tie: most recent), else latest basic (T136-F2, F3)."""
-    last8 = [(w, p.get("basic", Decimal(0))) for w, p in window_weeks(pay, lw, 8)]  # newest first
-    vals = [b for _, b in last8 if b > 0]
-    if vals:
-        best = max(vals.count(v) for v in set(vals))
-        for v in vals:  # newest first, so first hit = most recent among the tied
-            if vals.count(v) == best:
-                return Fraction(v)
-    for _, p in window_weeks(pay, lw, 104):
-        if p.get("basic", Decimal(0)) > 0:
-            return Fraction(p["basic"])
-    return Fraction(0)  # no basic anywhere in the history: rate 0.00 (probed, T136-F5)
+    """Blank contract (T-137): (rate, ambiguous). Most recent basic>0 in the last 8 non-statutory weeks; else latest basic>0."""
+    last8 = [p.get("basic", Decimal(0)) for _, p in window_weeks(pay, lw, 8)
+             if p.get("basic", Decimal(0)) > 0 and p.get("statutory", Decimal(0)) <= 0]  # newest first
+    if last8:
+        return Fraction(last8[0]), len(set(last8)) > 1
+    for stat_ok in (False, True):  # latest non-statutory basic first, then any basic
+        for _, p in window_weeks(pay, lw, 104):
+            if p.get("basic", Decimal(0)) > 0 and (stat_ok or p.get("statutory", Decimal(0)) <= 0):
+                return Fraction(p["basic"]), True
+    return Fraction(0), True  # no basic anywhere in the history: rate 0.00 and flag no_basic_pay_found
 
 
 def oracle_fixed(wid, contract, mmdd, pay, leaves, threshold, details=None):
@@ -87,7 +87,11 @@ def oracle_fixed(wid, contract, mmdd, pay, leaves, threshold, details=None):
         if not any(s > 0 for s in sums):
             rows.append((wid, lw.isoformat(), q(paid), None, None, "cannot_check", 0))
             continue
-        rate = Fraction(contract) if contract is not None else inferred_basic(pay, lw)
+        ambiguous = False
+        if contract is not None:
+            rate = Fraction(contract)
+        else:
+            rate, ambiguous = inferred_basic(pay, lw)
         var = [s - p.get("basic", Decimal(0)) for s, (_, p) in zip(sums, win) if s > 0][:52]
         avg_var = sum((Fraction(v) for v in var), Fraction(0)) / len(var)
         due = q((rate + avg_var) * Fraction(normal_part) + rate * Fraction(basic_part))
@@ -96,6 +100,10 @@ def oracle_fixed(wid, contract, mmdd, pay, leaves, threshold, details=None):
             flags = set()
             if contract is None:
                 flags.add("rate_inferred_no_contract_basic")
+            if ambiguous:
+                flags.add("rate_inferred_ambiguous")
+            if rate == 0:
+                flags.add("no_basic_pay_found")
             used = [p.get("basic", Decimal(0)) for s, (_, p) in zip(sums, win) if s > 0][:52]
             if contract is not None and any(b > 0 and Fraction(b) != rate for b in used):
                 flags.add("reference_week_basic_differs_from_contract")
@@ -105,8 +113,9 @@ def oracle_fixed(wid, contract, mmdd, pay, leaves, threshold, details=None):
             if Fraction(latest) != rate:
                 flags.add("latest_week_basic_differs_from_rate_used")
             details[(wid, lw.isoformat())] = (q(rate), flags)
-        if abs(diff) > threshold:
-            rows.append((wid, lw.isoformat(), q(paid), due, diff, "underpaid" if diff > 0 else "overpaid", len(var)))
+        if abs(diff) > threshold or ambiguous:  # an ambiguous / no-basic rate is always an exception
+            rows.append((wid, lw.isoformat(), q(paid), due, diff,
+                         "underpaid" if diff > 0 else "overpaid" if diff < 0 else "correct", len(var)))
     return rows
 
 
@@ -133,7 +142,13 @@ def gen_fixed(rng, wid, base, mode):
             if rng.random() < 0.5:
                 pay[d] = {"regular_overtime": money(rng, 5, 60)}  # overtime-only week, no basic
             continue
+        r_stat = rng.random()
+        if r_stat < 0.05:
+            pay[d] = {"statutory": money(rng, 50, 120)}  # SSP/SMP only week: not a paid week, no basic
+            continue
         rec = {"basic": levels[i]}
+        if r_stat < 0.12:
+            rec = {"basic": max(Decimal("10"), levels[i] / 2).quantize(CENT), "statutory": money(rng, 30, 100)}  # part-basic sick week
         for c in VARIABLE_CATS:
             if rng.random() < 0.3:
                 rec[c] = money(rng, 1, 70)
@@ -389,7 +404,7 @@ class FixedPayChangingBasic(unittest.TestCase):
                     continue
                 n += 1
                 rate, flags = details[(r["worker_id"], r["leave_week"])]
-                have = set(f for f in r["flags"].split(";") if f.startswith(("rate_", "reference_", "latest_")))
+                have = set(f for f in r["flags"].split(";") if f.startswith(("rate_", "reference_", "latest_", "no_basic")))
                 if Decimal(r["fixed_basic_rate"]) != rate or have != flags:
                     bad.append((seed, r["worker_id"], r["leave_week"], r["fixed_basic_rate"], str(rate), sorted(have), sorted(flags)))
         self.assertGreater(n, 60)
@@ -399,15 +414,15 @@ class FixedPayChangingBasic(unittest.TestCase):
 class HandComputed(unittest.TestCase):
     """Hand-worked cases for the findings in reviews/T-136-qa.md (expected values computed on paper)."""
 
-    def run_one(self, pay, leave, wtype, cell):
+    def run_one(self, pay, leave, wtype, cell, paid="1.00", all_rows=False):
         wk0 = date(2025, 1, 4)
         hist = {wk0 + timedelta(days=7 * i): v for i, v in pay.items()}
         ld = wk0 + timedelta(days=7 * leave)
-        hist.setdefault(ld, {})["holiday_pay"] = Decimal("1.00")
+        hist.setdefault(ld, {})["holiday_pay"] = Decimal(paid)
         with tempfile.TemporaryDirectory() as tmp:
             write_inputs(tmp, [("A1", wtype, (4, 1), cell, hist)], [("A1", ld, "1")])
             rows, _, _ = run_cli(tmp, Decimal("0"))
-        return rows[0]
+        return rows if all_rows else rows[0]
 
     def test_f1_one_contract_rate_for_the_whole_history(self):
         # contract 200, but the basic paid was 100 until a rise at week 10; leave in week 10 (before the rise, paid 100 + 1.00 pay)
@@ -416,18 +431,61 @@ class HandComputed(unittest.TestCase):
         self.assertEqual((r["due"], r["difference"], r["fixed_basic_rate"]), ("200.00", "199.00", "200.00"))
         self.assertIn("reference_week_basic_differs_from_contract", r["flags"])  # the only warning that the rate moved
 
-    def test_f2_rise_three_weeks_before_leave_is_not_picked_up_when_contract_blank(self):
+    def test_f2_rise_three_weeks_before_leave_uses_new_rate_and_flags(self):
+        # T-137: blank contract, rate = most recent basic in the last 8 weeks, flagged ambiguous (was: old modal rate 100.00)
         pay = {i: {"basic": Decimal(100 if i < 17 else 200)} for i in range(20)}
         r = self.run_one(pay, 20, "fixed_pay", "")
-        self.assertEqual((r["due"], r["fixed_basic_rate"]), ("100.00", "100.00"))
-        self.assertIn("latest_week_basic_differs_from_rate_used", r["flags"])
-        pay = {i: {"basic": Decimal(100 if i < 16 else 200)} for i in range(20)}  # 4 old, 4 new in the last 8: tie goes to newest
+        self.assertEqual((r["due"], r["fixed_basic_rate"]), ("200.00", "200.00"))
+        self.assertIn("rate_inferred_ambiguous", r["flags"])
+        pay = {i: {"basic": Decimal(100 if i < 16 else 200)} for i in range(20)}  # 4 old, 4 new in the last 8
         self.assertEqual(self.run_one(pay, 20, "fixed_pay", "")["due"], "200.00")
 
-    def test_f5_blank_contract_and_no_basic_anywhere_gives_rate_zero(self):
+    def test_f2_zero_difference_after_rise_is_still_an_exception(self):
+        pay = {i: {"basic": Decimal(100 if i < 17 else 200)} for i in range(20)}
+        rows = self.run_one(pay, 20, "fixed_pay", "", paid="200.00", all_rows=True)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual((rows[0]["difference"], rows[0]["direction"]), ("0.00", "correct"))
+        self.assertIn("rate_inferred_ambiguous", rows[0]["flags"])
+        # an employer who paid the old rate is underpaid by the rise, not hidden
+        r = self.run_one(pay, 20, "fixed_pay", "", paid="100.00")
+        self.assertEqual((r["difference"], r["direction"]), ("100.00", "underpaid"))
+
+    def test_report_md_explains_zero_difference_guessed_rate(self):
+        pay = {i: {"basic": Decimal(100 if i < 17 else 200)} for i in range(20)}
+        wk0 = date(2025, 1, 4)
+        hist = {wk0 + timedelta(days=7 * i): v for i, v in pay.items()}
+        ld = wk0 + timedelta(days=140)
+        hist[ld] = {"holiday_pay": Decimal("200.00")}
+        with tempfile.TemporaryDirectory() as tmp:
+            write_inputs(tmp, [("A1", "fixed_pay", (4, 1), "", hist)], [("A1", ld, "1")])
+            run_cli(tmp, Decimal("0.01"))
+            with open(os.path.join(tmp, "out", "report.md"), encoding="utf-8") as fh:
+                md = fh.read()
+        for text in ("or weekly rate guessed): 1", "Leave weeks with a guessed weekly rate: 1",
+                     "Listed although the difference is £0.00"):
+            self.assertIn(text, md)
+
+    def test_f3_partial_latest_week_is_flagged_even_when_paid_equals_due(self):
+        pay = {i: {"basic": Decimal(100 if i < 19 else 40)} for i in range(20)}
+        rows = self.run_one(pay, 20, "fixed_pay", "", paid="40.00", all_rows=True)
+        self.assertEqual((rows[0]["due"], rows[0]["difference"]), ("40.00", "0.00"))
+        self.assertIn("rate_inferred_ambiguous", rows[0]["flags"])
+
+    def test_contract_given_has_no_new_flags_and_no_forced_exception(self):
+        pay = {i: {"basic": Decimal(100 if i < 17 else 200)} for i in range(20)}
+        self.assertEqual(self.run_one(pay, 20, "fixed_pay", "200.00", paid="200.00", all_rows=True), [])
+        r = self.run_one(pay, 20, "fixed_pay", "200.00")
+        self.assertNotIn("rate_inferred_ambiguous", r["flags"])
+        self.assertNotIn("no_basic_pay_found", r["flags"])
+
+    def test_f5_blank_contract_and_no_basic_anywhere_is_flagged(self):
         pay = {i: {"regular_overtime": Decimal(30)} for i in range(6)}
         r = self.run_one(pay, 6, "fixed_pay", "")
         self.assertEqual((r["due"], r["fixed_basic_rate"], r["direction"]), ("30.00", "0.00", "underpaid"))  # paid 1.00 by the helper
+        self.assertIn("no_basic_pay_found", r["flags"])
+        rows = self.run_one(pay, 6, "fixed_pay", "", paid="30.00", all_rows=True)  # still an exception at difference 0
+        self.assertEqual(len(rows), 1)
+        self.assertIn("no_basic_pay_found", rows[0]["flags"])
 
 
 class RolledUpOracle(unittest.TestCase):

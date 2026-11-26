@@ -67,7 +67,7 @@ def avg_of_most_recent(values):
     return sum((Fraction(v) for v in vals), Fraction(0)) / len(vals), len(vals)
 
 
-def oracle_worker(wid, wtype, contract, mmdd, pay, leaves, threshold):
+def oracle_worker(wid, wtype, contract, mmdd, pay, leaves, threshold, blank=False):
     """pay: {date: {cat: Decimal}}; leaves: [(date, Decimal fraction)] sorted. Returns exception tuples."""
     rows = []
     cum = {}
@@ -95,8 +95,13 @@ def oracle_worker(wid, wtype, contract, mmdd, pay, leaves, threshold):
             basic_rate = avg_of_most_recent(basics)[0] if basics else Fraction(0)
         due = q(normal_rate * Fraction(normal_part) + basic_rate * Fraction(basic_part))
         diff = q(due - q(paid))
-        if abs(diff) > threshold:
-            rows.append((wid, lw.isoformat(), q(paid), due, diff, "underpaid" if diff > 0 else "overpaid", n))
+        # blank contract and no basic in the 8 weeks before the leave: rate inferred by fallback, flag
+        # rate_inferred_ambiguous, so the row is always an exception (T-137), even with difference 0
+        ambiguous = blank and wtype == "fixed_pay" and not any(
+            p.get("basic", Decimal(0)) > 0 and p.get("statutory", Decimal(0)) <= 0 for _, p in win[:8])
+        if abs(diff) > threshold or ambiguous:
+            rows.append((wid, lw.isoformat(), q(paid), due, diff,
+                         "underpaid" if diff > 0 else "overpaid" if diff < 0 else "correct", n))
     return rows
 
 
@@ -246,7 +251,7 @@ def run_case(seed):
     expected = []
     for wid, w in workers:
         fr = [(d, Decimal(f or "1")) for d, f in w["leaves"]]
-        expected += oracle_worker(wid, w["type"], w["contract"], w["mmdd"], w["pay"], fr, threshold)
+        expected += oracle_worker(wid, w["type"], w["contract"], w["mmdd"], w["pay"], fr, threshold, w["blank"])
     expected.sort(key=lambda t: (t[0], t[1]))
     with tempfile.TemporaryDirectory() as tmp:
         write_inputs(tmp, workers, with_weeks)
