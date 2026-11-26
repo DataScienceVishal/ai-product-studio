@@ -13,3 +13,11 @@ Official examples and where the published figures disagree with their own method
 Not legal advice; a payroll professional signs off. Assumptions: weekly history is complete, `allowance` counts only if status-related.
 
 Assumptions for adviser sign-off: the first 4 weeks of leave taken in each leave year are treated as the normal-pay (reg 13) weeks, and a leave week belongs to the leave year containing its week-ending date. `worker_type="variable_hours"` (default, s224 averaging) or `"fixed_pay"` (current basic rate plus 52-week average of variable elements). Misaligned dates raise; rows carry `flags` (`no_reference_weeks`, `shortened`, `leave_week_missing_from_history`).
+
+## Run an audit (T-115)
+
+```
+python3 audit.py --history history.csv --leave leave.csv [--workers workers.csv] --out out/ [--threshold 0.01] [--include-flagged]
+```
+Try it on the synthetic sample: `python3 audit.py --history samples/history.csv --leave samples/leave.csv --workers samples/workers.csv --out out/`.
+Writes `out/exceptions.csv` (one row per leave week whose difference exceeds the threshold) and `out/report.md` (summary plus the working in plain English). Exit 0 on success; exit 2 if any input is invalid: every error is printed to stderr with file and line, and nothing is written. Input columns, privacy rules (pseudonymous IDs only; name/NI columns are refused) and an example: `ingest/FORMAT.md`. Sample data and the hand-computed expectations: `samples/generate.py`.

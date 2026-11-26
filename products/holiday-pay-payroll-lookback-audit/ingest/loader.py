@@ -18,7 +18,7 @@ WORKER_COLS = (("worker_id", "worker_type"), ("contract_weekly_basic",))
 _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _NUM = re.compile(r"^\d+(\.\d+)?$")
 _NI = re.compile(r"^[A-Za-z]{2}\s?\d{2}\s?\d{2}\s?\d{2}\s?[A-Za-z]$")
-_PERSONAL_PARTS = ("name", "nino", "insurance", "birth", "dob", "address", "postcode",
+_PERSONAL_PARTS = ("name", "nino", "ninumber", "insurance", "birth", "dob", "address", "postcode",
                    "email", "phone", "mobile", "surname")
 
 

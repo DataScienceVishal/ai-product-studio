@@ -130,7 +130,8 @@ class EndToEnd(Base):
             "W005": ("300.00", "315.00", "15.00", "underpaid")})
         self.assertEqual(by["W004"]["flags"], "shortened")
         self.assertEqual((by["W003"]["ref_weeks_used"], by["W003"]["ref_weeks_skipped"]), ("52", "5"))
-        md = open(f"{out}/report.md", encoding="utf-8").read()
+        with open(f"{out}/report.md", encoding="utf-8") as fh:
+            md = fh.read()
         self.assertIn("Not legal advice; a payroll professional signs off", md.split("\n")[2])
         for s in ("Workers: 5", "Leave weeks checked: 5", "Underpayments: 3, total underpaid £145.00",
                   "Overpayments: 1, total overpaid £10.00", "Workers with flags: 1 (W004)",
@@ -138,7 +139,7 @@ class EndToEnd(Base):
             self.assertIn(s, md)
 
     def test_threshold(self):
-        self.assertEqual(len(self.audit("--threshold", "20")[1]), 3)     # drops W005 (15.00)
+        self.assertEqual(len(self.audit("--threshold", "20")[1]), 2)     # only 80.00 and 50.00 exceed 20
         self.assertEqual(len(self.audit("--threshold", "80")[1]), 0)     # strictly greater than
         _, rows = self.audit("--threshold", "80", "--include-flagged")
         self.assertEqual([r["worker_id"] for r in rows], ["W004"])
