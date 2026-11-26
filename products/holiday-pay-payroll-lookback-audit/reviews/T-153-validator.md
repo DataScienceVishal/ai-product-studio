@@ -50,3 +50,29 @@ Edits needed:
 ## What turns this into PASS
 
 Apply edits 1 to 8 to the idea file's demand test under the dated note, before any contact, and apply S1 to S6 to `SPEC.md`. S1, S2 and edits 3 and 8 carry the weight. The rest is wording. A re-check is desk-only and short.
+
+## Re-review (2026-11-26)
+
+VERDICT: PASS
+
+I re-read the "Amendment 2026-11-26, before any contact, per T-153 validator review" in `state/ideas/holiday-pay-payroll-lookback-audit.md` (it states that it wins on conflict) and the current `SPEC.md`.
+
+| Item | Applied? | Where |
+|---|---|---|
+| 1 Friend counts once; no clients or suppliers | Yes | amendment 1 |
+| 2 Questions read word for word; notes within 24 h, unedited; every interview counts; first 5; firms recorded by type and size | Yes | amendment 2 (overrides "written down verbatim by the studio") |
+| 3 "Unprompted" defined; no price, plan or checkout in the demo | Yes | amendment 3 |
+| 4 Q4 not leading; "no" scores £0 | Yes | amendment 4 |
+| 5 Past-behaviour pass line | Yes | amendment 5 |
+| 6 Sign-off role, not a person | Yes | amendment 6 (overrides the original Q6 and the third pass line) |
+| 7 Fail line fixed; the four pass lines listed | Yes | amendment 7 |
+| 8 Contact-only points decided now, all or nothing | Yes | amendment 8 |
+| S1 Billing off, no price shown | Yes | SPEC section 4 Must, plus section 5 |
+| S2 Demo fallback without Q-5 or Q-16 | Yes | SPEC section 4 Must |
+| S3 HR leave import reworded | Yes | SPEC section 4 Should |
+| S4 Irwin Mitchell moved; 17+ examples cited to KILL-TEST; reference fixed | Yes | SPEC sections 2, 6 and 5 |
+| S5 Payback logic; pilot terms labelled a hypothesis | Yes | SPEC section 5 |
+| S6 Activation metric reworded | Yes | SPEC section 7 |
+| G1c caveat | Yes | SPEC section 8: not G1c until Q-16 passes and the data design is signed off |
+
+No new problems. The original text still says "the studio" records answers and "name a sign-off person", but the amendment overrides both, as it says it does. The test is now pre-registered, has numbers, can clearly fail, and defines the unprompted price. The SPEC's scope fits two weeks from `_starter`, its prices are labelled as guesses, and every claim is traced to a source. This passes T-153 only. It is not a G1 or G1c grant: that still depends on Q-17, Q-16 part B and the security sign-off of the data design.
