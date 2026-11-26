@@ -99,6 +99,8 @@ def split_rows(rows):
 
 
 _md = md_escape
+MAX_ROLLED_UP_TOTAL = 500    # detailed rolled-up sections in the whole report.md, all workers together
+MAX_ROLLED_UP_SUMMARIES = 50  # per-worker 'and K more' lines; further workers share one line
 MAX_ROLLED_UP_DETAILS = 20   # detailed report.md sections per rolled-up worker; exceptions.csv is always complete
 
 
@@ -351,7 +353,7 @@ def _rolled_up_notes(skipped_leave, idle=None, leave_missing=None):
     if idle:
         out += ["", "## Note: irregular_rolled_up workers with nothing to check", "",
                 f"{len(idle)} irregular_rolled_up worker(s) were loaded but had no week that the rolled-up check applies to "
-                "(no pay that counts, or pay only in leave years before 2024 with no rolled_up_holiday_pay, and no holiday_pay row): "
+                "(no pay that counts, or pay only in leave years starting before 1 April 2024 with no rolled_up_holiday_pay, and no holiday_pay row): "
                 + ", ".join(_md(w) for w in idle) + ". They were not skipped by mistake; confirm their history is complete."]
     if leave_missing:
         out += ["", "## Warning: leave week of an irregular_rolled_up worker missing from history", "",
@@ -362,24 +364,32 @@ def _rolled_up_notes(skipped_leave, idle=None, leave_missing=None):
 
 
 def _exception_sections(exceptions):
-    """Detailed sections: all look-back exceptions, and at most MAX_ROLLED_UP_DETAILS per rolled-up worker."""
-    out, shown, more = [], {}, {}
+    """Detailed sections: all look-back exceptions; rolled-up ones at most MAX_ROLLED_UP_DETAILS per worker and
+    MAX_ROLLED_UP_TOTAL overall. Left-out ones get an 'and K more' line for the first MAX_ROLLED_UP_SUMMARIES workers,
+    then one combined line. exceptions.csv is never capped."""
+    out, shown, more, total = [], {}, {}, 0
     for r in exceptions:
         if not is_rolled_up(r):
             out.append(explain(r))
             continue
         wid = r["worker_id"]
-        if shown.get(wid, 0) < MAX_ROLLED_UP_DETAILS:
+        if shown.get(wid, 0) < MAX_ROLLED_UP_DETAILS and total < MAX_ROLLED_UP_TOTAL:
             shown[wid] = shown.get(wid, 0) + 1
+            total += 1
             out.append(explain_rolled_up(r, _gbp, _md))
         else:
             more.setdefault(wid, []).append(r)
-    for wid, rs in more.items():
+    items = list(more.items())
+    for wid, rs in items[:MAX_ROLLED_UP_SUMMARIES]:
         flags = Counter(f for r in rs for f in r["flags"])
         detail = f" ({', '.join(f'{_md(f)}: {c}' for f, c in sorted(flags.items()))})" if flags else ""
         out.append(f"### {_md(wid)}: and {len(rs)} more rolled-up pay exception(s){detail}\n\n"
-                   f"Only the first {MAX_ROLLED_UP_DETAILS} are written out above. All of them, "
+                   f"The rest are not written out above (at most {MAX_ROLLED_UP_DETAILS} per worker and {MAX_ROLLED_UP_TOTAL} in the whole report). All of them, "
                    f"{', '.join(_week_ranges(sorted({r['week_end'] for r in rs})))}, are in exceptions.csv.\n")
+    rest = items[MAX_ROLLED_UP_SUMMARIES:]
+    if rest:
+        out.append(f"### and {sum(len(rs) for _, rs in rest)} more rolled-up pay exception(s) for {len(rest)} further worker(s)\n\n"
+                   "Left out of this report to keep it readable. Every exception is in exceptions.csv.\n")
     return out
 
 
