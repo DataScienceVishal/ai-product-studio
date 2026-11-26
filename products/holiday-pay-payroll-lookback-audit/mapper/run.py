@@ -189,7 +189,7 @@ def main(argv: list[str] | None = None, client=None, now=None) -> int:
     before_usd = earlier_worst_case(earlier, estimate)  # validated by preflight
     if live and hasattr(client, "set_spend_cap"):
         try:
-            client.set_spend_cap(args.max_usd, DEFAULT_PRICE)
+            client.set_spend_cap(args.max_usd - before_usd, DEFAULT_PRICE)
         except ValueError as error:
             print(f"error: {error}", file=sys.stderr)
             return 2
