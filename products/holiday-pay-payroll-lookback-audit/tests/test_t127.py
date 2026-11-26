@@ -61,6 +61,7 @@ class DefaultUnchanged(Base):
                            "--workers", self.write("w.csv", text), "--out", out)
         self.assertEqual((code, err), (0, ""))
         self.assertEqual(read(f"{out}/exceptions.csv"), read(f"{GOLDEN}/main_exceptions.csv"))
+        self.assertEqual(read(f"{out}/report.md"), read(f"{GOLDEN}/main_report.md"))
 
     def test_loader_default_and_blank(self):
         h = self.write("h.csv", H + "W1,2025-06-07,basic,100\n")
@@ -259,6 +260,48 @@ class Counts(Base):
         out = os.path.join(self.tmp.name, "o")
         code, so, se = run("--history", f"{SAMPLES}/history.csv", "--leave", f"{SAMPLES}/leave.csv", "--out", out)
         self.assertEqual(so, f"6 leave weeks checked, 4 exceptions. Written to {out}\n")
+        self.assertEqual((code, se), (0, ""))
+
+
+class TrailingNewline(unittest.TestCase):
+    def test_mmdd_and_date_reject_trailing_newline(self):
+        from ingest.loader import _date, _leave_year_start_value
+        self.assertEqual(_leave_year_start_value("01-01"), (1, 1))
+        self.assertIsNone(_leave_year_start_value("01-01\n"))
+        issues = []
+        self.assertIsNone(_date("h.csv", 2, {"week_ending": "2025-06-07\n"}, issues))
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(_date("h.csv", 2, {"week_ending": "2025-06-07"}, []), date(2025, 6, 7))
+
+
+class LeaveYearsSummary(Base):
+    def report(self, workers_text):
+        out = os.path.join(self.tmp.name, "o")
+        code, _, err = run("--history", f"{SAMPLES}/history.csv", "--leave", f"{SAMPLES}/leave.csv",
+                           "--workers", self.write("w.csv", workers_text), "--out", out)
+        self.assertEqual((code, err), (0, ""))
+        with open(f"{out}/report.md", encoding="utf-8") as fh:
+            return fh.read()
+
+    def test_lists_only_non_default_workers(self):
+        md = self.report(W + "W001,variable_hours,,01-01\nW002,variable_hours,,04-01\nW004,variable_hours,,06-15\n")
+        self.assertIn("- Leave years: 1 April unless set; W001: 1 January, W004: 15 June\n", md)
+        self.assertEqual(md.count("Leave years:"), 1)
+
+    def test_capped_at_20_with_and_k_more(self):
+        from report.builder import _leave_years_line
+        line = _leave_years_line({f"W{i:03d}": (1, 1) for i in range(1, 26)})
+        self.assertEqual(line.count("1 January"), 20)
+        self.assertTrue(line.endswith(", and 5 more"))
+        self.assertIn("W020: 1 January", line)
+        self.assertNotIn("W021", line)
+
+    def test_ids_are_escaped(self):
+        from report.builder import _leave_years_line
+        self.assertNotIn("<b>", _leave_years_line({"<b>x": (1, 1)}) or "")
+
+    def test_absent_when_all_default(self):
+        self.assertNotIn("Leave years", self.report(W + "W001,variable_hours,,\n"))
 
 
 if __name__ == "__main__":

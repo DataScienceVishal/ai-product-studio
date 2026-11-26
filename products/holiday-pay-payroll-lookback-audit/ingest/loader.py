@@ -16,9 +16,9 @@ HISTORY_COLS = (("worker_id", "week_ending", "element_category", "amount"), ())
 LEAVE_COLS = (("worker_id", "week_ending"), ("weeks",))
 WORKER_COLS = (("worker_id", "worker_type"), ("contract_weekly_basic", "leave_year_start"))
 DEFAULT_LEAVE_YEAR_START = (4, 1)
-_MMDD = re.compile(r"^[0-9]{2}-[0-9]{2}$")
+_MMDD = re.compile(r"[0-9]{2}-[0-9]{2}")
 
-_DATE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+_DATE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
 _MONEY = re.compile(r"^[0-9]{1,9}(\.[0-9]{1,2})?$")
 _ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")
 # NI shape on a value with every separator removed: two prefix letters, six digits, optional suffix A-D.
@@ -158,7 +158,7 @@ def _worker_id(name, line, row, issues):
 
 def _date(name, line, row, issues):
     v = row["week_ending"]
-    if _DATE.match(v):
+    if _DATE.fullmatch(v):
         try:
             d = date.fromisoformat(v)
         except ValueError:
@@ -181,7 +181,7 @@ def _amount(name, line, col, v, issues):
 
 def _leave_year_start_value(v):
     """(month, day) for a real MM-DD calendar date, else None. 02-29 is refused: the start must exist every year."""
-    if not _MMDD.match(v):
+    if not _MMDD.fullmatch(v):
         return None
     m, d = int(v[:2]), int(v[3:])
     try:

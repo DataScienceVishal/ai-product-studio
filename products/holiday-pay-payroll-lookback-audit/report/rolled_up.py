@@ -13,7 +13,7 @@ import re
 from decimal import Decimal
 
 from engine import accrual_applies, normal_pay, rolled_up_pay, ROLLED_UP, money, dec
-from engine.lookback import ROLLED_UP_TYPE, _leave_year_start
+from engine.lookback import ROLLED_UP_TYPE, leave_year_start_date
 
 BEFORE_2024 = "rolled_up_before_2024_rules"
 NOT_SEPARATE = "rolled_up_not_shown_separately"
@@ -35,7 +35,7 @@ def check_week(worker_id, week_end, pay, threshold, leave_year_start=(4, 1)):
     recalculated under these settings, or None when the rules do not allow one), difference (positive = paid
     less than recalculated), flags and `exception` (True when it belongs in exceptions.csv).
     """
-    lys = _leave_year_start(week_end, *leave_year_start)
+    lys = leave_year_start_date(week_end, *leave_year_start)
     has_row = ROLLED_UP in pay
     paid = money(dec(pay.get(ROLLED_UP, 0)))
     counts = normal_pay(pay)
@@ -65,7 +65,7 @@ def holiday_pay_row(worker_id, week_end, pay, leave_year_start=(4, 1)):
     if amount <= 0:
         return None
     return {"kind": "rolled_up", "worker_id": worker_id, "week_end": week_end,
-            "leave_year_start": _leave_year_start(week_end, *leave_year_start), "paid": amount, "counts": money(normal_pay(pay)),
+            "leave_year_start": leave_year_start_date(week_end, *leave_year_start), "paid": amount, "counts": money(normal_pay(pay)),
             "due": None, "difference": None, "flags": [HOLIDAY_PAID], "exception": True}
 
 

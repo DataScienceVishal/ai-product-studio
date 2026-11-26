@@ -29,7 +29,7 @@ class LeaveEntry:
     weeks: Decimal = Decimal(1)    # leave taken, in weeks (1 = full week)
 
 
-def _leave_year_start(d: date, month: int, day: int) -> date:
+def leave_year_start_date(d: date, month: int, day: int) -> date:
     s = date(d.year, month, day)
     return s if d >= s else date(d.year - 1, month, day)
 
@@ -122,7 +122,7 @@ def lookback(history: Dict[date, dict], leave: Sequence[LeaveEntry],
     for entry in sorted(leave, key=lambda e: e.week_end):
         weeks = dec(entry.weeks)
         try:
-            lys = _leave_year_start(entry.week_end, leave_year_month, leave_year_day)
+            lys = leave_year_start_date(entry.week_end, leave_year_month, leave_year_day)
         except ValueError:
             raise ValueError("invalid leave year start date")
         used = used_in_year.get(lys, Decimal(0))

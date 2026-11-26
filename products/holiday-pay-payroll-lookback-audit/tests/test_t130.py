@@ -34,7 +34,11 @@ class Case(unittest.TestCase):
             code = cli.main(["--history", self.f("h.csv", h), "--leave", self.f("l.csv", l),
                              "--workers", self.f("w.csv", w), "--out", out])
         rep = os.path.join(out, "report.md")
-        return code, so.getvalue(), se.getvalue(), (open(rep, encoding="utf-8").read() if os.path.exists(rep) else "")
+        text = ""
+        if os.path.exists(rep):
+            with open(rep, encoding="utf-8") as fh:
+                text = fh.read()
+        return code, so.getvalue(), se.getvalue(), text
 
 
 class F1EmptyLeave(Case):

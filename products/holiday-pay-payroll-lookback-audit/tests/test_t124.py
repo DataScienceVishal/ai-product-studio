@@ -15,7 +15,10 @@ class ContractBasic(Base):
         out = os.path.join(self.tmp.name, "out")
         code, err = run_cli("--history", self.write("h.csv", HIST), "--leave", self.write("l.csv", L + "W1,2025-05-17\n"),
                             "--workers", self.write("w.csv", workers), "--out", out)
-        report = open(f"{out}/report.md").read() if code == 0 else ""
+        report = ""
+        if code == 0:
+            with open(f"{out}/report.md") as fh:
+                report = fh.read()
         return code, err, report
 
     def test_fixed_pay_zero_rejected_with_line(self):

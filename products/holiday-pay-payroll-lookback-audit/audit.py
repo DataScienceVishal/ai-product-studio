@@ -58,7 +58,8 @@ def main(argv=None):
     try:
         write_outputs(a.out, rows, exceptions, a.threshold, history_gaps(workers), len(workers),
                       unlisted_holiday_pay(workers), ignored, stray_rolled_up(workers), rolled_up_leave_weeks(workers),
-                      holiday_pay_to_rolled_up(workers), idle, leave_missing)
+                      holiday_pay_to_rolled_up(workers), idle, leave_missing,
+                      {wid: w.leave_year_start for wid, w in workers.items()})
     except OSError as e:
         print(f"cannot write output to '{a.out}': {e.strerror or e}", file=sys.stderr)
         return 2

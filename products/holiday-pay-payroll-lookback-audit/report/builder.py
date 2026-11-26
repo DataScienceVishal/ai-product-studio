@@ -9,7 +9,7 @@ from collections import Counter
 from decimal import Decimal
 
 from engine import lookback, money
-from engine.lookback import _leave_year_start, ROLLED_UP_TYPE
+from engine.lookback import leave_year_start_date, ROLLED_UP_TYPE
 from .rolled_up import HOLIDAY_PAID, audit_rolled_up, rolled_up_leave_weeks, stray_rolled_up, explain_rolled_up, holiday_pay_to_rolled_up, md_escape, rolled_up_idle, rolled_up_leave_missing
 
 DEFAULT_THRESHOLD = Decimal("0.01")
@@ -73,7 +73,7 @@ def audit(workers, threshold=DEFAULT_THRESHOLD, include_flagged=False):
         for r in lookback(w.history, w.leave, worker_type=w.worker_type,
                           contract_weekly_basic=w.contract_weekly_basic,
                           leave_year_month=w.leave_year_start[0], leave_year_day=w.leave_year_start[1]):
-            if any(_leave_year_start(d, *w.leave_year_start) == r["leave_year_start"] and d < r["week_end"]
+            if any(leave_year_start_date(d, *w.leave_year_start) == r["leave_year_start"] and d < r["week_end"]
                    for d in unlisted.get(wid, ())):
                 r["flags"].append("holiday_pay_week_not_in_leave_file")
             rows.append({"worker_id": wid, "first_week": w.first_week, **r})
@@ -393,9 +393,30 @@ def _exception_sections(exceptions):
     return out
 
 
+MAX_LEAVE_YEAR_WORKERS = 20   # workers named in the 'Leave years' summary line
+
+_MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
+           "November", "December")
+
+
+def _leave_years_line(starts):
+    """Summary line naming workers whose leave year does not start on 1 April, or None when there are none.
+
+    starts maps worker_id -> (month, day). When every worker uses the default the line is left out, so reports
+    without a custom leave_year_start are unchanged."""
+    odd = sorted((w, s) for w, s in (starts or {}).items() if s != (4, 1))
+    if not odd:
+        return None
+    shown = [f"{_md(w)}: {s[1]} {_MONTHS[s[0] - 1]}" for w, s in odd[:MAX_LEAVE_YEAR_WORKERS]]
+    more = len(odd) - MAX_LEAVE_YEAR_WORKERS
+    if more > 0:
+        shown.append(f"and {more} more")
+    return "- Leave years: 1 April unless set; " + ", ".join(shown)
+
+
 def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=None, workers_loaded=None, unlisted=None,
                   ignored_basic=None, stray_rolled=None, skipped_leave=None, holiday_paid=None,
-                  rolled_up_idle_workers=None, rolled_up_leave_missing_weeks=None):
+                  rolled_up_idle_workers=None, rolled_up_leave_missing_weeks=None, leave_year_starts=None):
     rows, ru_rows = split_rows(rows)
     lb_exc, ru_exc = split_rows(exceptions)
     under = [r for r in rows if not cannot_check(r) and r["difference"] > threshold]
@@ -416,6 +437,9 @@ def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=N
            f"- Overpayments: {len(over)}, total overpaid {_gbp(sum((-r['difference'] for r in over), Decimal(0)))}",
            f"- Workers with flags: {len(flagged)}" + (f" ({', '.join(_md(f) for f in flagged)})" if flagged else ""),
            ]
+    leave_years = _leave_years_line(leave_year_starts)
+    if leave_years:
+        md.append(leave_years)
     if gaps is not None:
         md.append(f"- Workers with weeks missing from the export: {len(gaps)}")
     if unlisted:
