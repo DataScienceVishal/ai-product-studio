@@ -277,7 +277,7 @@ def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=N
         md.append(f"- Workers loaded: {workers_loaded}")
     md += [f"- Workers with leave: {with_leave}",
            f"- Leave weeks checked: {len(rows)}",
-           f"- Exceptions (difference over {_gbp(threshold)}): {len(exceptions)}",
+           f"- Exceptions (difference over {_gbp(threshold)}, or cannot be checked): {len(exceptions)}",
            f"- Leave weeks that could not be checked: {len(unchecked)}",
            f"- Underpayments: {len(under)}, total underpaid {_gbp(sum((r['difference'] for r in under), Decimal(0)))}",
            f"- Overpayments: {len(over)}, total overpaid {_gbp(sum((-r['difference'] for r in over), Decimal(0)))}",
@@ -285,6 +285,8 @@ def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=N
            ]
     if gaps is not None:
         md.append(f"- Workers with weeks missing from the export: {len(gaps)}")
+    if unlisted:
+        md.append(f"- Workers with holiday pay outside leave.csv: {len(unlisted)}")
     md += ["", "## Exceptions", ""]
     md += [explain(r) for r in exceptions] or ["None.\n"]
     md += _gap_section(gaps)

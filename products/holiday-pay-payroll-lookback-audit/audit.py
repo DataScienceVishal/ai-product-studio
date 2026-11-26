@@ -18,7 +18,6 @@ def _threshold(s):
     try:
         v = Decimal(s)
         if v.is_finite() and 0 <= v <= MAX_THRESHOLD:
-            v.quantize(Decimal("0.01"))
             return v
     except InvalidOperation:
         pass

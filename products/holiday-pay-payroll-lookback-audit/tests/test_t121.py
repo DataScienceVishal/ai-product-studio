@@ -132,6 +132,17 @@ class NiDetection(Run):
                    "STAFF.42", "A1", "12345678"):
             self.assertFalse(_looks_like_ni(ok), ok)
 
+    def test_long_cell_with_many_separators_is_fast(self):
+        import time
+        for cell in (" ".join(["ab"] * 50000), "a." * 50000, "1 " * 4000):
+            t = time.time()
+            _looks_like_ni(cell)
+            self.assertLess(time.time() - t, 1.0)
+        t = time.time()
+        iss = self.issues(H + "W1,2025-06-07,basic,1\n" + '"' + " ".join(["word"] * 3000) + '",2025-06-07,basic,1\n')
+        self.assertLess(time.time() - t, 1.0)
+        self.assertTrue(any(i.startswith("h.csv:3:") for i in iss))
+
     def test_ni_message_does_not_echo_value(self):
         iss = self.issues(H + "QQ123456C,2025-06-07,basic,1\n")
         self.assertFalse(any("QQ123456" in i for i in iss), iss)

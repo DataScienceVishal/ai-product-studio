@@ -66,6 +66,8 @@ def _looks_like_ni(wid):
     for i in range(len(parts)):
         for j in range(i + 1, len(parts) + 1):
             c = "".join(parts[i:j])
+            if len(c) > 9:      # an NI number has at most 9 characters; keeps the scan linear in the input
+                break
             if _NI_SHAPE.match(c) and c[:2] not in _NI_NEVER:
                 return True
     return False
