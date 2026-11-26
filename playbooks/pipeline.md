@@ -44,6 +44,14 @@ Lessons from T-56 (added 2026-11-25, T-66), required in every kill test:
 - **Keep every amendment in the idea file**, dated, not only on a branch.
 - **Reuse the T-56 kit** (generator, quote-trace scorer, ledger spend guard on branch `p/pepr-packaging-data-pipeline/T-56`) for any "documents into fields" test.
 
+## Desk ceiling (added 2026-11-26, T-152)
+
+Buyer contact is locked until `unlock selling`, so some points can only be earned later. Every score table adds:
+- a **held by contact** column: the points in each row that only buyer contact can earn (typically Pain, Willingness to pay, Reachability);
+- a **desk ceiling** row: the best score desk and self-run evidence can reach.
+
+A scout writes a G0 file only if its desk ceiling reaches 70 (or the conditional-G1 entry score, if Vishal adopts Q-17). Open-ended scouting rounds have stopped. Scouting runs only as a monthly re-check of parked gates, or on a lead from Vishal.
+
 ## Kill rules
 
 - An idea that fails a gate twice is killed. Write the reason, the lessons and what would revive it in its file, then move the file to `state/ideas/killed/`.

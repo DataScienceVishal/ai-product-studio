@@ -139,3 +139,11 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - If no answer: waits (spending is ask-first). Meanwhile the studio builds part A and freezes part B's test data, so B can run the same day you say yes.
 - Update 2026-11-26T02:35Z (run 84ae): part A passed and the part B sorter, guard and marker are built and reviewed (T-114). Only the paid run is left.
 - Update 2026-11-26T05:4xZ (run b543): the sorter now has a hard $2 cap that also counts earlier attempts (worst case about $0.31), https only (T-122, T-123, reviewer PASS). Still waits for a yes.
+
+## Q-17 (status: queued 2026-11-26T19:50Z, run fda7; Desk sends it with Q-16)
+- Decision: May the top idea (holiday-pay look-back, 64) go to spec and a two-week demo build on made-up data before it reaches the 70 bar?
+- Context: 0 of 55 ideas passed G1. Two reviews (state/ideas/META-REVIEW-2.md) found that about 16 of the 100 points can only be earned by talking to buyers, and that's locked until `unlock selling`. So desk evidence tops out around 64-68, and real paying AI products score in the same band. Holiday-pay's calculator proof test passed. With the AI sorting test (Q-16) and a security sign-off it reaches about 68.
+- Options: A) Yes, a "conditional G1": only one idea at a time, at 64+ with a passed proof test, made-up data, no contact, a two-week build cap. A demand test is written before the build and run at the first contact you allow (for example a demo to your friend). If it fails, the idea is killed. The 70 bar still applies before G4 (recommended) B) No: keep the 70 bar, keep waiting, scout only on leads you send C) Yes, but only after the government publishes its holiday-pay consultation response
+- Recommended: A, because without it the studio can't build anything for the three-month target, and the demand test still kills a weak idea at the first real conversation.
+- If no answer: A 12 hours after sending (reversible: made-up data, no spend, nothing public). Q-16 ($2 spend) still needs your yes separately.
+
