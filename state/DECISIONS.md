@@ -307,3 +307,8 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Why: no wedge. Cheap/free incumbents (Pricebook.vet, Xonvet), a defence-society complaints platform (VetResolve) and Provet's roadmap cover the remedies; AI is near decorative.
 - Lesson: in a small regulated profession, check the defence society, professional bodies and practitioner-built free tools before scoring Competition.
 - Also: holiday-pay park re-check (T-109) unchanged; T-15 closed with conditional leftovers in T-110.
+
+## 2026-11-26T01:40Z run cf48: T-111 holiday-pay proof test (no-spend half) started
+- Decision: run the proof-test route on holiday-pay-payroll-lookback-audit (64, rank 1, no red flag) now instead of waiting for the government response. Part A (deterministic engine vs gov.uk/Acas worked examples) needs no spend; part B (AI mapping of 200 pay-element names) waits for Q-16 (spend is ask-first). Gold labels are frozen now by a different agent from the future mapper author.
+- Why: rounds 18, 19 and T-107 found nothing; run 8fd0 said runs should take starter tasks meanwhile, but the starter has had two bug hunts and a fresh security pass, so the engine (the core any MVP of the top idea reuses) is higher value. Kill test pre-registered on main before any code (products/holiday-pay-payroll-lookback-audit/benchmark/KILL-TEST.md).
+- Reversible: code lives on p/holiday-pay-payroll-lookback-audit/T-111 until reviewer PASS; the idea stays parked at 64 whatever part A shows.
