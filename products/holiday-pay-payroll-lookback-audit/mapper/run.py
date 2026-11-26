@@ -20,7 +20,8 @@ if __package__ in (None, ""):
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from mapper.mapper import UNMAPPED, AzureOpenAIClient, FakeClient, MapResult, map_names
-from mapper.mapper import MAX_OUTPUT_TOKENS
+from mapper.mapper import MAX_OUTPUT_TOKENS, check_price, estimate_input_tokens, worst_case_usd
+from mapper.prompt import SYSTEM_PROMPT, build_user_message
 from mapper.prompt import PROMPT_SHA256, PROMPT_VERSION, REASONING_EFFORT, config_sha256
 
 # gpt-5-mini USD per million tokens. Input $0.25 and output $2.00 (reasoning bills as output): the figures recorded in
@@ -28,6 +29,40 @@ from mapper.prompt import PROMPT_SHA256, PROMPT_VERSION, REASONING_EFFORT, confi
 # conservative blend; here input and output are priced separately. Estimate: the Azure spend report has the last word.
 PRICE_PER_MILLION = {"gpt-5-mini": (0.25, 2.00)}
 DEFAULT_PRICE = PRICE_PER_MILLION["gpt-5-mini"]
+
+
+# Spend and size limits (security review T-120 M-2). The cap is the Q-16 approval; lowering it is free, raising it
+# above HARD_MAX_USD needs --allow-over-cap.
+HARD_MAX_USD = 2.00
+DEFAULT_MAX_USD = 2.00
+MAX_NAMES = 500
+MAX_NAME_CHARS = 120
+MAX_REQUEST_CHARS = 100_000  # one request's user message
+
+
+def preflight(rows: list[dict], client, max_usd: float, price: tuple[float, float] = DEFAULT_PRICE,
+              batch_size: int = 200) -> tuple[float, str]:
+    """(worst-case USD, "") or (0, reason to refuse). Pure: sends nothing."""
+    if len(rows) > MAX_NAMES:
+        return 0.0, f"{len(rows)} names is over the limit of {MAX_NAMES}"
+    for row in rows:
+        if len(row["pay_element_name"]) > MAX_NAME_CHARS:
+            return 0.0, f"id {row['id']}: pay_element_name is over {MAX_NAME_CHARS} characters"
+    try:
+        price = check_price(price)
+    except ValueError as error:
+        return 0.0, str(error)
+    max_out = getattr(client, "max_output_tokens", MAX_OUTPUT_TOKENS)
+    attempts = getattr(client, "retries", 2) + 1
+    total = 0.0
+    for start in range(0, len(rows), batch_size):
+        user = build_user_message(rows[start:start + batch_size])
+        if len(user) > MAX_REQUEST_CHARS:
+            return 0.0, f"a request would be {len(user)} characters, over the limit of {MAX_REQUEST_CHARS}"
+        total += worst_case_usd(estimate_input_tokens(SYSTEM_PROMPT, user), max_out, price) * attempts
+    if total > max_usd:
+        return total, f"worst-case spend ${total:.4f} (all retries counted) is over the cap ${max_usd:.2f}"
+    return total, ""
 
 
 def cost_usd(input_tokens: int, output_tokens: int, price: tuple[float, float] = DEFAULT_PRICE) -> float:
@@ -74,6 +109,10 @@ def main(argv: list[str] | None = None, client=None, now=None) -> int:
     parser.add_argument("--names", required=True)
     parser.add_argument("--out", required=True)
     parser.add_argument("--fake", action="store_true")
+    parser.add_argument("--max-usd", type=float, default=DEFAULT_MAX_USD,
+                        help=f"hard cap on worst-case spend, default {DEFAULT_MAX_USD}")
+    parser.add_argument("--allow-over-cap", action="store_true", help=f"needed to set --max-usd above {HARD_MAX_USD}")
+    parser.add_argument("--allow-insecure-localhost", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     try:
         rows = read_names(args.names)
@@ -87,6 +126,12 @@ def main(argv: list[str] | None = None, client=None, now=None) -> int:
         print("error: duplicate ids in names file", file=sys.stderr)
         return 2
     live = not args.fake
+    if not (args.max_usd > 0 and args.max_usd == args.max_usd and args.max_usd != float("inf")):
+        print("error: --max-usd must be a number above zero", file=sys.stderr)
+        return 2
+    if args.max_usd > HARD_MAX_USD and not args.allow_over_cap:
+        print(f"error: --max-usd above {HARD_MAX_USD} needs --allow-over-cap (the Q-16 cap)", file=sys.stderr)
+        return 2
     with open(args.names, "rb") as handle:
         names_sha = hashlib.sha256(handle.read()).hexdigest()
     out_dir = args.out if live else os.path.join(args.out, "fake")
@@ -105,7 +150,17 @@ def main(argv: list[str] | None = None, client=None, now=None) -> int:
         client = FakeClient()
     elif client is None:
         try:
-            client = AzureOpenAIClient.from_env()
+            client = AzureOpenAIClient.from_env(allow_insecure_localhost=args.allow_insecure_localhost)
+        except ValueError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return 2
+    estimate, reason = preflight(rows, client, args.max_usd)
+    if reason:
+        print(f"refused before any call: {reason}", file=sys.stderr)
+        return 2
+    if live and hasattr(client, "set_spend_cap"):
+        try:
+            client.set_spend_cap(args.max_usd, DEFAULT_PRICE)
         except ValueError as error:
             print(f"error: {error}", file=sys.stderr)
             return 2
@@ -166,6 +221,8 @@ def main(argv: list[str] | None = None, client=None, now=None) -> int:
         "output_tokens": result.output_tokens,
         "price_per_million_usd": {"input": DEFAULT_PRICE[0], "output": DEFAULT_PRICE[1]},
         "cost_usd": cost,
+        "spend_cap_usd": args.max_usd,
+        "worst_case_estimate_usd": round(estimate, 6),
         "unmapped": result.unmapped,
         "problems": result.errors,
         "failed_attempts": earlier,

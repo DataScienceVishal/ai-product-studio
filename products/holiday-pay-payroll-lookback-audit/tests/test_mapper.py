@@ -7,9 +7,11 @@ import json
 import os
 import tempfile
 import unittest
+import unittest.mock
 import urllib.error
 
 from mapper import extract_names, run, score
+from mapper import mapper as mapper_mod
 import http.client
 from mapper.mapper import AzureOpenAIClient, ClientError, Completion, FakeClient, map_names, validate_reply
 from mapper.prompt import CATEGORIES, PROMPT_SHA256, SYSTEM_PROMPT, config_sha256
@@ -648,3 +650,156 @@ class AzureClientTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SpendCapTests(Tmp):
+    def names(self, n, text="Salary"):
+        write_csv(self.p("n.csv"), ["id", "pay_element_name", "source_style"], [[str(i), text, "a"] for i in range(n)])
+        return ["--names", self.p("n.csv"), "--out", self.p("r")]
+
+    def go(self, args, client=None):
+        client = client or ScriptedClient('{"mappings":[]}')
+        return quiet(run.main, args, client=client), client
+
+    def test_too_many_names_refused_before_any_call(self):
+        rc, c = self.go(self.names(run.MAX_NAMES + 1))
+        self.assertEqual((rc, c.calls), (2, 0))
+        self.assertFalse(os.path.exists(self.p("r/run.started")))
+
+    def test_long_name_refused(self):
+        rc, c = self.go(self.names(2, "x" * (run.MAX_NAME_CHARS + 1)))
+        self.assertEqual((rc, c.calls), (2, 0))
+
+    def test_name_at_limit_ok(self):
+        rc, _ = self.go(self.names(2, "x" * run.MAX_NAME_CHARS))
+        self.assertEqual(rc, 0)
+
+    def test_request_size_cap(self):
+        rows = [{"id": str(i), "pay_element_name": "x" * 120, "source_style": "a"} for i in range(500)]
+        with unittest.mock.patch.object(run, "MAX_REQUEST_CHARS", 1000):
+            total, reason = run.preflight(rows, ScriptedClient(""), 2.0)
+        self.assertIn("characters", reason)
+
+    def test_default_cap_is_two_dollars_and_normal_run_fits(self):
+        self.assertEqual(run.DEFAULT_MAX_USD, 2.0)
+        rows = [{"id": str(i), "pay_element_name": "x" * 120, "source_style": "a"} for i in range(200)]
+        total, reason = run.preflight(rows, ScriptedClient(""), 2.0)
+        self.assertEqual(reason, "")
+        self.assertGreater(total, 0.05)
+
+    def test_lower_cap_refuses_and_records_nothing(self):
+        rc, c = self.go(self.names(2) + ["--max-usd", "0.01"])
+        self.assertEqual((rc, c.calls), (2, 0))
+        self.assertFalse(os.path.exists(self.p("r/run.started")))
+
+    def test_cap_above_hard_max_needs_flag(self):
+        rc, c = self.go(self.names(2) + ["--max-usd", "5"])
+        self.assertEqual((rc, c.calls), (2, 0))
+        rc, c = self.go(self.names(2) + ["--max-usd", "5", "--allow-over-cap"])
+        self.assertEqual((rc, c.calls), (0, 1))
+
+    def test_bad_max_usd_values(self):
+        for v in ("0", "-1", "nan", "inf"):
+            rc, c = self.go(self.names(2) + ["--max-usd", v])
+            self.assertEqual((rc, c.calls), (2, 0), v)
+
+    def test_missing_or_nonpositive_price_refused(self):
+        rows = [{"id": "1", "pay_element_name": "Salary", "source_style": "a"}]
+        for bad in (None, (0, 2.0), (0.25, 0), (-1, 2), (float("nan"), 1), ("a", "b"), ()):
+            total, reason = run.preflight(rows, ScriptedClient(""), 2.0, price=bad)
+            self.assertTrue(reason, bad)
+
+    def test_retries_counted_in_estimate(self):
+        rows = [{"id": "1", "pay_element_name": "Salary", "source_style": "a"}]
+        a, b = ScriptedClient(""), ScriptedClient("")
+        a.retries, b.retries = 0, 2
+        self.assertAlmostEqual(run.preflight(rows, b, 2.0)[0], 3 * run.preflight(rows, a, 2.0)[0], places=6)
+
+    def test_run_json_records_cap_and_estimate(self):
+        rc, _ = self.go(self.names(2))
+        info = json.loads(read(self.p("r/run.json")))
+        self.assertEqual(info["spend_cap_usd"], 2.0)
+        self.assertGreater(info["worst_case_estimate_usd"], 0)
+
+    def test_prompt_sha_unchanged_by_cap(self):
+        from mapper.prompt import PROMPT_SHA256
+        self.assertEqual(PROMPT_SHA256, "ae175fa9c2fa89f244dba58854abe9ea0739d86ea35cfe9a917b746b88a4a5ed")  # the sha on main
+
+    def test_client_counts_retries_against_cap(self):
+        calls = []
+
+        def opener(request, timeout=None):
+            calls.append(1)
+            raise urllib.error.HTTPError("https://x", 503, "x", {}, None)
+        c = AzureOpenAIClient("https://r.example", "d", "k", opener=opener, sleep=lambda s: None)
+        worst = mapper_mod.worst_case_usd(mapper_mod.estimate_input_tokens("s", "u"), c.max_output_tokens, run.DEFAULT_PRICE)
+        c.set_spend_cap(worst * 2.5, run.DEFAULT_PRICE)  # room for two attempts, not three
+        with self.assertRaises(ClientError) as ctx:
+            c.complete("s", "u")
+        self.assertEqual(len(calls), 2)
+        self.assertIn("cap", str(ctx.exception))
+
+    def test_client_refuses_bad_price_for_cap(self):
+        c = AzureOpenAIClient("https://r.example", "d", "k", opener=lambda r, timeout=None: None)
+        with self.assertRaises(ValueError):
+            c.set_spend_cap(2.0, (0, 0))
+
+
+class TransportSecurityTests(unittest.TestCase):
+    def test_http_endpoint_refused(self):
+        for url in ("http://res.openai.azure.com", "ftp://x", "res.openai.azure.com", "http://127.0.0.1:1"):
+            with self.assertRaises(ValueError, msg=url):
+                AzureOpenAIClient(url, "d", "k")
+
+    def test_http_localhost_only_with_explicit_flag(self):
+        AzureOpenAIClient("http://127.0.0.1:1", "d", "k", allow_insecure_localhost=True)
+        with self.assertRaises(ValueError):
+            AzureOpenAIClient("http://evil.example", "d", "k", allow_insecure_localhost=True)
+        with self.assertRaises(ValueError):
+            AzureOpenAIClient("http://localhost.evil.example", "d", "k", allow_insecure_localhost=True)
+
+    def test_from_env_refuses_http(self):
+        with self.assertRaises(ValueError):
+            AzureOpenAIClient.from_env({"AZURE_OPENAI_ENDPOINT": "http://x.example", "AZURE_OPENAI_API_KEY": "k"})
+
+    def test_redirect_not_followed_and_key_not_forwarded(self):
+        import http.server
+        import threading
+        hits = []
+
+        class Second(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                hits.append(self.headers.get("api-key"))
+                self.send_response(200)
+                self.end_headers()
+            do_POST = do_GET
+
+            def log_message(self, *a):
+                pass
+        second = http.server.HTTPServer(("127.0.0.1", 0), Second)
+
+        class First(http.server.BaseHTTPRequestHandler):
+            def do_POST(self):
+                self.rfile.read(int(self.headers.get("Content-Length", 0)))
+                self.send_response(302)
+                self.send_header("Location", f"http://127.0.0.1:{second.server_port}/steal")
+                self.end_headers()
+
+            def log_message(self, *a):
+                pass
+        first = http.server.HTTPServer(("127.0.0.1", 0), First)
+        for srv in (first, second):
+            threading.Thread(target=srv.serve_forever, daemon=True).start()
+        sleeps = []
+        try:
+            c = AzureOpenAIClient(f"http://127.0.0.1:{first.server_port}", "d", "TESTKEY", sleep=sleeps.append,
+                                  allow_insecure_localhost=True, timeout=5)
+            with self.assertRaises(ClientError) as ctx:
+                c.complete("s", "u")
+        finally:
+            first.shutdown()
+            second.shutdown()
+        self.assertEqual(hits, [])
+        self.assertEqual(ctx.exception.http_code, 302)
+        self.assertEqual(sleeps, [])  # not retried
+        self.assertNotIn("TESTKEY", str(ctx.exception))

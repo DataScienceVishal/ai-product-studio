@@ -24,6 +24,23 @@ Note: `python3 -I -m mapper.run` cannot work (`-I` removes the current directory
 `python3 -m mapper.run --names names.csv --out /tmp/try --fake` checks the plumbing with the keyword baseline and no
 network; it writes only to `<out>/fake/`. Fake results are not kill-test evidence.
 
+## Spend and transport limits (security review T-120)
+
+Before any call the run refuses more than 500 names, any name over 120 characters, a request over 100,000 characters,
+a missing or non-positive price, and a worst-case spend (estimated input plus the full output cap, times every allowed
+attempt) above `--max-usd` (default and hard maximum $2, the Q-16 cap; above that needs `--allow-over-cap`). The client
+also counts every attempt, retries included, and stops sending once the cap would be passed. The estimate is recorded in
+`run.json`. Endpoints must be `https://`; redirects are never followed, so the `api-key` header cannot leave the host.
+None of this touches the prompt or schema, so the prompt sha is unchanged.
+
+## Limits to know (DRAFT, not legal advice)
+
+- Prompt injection: pay-element names are data sent to the model. A hostile name can change the category of other rows
+  in its batch. Before the mapper feeds the audit, a person must confirm the element-to-category table, and the audit
+  must use the confirmed table, never raw model output.
+- Retention: the names file, `predictions.csv` and `run.json` hold no worker data, but any payroll export you map from
+  is personal data. Keep inputs and outputs only for the engagement and delete them after sign-off.
+
 ## Pre-registered settings (fixed before any label was seen)
 
 Structured output on both APIs (JSON schema, strict, wrapper `{"mappings":[{"id","category"}]}`, category an enum of the
