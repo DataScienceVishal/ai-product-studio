@@ -357,3 +357,5 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 ## 2026-11-26T08:40Z run 029c: T-132 round 20, T-133 AML follow-up
 - Board had only Vishal-blocked or trigger-only tasks; no G3/G4 product, holiday-pay QA/security and brief already current (286 tests OK, demo output matches BRIEF.md section 6). Took a desk round per Q-15 B with a new thesis (second-checker review jobs). 0 survivors of 5.
 - Opened T-133, one focused check on AML file review (the only lead the scout named), same shape as T-107. Reversible, no spend.
+- 08:50Z T-133 AML file-review check: DROP (no price for the job, fines are mostly late registration, FCA date unconfirmed). Not re-queued; revisit only when the FCA publishes accountant supervision guidance (expected from March 2027) or a buyer names a price.
+- Three edge-only desk rounds in a row (18, 19, 20) found nothing. Next idle runs should take Always-On items 1-5 or the parked holiday-pay checks instead of opening a round 21, unless Vishal sends a new direction or buyer notes.
