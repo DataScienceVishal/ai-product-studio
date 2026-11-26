@@ -353,3 +353,7 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Problem slot: the spend report. azure-spend run 7 (2026-11-25T17:10Z, scheduled) failed with AADSTS700213 like run 6; no green run since 2026-11-24T17:39Z. The digest points Vishal at the SETUP.md id-github-spend step (it registers the immutable-ID subject GitHub presents) plus AZURE_SPEND_CLIENT_ID, which fixes the report without widening the deploy identity.
 - Header shows the hand-kept token count ("About $15–20 of $80 used", BUDGET.md token log) instead of "spend not reported yet", since the automated report is down and nothing else is billed yet. Reversible.
 - Committed to main directly (CLAUDE.md section 9 and Vishal's push-to-main instruction, DECISIONS 2026-11-23T21:49Z); the session branch is kept level.
+
+## 2026-11-26T08:40Z run 029c: T-132 round 20, T-133 AML follow-up
+- Board had only Vishal-blocked or trigger-only tasks; no G3/G4 product, holiday-pay QA/security and brief already current (286 tests OK, demo output matches BRIEF.md section 6). Took a desk round per Q-15 B with a new thesis (second-checker review jobs). 0 survivors of 5.
+- Opened T-133, one focused check on AML file review (the only lead the scout named), same shape as T-107. Reversible, no spend.
