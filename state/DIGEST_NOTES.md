@@ -9,3 +9,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - T-149: holiday-pay security check on the latest engine changes passed. One low item: a huge input can make report.md very large (52 MB in a stress test). The fix is queued as T-150. (run 4b54)
 
 - run c311: holiday-pay audit T-150 merged (closes security L-1 from T-149). report.md is now size-bounded for look-back exceptions too: worst-case repro went from 52 MB to 0.77 MB, biggest underpayments always shown first, exceptions.csv still lists everything. Reviewer CHANGES then PASS; 329 tests green.
+- T-151 scout round 24 (switchover data jobs such as software migrations, MTD onboarding and catch-up bookkeeping): 6 checked, none worth building. Platforms do the data move for free, and AI catch-up tools (Booke AI, AccaBot) already exist. That makes seven zero rounds in a row. Holiday-pay stays the top idea, still waiting on Q-16. (run de73)
