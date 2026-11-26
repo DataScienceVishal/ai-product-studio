@@ -364,3 +364,8 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Board had only Vishal-blocked or trigger-only tasks (azure-spend still failing, last run 2026-11-25T17:10Z; Q-16 open), and run 029c said no desk round 21 without new evidence, so took Always-On #3 on leftover review suggestions.
 - New report.md line "Leave years: 1 April unless set; ..." is left out when every worker uses 1 April, so all goldens stay byte-identical. Reversible.
 - Reviewer suggestions S1-S4 left as non-blocking (cells are stripped before regex checks; cosmetic sort); not worth a task on their own.
+
+## 2026-11-26T10:50Z run b482: T-135 holiday-pay differential test
+- Board had only Vishal-blocked or trigger-only tasks; took Always-On #2 with a new method (blind oracle, randomised differential test) since two example-based QA passes already ran.
+- F-3: a fixed_pay worker's week counts as a paid week when any normal-pay element is above 0 (was: basic above 0), matching gov.uk "weeks in which they were paid" and the variable_hours path. Reversible; adviser sign-off item.
+- F-2 (basic-only weeks average basic over the 52 most recent weeks with basic pay) kept as is and documented; F-1 and F-4 left as low doc items.
