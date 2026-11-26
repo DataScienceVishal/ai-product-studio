@@ -12,11 +12,15 @@ from datetime import date, timedelta
 from decimal import Decimal
 from typing import Dict, List, Sequence
 
-from .elements import normal_pay, basic_pay, VARIABLE
+from .elements import normal_pay, basic_pay, VARIABLE, ROLLED_UP
 from .reference import reference_average, money, dec, MAX_LOOKBACK_WEEKS, MAX_PAID_WEEKS
 
 NORMAL_WEEKS = Decimal(4)
 WORKER_TYPES = ("variable_hours", "fixed_pay")
+# Accepted in workers.csv but never passed to lookback(): their holiday pay is paid as rolled-up pay in each wage
+# packet and is checked week by week in report/rolled_up.py, so their leave weeks are not re-audited here.
+ROLLED_UP_TYPE = "irregular_rolled_up"
+INPUT_WORKER_TYPES = WORKER_TYPES + (ROLLED_UP_TYPE,)
 
 
 @dataclass(frozen=True)
@@ -150,7 +154,7 @@ def lookback(history: Dict[date, dict], leave: Sequence[LeaveEntry],
             flags.append("leave_week_missing_from_history")
         elif "holiday_pay" not in history[entry.week_end]:
             flags.append("leave_week_without_holiday_pay")
-        other_pay = sum((dec(v) for k, v in history.get(entry.week_end, {}).items() if k != "holiday_pay"), Decimal(0))
+        other_pay = sum((dec(v) for k, v in history.get(entry.week_end, {}).items() if k not in ("holiday_pay", ROLLED_UP)), Decimal(0))
         rows.append({
             "week_end": entry.week_end, "leave_year_start": lys, "leave_weeks": weeks,
             "normal_weeks": normal_w, "basic_weeks": basic_w, "worker_type": worker_type,

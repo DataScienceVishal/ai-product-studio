@@ -160,6 +160,7 @@ class EndToEnd(Base):
 
     def test_known_underpayments_and_totals(self):
         out, rows = self.audit()
+        rows = [r for r in rows if r["check"] == "leave_lookback"]
         by = {r["worker_id"]: r for r in rows}
         self.assertEqual({k: (v["paid"], v["due"], v["difference"], v["direction"]) for k, v in by.items()}, {
             "W002": ("400.00", "480.00", "80.00", "underpaid"),
@@ -173,17 +174,18 @@ class EndToEnd(Base):
         with open(f"{out}/report.md", encoding="utf-8") as fh:
             md = fh.read()
         self.assertIn("Not legal advice; a payroll professional signs off", md.split("\n")[2])
-        for s in ("Workers loaded: 5", "Workers with leave: 5", "Leave weeks checked: 5", "Underpayments: 3, total underpaid £145.00",
+        for s in ("Workers loaded: 8", "Workers with leave: 5", "Leave weeks checked: 5", "Underpayments: 3, total underpaid £145.00",
                   "Overpayments: 1, total overpaid £10.00", "Workers with flags: 1 (W004)",
                   "### W002, week ending 2025-08-09", "underpaid by £80.00",
                   "57 week(s) before the first payroll record in the file not counted"):
             self.assertIn(s, md)
 
     def test_threshold(self):
-        self.assertEqual(len(self.audit("--threshold", "20")[1]), 2)     # only 80.00 and 50.00 exceed 20
-        self.assertEqual(len(self.audit("--threshold", "80")[1]), 0)     # strictly greater than
-        _, rows = self.audit("--threshold", "80", "--include-flagged")
-        self.assertEqual([r["worker_id"] for r in rows], ["W004"])
+        def lb(*a):
+            return [r["worker_id"] for r in self.audit(*a)[1] if r["check"] == "leave_lookback"]
+        self.assertEqual(lb("--threshold", "20"), ["W002", "W004"])     # only 80.00 and 50.00 exceed 20
+        self.assertEqual(lb("--threshold", "80"), [])                   # strictly greater than
+        self.assertEqual(lb("--threshold", "80", "--include-flagged"), ["W004"])
 
     def test_validation_failure_exit_2_writes_nothing(self):
         bad = self.write("bad.csv", H + "W1,not-a-date,basic,1\nW1,2025-06-07,zzz,1\n")
@@ -456,9 +458,12 @@ class OutputHandling(Base):
 
     def test_no_gap_section_for_sample(self):
         out = os.path.join(self.tmp.name, "out")
-        self.assertEqual(run_cli(*self.args(out))[0], 0)
+        self.assertEqual(run_cli(*self.args(out), "--workers", f"{SAMPLES}/workers.csv")[0], 0)
         with open(f"{out}/report.md", encoding="utf-8") as fh:
-            self.assertNotIn("## Warning", fh.read())
+            md = fh.read()
+        # the only warning is the holiday_pay one for the rolled-up sample worker W008 (T-126)
+        self.assertEqual(md.count("## Warning"), 1)
+        self.assertIn("## Warning: holiday_pay recorded for an irregular_rolled_up worker", md)
 
     def test_history_file_error_suppresses_no_history_noise(self):
         iss = self.issues(H + "W1,not-a-date,basic,1\n", leave=L + "W1,2025-06-14\nW2,2025-06-14\n")

@@ -7,7 +7,7 @@ from decimal import Decimal, InvalidOperation
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from ingest import load_workers, ValidationError   # noqa: E402
-from report import audit, write_outputs, history_gaps, unlisted_holiday_pay, ignored_contract_basic, DEFAULT_THRESHOLD   # noqa: E402
+from report import audit, write_outputs, history_gaps, unlisted_holiday_pay, ignored_contract_basic, DEFAULT_THRESHOLD, split_rows, rolled_up_leave_weeks, stray_rolled_up, holiday_pay_to_rolled_up   # noqa: E402
 
 
 MAX_ERRORS_SHOWN = 50
@@ -51,14 +51,18 @@ def main(argv=None):
         return 2
     ignored = ignored_contract_basic(workers)
     if ignored:
-        print(f"note: contract_weekly_basic ignored for {len(ignored)} variable_hours worker(s); see report.md", file=sys.stderr)
+        print(f"note: contract_weekly_basic ignored for {len(ignored)} worker(s) not set as fixed_pay; see report.md", file=sys.stderr)
     try:
         write_outputs(a.out, rows, exceptions, a.threshold, history_gaps(workers), len(workers),
-                      unlisted_holiday_pay(workers), ignored)
+                      unlisted_holiday_pay(workers), ignored, stray_rolled_up(workers), rolled_up_leave_weeks(workers),
+                      holiday_pay_to_rolled_up(workers))
     except OSError as e:
         print(f"cannot write output to '{a.out}': {e.strerror or e}", file=sys.stderr)
         return 2
-    print(f"{len(rows)} leave weeks checked, {len(exceptions)} exceptions. Written to {a.out}")
+    lb_rows, ru_rows = split_rows(rows)
+    print(f"{len(lb_rows)} leave weeks checked, {len(exceptions)} exceptions. Written to {a.out}")
+    if ru_rows:
+        print(f"{len(ru_rows)} rolled-up pay weeks checked, {len(split_rows(exceptions)[1])} of the exceptions are rolled-up pay.")
     return 0
 
 

@@ -334,3 +334,8 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - QA M1-M3 handling: flag and warn rather than guess (a leave week with missing data or without a holiday_pay row must show in the exceptions, not vanish). Reversible; documented in FORMAT.md.
 - Security M-2 (mapper spend cap) treated as a prerequisite for the Q-16 live run, even though expected cost is ~$0.10.
 - 2026-11-26T05:36Z run b543 (T-124): NI numbers glued to a letter prefix with no separator (EMPAB123456C) stay undetected as worker IDs. A window scan would refuse about 12 in 30 realistic payroll IDs (e.g. EMP100234), which would make the tool unusable for many payroll exports; the input format already says pseudonymous payroll IDs only. Reversible.
+
+## 2026-11-26T06:40Z run 0965: T-125 brief, T-126 rolled-up checks
+- Board had only Vishal-blocked or trigger-only tasks, so took Always-On #5: a teacher-style brief for the holiday-pay audit (BRIEF.md), reviewer CHANGES then PASS.
+- The brief found that the CLI never calls engine/accrual.py, so two of the validator's three seeded errors (rolled-up pay in a pre-April-2024 leave year; rolled-up pay not shown separately) are not caught, and the "recalculated under these settings" wording guardrail is missing. Opened T-126 to build both, on p/holiday-pay-payroll-lookback-audit/T-126. mapper/ and the frozen part-B data stay untouched so the Q-16 test remains blind and pre-registered.
+- Reversible: branch only until reviewer PASS; the idea stays parked at 64.

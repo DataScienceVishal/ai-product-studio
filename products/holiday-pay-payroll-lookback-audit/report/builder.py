@@ -8,12 +8,14 @@ from datetime import timedelta
 from decimal import Decimal
 
 from engine import lookback, money
-from engine.lookback import _leave_year_start
+from engine.lookback import _leave_year_start, ROLLED_UP_TYPE
+from .rolled_up import audit_rolled_up, rolled_up_leave_weeks, stray_rolled_up, explain_rolled_up, holiday_pay_to_rolled_up
 
 DEFAULT_THRESHOLD = Decimal("0.01")
 DISCLAIMER = "Not legal advice; a payroll professional signs off."
 COLUMNS = ("worker_id", "leave_week", "paid", "due", "difference", "direction", "flags",
-           "ref_weeks_used", "ref_weeks_skipped", "ref_weeks_before_first_record", "average", "fixed_basic_rate")
+           "ref_weeks_used", "ref_weeks_skipped", "ref_weeks_before_first_record", "average", "fixed_basic_rate", "check")
+CHECK_LOOKBACK, CHECK_ROLLED_UP = "leave_lookback", "rolled_up_pay"
 FLAG_TEXT = {
     "no_reference_weeks": "no paid weeks before the leave, so nothing to average",
     "shortened": "fewer than 52 paid weeks were available, so the average uses what exists",
@@ -33,7 +35,7 @@ def unlisted_holiday_pay(workers):
     out = {}
     for wid in sorted(workers):
         w = workers[wid]
-        if not w.leave:
+        if not w.leave or w.worker_type == ROLLED_UP_TYPE:
             continue
         listed = {e.week_end for e in w.leave}
         weeks = sorted(d for d, p in w.history.items() if "holiday_pay" in p and d not in listed)
@@ -43,8 +45,9 @@ def unlisted_holiday_pay(workers):
 
 
 def ignored_contract_basic(workers):
-    """Worker ids that are variable_hours but were given a contract_weekly_basic, which the engine ignores."""
-    return sorted(w for w, d in workers.items() if d.worker_type != "fixed_pay" and d.contract_weekly_basic is not None)
+    """[(worker_id, worker_type)] for workers not fixed_pay that were given a contract_weekly_basic, which is ignored."""
+    return sorted((w, d.worker_type) for w, d in workers.items()
+                  if d.worker_type != "fixed_pay" and d.contract_weekly_basic is not None)
 
 
 def cannot_check(r):
@@ -54,12 +57,18 @@ def cannot_check(r):
 def audit(workers, threshold=DEFAULT_THRESHOLD, include_flagged=False):
     """Return (all_rows, exceptions); each row is an engine row plus worker_id.
 
+    Rows from the rolled-up pay check (irregular_rolled_up workers, report/rolled_up.py) have kind 'rolled_up'
+    and follow the look-back rows. The look-back skips those workers' leave weeks: their holiday pay is paid
+    as rolled-up pay in each wage packet, so the 52-week average does not apply to them.
+
     A row that cannot be checked (no reference weeks) is always an exception, never dropped.
     """
     rows = []
     unlisted = unlisted_holiday_pay(workers)
     for wid in sorted(workers):
         w = workers[wid]
+        if w.worker_type == ROLLED_UP_TYPE:
+            continue
         for r in lookback(w.history, w.leave, worker_type=w.worker_type,
                           contract_weekly_basic=w.contract_weekly_basic):
             if any(_leave_year_start(d, 4, 1) == r["leave_year_start"] and d < r["week_end"]
@@ -68,7 +77,17 @@ def audit(workers, threshold=DEFAULT_THRESHOLD, include_flagged=False):
             rows.append({"worker_id": wid, "first_week": w.first_week, **r})
     exceptions = [r for r in rows if cannot_check(r) or abs(r["difference"]) > threshold
                   or (include_flagged and r["flags"])]
-    return rows, exceptions
+    ru_rows, ru_exc = audit_rolled_up(workers, threshold)
+    return rows + ru_rows, exceptions + ru_exc
+
+
+def is_rolled_up(r):
+    return r.get("kind") == "rolled_up"
+
+
+def split_rows(rows):
+    """(look-back rows, rolled-up rows)."""
+    return [r for r in rows if not is_rolled_up(r)], [r for r in rows if is_rolled_up(r)]
 
 
 def _md(text):
@@ -100,6 +119,14 @@ def _direction(diff, r=None):
 
 
 def _csv_row(r):
+    if is_rolled_up(r):
+        due, diff = r["due"], r["difference"]
+        direction = "rule_flag" if due is None else ("underpaid" if diff > 0 else "overpaid" if diff < 0 else "correct")
+        return {"worker_id": _safe(r["worker_id"]), "leave_week": r["week_end"].isoformat(), "paid": f"{r['paid']:.2f}",
+                "due": "" if due is None else f"{due:.2f}", "difference": "" if diff is None else f"{diff:.2f}",
+                "direction": direction, "flags": _safe(";".join(r["flags"])), "ref_weeks_used": "",
+                "ref_weeks_skipped": "", "ref_weeks_before_first_record": "", "average": "", "fixed_basic_rate": "",
+                "check": CHECK_ROLLED_UP}
     n = r["working"]["normal"]
     return {"worker_id": _safe(r["worker_id"]), "leave_week": r["week_end"].isoformat(),
             "paid": f"{r['paid']:.2f}", "due": f"{r['due']:.2f}", "difference": f"{r['difference']:.2f}",
@@ -107,7 +134,7 @@ def _csv_row(r):
             "ref_weeks_used": n["weeks_used"], "ref_weeks_skipped": _split_skipped(r)[1],
             "ref_weeks_before_first_record": _split_skipped(r)[0],
             "average": f"{n['average']:.2f}",
-            "fixed_basic_rate": f"{n['current_basic']:.2f}" if "current_basic" in n else ""}
+            "fixed_basic_rate": f"{n['current_basic']:.2f}" if "current_basic" in n else "", "check": CHECK_LOOKBACK}
 
 
 def explain(r):
@@ -129,9 +156,9 @@ def explain(r):
             lines.append(f"- Basic-only weekly pay (for the remaining leave): {_gbp(b['average'])}.")
     if cannot_check(r):
         lines.append(f"- CANNOT BE CHECKED: no paid weeks before this leave week, so there is nothing to average. "
-                     f"Paid in the leave week: {_gbp(r['paid'])}. Any due figure shown is not reliable.")
+                     f"Paid in the leave week: {_gbp(r['paid'])}. Any recalculated figure shown is not reliable.")
     else:
-        lines.append(f"- Due: {_gbp(r['due'])}. Paid in the leave week: {_gbp(r['paid'])}. "
+        lines.append(f"- Recalculated under these settings: {_gbp(r['due'])}. Paid in the leave week: {_gbp(r['paid'])}. "
                      f"Result: {_direction(r['difference'])} by {_gbp(abs(r['difference']))}.")
     if "leave_week_without_holiday_pay" in r["flags"]:
         lines.append(f"- Pay in this week that was not marked as holiday pay: {_gbp(r['other_pay_in_leave_week'])}.")
@@ -274,25 +301,65 @@ def _unlisted_section(unlisted):
 def _ignored_basic_section(ignored):
     if not ignored:
         return []
-    out = ["", "## Warning: contract_weekly_basic ignored", "",
-           "These workers are variable_hours, so the contract_weekly_basic you gave is ignored: their rate is the "
-           "52-week average. Set worker_type to fixed_pay if the contract rate should be used, or remove the value.", ""]
-    return out + [f"- {_md(wid)}: contract_weekly_basic ignored (variable_hours)" for wid in ignored]
+    out = ["", "## Warning: contract_weekly_basic ignored", ""]
+    if any(t == "variable_hours" for _, t in ignored):
+        out += ["For variable_hours workers the contract_weekly_basic you gave is ignored: their rate is the "
+                "52-week average. Set worker_type to fixed_pay if the contract rate should be used, or remove the value.", ""]
+    if any(t == ROLLED_UP_TYPE for _, t in ignored):
+        out += ["For irregular_rolled_up workers the contract_weekly_basic you gave is ignored: their rolled-up pay is "
+                "checked as 12.07% of pay that counts, so a weekly basic is not used.", ""]
+    return out + [f"- {_md(wid)}: contract_weekly_basic ignored ({t})" for wid, t in ignored]
+
+
+def _holiday_paid_section(held):
+    if not held:
+        return []
+    out = ["", "## Warning: holiday_pay recorded for an irregular_rolled_up worker", "",
+           "These workers are paid holiday pay rolled up into each wage packet, but these weeks also carry a holiday_pay "
+           "row. That may be a second payment of the same holiday pay, or the worker may not be on rolled-up pay. "
+           "Each week is listed in exceptions.csv with the flag `holiday_pay_paid_to_rolled_up_worker`; "
+           "it is not recalculated.", ""]
+    return out + [f"- {_md(wid)}: {len(ws)} week(s): {', '.join(_week_ranges(ws))}" for wid, ws in held.items()]
+
+
+def _stray_section(stray):
+    if not stray:
+        return []
+    out = ["", "## Warning: rolled-up holiday pay for a worker not set as irregular_rolled_up", "",
+           "These workers have rolled_up_holiday_pay rows but their worker_type is not irregular_rolled_up, so the "
+           "rolled-up pay was not checked and is not counted as normal pay, basic pay or holiday pay. "
+           "Set worker_type to irregular_rolled_up in workers.csv if they are paid rolled-up holiday pay, then re-run.", ""]
+    return out + [f"- {_md(wid)}: {len(ws)} week(s): {', '.join(_week_ranges(ws))}" for wid, ws in stray.items()]
+
+
+def _rolled_up_notes(skipped_leave):
+    if not skipped_leave:
+        return []
+    n = sum(skipped_leave.values())
+    return ["", "## Note: leave weeks of irregular_rolled_up workers", "",
+            f"{n} leave week(s) listed in leave.csv for {len(skipped_leave)} irregular_rolled_up worker(s) "
+            "were not re-audited by the 52-week look-back, because their holiday pay is paid as rolled-up pay in "
+            "each wage packet. Their pay weeks are checked under the rolled-up rules above: "
+            + ", ".join(f"{_md(w)} ({c})" for w, c in skipped_leave.items()) + "."]
 
 
 def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=None, workers_loaded=None, unlisted=None,
-                  ignored_basic=None):
+                  ignored_basic=None, stray_rolled=None, skipped_leave=None, holiday_paid=None):
+    rows, ru_rows = split_rows(rows)
+    lb_exc, ru_exc = split_rows(exceptions)
     under = [r for r in rows if not cannot_check(r) and r["difference"] > threshold]
     over = [r for r in rows if not cannot_check(r) and r["difference"] < -threshold]
     unchecked = [r for r in rows if cannot_check(r)]
     flagged = sorted({r["worker_id"] for r in rows if r["flags"]})
     with_leave = len({r["worker_id"] for r in rows})
-    md = [f"# Holiday pay look-back audit", "", f"**{DISCLAIMER}**", "", "## Summary", ""]
+    md = [f"# Holiday pay look-back audit", "", f"**{DISCLAIMER}**", "",
+          "Every figure here is recalculated under these settings. It is a calculation to check, not a finding.", "",
+          "## Summary", ""]
     if workers_loaded is not None:
         md.append(f"- Workers loaded: {workers_loaded}")
     md += [f"- Workers with leave: {with_leave}",
            f"- Leave weeks checked: {len(rows)}",
-           f"- Exceptions (difference over {_gbp(threshold)}, or cannot be checked): {len(exceptions)}",
+           f"- Exceptions (difference over {_gbp(threshold)}, or cannot be checked): {len(lb_exc)}",
            f"- Leave weeks that could not be checked: {len(unchecked)}",
            f"- Underpayments: {len(under)}, total underpaid {_gbp(sum((r['difference'] for r in under), Decimal(0)))}",
            f"- Overpayments: {len(over)}, total overpaid {_gbp(sum((-r['difference'] for r in over), Decimal(0)))}",
@@ -304,11 +371,23 @@ def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=N
         md.append(f"- Workers with holiday pay outside leave.csv: {len(unlisted)}")
     if ignored_basic:
         md.append(f"- Workers whose contract_weekly_basic was ignored: {len(ignored_basic)}")
+    if ru_rows or ru_exc:
+        flagged_ru = [r for r in ru_exc if r["flags"]]
+        md += [f"- Rolled-up pay weeks checked: {len(ru_rows)}",
+               f"- Rolled-up pay exceptions: {len(ru_exc)} ({len(flagged_ru)} rule flags, "
+               f"{len(ru_exc) - len(flagged_ru)} differences from 12.07% of pay that counts)"]
+    if holiday_paid:
+        md.append(f"- Workers with holiday_pay recorded while on rolled-up pay: {len(holiday_paid)}")
+    if stray_rolled:
+        md.append(f"- Workers with rolled-up pay but not set as irregular_rolled_up: {len(stray_rolled)}")
     md += ["", "## Exceptions", ""]
-    md += [explain(r) for r in exceptions] or ["None.\n"]
+    md += [explain_rolled_up(r, _gbp, _md) if is_rolled_up(r) else explain(r) for r in exceptions] or ["None.\n"]
     md += _gap_section(gaps)
     md += _unlisted_section(unlisted)
     md += _ignored_basic_section(ignored_basic)
+    md += _rolled_up_notes(skipped_leave)
+    md += _holiday_paid_section(holiday_paid)
+    md += _stray_section(stray_rolled)
 
     def write_csv(fh):
         w = csv.DictWriter(fh, COLUMNS, lineterminator="\n")

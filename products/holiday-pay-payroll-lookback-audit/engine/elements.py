@@ -11,10 +11,11 @@ from decimal import Decimal
 from .reference import dec
 
 CATEGORIES = ("basic", "regular_overtime", "commission", "bonus_non_regular",
-              "allowance", "expense_excluded", "holiday_pay", "statutory")
+              "allowance", "expense_excluded", "holiday_pay", "statutory", "rolled_up_holiday_pay")
 VARIABLE = frozenset({"regular_overtime", "commission", "allowance"})
 COUNTS_FOR_NORMAL = frozenset({"basic", "regular_overtime", "commission", "allowance"})
 BASIC_ONLY = frozenset({"basic"})
+ROLLED_UP = "rolled_up_holiday_pay"   # holiday pay paid with each wage packet; never counts as normal pay or basic pay
 
 
 def _sum(pay: dict, cats) -> Decimal:

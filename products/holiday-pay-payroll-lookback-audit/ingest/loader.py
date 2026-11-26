@@ -9,7 +9,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Dict, List, Optional
 
 from engine import CATEGORIES, LeaveEntry
-from engine.lookback import WORKER_TYPES
+from engine.lookback import INPUT_WORKER_TYPES as WORKER_TYPES
 
 HISTORY_COLS = (("worker_id", "week_ending", "element_category", "amount"), ())
 LEAVE_COLS = (("worker_id", "week_ending"), ("weeks",))

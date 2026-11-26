@@ -8,7 +8,8 @@ Error messages never print a full cell value from `worker_id`, `week_ending`, `e
 
 ## history.csv (required)
 One row per worker, week and pay element. Weeks with no pay need no rows. Columns: `worker_id` (letters, digits, `_ . -`, max 64, starting with a letter or digit), `week_ending`, `element_category`, `amount`.
-`element_category` is one of: basic, regular_overtime, commission, bonus_non_regular, allowance, expense_excluded, holiday_pay, statutory. The `holiday_pay` amount in a leave week is what was actually paid for that leave. All of a worker's `week_ending` dates must fall on the same weekday. One row per worker, week and category (no duplicates).
+`element_category` is one of: basic, regular_overtime, commission, bonus_non_regular, allowance, expense_excluded, holiday_pay, statutory, rolled_up_holiday_pay. The `holiday_pay` amount in a leave week is what was actually paid for that leave. All of a worker's `week_ending` dates must fall on the same weekday. One row per worker, week and category (no duplicates).
+`rolled_up_holiday_pay` is holiday pay paid with each wage packet to an irregular-hours or part-year worker (12.07% of pay). It never counts as normal pay, basic pay or holiday pay in the 52-week look-back. Use it only for workers whose `worker_type` is `irregular_rolled_up`; for any other worker a `report.md` warning lists the weeks and the rolled-up pay is not checked.
 
 **Negative amounts are refused for now** (clawbacks, corrections, reversals). Net any correction into the week it relates to before exporting, so each week and category carries one non-negative amount.
 
@@ -22,7 +23,21 @@ One row per leave week. **List every leave week of the leave year**: the first 4
 - A leave week with no paid week before it (`no_reference_weeks`) cannot be checked. It is always listed in exceptions.csv (`direction` = `cannot_check`) and in report.md, is counted under "Leave weeks that could not be checked", and is not counted as an over- or underpayment.
 
 ## workers.csv (optional)
-Columns: `worker_id`, `worker_type` (`variable_hours` default, or `fixed_pay`), optional `contract_weekly_basic` (fixed_pay: the contractual weekly basic, must be greater than 0, or blank to infer it and flag that; a zero or negative value exits 2. variable_hours: ignored, and a value there gives a warning in report.md and a note on stderr, exit stays 0). Workers not listed are `variable_hours`.
+Columns: `worker_id`, `worker_type` (`variable_hours` default, `fixed_pay`, or `irregular_rolled_up`), optional `contract_weekly_basic` (fixed_pay: the contractual weekly basic, must be greater than 0, or blank to infer it and flag that; a zero or negative value exits 2. variable_hours: ignored, and a value there gives a warning in report.md and a note on stderr, exit stays 0). Workers not listed are `variable_hours`.
+
+**irregular_rolled_up (T-126):** an irregular-hours or part-year worker paid rolled-up holiday pay. The user decides this status, the tool does not infer it. Each pay week in `history.csv` is checked on its own (leave years start 1 April; a week belongs to the leave year containing its week-ending date):
+- leave year starting before 2024-04-01 and `rolled_up_holiday_pay` above 0: flag `rolled_up_before_2024_rules`. Rolled-up pay was not allowed under the rules of that time, so no figure is recalculated;
+- leave year starting on or after 2024-04-01, pay that counts above 0 (basic, regular overtime, commission, allowance) and no `rolled_up_holiday_pay` row: flag `rolled_up_not_shown_separately`;
+- otherwise the rolled-up pay is recalculated as 12.07% x pay that counts (to the penny) and compared with what was paid. A difference above `--threshold` is an exception (`underpaid` or `overpaid`) with the working in `report.md`. A week with no pay that counts and no rolled-up row has nothing to check.
+- `holiday_pay` above 0 in any week of an `irregular_rolled_up` worker: flag `holiday_pay_paid_to_rolled_up_worker` (possible second payment of the same holiday pay, or a worker not really on rolled-up pay). It is listed in exceptions.csv (`paid` = the holiday_pay amount, direction `rule_flag`) and in a `report.md` warning, and is not recalculated.
+Rule flags are always exceptions, whatever the threshold.
+
+**Leave-year assumption:** leave years are assumed to start on 1 April for every worker (there is no option yet). Rolled-up pay was lawful only in leave years starting on or after 2024-04-01. An employer whose leave year starts on another date (for example 1 January) has a year that began before 2024-04-01 running into 2024: rolled-up pay in the weeks from 1 April to the end of that year is treated here as the rules-era year and recalculated instead of flagged `rolled_up_before_2024_rules`. Treat the flag as correct only if the employer's leave year starts on 1 April; otherwise check those weeks by hand. Leave weeks listed in `leave.csv` for these workers are not re-audited by the 52-week look-back (their holiday pay is paid as rolled-up pay, not at the average); `report.md` notes how many were skipped. A `contract_weekly_basic` is ignored for them (the report says so in its own words and does not suggest another worker type).
+
+## Output columns: rolled-up rows (exceptions.csv)
+`exceptions.csv` has a final column `check`: `leave_lookback` (the look-back rows above) or `rolled_up_pay`. For `rolled_up_pay` rows `leave_week` is the pay week ending, `paid` is the rolled-up pay recorded, `due` and `difference` are the amount recalculated under these settings (blank for the two rule flags, where `direction` is `rule_flag`), and the `ref_weeks_*`, `average` and `fixed_basic_rate` columns are blank. **Changed in T-126:** the `check` column is new, and report.md says "Recalculated under these settings" where it used to say "Due". The column name `due` is unchanged.
+
+**Wording:** outputs never say "compliant", "owed" or "liable". Figures are recalculated under the settings you gave; "Not legal advice; a payroll professional signs off." stays on every report.
 
 ## Output columns: reference weeks (exceptions.csv)
 - `ref_weeks_used`: paid weeks that went into the average.
