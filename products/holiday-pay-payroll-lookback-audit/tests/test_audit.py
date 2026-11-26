@@ -257,6 +257,125 @@ class OutputHandling(Base):
         self.assertEqual(code, 2)
         self.assertEqual(os.listdir(out), [])
 
+    def _fail_second_replace(self):
+        from unittest import mock
+        import report.builder as b
+        real = os.replace
+
+        def flaky(src, dst):
+            if os.path.basename(dst) == "report.md" and src.endswith(".tmp"):
+                raise OSError("second rename failed")
+            return real(src, dst)
+        return mock.patch.object(b.os, "replace", flaky)
+
+    def test_second_rename_failure_rolls_back_to_old_pair(self):
+        out = os.path.join(self.tmp.name, "out")
+        os.makedirs(out)
+        for n in ("exceptions.csv", "report.md"):
+            with open(os.path.join(out, n), "w") as fh:
+                fh.write("OLD " + n)
+        with self._fail_second_replace():
+            code, err = run_cli(*self.args(out))
+        self.assertEqual(code, 2)
+        for n in ("exceptions.csv", "report.md"):
+            with open(os.path.join(out, n)) as fh:
+                self.assertEqual(fh.read(), "OLD " + n)
+        self.assertEqual(sorted(os.listdir(out)), ["exceptions.csv", "report.md"])
+
+    def test_failed_rollback_keeps_backup_and_names_it(self):
+        from unittest import mock
+        import report.builder as b
+        out = os.path.join(self.tmp.name, "out")
+        os.makedirs(out)
+        for n in ("exceptions.csv", "report.md"):
+            with open(os.path.join(out, n), "w") as fh:
+                fh.write("OLD " + n)
+        real = os.replace
+
+        def flaky(src, dst):
+            if src.endswith(".bak") or (os.path.basename(dst) == "report.md" and src.endswith(".tmp")):
+                raise OSError("replace refused")
+            return real(src, dst)
+        with mock.patch.object(b.os, "replace", flaky):
+            code, err = run_cli(*self.args(out))
+        self.assertEqual(code, 2)
+        baks = [n for n in os.listdir(out) if n.endswith(".bak")]
+        self.assertEqual(len(baks), 1)
+        self.assertIn(os.path.join(out, baks[0]), err)
+        self.assertIn("rollback failed", err)
+        with open(os.path.join(out, baks[0])) as fh:
+            self.assertEqual(fh.read(), "OLD exceptions.csv")
+        self.assertFalse([n for n in os.listdir(out) if n.endswith(".tmp")])
+
+    def test_link_unavailable_uses_copy_fallback_and_rolls_back(self):
+        from unittest import mock
+        import errno
+        import report.builder as b
+        out = os.path.join(self.tmp.name, "out")
+        os.makedirs(out)
+        for n in ("exceptions.csv", "report.md"):
+            with open(os.path.join(out, n), "w") as fh:
+                fh.write("OLD " + n)
+        def nolink(*a, **k):
+            raise OSError(errno.EPERM, "no links")
+        with mock.patch.object(b.os, "link", nolink), self._fail_second_replace():
+            code, err = run_cli(*self.args(out))
+        self.assertEqual(code, 2)
+        for n in ("exceptions.csv", "report.md"):
+            with open(os.path.join(out, n)) as fh:
+                self.assertEqual(fh.read(), "OLD " + n)
+        self.assertEqual(sorted(os.listdir(out)), ["exceptions.csv", "report.md"])
+
+    def test_second_rename_failure_without_old_files_leaves_nothing(self):
+        out = os.path.join(self.tmp.name, "fresh")
+        with self._fail_second_replace():
+            code, err = run_cli(*self.args(out))
+        self.assertEqual(code, 2)
+        self.assertEqual(os.listdir(out), [])
+
+    def test_success_leaves_no_backups_and_owner_only_files(self):
+        out = os.path.join(self.tmp.name, "out")
+        os.makedirs(out)
+        for n in ("exceptions.csv", "report.md"):
+            with open(os.path.join(out, n), "w") as fh:
+                fh.write("OLD")
+        self.assertEqual(run_cli(*self.args(out))[0], 0)
+        self.assertEqual(sorted(os.listdir(out)), ["exceptions.csv", "report.md"])
+        for n in os.listdir(out):
+            self.assertEqual(os.stat(os.path.join(out, n)).st_mode & 0o777, 0o600)
+
+    def test_week_ranges_single_run_and_two_runs(self):
+        from datetime import date, timedelta
+        from report.builder import _week_ranges
+        d0 = date(2025, 1, 4)
+        wk = lambda *ns: [d0 + timedelta(days=7 * n) for n in ns]
+        self.assertEqual(_week_ranges(wk(0)), ["2025-01-04"])
+        self.assertEqual(_week_ranges(wk(0, 1, 2, 3, 4)), ["2025-01-04 to 2025-02-01 (5 weeks)"])
+        self.assertEqual(_week_ranges(wk(0, 1, 5, 7, 8)),
+                         ["2025-01-04 to 2025-01-11 (2 weeks)", "2025-02-08", "2025-02-22 to 2025-03-01 (2 weeks)"])
+
+    def test_gap_section_uses_ranges(self):
+        h = self.write("h.csv", H + "W1,2025-06-07,basic,100\nW1,2025-07-19,basic,100\n")
+        l = self.write("l.csv", L + "W1,2025-07-19\n")
+        out = os.path.join(self.tmp.name, "out")
+        self.assertEqual(run_cli("--history", h, "--leave", l, "--out", out)[0], 0)
+        with open(f"{out}/report.md", encoding="utf-8") as fh:
+            self.assertIn("W1: 5 week(s): 2025-06-14 to 2025-07-12 (5 weeks)", fh.read())
+
+    def test_gaps_none_omits_summary_line(self):
+        import report
+        out = os.path.join(self.tmp.name, "out")
+        report.write_outputs(out, [], [])
+        with open(f"{out}/report.md", encoding="utf-8") as fh:
+            self.assertNotIn("weeks missing from the export", fh.read())
+        report.write_outputs(out, [], [], gaps={})
+        with open(f"{out}/report.md", encoding="utf-8") as fh:
+            self.assertIn("Workers with weeks missing from the export: 0", fh.read())
+
+    def test_history_gaps_exported(self):
+        import report
+        self.assertTrue(callable(report.history_gaps))
+
     def test_mid_history_gap_warning(self):
         h = self.write("h.csv", H + "W1,2025-06-07,basic,100\nW1,2025-06-14,basic,100\n"
                        "W1,2025-06-28,basic,100\nW1,2025-07-12,basic,100\n"

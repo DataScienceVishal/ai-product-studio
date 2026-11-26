@@ -7,8 +7,7 @@ from decimal import Decimal, InvalidOperation
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from ingest import load_workers, ValidationError   # noqa: E402
-from report import audit, write_outputs, DEFAULT_THRESHOLD   # noqa: E402
-from report.builder import history_gaps   # noqa: E402
+from report import audit, write_outputs, history_gaps, DEFAULT_THRESHOLD   # noqa: E402
 
 
 def _threshold(s):

@@ -25,6 +25,11 @@ Columns: `worker_id`, `worker_type` (`variable_hours` default, or `fixed_pay`), 
 
 **Changed in T-115:** `ref_weeks_skipped` used to include the before-first-record weeks. It now counts only no-pay-that-counts weeks, and the other weeks are in `ref_weeks_before_first_record`. Compare earlier output with this in mind.
 
+## Output files and permissions
+`exceptions.csv` and `report.md` hold payroll data, so they are created owner-only (mode 0600), not the 0644 an ordinary `open()` would give. Any mode or owner on files already in `--out` is replaced by this. Change it afterwards with `chmod` if others must read the files. The two files are written together: if either cannot be written, the folder keeps its previous contents (a crash or power loss mid-write is not covered).
+
+**Changed in T-116/T-117:** earlier output was 0644. `report.md` lists missing weeks as ranges, for example `2025-01-04 to 2025-02-01 (5 weeks)`.
+
 ## Example
 history.csv
 ```
