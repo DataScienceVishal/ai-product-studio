@@ -1,6 +1,7 @@
 import csv
 import os
 import re
+import tempfile
 from datetime import timedelta
 from decimal import Decimal
 
@@ -93,23 +94,77 @@ def explain(r):
     return "\n".join(lines) + "\n"
 
 
-def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD):
+def history_gaps(workers):
+    """{worker_id: [week endings between the first and last payroll row with no rows at all]}."""
+    gaps = {}
+    for wid in sorted(workers):
+        weeks = sorted(workers[wid].history)
+        have, missing, d = set(weeks), [], weeks[0] + timedelta(days=7)
+        while d < weeks[-1]:
+            if d not in have:
+                missing.append(d)
+            d += timedelta(days=7)
+        if missing:
+            gaps[wid] = missing
+    return gaps
+
+
+def _gap_section(gaps):
+    if not gaps:
+        return []
+    out = ["", "## Warning: weeks missing from the export", "",
+           "These weeks fall between the worker's first and last record but have no rows at all. "
+           "Confirm these were genuinely unpaid weeks and not missing from the export; "
+           "the results above treat them as unpaid.", ""]
+    out += [f"- {_md(wid)}: {len(ws)} week(s): {', '.join(d.isoformat() for d in ws)}" for wid, ws in gaps.items()]
+    return out
+
+
+def _atomic_write_pair(out_dir, files):
+    """files: [(name, writer(fh))]. Write all to temp files, then rename all into place."""
     os.makedirs(out_dir, exist_ok=True)
-    with open(os.path.join(out_dir, "exceptions.csv"), "w", newline="", encoding="utf-8") as fh:
-        w = csv.DictWriter(fh, COLUMNS, lineterminator="\n")
-        w.writeheader()
-        w.writerows(_csv_row(r) for r in exceptions)
+    temps = []
+    try:
+        for name, writer, kw in files:
+            fd, tmp = tempfile.mkstemp(prefix="." + name + ".", suffix=".tmp", dir=out_dir)
+            temps.append((tmp, os.path.join(out_dir, name)))
+            with os.fdopen(fd, "w", **kw) as fh:
+                writer(fh)
+        for tmp, dest in temps:
+            os.replace(tmp, dest)
+            temps = [t for t in temps if t[0] != tmp]
+    finally:
+        for tmp, _ in temps:
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
+
+
+def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=None, workers_loaded=None):
     under = [r for r in rows if r["difference"] > threshold]
     over = [r for r in rows if r["difference"] < -threshold]
     flagged = sorted({r["worker_id"] for r in rows if r["flags"]})
-    md = [f"# Holiday pay look-back audit", "", f"**{DISCLAIMER}**", "", "## Summary", "",
-          f"- Workers: {len({r['worker_id'] for r in rows})}",
-          f"- Leave weeks checked: {len(rows)}",
-          f"- Exceptions (difference over {_gbp(threshold)}): {len(exceptions)}",
-          f"- Underpayments: {len(under)}, total underpaid {_gbp(sum((r['difference'] for r in under), Decimal(0)))}",
-          f"- Overpayments: {len(over)}, total overpaid {_gbp(sum((-r['difference'] for r in over), Decimal(0)))}",
-          f"- Workers with flags: {len(flagged)}" + (f" ({', '.join(flagged)})" if flagged else ""), "",
-          "## Exceptions", ""]
+    with_leave = len({r["worker_id"] for r in rows})
+    md = [f"# Holiday pay look-back audit", "", f"**{DISCLAIMER}**", "", "## Summary", ""]
+    if workers_loaded is not None:
+        md.append(f"- Workers loaded: {workers_loaded}")
+    md += [f"- Workers with leave: {with_leave}",
+           f"- Leave weeks checked: {len(rows)}",
+           f"- Exceptions (difference over {_gbp(threshold)}): {len(exceptions)}",
+           f"- Underpayments: {len(under)}, total underpaid {_gbp(sum((r['difference'] for r in under), Decimal(0)))}",
+           f"- Overpayments: {len(over)}, total overpaid {_gbp(sum((-r['difference'] for r in over), Decimal(0)))}",
+           f"- Workers with flags: {len(flagged)}" + (f" ({', '.join(flagged)})" if flagged else ""),
+           f"- Workers with weeks missing from the export: {len(gaps or {})}", "",
+           "## Exceptions", ""]
     md += [explain(r) for r in exceptions] or ["None.\n"]
-    with open(os.path.join(out_dir, "report.md"), "w", encoding="utf-8") as fh:
-        fh.write("\n".join(md))
+    md += _gap_section(gaps)
+
+    def write_csv(fh):
+        w = csv.DictWriter(fh, COLUMNS, lineterminator="\n")
+        w.writeheader()
+        w.writerows(_csv_row(r) for r in exceptions)
+
+    _atomic_write_pair(out_dir, [
+        ("exceptions.csv", write_csv, {"newline": "", "encoding": "utf-8"}),
+        ("report.md", lambda fh: fh.write("\n".join(md)), {"encoding": "utf-8"})])

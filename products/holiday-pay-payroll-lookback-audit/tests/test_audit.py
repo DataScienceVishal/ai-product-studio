@@ -173,7 +173,7 @@ class EndToEnd(Base):
         with open(f"{out}/report.md", encoding="utf-8") as fh:
             md = fh.read()
         self.assertIn("Not legal advice; a payroll professional signs off", md.split("\n")[2])
-        for s in ("Workers: 5", "Leave weeks checked: 5", "Underpayments: 3, total underpaid £145.00",
+        for s in ("Workers loaded: 5", "Workers with leave: 5", "Leave weeks checked: 5", "Underpayments: 3, total underpaid £145.00",
                   "Overpayments: 1, total overpaid £10.00", "Workers with flags: 1 (W004)",
                   "### W002, week ending 2025-08-09", "underpaid by £80.00",
                   "57 week(s) before the first payroll record in the file not counted"):
@@ -197,6 +197,96 @@ class EndToEnd(Base):
         out = os.path.join(self.tmp.name, "o2")
         self.assertEqual(run_cli("--history", f"{SAMPLES}/history.csv", "--leave", f"{SAMPLES}/leave.csv", "--out", out)[0], 0)
         self.assertTrue(os.path.exists(f"{out}/report.md"))
+
+
+class OutputHandling(Base):
+    def args(self, out, history=None):
+        return ("--history", history or f"{SAMPLES}/history.csv", "--leave", f"{SAMPLES}/leave.csv", "--out", out)
+
+    def test_out_is_existing_file(self):
+        f = self.write("afile", "x")
+        code, err = run_cli(*self.args(f))
+        self.assertEqual(code, 2)
+        self.assertEqual(len(err.strip().splitlines()), 1)
+        self.assertIn("cannot write output", err)
+        self.assertNotIn("Traceback", err)
+
+    def test_out_parent_not_writable_or_missing(self):
+        f = self.write("afile", "x")
+        code, err = run_cli(*self.args(os.path.join(f, "sub")))   # parent is a file
+        self.assertEqual((code, len(err.strip().splitlines())), (2, 1))
+        self.assertIn("cannot write output", err)
+
+    def test_second_write_failure_leaves_no_partial_outputs(self):
+        from unittest import mock
+        import report.builder as b
+        out = os.path.join(self.tmp.name, "out")
+        # old outputs exist and must stay untouched when the new write fails
+        os.makedirs(out)
+        for n in ("exceptions.csv", "report.md"):
+            with open(os.path.join(out, n), "w") as fh:
+                fh.write("OLD " + n)
+        # fail during the second temp write (report.md) before anything is renamed
+        real_fdopen = os.fdopen
+        n_open = []
+
+        def fdopen(fd, *a, **kw):
+            n_open.append(1)
+            if len(n_open) == 2:
+                os.close(fd)
+                raise OSError("disk full")
+            return real_fdopen(fd, *a, **kw)
+        with mock.patch.object(b.os, "fdopen", fdopen):
+            code, err = run_cli(*self.args(out))
+        self.assertEqual(code, 2)
+        self.assertIn("disk full", err)
+        for n in ("exceptions.csv", "report.md"):
+            with open(os.path.join(out, n)) as fh:
+                self.assertEqual(fh.read(), "OLD " + n)
+        self.assertEqual(sorted(os.listdir(out)), ["exceptions.csv", "report.md"])   # no temp files left
+
+    def test_rename_failure_cleans_temps_and_fresh_dir_has_no_outputs(self):
+        from unittest import mock
+        import report.builder as b
+        out = os.path.join(self.tmp.name, "fresh")
+
+        def boom(src, dst):
+            raise OSError("rename failed")
+        with mock.patch.object(b.os, "replace", boom):
+            code, err = run_cli(*self.args(out))
+        self.assertEqual(code, 2)
+        self.assertEqual(os.listdir(out), [])
+
+    def test_mid_history_gap_warning(self):
+        h = self.write("h.csv", H + "W1,2025-06-07,basic,100\nW1,2025-06-14,basic,100\n"
+                       "W1,2025-06-28,basic,100\nW1,2025-07-12,basic,100\n"
+                       "W2,2025-06-07,basic,100\nW2,2025-06-14,basic,100\n")
+        l = self.write("l.csv", L + "W1,2025-07-12\n")
+        out = os.path.join(self.tmp.name, "out")
+        self.assertEqual(run_cli("--history", h, "--leave", l, "--out", out)[0], 0)
+        with open(f"{out}/report.md", encoding="utf-8") as fh:
+            md = fh.read()
+        self.assertIn("weeks missing from the export", md)
+        self.assertIn("W1: 2 week(s): 2025-06-21, 2025-07-05", md)
+        self.assertNotIn("W2:", md)
+        self.assertIn("Workers loaded: 2", md)
+        self.assertIn("Workers with leave: 1", md)
+        self.assertIn("Workers with weeks missing from the export: 1", md)
+
+    def test_no_gap_section_for_sample(self):
+        out = os.path.join(self.tmp.name, "out")
+        self.assertEqual(run_cli(*self.args(out))[0], 0)
+        with open(f"{out}/report.md", encoding="utf-8") as fh:
+            self.assertNotIn("## Warning", fh.read())
+
+    def test_history_file_error_suppresses_no_history_noise(self):
+        iss = self.issues(H + "W1,not-a-date,basic,1\n", leave=L + "W1,2025-06-14\nW2,2025-06-14\n")
+        self.has(iss, "h.csv:2:")
+        self.assertFalse(any("no payroll history" in i for i in iss), iss)
+
+    def test_no_history_message_kept_when_history_is_fine(self):
+        iss = self.issues(H + "W1,2025-06-07,basic,1\n", leave=L + "W2,2025-06-14\n")
+        self.has(iss, "no payroll history")
 
 
 if __name__ == "__main__":

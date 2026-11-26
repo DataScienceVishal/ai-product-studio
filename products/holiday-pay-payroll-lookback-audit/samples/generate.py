@@ -47,7 +47,7 @@ def build():
         add("W002", d, "basic", 400)
         add("W002", d, "commission", 30)
         add("W002", d, "regular_overtime", 40 if ((d - START).days // 7) % 2 else 60)
-        if date(2025, 1, 4) <= d <= date(2025, 2, 8) and d != date(2025, 2, 8):
+        if date(2025, 1, 4) <= d < date(2025, 2, 8):
             add("W003", d, "statutory", 116.75)
         else:
             add("W003", d, "basic", 300)
