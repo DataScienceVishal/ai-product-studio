@@ -83,9 +83,9 @@ class G8(Case):
         self.assertNotIn("john.smith", err.getvalue())
 
     def test_detection(self):
-        ws = {k: None for k in ("john.smith", "mary_jones", "EMP100234", "JSmith1990", "AB1234", "w-001")}
+        ws = {k: None for k in ("john.smith", "mary_jones", "john-smith", "EMP100234", "JSmith1990", "AB1234", "w-001")}
         got = name_like_id_warnings(ws)
-        self.assertEqual(len(got), 2)
+        self.assertEqual(len(got), 3)
         self.assertTrue(all("***" in g for g in got))
 
 

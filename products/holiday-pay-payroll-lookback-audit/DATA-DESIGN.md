@@ -29,7 +29,7 @@ Only these columns are accepted (`ingest/loader.py:15-17`):
 ## 2. Absences
 
 - leave.csv has no reason column, so no reason can be given (`loader.py:16`, `116-118`).
-- **Gap G1.** history.csv still has an `element_category` called `statutory`, with an amount (`engine/elements.py:13-14`). That says "SSP or SMP paid this week", and the flat SSP rate tells sickness apart from maternity. The engine uses `statutory` only as a yes/no marker (`engine/lookback.py:69`, `76-77`). *Proposed task:* replace it with a reason-free `excluded_week` marker with no amount. Results must not change: the golden tests stay identical.
+- **Gap G1 (closed by T-154).** history.csv still has an `element_category` called `statutory`, with an amount (`engine/elements.py:13-14`). That says "SSP or SMP paid this week", and the flat SSP rate tells sickness apart from maternity. The engine uses `statutory` only as a yes/no marker (`engine/lookback.py:69`, `76-77`). *Proposed task:* replace it with a reason-free `excluded_week` marker with no amount. Results must not change: the golden tests stay identical.
 
 ## 3. What the mapper sends to Azure OpenAI
 
@@ -56,7 +56,7 @@ Only these columns are accepted (`ingest/loader.py:15-17`):
 
 - **Rule:** no row data in any log: no worker_id, date, amount or pay-element name. Logs carry counts and token use only.
 - In the CLI, errors go to stderr only, at most 50 (`audit.py:41-45`). The starter logs request, tenant and user IDs only (`_starter/backend/app/logs.py:1-4`), and Log Analytics keeps them 30 days.
-- **Gap G6.** FORMAT.md says errors never print a full `worker_id`, but `loader.py:215`, `228`, `243`, `245`, `247`, `259`, `263` and `280` do. It is low risk, because the IDs are pseudonymous. *Proposed task:* mask them, or correct the doc.
+- **Gap G6 (closed by T-154).** FORMAT.md says errors never print a full `worker_id`, but `loader.py:215`, `228`, `243`, `245`, `247`, `259`, `263` and `280` do. It is low risk, because the IDs are pseudonymous. *Proposed task:* mask them, or correct the doc.
 
 ## 7. Who can see what
 
@@ -76,7 +76,7 @@ Only these columns are accepted (`ingest/loader.py:15-17`):
 |-|-|
 | Pseudonymised pay is still personal data, and small firms' workers can be singled out | Minimum columns, 30-day deletion, and a processor agreement reviewed by a lawyer before real data |
 | An NI number is hidden inside an ID | The shape check, plus the customer's attestation at upload |
-| SSP or SMP reveals health or family leave | G1 |
+| SSP or SMP reveals health or family leave | G1, closed by T-154 (`excluded_week`, amount 0) |
 | A hostile or personal name reaches the model | Names only, the G2 filter, and a person confirms the table |
 | Abroad processing, or Azure's abuse-monitoring retention | G3. Only names are sent |
 | Real data on the Student subscription | G4 |
@@ -84,3 +84,5 @@ Only these columns are accepted (`ingest/loader.py:15-17`):
 | A cross-tenant leak | Starter scoping, plus the G7 tests |
 | Outputs are emailed unencrypted | 0600 files and the FORMAT.md warning. The hosted version is download-only |
 | 16 and 17 year olds | No date of birth is taken |
+
+- **Gap G8 (closed by T-154, as a warning only).** Name-like worker_ids (`john.smith`) are accepted with a masked non-fatal warning; FORMAT.md says so. No regex can catch every name.

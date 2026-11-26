@@ -82,11 +82,11 @@ def _mask_id(wid):
     return f"{str(wid)[:2]}***"
 
 
-_NAME_LIKE = re.compile(r"^[A-Za-z]{2,}(?:[._ ][A-Za-z]{2,})+$")
+_NAME_LIKE = re.compile(r"^[A-Za-z]{2,}(?:[._-][A-Za-z]{2,})+$")
 
 
 def name_like_id_warnings(workers):
-    """Non-fatal G8 warnings: worker_ids made only of letters joined by '.', '_' or space (john.smith) look like names.
+    """Non-fatal G8 warnings: worker_ids made only of letters joined by '.', '_' or '-' (john.smith) look like names.
     IDs are masked; the check is a hint, not a guarantee (JSmith1990 is not caught)."""
     return [f"warning: worker_id {_mask_id(wid)} ({len(wid)} chars) looks like a person's name. Use a pseudonymous payroll ID"
             for wid in sorted(workers) if _NAME_LIKE.match(wid)]
