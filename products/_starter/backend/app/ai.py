@@ -49,6 +49,15 @@ def _reason(value) -> str | None:
     return value if isinstance(value, str) else (None if value is None else "unknown")
 
 
+def _clean_model(value) -> str:
+    """The model name the provider reported, made safe to store (ai_usage.model is 80 characters, no NUL) and to log
+    (no line breaks or escape codes). Not a string, empty, or one of our reservation markers: "unknown"."""
+    if not isinstance(value, str):
+        return "unknown"
+    name = "".join(c for c in value if c.isprintable()).strip()[:80].strip()
+    return "unknown" if not name or name.lower() in ("pending", "abandoned") else name
+
+
 def _dicts(value) -> list[dict]:
     """The dict items of a provider list; anything malformed counts as no items."""
     return [v for v in value if isinstance(v, dict)] if isinstance(value, list) else []
@@ -312,7 +321,7 @@ class AzureOpenAI:
         else:
             return
         self.disabled = True
-        shown = reported[:80] if isinstance(reported, str) else "(missing)"
+        shown = _clean_model(reported) if isinstance(reported, str) else "(missing)"
         log.error("AI switched off: the model Azure reported (%s) %s. Fix AZURE_OPENAI_DEPLOYMENT or the price "
                   "settings and restart.", shown, reason)
 
@@ -391,7 +400,7 @@ class AzureOpenAI:
                 log.warning("ai returned no usable answer", extra={"finish_reason": why})
                 raise fail(_NO_ANSWER.get(why, _NO_ANSWER[None]))
             return AIResult(text=text, input_tokens=billed_in, output_tokens=billed_out,
-                            model=reported if isinstance(reported, str) and reported else "unknown")
+                            model=_clean_model(reported))
         raise fail()
 
     def _parse(self, data: dict) -> tuple[int, int, str, str | None]:
@@ -403,6 +412,8 @@ class AzureOpenAI:
             message = choice.get("message") if isinstance(choice.get("message"), dict) else {}
             content = message.get("content")
             text = content.strip() if isinstance(content, str) else ""
+            if not text and isinstance(message.get("refusal"), str) and message["refusal"].strip():
+                return (_count(usage.get("prompt_tokens")), _count(usage.get("completion_tokens")), "", "refusal")
             # chat keeps its old rule: any text is an answer, even when finish_reason is "length"
             return (_count(usage.get("prompt_tokens")), _count(usage.get("completion_tokens")), text,
                     None if text else _reason(choice.get("finish_reason")))

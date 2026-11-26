@@ -1262,3 +1262,68 @@ def test_request_refused_after_reserving_releases_its_reservation(settings, outb
         rows = db.scalars(select(AIUsage)).all()
     assert [(r.model, r.input_tokens, r.output_tokens) for r in rows] == [("unknown", 0, 0)]
     assert not any(r.model == "pending" for r in rows)
+
+
+# --- T-162 QA: reported-model edge cases ------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("name", ["gpt-5-mini-pro", "gpt-5-nano-pro", "gpt-5-mini@2025", "gpt-5-", "gpt-5-chat",
+                                  "gpt-5-2025-08-07-2025-08-07", "gpt-5-mini\x00", "gpt-5-mini-2025-08",
+                                  "gpt-5-mini-٢٠٢٥٠٨٠٧"])
+def test_reported_model_with_an_unrecognised_suffix_is_unknown_not_priced_as_its_prefix(name):
+    """`gpt-5-mini-pro` must not be priced as gpt-5-mini ($2): a suffix that is not a date makes it a different model."""
+    assert reported_model_price(name) is None
+
+
+@pytest.mark.parametrize("name,price", [("gpt-5-mini-2025-08-07", 2.0), ("  GPT-5-Mini-20250807\n", 2.0),
+                                        ("gpt-5-pro-2025-10-06", 120.0), ("gpt-5.4-pro-2026-03-05", 180.0)])
+def test_reported_model_dates_and_case_still_resolve(name, price):
+    assert reported_model_price(name) == price
+
+
+@pytest.mark.parametrize("reported", ["x" * 500, "pending", "abandoned", "bad\x00name", "   "])
+def test_odd_reported_model_name_is_stored_safely_and_the_summary_still_works(settings, outbox, new_client, database,
+                                                                              reported):
+    """ai_usage.model is 80 characters: a longer or NUL-bearing name made settle fail (500, usage never recorded), and
+    'pending' would have looked like an open reservation."""
+    app = _guarded_app(settings, outbox, reported, deployment="chat", explicit=2.0)
+    try:
+        first, _ = _two_summaries(app, new_client, outbox)
+    finally:
+        app.state.db.dispose()
+    assert first.status_code == 200
+    with database.sessions() as db:
+        rows = db.scalars(select(AIUsage)).all()
+    assert rows and all(r.model not in ("pending", "abandoned") and 0 < len(r.model) <= 80 for r in rows)
+    assert rows[0].feature == "note_summary" and (rows[0].input_tokens, rows[0].output_tokens) == (12, 7)
+
+
+def test_reported_model_with_newlines_cannot_forge_a_log_line():
+    import logging
+    seen: list[str] = []
+
+    class Grab(logging.Handler):
+        def emit(self, record):
+            seen.append(record.getMessage())
+
+    handler = Grab(logging.ERROR)
+    ai_module.log.addHandler(handler)
+    provider = AzureOpenAI("https://res.openai.azure.com/", "gpt-5-mini", "k", retries=0, checked_price=2.0,
+                           client=httpx.Client(transport=httpx.MockTransport(
+                               lambda _: _reply("gpt-5-pro\nERROR forged line\r\x1b[31m"))))
+    try:
+        provider.complete("s", "u")
+    finally:
+        ai_module.log.removeHandler(handler)
+    assert len(seen) == 1 and not any(c in seen[0] for c in "\n\r\x1b")
+
+
+def test_chat_refusal_gets_the_refusal_message():
+    body = {"model": "gpt-5-mini", "choices": [{"message": {"content": None, "refusal": "I can't help with that."},
+                                                "finish_reason": "stop"}],
+            "usage": {"prompt_tokens": 5, "completion_tokens": 9}}
+    provider = AzureOpenAI("https://res.openai.azure.com/", "gpt-5-mini", "k", retries=0, checked_price=2.0,
+                           client=httpx.Client(transport=httpx.MockTransport(lambda _: httpx.Response(200, json=body))))
+    with pytest.raises(AIUnavailable) as failed:
+        provider.complete("s", "u")
+    assert "declined" in failed.value.message and "can't help" not in failed.value.message  # never echoes the refusal
+    assert (failed.value.input_tokens, failed.value.output_tokens) == (5, 9)
