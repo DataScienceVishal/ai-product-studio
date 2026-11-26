@@ -137,3 +137,4 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Options: A) Yes, up to $2 on gpt-5-mini, test data only, logged in BUDGET.md (recommended) B) No spend; part A only, and the idea stays parked at 64 C) Yes, but only after the government responds to the consultation
 - Recommended: A, because a pass is the evidence the parked idea needs whenever the government response lands, and it costs pennies.
 - If no answer: waits (spending is ask-first). Meanwhile the studio builds part A and freezes part B's test data, so B can run the same day you say yes.
+- Update 2026-11-26T02:35Z (run 84ae): part A passed and the part B sorter, guard and marker are built and reviewed (T-114). Only the paid run is left.
