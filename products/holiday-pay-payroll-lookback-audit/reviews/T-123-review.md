@@ -54,3 +54,32 @@ A `{}` entry counts at this run's size, and an empty list sums to 0.0. A missing
 - Counting legacy entries as 0: 1 failure.
 - Leaving out the earlier total in the cap check: 3 failures.
 - Not recording `worst_case_usd`: 1 error.
+
+---
+
+## Re-review at e504540
+
+Tests: `python3 -I -m unittest discover -s tests -t .` gives **Ran 199, OK**. Since a35fa68, the only product-code change is one line in `run.py`, which sets the client spend cap to `args.max_usd - before_usd`. The test changes resolve critical issue 1.
+
+### Mutation re-run (each mutant run against the full suite)
+
+| Mutant | Result |
+|---|---|
+| Delete the whole range/type check | caught (2 failures) |
+| Drop `0 <=` | caught (1 failure) |
+| Remove the non-dict check in `read_attempts` | caught (1 failure) |
+| Client cap set back to `args.max_usd` | caught (1 failure) |
+| Drop `< inf` | survives. This is an equivalent mutant: inf makes `before + total` inf, which is over the cap, so the run is still refused with exit 2 before any call. Still fails closed. |
+| Remove the non-dict check in `earlier_worst_case` | survives. `read_attempts` now rejects non-object lines first, so `main` can no longer reach this check. |
+| `>` changed to `>=` at the boundary | survives. Suggestion only, unchanged from the first review. |
+
+### The questions you asked
+
+- **Exit 3 from `read_attempts` for corrupt JSON and non-object lines.** This is acceptable fail-closed behaviour. The run is refused before preflight, before any call and before any write. Exit 3 ("refused: attempts.jsonl is unreadable") matches the other refusals about the state of the out dir.
+- **Is the non-object check in `earlier_worst_case` dead code?** In `main`, yes. `preflight` is a function other code can call and it takes `earlier` as a parameter, so the check stays useful as a guard for those callers. Keep it. An optional direct unit test would be `run.earlier_worst_case([[1]], 1.0)` raising ValueError.
+
+### Client cap
+
+The remaining budget is `max_usd - before`. Preflight guarantees `before + total <= max_usd` with `total > 0`, so this budget is always above zero. One edge: the recorded `worst_case_usd` is rounded to 6 decimal places. When the cap fits almost exactly, within about 5e-7, the client may refuse the last request. That failure is safe (no request is sent) and is not worth changing.
+
+### Verdict: PASS
