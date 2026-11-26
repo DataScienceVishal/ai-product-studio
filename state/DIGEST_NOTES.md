@@ -12,3 +12,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 
 - 2026-11-26T13:25Z T-140 done: last surviving mutant in the holiday-pay rate fallback is now killed by a test (318 tests green).
 - 2026-11-26T13:28Z T-141 scout round 20 (jobs SMEs already outsource): 0 of 8 survive; near miss is UK food suppliers disputing supermarket deductions, price check queued as T-142.
+- 2026-11-26T14:40Z T-142: the supermarket-deductions idea is parked (51/100). No public UK price, and Salitix plus Esker already serve UK grocery suppliers. Holiday-pay suite still 318 green.

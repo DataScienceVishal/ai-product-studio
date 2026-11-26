@@ -86,7 +86,45 @@ Not scoped (G0). Likely: ingest PDF/CSV/email remittances, match to uploaded ord
 ## Score (validator)
 | Pain /20 | Pay /20 | AI /15 | Reach /10 | Build /15 | Competition /10 | Risk /10 | Total /100 |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| 13 | 7 | 8 | 6 | 7 | 2 | 8 | 51 |
 
 ## Gate log
 - 2026-11-26 G0 scout (T-142): evidence gathered; scout recommendation DROP unless a buyer or recovery-firm quote is obtained.
+- 2026-11-26 G1 validator (T-142): 51, REVISE (first G1 failure, no red flag). No public fee was found, and a UK supplier-side incumbent the scout missed (Salitix) already sells recovery to grocery suppliers with no upfront fee. A second failure kills it. See the Validator (T-142) section.
+
+## Validator (T-142)
+
+Verdict: **REVISE, 51/100** (first G1 attempt; pipeline.md kills only on a second failure or a red flag). Ceiling about 58. Park low. The board's "drop if no public fee is found" condition is met, so this should not get more scouting time unless the revive evidence below turns up for free.
+
+Top reason: no UK fee exists for the job, and the supplier-side market is already served in the UK. **Salitix** is a profit-recovery sales auditor "working exclusively with grocery suppliers", is an FDF professional affiliate, and handles retailer audit claims and trade-spend recovery "without upfront cost" (contingency model, rate not published). Esker also sells Claims & Deductions to a UK food supplier selling through supermarkets. So the wedge comes down to "cheaper for the smallest suppliers", and nothing evidences that.
+
+### Spot checks (validator, 2026-11-26)
+1. **Published UK recovery fee: none found (confirms the scout).** Searches for no-win-no-fee, contingency and success-fee terms found only retailer-side audit fees (The Grocer: more than 20% common a decade ago, some first-audit fees now below 10%; https://www.thegrocer.co.uk/suppliers/forensic-auditors-how-they-pile-pressure-on-suppliers/354535.article, search summary only). Those are what retailers pay to audit suppliers, not what suppliers pay.
+2. **UK supplier-side incumbent: Salitix (the scout missed it).** Grocery Gazette feature (https://www.grocerygazette.co.uk/?p=117688), FDF affiliate listing (https://www.fdf.org.uk/fdf/about-fdf/professional-affiliates/salitix-ltd), Retail Bulletin Q&A with its CRO, 1 Jul 2026 (https://www.theretailbulletin.com/retail-solutions/qa-ben-lewis-chief-revenue-officer-salitix-ltd-01-07-2026/, HTTP 403 on fetch). Vendor claim: it recovers on average 5% of net profit, with no upfront fees. All of this is from search summaries; I did not open salitix.com. Salitix proves that suppliers pay for this, but it gives no figure.
+3. **Esker covers UK grocery suppliers.** The All About Food customer story, fetched 2026-11-26 (https://www.esker.com/resources/customer-story/all-about-food/), describes a UK food company (GBP 130m revenue, about 180 staff, Sage 200) selling "through major supermarkets and wholesalers". It uses Esker Cash Application plus Claims & Deductions, and Esker reports short-payment resolution 97% faster and DSO down from 95 to 79 days. No retailer is named, so Esker does not need retailer connectors to serve this market. The company is above the target's 5 to 100 staff band, so the small-supplier gap stays open but unevidenced.
+4. **YouGov pain item.** A search summary of the 2025 GCA YouGov deck (https://assets.publishing.service.gov.uk/media/68dd3fdb8c1db6022d0c9fbb/YouGov_slides_-_GCA_Annual_conference_2025.pdf) confirms that "not allowing time (30 days) to challenge proposed invoice deductions, or deducting even if challenged" is a tracked issue. I did not open the slide to check the roughly 51% figure.
+
+### Score
+| Criterion | Score | Evidence and reasoning |
+|---|---|---|
+| Pain /20 | 13 | Real and regulator-recognised. GCA 2026 survey: 20% of suppliers raised invoice-discrepancy handling. The GCA forensic-auditing statement documents the 30-day and deduct-anyway practice. The YouGov deduction item is tracked in both 2025 and 2026 (about 51% is from a search summary). There is a job ad for an in-house deductions analyst. Held back because no frequency or cost figure exists for small suppliers, and the GCA's 2026/27 priorities don't name deductions (no forcing function) |
+| Pay /20 | 7 | Buyers do pay: Salitix contingency, Esker licences, in-house analysts. But there is no public price: no fee, no software price (Esker, SPS, Promomash and Roma are all quote-only), one non-food salary estimate and two unverified credit-controller salaries. The G1 minimum of "2 competitor prices or a clear substitute cost" is not met. Contingency pricing also undercuts a subscription, because a supplier who pays only on recovery has no reason to pay monthly |
+| AI advantage /15 | 8 | Reading varied remittances and reason codes and drafting a dispute that cites GSCOP is real LLM work. But the core is matching deductions to POs, PODs and promotion terms (mostly deterministic once extracted), Esker already ships AI capture and matching, and GSCOP wording is public. Copyable in weeks |
+| Reachability /10 | 6 | The buyers can be found: the FDF and its affiliates, GCA supplier events, The Grocer, regional food groups. The partner sector is unknown, Salitix already holds the FDF channel, and selling is locked |
+| Build feasibility /15 | 7 | The extraction, matching and drafting are buildable on the stack at low Azure cost. But retailer remittance and deduction layouts sit behind portal logins (Tesco Partners Toolkit, Sainsbury's), so the demo would run only on synthetic layouts, and matching needs the supplier's ERP, POD and promotion data. This is not a red flag (an extraction flow can be shown on synthetic data, as in T-56), but accuracy on real layouts can't be shown, which repeats the restaurant and pEPR lesson |
+| Competition /10 | 2 | Wedge rule: there is no evidenced advantage over the incumbent the buyer would otherwise pay. That incumbent is Salitix for a UK grocery supplier (no upfront cost, so "cheaper" is hard to claim), with Esker for mid-size suppliers. GSCOP-specific letters are a feature a UK recovery firm already applies by hand. "Priced out" has no evidence because nobody publishes a price |
+| Risk /10 | 8 | Commercial data only, no personal data at scale. Small deductions: dispute letters citing the Code sit close to legal drafting (not advice as scoped), and a wrong dispute could harm the supplier's relationship with the retailer |
+| **Total** | **51** | |
+
+Red flags: none fire. Not an off-limits area, no paid service dependency, no scraping. The data flag is near: if a reviewer holds that the value is accuracy on real retailer layouts, it would fire.
+
+### What would change my mind (revive evidence, all needed)
+1. A published or quoted price for the job: a Salitix or other UK recovery firm's contingency rate, or a deductions-software price that a 5 to 100 staff supplier pays. This needs contact, which is locked until `unlock selling`.
+2. Evidence that Salitix and Esker turn away or price out small suppliers, for example a minimum-recovery threshold or minimum turnover on their own pages.
+3. A public sample or spec of at least one designated retailer's remittance or deduction-notice format (CSV or PDF fields), so that the demo isn't purely invented.
+Without points 1 and 2, Pay stays at about 8 and Competition at about 3, and the ceiling is about 58.
+
+### Lessons
+- For any "supplier versus big buyer" money-recovery job, search for the supplier-side recovery auditor and the trade body's affiliate list (FDF professional affiliates) before writing the G0 file. Here the market was already served by a contingency firm the scout's software-only search missed.
+- A contingency incumbent makes the "cheaper" wedge almost impossible to evidence, because the buyer pays nothing up front. It also argues against a subscription.
+- This confirms the T-141 lesson. Where no public price exists, desk research can't lift Pay above about 8. Stop scouting jobs whose only price is behind a quote or a contingency agreement until selling is unlocked.
