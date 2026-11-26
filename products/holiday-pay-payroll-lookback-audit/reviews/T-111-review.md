@@ -100,3 +100,38 @@ The weak one is **Table 4 "Weeks 9-43 ... Average = £281.56"**. It is a publish
 ## Security and performance
 
 No I/O, network, deserialization or secrets. The look-back is O(leave entries × 104) dict lookups, which is fine. There is no AI cost in Part A.
+
+---
+
+## Re-review (fixes at 6c85d27)
+
+Re-reviewed 2026-11-26.
+- **Branch suite:** `Ran 46 tests in 0.010s` / `OK`.
+- **Simulated merge with `origin/main` (`2455f22`):** `git merge-tree --write-tree` is clean, and the archived product folder gives `Ran 46 tests in 0.010s` / `OK`.
+
+### Verdict: PASS
+
+### Blocking items
+
+| Item | Status | Evidence (my own runs) |
+|---|---|---|
+| B1 monthly conversion; E12/E13 from published inputs | **fixed** | `engine/monthly.py` `weekly_pay_from_monthly` (unrounded rate, split weeks across months). `tests/fixtures_gov_monthly.py` month pay/hours match the PDF Table 3/Annex (13 months checked line by line). All 52 weekly figures equal the published Annex column. E13 now calls the engine (240.38, 192.31, 336.54, 336.54). The penny note is verified: the unrounded sum is 14,606.67 and the sum of rounded weeks is 14,606.66 (the published figure). The test asserts the latter and gets 280.90 either way. E12b encodes 281.56 (N1 done). Mutants: rate rounded to 2 dp is killed (E12, E12b, E13); split week drops the 2nd month is killed (E12, E12b). |
+| B2 fixed-pay workers | **fixed** | `worker_type="fixed_pay"` uses the current basic plus the 52-week average of the variable elements. The 400 to 500 rise now gives due 500.00, difference 0.00. Mutants: average basic, oldest basic, and dropping the variable average are each killed. |
+| B3 silent misalignment | **fixed** | A Friday leave date against Saturday history raises `ValueError`. Mixed-weekday history raises. A missing leave week is flagged `leave_week_missing_from_history`, and no reference weeks is flagged `no_reference_weeks`. Mutants removing each check or flag, and allowing zero weeks, are each killed. |
+| B4 leave-year reset test | **fixed** | Now 5 March weeks then 1 April week. The no-reset mutant is now killed (`test_leave_year_boundary_resets_split`). |
+
+I re-ran the earlier mutants: M1, M2, M3, M5 and M12 are still killed. The float mutant (`dec()` back to `Decimal(x)`) is killed by `test_float_input_no_binary_noise`. One survivor in 19 targeted mutants: `monthly.py` `h <= 0` changed to `h < 0`. A zero-hours month then raises `decimal.DivisionByZero` instead of `ValueError`, so it is still not silent. This is a nit.
+
+### Marks, rescored
+
+- **A1 PASS.** All 18 encoded examples (E1-E17 plus E12b) run engine code on the published inputs. Each one equals the published figure or a recorded, verified disagreement (E11 231.54, E13 unrounded rate, E17 unrounded 1.6525). Every left-out item has a legitimate reason. Table 4's 281.56 is now encoded.
+- **A2 PASS (grey zone, unchanged).** 3 of 4 areas have official numeric examples. No official overtime/commission example exists (re-fetched). The kill line is not hit.
+- **A3 PASS.** Each row has per-week `paid` / `due` / `difference`, `working` and now `flags`. S1 (week-ending dates used, holiday vs no-pay skip split) is still open.
+- **A4 PASS.** 46 of 46 green on the branch and on the simulated merged tree, and the reviewer verdict is PASS.
+
+### Remaining (not blocking for Part A; do before the MVP uses `fixed_pay` on real data)
+
+- **R1 (high).** `_fixed_pay_refs` (`engine/lookback.py`) takes the "current basic" from the most recent week with any basic, so a single irregular week becomes the rate. Reproduced: 59 weeks of 500 basic, then a sick week the week before leave (basic 100, SSP 50), holiday paid 500. Result: due 100.00, difference -400.00, flags `[]`. Back-pay arrears in that week would inflate due the same way. Fix: take `contract_weekly_basic` (with an effective date) as an input. Failing that, flag `current_basic_changed` when the latest basic differs from the prior paid week.
+- **R2.** `holiday_weeks_count` is silently ignored when `worker_type="fixed_pay"`. Either raise or document it.
+- **R3.** S1 is still open (see A3).
+- **R4 (nit).** Add a test for the zero-hours month in `weekly_pay_from_monthly` (the surviving mutant).
