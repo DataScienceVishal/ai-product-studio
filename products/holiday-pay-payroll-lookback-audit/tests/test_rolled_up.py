@@ -49,7 +49,7 @@ class Rules(unittest.TestCase):
 
     def test_not_shown_separately_needs_pay_that_counts(self):
         # only excluded items, holiday pay or nothing: nothing to compare, no row
-        self.assertIsNone(week(date(2025, 6, 7), statutory=90, expense_excluded=10, bonus_non_regular=50, holiday_pay=100))
+        self.assertIsNone(week(date(2025, 6, 7), excluded_week=90, expense_excluded=10, bonus_non_regular=50, holiday_pay=100))
         self.assertIsNone(week(date(2025, 6, 7)))
 
     def test_zero_pay_week_with_rolled_up_row_is_overpaid(self):
@@ -64,7 +64,7 @@ class Rules(unittest.TestCase):
 
     def test_pay_that_counts_excludes_expenses_bonus_statutory_and_holiday_pay_and_rolled_up(self):
         r = week(date(2025, 6, 7), basic=100, regular_overtime=10, commission=10, allowance=10, bonus_non_regular=999,
-                 expense_excluded=999, statutory=999, holiday_pay=999, rolled_up_holiday_pay="16.28")
+                 expense_excluded=999, excluded_week=999, holiday_pay=999, rolled_up_holiday_pay="16.28")
         self.assertEqual((r["counts"], r["due"], r["difference"]), (D("130.00"), D("15.69"), D("-0.59")))
 
     def test_threshold_is_strictly_greater(self):

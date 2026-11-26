@@ -69,7 +69,7 @@ class Accrual(unittest.TestCase):
 
 class Elements(unittest.TestCase):
     P = {"basic": 400, "regular_overtime": 50, "commission": 25, "allowance": 10,
-         "bonus_non_regular": 500, "expense_excluded": 40, "holiday_pay": 300, "statutory": 99}
+         "bonus_non_regular": 500, "expense_excluded": 40, "holiday_pay": 300, "excluded_week": 99}
 
     def test_normal_vs_basic(self):
         self.assertEqual(normal_pay(self.P), D(485))
@@ -140,7 +140,7 @@ class Lookback(unittest.TestCase):
         return lookback(h, [LeaveEntry(we)], worker_type="fixed_pay", **kw)[0]
 
     def test_fixed_pay_sick_week_before_leave_ssp(self):
-        r = self._fixed({"basic": 100, "statutory": 99})
+        r = self._fixed({"basic": 100, "excluded_week": 99})
         self.assertEqual((r["due"], r["difference"]), (D("500.00"), D("0.00")))
         self.assertIn("latest_week_basic_differs_from_rate_used", r["flags"])
 
@@ -188,7 +188,7 @@ class Lookback(unittest.TestCase):
     def test_fixed_pay_rate_excludes_ssp_weeks(self):
         h = hist(60, {"basic": 500})
         for i in range(5):                                    # 5 of last 8 weeks are SSP weeks at basic 300
-            h[SAT - timedelta(days=7 * i)] = {"basic": 300, "statutory": 99}
+            h[SAT - timedelta(days=7 * i)] = {"basic": 300, "excluded_week": 99}
         we = SAT + timedelta(days=7)
         r = lookback(h, [LeaveEntry(we)], worker_type="fixed_pay")[0]
         self.assertEqual(r["working"]["normal"]["current_basic"], D("500.00"))
@@ -224,16 +224,16 @@ class Lookback(unittest.TestCase):
     def test_fixed_pay_all_recent_weeks_ssp_fallback(self):
         h = hist(60, {"basic": 500})
         for i in range(8):
-            h[SAT - timedelta(days=7 * i)] = {"basic": 200 + i, "statutory": 50}
+            h[SAT - timedelta(days=7 * i)] = {"basic": 200 + i, "excluded_week": 50}
         r = lookback(h, [LeaveEntry(SAT + timedelta(days=7))], worker_type="fixed_pay")[0]
-        self.assertEqual(r["working"]["normal"]["current_basic"], D("500.00"))   # latest NON-statutory basic, not the SSP one
+        self.assertEqual(r["working"]["normal"]["current_basic"], D("500.00"))   # latest NON-excluded basic, not the SSP one
         self.assertEqual(r["working"]["normal"]["basic_source"], "latest_week_fallback")
         self.assertIn("rate_inferred_ambiguous", r["flags"])
 
     def test_fixed_pay_long_sickness_uses_last_full_pay_rate(self):
         h = hist(60, {"basic": 500})
         for i in range(10):                                   # 10 SSP weeks at basic 100 just before leave
-            h[SAT - timedelta(days=7 * i)] = {"basic": 100, "statutory": 99}
+            h[SAT - timedelta(days=7 * i)] = {"basic": 100, "excluded_week": 99}
         r = lookback(h, [LeaveEntry(SAT + timedelta(days=7))], worker_type="fixed_pay")[0]
         self.assertEqual(r["working"]["normal"]["current_basic"], D("500.00"))
         self.assertIn("rate_inferred_ambiguous", r["flags"])
@@ -250,7 +250,7 @@ class Lookback(unittest.TestCase):
 
     def test_fixed_pay_fallback_tier2_prefers_part_leave_over_newer_ssp(self):
         h = hist(60, {"regular_overtime": 20})                # no full week with basic anywhere
-        h[SAT] = {"basic": 80, "statutory": 99}               # SSP week, most recent
+        h[SAT] = {"basic": 80, "excluded_week": 99}               # SSP week, most recent
         h[SAT - timedelta(days=7 * 3)] = {"basic": 200, "holiday_pay": 300}   # older part-leave week
         r = lookback(h, [LeaveEntry(SAT + timedelta(days=7))], worker_type="fixed_pay")[0]
         self.assertEqual(r["working"]["normal"]["current_basic"], D("200.00"))   # tier 2, not tier 3's 80
@@ -258,7 +258,7 @@ class Lookback(unittest.TestCase):
         self.assertIn("rate_inferred_ambiguous", r["flags"])
 
     def test_fixed_pay_only_ssp_weeks_carry_basic(self):
-        h = hist(8, {"basic": 100, "statutory": 99})
+        h = hist(8, {"basic": 100, "excluded_week": 99})
         r = lookback(h, [LeaveEntry(SAT + timedelta(days=7))], worker_type="fixed_pay")[0]
         self.assertEqual(r["working"]["normal"]["current_basic"], D("100.00"))
         self.assertNotIn("no_basic_pay_found", r["flags"])

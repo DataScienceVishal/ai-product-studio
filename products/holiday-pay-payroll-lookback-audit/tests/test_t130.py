@@ -67,7 +67,7 @@ class F1EmptyLeave(Case):
 
 class F2Visibility(Case):
     def test_idle_rolled_up_worker_noted(self):
-        h = H + "R1,2025-06-07,bonus_non_regular,50\nR1,2025-06-14,statutory,50\nV1,2025-06-07,basic,100\n"
+        h = H + "R1,2025-06-07,bonus_non_regular,50\nR1,2025-06-14,excluded_week,0\nV1,2025-06-07,basic,100\n"
         code, so, se, rep = self.run_cli(h, LV + "V1,2025-06-07\n", W + "R1,irregular_rolled_up,\n")
         self.assertEqual(code, 0, se)
         self.assertIn("0 rolled-up pay weeks checked, 0 exceptions", so)

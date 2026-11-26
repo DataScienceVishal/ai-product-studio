@@ -3,7 +3,7 @@
 Reg 13 (4 weeks, EU-derived): normal remuneration = basic + regular overtime +
 commission + status-related allowances. Reg 13A (remaining 1.6 weeks): basic
 pay is allowed. Bonuses that are not regular/linked to work, expenses, holiday
-pay itself and statutory payments (SSP/SMP etc) are excluded. Treating
+pay itself are excluded. An `excluded_week` marker (no reason, no amount) flags a week left out of averaging. Treating
 `allowance` as counting means status-related allowances (length of service,
 seniority); non-status allowances need adviser review.
 """
@@ -11,7 +11,7 @@ from decimal import Decimal
 from .reference import dec
 
 CATEGORIES = ("basic", "regular_overtime", "commission", "bonus_non_regular",
-              "allowance", "expense_excluded", "holiday_pay", "statutory", "rolled_up_holiday_pay")
+              "allowance", "expense_excluded", "holiday_pay", "excluded_week", "rolled_up_holiday_pay")
 VARIABLE = frozenset({"regular_overtime", "commission", "allowance"})
 COUNTS_FOR_NORMAL = frozenset({"basic", "regular_overtime", "commission", "allowance"})
 BASIC_ONLY = frozenset({"basic"})

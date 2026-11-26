@@ -32,7 +32,7 @@ AUDIT = os.path.join(ROOT, "audit.py")
 CENT = Decimal("0.01")
 NORMAL_CATS = ("basic", "regular_overtime", "commission", "allowance")
 VARIABLE_CATS = ("regular_overtime", "commission", "allowance")
-NON_COUNTING = ("bonus_non_regular", "expense_excluded", "statutory")
+NON_COUNTING = ("bonus_non_regular", "expense_excluded", "excluded_week")
 
 
 def q(x):
@@ -98,7 +98,7 @@ def oracle_worker(wid, wtype, contract, mmdd, pay, leaves, threshold, blank=Fals
         # blank contract and no basic in the 8 weeks before the leave: rate inferred by fallback, flag
         # rate_inferred_ambiguous, so the row is always an exception (T-137), even with difference 0
         ambiguous = blank and wtype == "fixed_pay" and not any(
-            p.get("basic", Decimal(0)) > 0 and p.get("statutory", Decimal(0)) <= 0 for _, p in win[:8])
+            p.get("basic", Decimal(0)) > 0 and "excluded_week" not in p for _, p in win[:8])
         if abs(diff) > threshold or ambiguous:
             rows.append((wid, lw.isoformat(), q(paid), due, diff,
                          "underpaid" if diff > 0 else "overpaid" if diff < 0 else "correct", n))
@@ -128,7 +128,7 @@ def gen_worker(rng, wid, base, case_kind):
         if style == "sparse" and r < 0.5:
             continue
         if r > 0.95:  # statutory only
-            pay[d] = {"statutory": money(rng, 50, 120)}
+            pay[d] = {"excluded_week": money(rng, 50, 120)}
             continue
         if r > 0.92:  # bonus only
             pay[d] = {"bonus_non_regular": money(rng, 10, 300)}
@@ -197,7 +197,7 @@ def write_inputs(tmp, workers, with_weeks_col):
         for wid, wk in workers:
             for d in sorted(wk["pay"]):
                 for c, a in sorted(wk["pay"][d].items()):
-                    w.writerow([wid, d.isoformat(), c, f"{a:.2f}"])
+                    w.writerow([wid, d.isoformat(), c, f"{(0 if c == 'excluded_week' else a):.2f}"])
     with open(os.path.join(tmp, "leave.csv"), "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh, lineterminator="\n")
         w.writerow(["worker_id", "week_ending"] + (["weeks"] if with_weeks_col else []))
