@@ -49,3 +49,17 @@ No new input reaches markdown without `_md`. No new I/O. Selection is one sort, 
 Verdict: CHANGES
 1. Fix the `and K more` bucket classification (threshold-aware under/over; do not call non-guessed-rate rows "guessed weekly rate") and align `_lookback_priority`; add an `--include-flagged` test (`report/builder.py:393-432`).
 2. Emit look-back `and K more` lines before the rolled-up detail sections; add a mixed-firm heading-order test (`report/builder.py:449-473`).
+
+## Re-review (commit 730ae28, `git diff 7fdd406..HEAD`)
+
+Tests: `python3 -I -m unittest discover -s tests -t .` gave `Ran 329 tests in 52.883s` and then `OK`. That is 4 new tests in `ReviewFixes`, and the existing goldens are unchanged.
+
+1. **Item 1 is fixed.** `_lookback_bucket(r, threshold)` now drives both `_lookback_priority` and `_lookback_counts`. Underpaid and overpaid use `> threshold` / `< -threshold`, the same rule as the summary block and the `audit()` exception filter. Rows within the threshold are split into "guessed" (`always_exception`) and "flagged". I re-ran my earlier probe (a £0 row with `leave_week_without_holiday_pay`, a +£0.004 row and a £0 row with `no_basic_pay_found`, threshold 0.01). It now reads `1 within £0.01 with a guessed weekly rate; 2 within £0.01, listed for their flags`, with no false "underpaid". The `threshold` is passed from `write_outputs` into `_exception_sections`.
+2. **Item 2 is fixed.** `_exception_sections` now returns `_lookback_sections(...) + _rolled_up_sections(...)`, so each kind's summaries follow its own details. This is covered by `test_lookback_more_line_before_rolled_up_sections`. `audit()` already put look-back exceptions before rolled-up ones, so reports with no capped rows are unchanged (the goldens pass).
+3. **The suggestions are in.** S-1: `MAX_SUMMARY_RANGES=10` applies to both kinds. On the L-1 repro (37,500 exceptions) report.md is now **769,666 bytes** (it was 1,206,366 after the first fix and 52 MB on main), with 550 headings and the longest line 501 bytes. S-2: the combined line uses `_lookback_counts`, so cannot-check rows are counted. S-3: the summary workers are sorted by hidden underpaid total with a stable sort, so ties keep file order (tested). S-4: there is a long-history size test (55 workers x 400 weeks, under 1 MB, and it checks the range cap), and `code == 0` is asserted. S-5: docstrings and `_cap_text` are added.
+
+Nits (non-blocking):
+- The README sentence "each `and K more` line names at most 10 week ranges, and likewise at most 20 detailed rolled-up sections..." reads as if the range cap were part of the look-back list. Consider splitting it into two sentences.
+- `ingest/FORMAT.md` (T-130 paragraph) does not mention the 10-range cap in `and K more` lines.
+
+Verdict: PASS
