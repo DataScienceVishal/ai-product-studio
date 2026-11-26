@@ -275,6 +275,20 @@ Scout, Always-On item 6, run 20261125T001943Z-run-cf06. Score not changed by the
 
 Bottom line: nothing new since 2026-11-24. The government response is still unpublished, there is no commencement date beyond "2027", and no FWA holiday pay calculator or scope has appeared, so the evidence that would move Competition (to 8-9 or to 2) has not arrived. No vendor in the named set has launched a look-back or audit feature; the only movement is Staffology's summer 2026 update, which adds history import and daily-basis averaging (forward calculation, read from a search summary only). The park decision stands, T-24 and T-25 stay blocked, and nothing justifies a re-score. Next re-check on publication of the response or the FWA calculator, otherwise monthly.
 
+## Re-check 2026-11-26
+
+Scout, about 8 searches and fetches, all accessed 2026-11-26. Score not changed. Verdict: **UNCHANGED**, park conditions all still open.
+
+| Park condition | Finding | Source |
+|---|---|---|
+| (a) Government response | Not published. Page still reads "Closed consultation" and "We are analysing your feedback ... Visit this page again soon to download the outcome". No "last updated" date shown. | https://www.gov.uk/government/consultations/make-work-pay-holiday-pay-compliance-and-enforcement (fetched) |
+| (b) Enforcement date | No fixed date. Delivery plan still "Updated 21 August 2026": "Holiday pay enforcement is expected to begin in 2027". Fetch summary also says the plan targets April 2027 for new powers (fetch-tool paraphrase, not read verbatim; an earlier pass could not find April 2027 in the primary text). Search summaries (law firms, Brightmine legal timetable) say the FWA intends April 2027, exact date unknown, three-year enforcement strategy due April 2027. | https://www.gov.uk/government/publications/fair-work-agency-delivery-plan-for-2026-to-2027/fair-work-agency-delivery-plan-2026-to-2027 (fetched); https://hrcentre.uk.brightmine.com/legal-timetable/fair-work-agency-begins-statutory-holiday-pay-enforcement/168132/ (search summary) |
+| (c) FWA calculator scope | Still no launch and no scope. Plan lists "a holiday pay calculator" among simpler tools, with no date. Consultation asked about a detailed calculator or chatbot. Searches found only Australian Fair Work Ombudsman tools and the one-worker gov.uk pages. | delivery plan above; https://www.gov.uk/holiday-entitlement-rights/holiday-pay (search result only) |
+
+New incumbent claims: none found. A search for BrightPay, Xero, Sage or Moneysoft holiday pay look-back or audit launches in November 2026 returned none of the four. Their own pages were not re-read because there was no hint of change. Peripheral items only, none a look-back: Staffology summer 2026 update (daily-basis average holiday pay; https://iris.co.uk/blog/payroll/staffology-payroll-summer-2026-software-update/, search summary); KashFlow (IRIS) holiday pay module, release year unconfirmed (https://www.iris.co.uk/blog/payroll/holiday-pay-solution-with-kashflow-payroll/, search summary); HotSchedules (US) "Holiday Record Keeping Audit", in development, a workforce tool and not UK payroll (https://help.hotschedules.com/hc/en-us/articles/48475729597197-New-Release-WFM-UK-Holiday-Carry-Over-Reason-Codes-03-Sep-2026, search summary).
+
+Bottom line: nothing published since 2026-11-20 moves any of the three conditions. Competition stays 7, total 64, parked. Next re-check on publication of the response or the FWA calculator, otherwise monthly.
+
 ## Gate log
 - 2026-11-23 scout round 3 (T-22): G0 drafted. Job-ad signal missing, flagged.
 - 2026-11-23 | validator | G0→G1 | REVISE 63 | Best of round 3, and the first idea with an incumbent gap confirmed on the vendors' own pages: BrightPay, Xero, Moneysoft and Sage 50 don't calculate holiday pay amounts, and no product documents a whole-workforce look-back. But FWA enforcement has no start date, the FWA is building its own free holiday pay calculator, and its look-back starts only at 18 Dec 2025. The core is a deterministic engine, and holding workers' pay and absence data cuts Risk to 5.
