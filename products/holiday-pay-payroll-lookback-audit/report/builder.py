@@ -9,7 +9,7 @@ from decimal import Decimal
 
 from engine import lookback, money
 from engine.lookback import _leave_year_start, ROLLED_UP_TYPE
-from .rolled_up import audit_rolled_up, rolled_up_leave_weeks, stray_rolled_up, explain_rolled_up, holiday_pay_to_rolled_up
+from .rolled_up import HOLIDAY_PAID, audit_rolled_up, rolled_up_leave_weeks, stray_rolled_up, explain_rolled_up, holiday_pay_to_rolled_up
 
 DEFAULT_THRESHOLD = Decimal("0.01")
 DISCLAIMER = "Not legal advice; a payroll professional signs off."
@@ -70,8 +70,9 @@ def audit(workers, threshold=DEFAULT_THRESHOLD, include_flagged=False):
         if w.worker_type == ROLLED_UP_TYPE:
             continue
         for r in lookback(w.history, w.leave, worker_type=w.worker_type,
-                          contract_weekly_basic=w.contract_weekly_basic):
-            if any(_leave_year_start(d, 4, 1) == r["leave_year_start"] and d < r["week_end"]
+                          contract_weekly_basic=w.contract_weekly_basic,
+                          leave_year_month=w.leave_year_start[0], leave_year_day=w.leave_year_start[1]):
+            if any(_leave_year_start(d, *w.leave_year_start) == r["leave_year_start"] and d < r["week_end"]
                    for d in unlisted.get(wid, ())):
                 r["flags"].append("holiday_pay_week_not_in_leave_file")
             rows.append({"worker_id": wid, "first_week": w.first_week, **r})
@@ -83,6 +84,12 @@ def audit(workers, threshold=DEFAULT_THRESHOLD, include_flagged=False):
 
 def is_rolled_up(r):
     return r.get("kind") == "rolled_up"
+
+
+def rolled_up_weeks_checked(ru_rows):
+    """Distinct (worker, pay week) pairs among rolled-up rows: a week with both a rolled-up check row and a
+    holiday_pay row counts once."""
+    return len({(r["worker_id"], r["week_end"]) for r in ru_rows})
 
 
 def split_rows(rows):
@@ -372,10 +379,12 @@ def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=N
     if ignored_basic:
         md.append(f"- Workers whose contract_weekly_basic was ignored: {len(ignored_basic)}")
     if ru_rows or ru_exc:
-        flagged_ru = [r for r in ru_exc if r["flags"]]
-        md += [f"- Rolled-up pay weeks checked: {len(ru_rows)}",
+        paid_ru = [r for r in ru_exc if r["flags"] == [HOLIDAY_PAID]]
+        flagged_ru = [r for r in ru_exc if r["flags"] and r["flags"] != [HOLIDAY_PAID]]
+        md += [f"- Rolled-up pay weeks checked (worker-weeks, each counted once): {rolled_up_weeks_checked(ru_rows)}",
                f"- Rolled-up pay exceptions: {len(ru_exc)} ({len(flagged_ru)} rule flags, "
-               f"{len(ru_exc) - len(flagged_ru)} differences from 12.07% of pay that counts)"]
+               f"{len(ru_exc) - len(flagged_ru) - len(paid_ru)} differences from 12.07% of pay that counts, "
+               f"{len(paid_ru)} holiday_pay week(s) paid to a rolled-up worker)"]
     if holiday_paid:
         md.append(f"- Workers with holiday_pay recorded while on rolled-up pay: {len(holiday_paid)}")
     if stray_rolled:

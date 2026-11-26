@@ -7,7 +7,7 @@ Rules (the engine decides lawfulness by leave year, see engine.accrual.accrual_a
   row: flag `rolled_up_not_shown_separately`;
 - otherwise the rolled-up amount is recalculated as 12.07% of the pay that counts and compared with what was paid.
 A week with no pay that counts and no rolled-up row has nothing to check and produces no row.
-Leave years start on 1 April and a week belongs to the year containing its week-ending date.
+Leave years start on the worker's leave_year_start (default 1 April) and a week belongs to the year containing its week-ending date.
 """
 from decimal import Decimal
 
@@ -27,14 +27,14 @@ FLAG_TEXT = {
 }
 
 
-def check_week(worker_id, week_end, pay, threshold):
+def check_week(worker_id, week_end, pay, threshold, leave_year_start=(4, 1)):
     """Return a result row for one pay week of an irregular_rolled_up worker, or None if there is nothing to check.
 
     The row has kind 'rolled_up', paid (the rolled-up amount recorded), counts (pay that counts), due (the amount
     recalculated under these settings, or None when the rules do not allow one), difference (positive = paid
     less than recalculated), flags and `exception` (True when it belongs in exceptions.csv).
     """
-    lys = _leave_year_start(week_end, 4, 1)
+    lys = _leave_year_start(week_end, *leave_year_start)
     has_row = ROLLED_UP in pay
     paid = money(dec(pay.get(ROLLED_UP, 0)))
     counts = normal_pay(pay)
@@ -58,13 +58,13 @@ def check_week(worker_id, week_end, pay, threshold):
     return row
 
 
-def holiday_pay_row(worker_id, week_end, pay):
+def holiday_pay_row(worker_id, week_end, pay, leave_year_start=(4, 1)):
     """An exception row when an irregular_rolled_up worker has holiday_pay above 0 in a week, else None."""
     amount = money(dec(pay.get("holiday_pay", 0)))
     if amount <= 0:
         return None
     return {"kind": "rolled_up", "worker_id": worker_id, "week_end": week_end,
-            "leave_year_start": _leave_year_start(week_end, 4, 1), "paid": amount, "counts": money(normal_pay(pay)),
+            "leave_year_start": _leave_year_start(week_end, *leave_year_start), "paid": amount, "counts": money(normal_pay(pay)),
             "due": None, "difference": None, "flags": [HOLIDAY_PAID], "exception": True}
 
 
@@ -76,10 +76,10 @@ def audit_rolled_up(workers, threshold):
         if w.worker_type != ROLLED_UP_TYPE:
             continue
         for d in sorted(w.history):
-            r = check_week(wid, d, w.history[d], threshold)
+            r = check_week(wid, d, w.history[d], threshold, w.leave_year_start)
             if r is not None:
                 checked.append(r)
-            h = holiday_pay_row(wid, d, w.history[d])
+            h = holiday_pay_row(wid, d, w.history[d], w.leave_year_start)
             if h is not None:
                 checked.append(h)
     return checked, [r for r in checked if r["exception"]]

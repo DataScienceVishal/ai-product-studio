@@ -13,7 +13,9 @@ from engine.lookback import INPUT_WORKER_TYPES as WORKER_TYPES
 
 HISTORY_COLS = (("worker_id", "week_ending", "element_category", "amount"), ())
 LEAVE_COLS = (("worker_id", "week_ending"), ("weeks",))
-WORKER_COLS = (("worker_id", "worker_type"), ("contract_weekly_basic",))
+WORKER_COLS = (("worker_id", "worker_type"), ("contract_weekly_basic", "leave_year_start"))
+DEFAULT_LEAVE_YEAR_START = (4, 1)
+_MMDD = re.compile(r"^[0-9]{2}-[0-9]{2}$")
 
 _DATE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
 _MONEY = re.compile(r"^[0-9]{1,9}(\.[0-9]{1,2})?$")
@@ -52,6 +54,7 @@ class WorkerData:
     leave: List[LeaveEntry] = field(default_factory=list)
     worker_type: str = "variable_hours"
     contract_weekly_basic: Optional[Decimal] = None
+    leave_year_start: tuple = DEFAULT_LEAVE_YEAR_START   # (month, day) the worker's leave year starts
     first_week: Optional[date] = None   # earliest week_ending in the history file
 
 
@@ -173,6 +176,18 @@ def _amount(name, line, col, v, issues):
     return None
 
 
+def _leave_year_start_value(v):
+    """(month, day) for a real MM-DD calendar date, else None. 02-29 is refused: the start must exist every year."""
+    if not _MMDD.match(v):
+        return None
+    m, d = int(v[:2]), int(v[3:])
+    try:
+        date(2023, m, d)     # 2023 is not a leap year, so 02-29 fails
+    except ValueError:
+        return None
+    return (m, d)
+
+
 def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, WorkerData]:
     """Return {worker_id: WorkerData} or raise ValidationError carrying every issue found."""
     issues: List[Issue] = []
@@ -249,6 +264,13 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
                 issues.append(Issue(wname, line, f"worker_type {_mask(row['worker_type'])} must be one of {', '.join(WORKER_TYPES)}"))
             else:
                 workers[wid].worker_type = row["worker_type"]
+            lys = row.get("leave_year_start", "")
+            if lys:
+                parsed = _leave_year_start_value(lys)
+                if parsed is None:
+                    issues.append(Issue(wname, line, f"leave_year_start {_mask(lys)} must be a real calendar date as MM-DD (for example 01-01 or 04-01); 02-29 is not accepted"))
+                else:
+                    workers[wid].leave_year_start = parsed
             basic = row.get("contract_weekly_basic", "")
             if basic:
                 amt = _amount(wname, line, "contract_weekly_basic", basic, issues)
