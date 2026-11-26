@@ -1,8 +1,10 @@
 # Input format
 
-UTF-8 CSV with a header row. Column order does not matter. Money is plain decimal pounds, up to 9 digits and 2 decimals (`412.50`): no currency symbols, commas, signs, NaN or Infinity. Dates are `YYYY-MM-DD`.
+UTF-8 CSV with a header row. Column order does not matter. Money is plain decimal pounds, up to 9 digits and 2 decimals (`412.50`): no currency symbols, commas, signs, NaN or Infinity. Dates are `YYYY-MM-DD` and must fall between 2000-01-01 and 2100-12-31 (anything else is refused with its line). `--threshold` must be 0 to 1,000,000 pounds.
 
-**Privacy:** use a pseudonymous payroll ID in `worker_id`. No names, NI numbers, addresses, emails or birth dates. A column that looks like personal data, or a `worker_id` that looks like an NI number, is refused.
+**Privacy:** use a pseudonymous payroll ID in `worker_id`. No names, NI numbers, addresses, emails or birth dates. A column that looks like personal data, or a `worker_id` that looks like an NI number or a date, is refused.
+The NI check ignores separators (`.`, `_`, `-`, spaces), accepts a missing suffix letter, and also looks at parts after a prefix (`EMP-QQ123456C`). It follows the HMRC prefix rules (first letter not D F I Q U V, second not D F I O Q U V, never BG GB NK KN TN NT ZZ), with one deliberate exception: `QQ` (the HMRC example prefix) is still refused. So IDs of the form two letters + six digits (`EM100234A`, `AB123456`) are refused. Use a longer prefix (`EMP100234`), which is allowed, or a different shape. An NI number glued to a letter prefix with no separator (`EMPAB123456C`) is not detected, so do not rely on the check; just do not put NI numbers in the file.
+Error messages never print a full cell value from `worker_id`, `week_ending`, `element_category`, `amount` or `worker_type`: they show the first 2 characters and the length, plus the file and line. At most 50 errors are printed, then `... and N more`; the last line gives the total.
 
 ## history.csv (required)
 One row per worker, week and pay element. Weeks with no pay need no rows. Columns: `worker_id` (letters, digits, `_ . -`, max 64, starting with a letter or digit), `week_ending`, `element_category`, `amount`.
@@ -13,7 +15,11 @@ One row per worker, week and pay element. Weeks with no pay need no rows. Column
 **Missing weeks:** a week with no rows is treated as unpaid. If a week between a worker's first and last record is absent, `report.md` lists it under "weeks missing from the export" so you can confirm it was genuinely unpaid and not left out of the export. Results are not changed by this warning.
 
 ## leave.csv (required)
-One row per leave week. Columns: `worker_id`, `week_ending` (same weekday as that worker's history), optional `weeks` (default 1, must be above 0 and at most 1; 0.5 is half a week).
+One row per leave week. **List every leave week of the leave year**: the first 4 leave weeks of a leave year count as normal pay and later ones as basic pay only, so a missing row can change the result. If history holds `holiday_pay` for a week that is not in leave.csv, `report.md` warns ("holiday pay recorded but no leave row") and later leave weeks that year carry the flag `holiday_pay_week_not_in_leave_file`. Columns: `worker_id`, `week_ending` (same weekday as that worker's history), optional `weeks` (default 1, must be above 0 and at most 1; 0.5 is half a week).
+
+**Leave weeks the audit cannot trust:**
+- A leave week with pay but no `holiday_pay` row is flagged `leave_week_without_holiday_pay`; nothing counts as paid and the report shows the pay that was in that week. Re-export it as `holiday_pay` if it was the holiday pay.
+- A leave week with no paid week before it (`no_reference_weeks`) cannot be checked. It is always listed in exceptions.csv (`direction` = `cannot_check`) and in report.md, is counted under "Leave weeks that could not be checked", and is not counted as an over- or underpayment.
 
 ## workers.csv (optional)
 Columns: `worker_id`, `worker_type` (`variable_hours` default, or `fixed_pay`), optional `contract_weekly_basic` (fixed_pay: the contractual weekly basic; blank means inferred and flagged). Workers not listed are `variable_hours`.
@@ -49,4 +55,4 @@ worker_id,worker_type,contract_weekly_basic
 W1,fixed_pay,400.00
 ```
 Run: `python3 audit.py --history history.csv --leave leave.csv --workers workers.csv --out out/`
-(exit 0 = done, 2 = validation errors, listed in full on stderr, nothing written).
+(exit 0 = done, 2 = validation errors or invalid options, nothing written).
