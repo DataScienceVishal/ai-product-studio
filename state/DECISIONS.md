@@ -359,3 +359,8 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Opened T-133, one focused check on AML file review (the only lead the scout named), same shape as T-107. Reversible, no spend.
 - 08:50Z T-133 AML file-review check: DROP (no price for the job, fines are mostly late registration, FCA date unconfirmed). Not re-queued; revisit only when the FCA publishes accountant supervision guidance (expected from March 2027) or a buyer names a price.
 - Three edge-only desk rounds in a row (18, 19, 20) found nothing. Next idle runs should take Always-On items 1-5 or the parked holiday-pay checks instead of opening a round 21, unless Vishal sends a new direction or buyer notes.
+
+## 2026-11-26T09:24Z run 47ad: T-134 holiday-pay test hygiene
+- Board had only Vishal-blocked or trigger-only tasks (azure-spend still failing, last run 2026-11-25T17:10Z; Q-16 open), and run 029c said no desk round 21 without new evidence, so took Always-On #3 on leftover review suggestions.
+- New report.md line "Leave years: 1 April unless set; ..." is left out when every worker uses 1 April, so all goldens stay byte-identical. Reversible.
+- Reviewer suggestions S1-S4 left as non-blocking (cells are stripped before regex checks; cosmetic sort); not worth a task on their own.
