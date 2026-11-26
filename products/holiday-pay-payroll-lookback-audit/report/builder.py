@@ -384,14 +384,75 @@ def _rolled_up_notes(skipped_leave, idle=None, leave_missing=None):
     return out
 
 
+MAX_LOOKBACK_DETAILS = 20   # detailed report.md sections per worker for look-back exceptions (T-150)
+MAX_LOOKBACK_TOTAL = 500    # detailed look-back sections in the whole report.md
+MAX_LOOKBACK_SUMMARIES = 50  # per-worker 'and K more' look-back lines; further workers share one line
+
+
+def _lookback_priority(r):
+    """Which look-back exceptions get a detailed section when a cap bites: biggest underpayments first, then weeks
+    that cannot be checked, then overpayments by size, then £0.00 guessed-rate weeks."""
+    if cannot_check(r):
+        return (1, Decimal(0))
+    d = r["difference"]
+    if d > 0:
+        return (0, -d)
+    if d < 0:
+        return (2, d)
+    return (3, Decimal(0))
+
+
+def _pick_lookback(rows):
+    """Indexes (into rows) of the look-back exceptions written out in full, at most MAX_LOOKBACK_DETAILS per worker
+    and MAX_LOOKBACK_TOTAL overall, chosen by _lookback_priority; ties keep file order."""
+    keep, per = set(), {}
+    for i in sorted(range(len(rows)), key=lambda i: (_lookback_priority(rows[i]), i)):
+        if len(keep) >= MAX_LOOKBACK_TOTAL:
+            break
+        wid = rows[i]["worker_id"]
+        if per.get(wid, 0) < MAX_LOOKBACK_DETAILS:
+            per[wid] = per.get(wid, 0) + 1
+            keep.add(i)
+    return keep
+
+
+def _lookback_more_line(wid, rs):
+    under = [r for r in rs if not cannot_check(r) and r["difference"] > 0]
+    over = [r for r in rs if not cannot_check(r) and r["difference"] < 0]
+    unchecked = sum(1 for r in rs if cannot_check(r))
+    zero = len(rs) - len(under) - len(over) - unchecked
+    parts = []
+    if under:
+        parts.append(f"{len(under)} underpaid, {_gbp(sum((r['difference'] for r in under), Decimal(0)))} in total")
+    if over:
+        parts.append(f"{len(over)} overpaid, {_gbp(sum((-r['difference'] for r in over), Decimal(0)))} in total")
+    if unchecked:
+        parts.append(f"{unchecked} cannot be checked")
+    if zero:
+        parts.append(f"{zero} at £0.00 with a guessed weekly rate")
+    flags = Counter(f for r in rs for f in r["flags"])
+    detail = f" Flags: {', '.join(f'{_md(f)}: {c}' for f, c in sorted(flags.items()))}." if flags else ""
+    return (f"### {_md(wid)}: and {len(rs)} more look-back exception(s)\n\n"
+            f"Not written out above (at most {MAX_LOOKBACK_DETAILS} per worker and {MAX_LOOKBACK_TOTAL} in the whole "
+            f"report; the largest underpayments are shown first): {'; '.join(parts)}.{detail} All of them, "
+            f"{', '.join(_week_ranges(sorted({r['week_end'] for r in rs})))}, are in exceptions.csv.\n")
+
+
 def _exception_sections(exceptions):
-    """Detailed sections: all look-back exceptions; rolled-up ones at most MAX_ROLLED_UP_DETAILS per worker and
-    MAX_ROLLED_UP_TOTAL overall. Left-out ones get an 'and K more' line for the first MAX_ROLLED_UP_SUMMARIES workers,
-    then one combined line. exceptions.csv is never capped."""
-    out, shown, more, total = [], {}, {}, 0
+    """Detailed sections. Look-back exceptions: at most MAX_LOOKBACK_DETAILS per worker and MAX_LOOKBACK_TOTAL
+    overall, picked by _lookback_priority. Rolled-up ones: at most MAX_ROLLED_UP_DETAILS per worker and
+    MAX_ROLLED_UP_TOTAL overall, in file order. Left-out ones get an 'and K more' line for the first *_SUMMARIES
+    workers, then one combined line. exceptions.csv is never capped."""
+    lb = [r for r in exceptions if not is_rolled_up(r)]
+    keep_lb = _pick_lookback(lb)
+    out, shown, more, lb_more, total, lb_i = [], {}, {}, {}, 0, 0
     for r in exceptions:
         if not is_rolled_up(r):
-            out.append(explain(r))
+            if lb_i in keep_lb:
+                out.append(explain(r))
+            else:
+                lb_more.setdefault(r["worker_id"], []).append(r)
+            lb_i += 1
             continue
         wid = r["worker_id"]
         if shown.get(wid, 0) < MAX_ROLLED_UP_DETAILS and total < MAX_ROLLED_UP_TOTAL:
@@ -400,6 +461,16 @@ def _exception_sections(exceptions):
             out.append(explain_rolled_up(r, _gbp, _md))
         else:
             more.setdefault(wid, []).append(r)
+    lb_items = list(lb_more.items())
+    for wid, rs in lb_items[:MAX_LOOKBACK_SUMMARIES]:
+        out.append(_lookback_more_line(wid, rs))
+    lb_rest = lb_items[MAX_LOOKBACK_SUMMARIES:]
+    if lb_rest:
+        rs = [r for _, x in lb_rest for r in x]
+        under = sum((r["difference"] for r in rs if not cannot_check(r) and r["difference"] > 0), Decimal(0))
+        out.append(f"### and {len(rs)} more look-back exception(s) for {len(lb_rest)} further worker(s)\n\n"
+                   f"Left out of this report to keep it readable (underpaid among them: {_gbp(under)} in total). "
+                   "Every exception is in exceptions.csv.\n")
     items = list(more.items())
     for wid, rs in items[:MAX_ROLLED_UP_SUMMARIES]:
         flags = Counter(f for r in rs for f in r["flags"])
