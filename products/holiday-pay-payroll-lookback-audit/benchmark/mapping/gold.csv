@@ -1,0 +1,201 @@
+id,pay_element_name,source_style,gold_category,note
+PE001,Sales Comm,Staffology,commission,
+PE002,Commission (Basic Rate),Sage50,commission,
+PE003,Pension - EE,Sage50,deduction_excluded,
+PE004,BASIC,bureau_custom,basic,
+PE005,Advance Repayment,bureau_custom,deduction_excluded,
+PE006,ShPP,Staffology,statutory_excluded,
+PE007,Piece Rate,bureau_custom,commission,AMBIGUOUS: Pay by output is a variable payment linked to work done; treated like commission in gov.uk 'normal pay' guidance.
+PE008,Target Commission,generic,commission,
+PE009,Tools Allowance,bureau_custom,expense_excluded,AMBIGUOUS: Cost contribution; excluded.
+PE010,Referral Bonus - staff,BrightPay,bonus_non_regular,AMBIGUOUS: Fixed reward for introducing a recruit is not linked to the worker's own work performance; non-regular.
+PE011,Cycle to Work,bureau_custom,deduction_excluded,AMBIGUOUS: Salary sacrifice for equipment hire; deduction/excluded.
+PE012,Holiday Pay - AL,Xero,holiday_pay_paid,
+PE013,TOIL paid,bureau_custom,basic,"AMBIGUOUS: Payout of accrued time off in lieu is pay for hours already worked at the normal rate, so basic; not holiday and not an extra payment."
+PE014,Christmas Bonus,BrightPay,bonus_non_regular,
+PE015,Annual Leave,BrightPay,holiday_pay_paid,
+PE016,Bsic Pay,bureau_custom,basic,typo
+PE017,Allowance,generic,allowance,"AMBIGUOUS: Bare 'Allowance' with no qualifier: paid with the wages; default allowance (included where linked to work, engine tests)."
+PE018,First Aider Allw,bureau_custom,allowance,"AMBIGUOUS: Paid for a role duty performed at work, so linked to the work; allowance."
+PE019,Overtime @1.5,BrightPay,regular_overtime,
+PE020,Attachment of Earnings,Sage50,deduction_excluded,
+PE021,Year End Bonus,bureau_custom,bonus_non_regular,
+PE022,Parental Bereavement Pay,Staffology,statutory_excluded,
+PE023,Student Loan Plan 2,BrightPay,deduction_excluded,
+PE024,Time Worked,Staffology,basic,
+PE025,Salary Sacrifice Pension,bureau_custom,deduction_excluded,"AMBIGUOUS: Sacrifice reduces contractual pay but is a pension contribution, not pay for work; excluded (engine uses gross contractual pay if sacrifice is in place)."
+PE026,Retro Salary,BrightPay,basic,AMBIGUOUS: Retrospective salary adjustment is basic pay.
+PE027,PILON,bureau_custom,statutory_excluded,"AMBIGUOUS: Pay in lieu of notice is a termination payment, not pay for work; excluded."
+PE028,Shift Allowance,BrightPay,allowance,
+PE029,Severance,bureau_custom,statutory_excluded,
+PE030,Gift Voucher Taxable,bureau_custom,bonus_non_regular,
+PE031,Expenses Reimbursed,Xero,expense_excluded,
+PE032,Bonus Q4 discretionary,bureau_custom,bonus_non_regular,
+PE033,Court Order,Sage50,deduction_excluded,
+PE034,Overtime,generic,regular_overtime,"AMBIGUOUS: Overtime alone is regular_overtime: under the Bear Scotland/Flowers/Dudley line, overtime that is normally and regularly worked counts as normal pay; the mapper cannot know regularity from the name, so default is in."
+PE035,Referral Comm,bureau_custom,commission,Commission linked to results of the worker's own work.
+PE036,Comm True-up,Staffology,commission,
+PE037,Statutory Sick Pay,Xero,statutory_excluded,
+PE038,Monthly Salary,BrightPay,basic,
+PE039,Comm Q1,bureau_custom,commission,
+PE040,Staff Bonus Scheme,generic,bonus_non_regular,
+PE041,Back Pay,Sage50,basic,"AMBIGUOUS: Arrears of ordinary pay for past periods are basic pay; allocation to the original weeks is a lookback issue, not a category issue."
+PE042,Meal Allowance,Sage50,expense_excluded,
+PE043,Length of Service Payment,bureau_custom,allowance,
+PE044,AL Paid,bureau_custom,holiday_pay_paid,
+PE045,OT2.0,bureau_custom,regular_overtime,
+PE046,Time and a Half,BrightPay,regular_overtime,
+PE047,Holiday Pay,generic,holiday_pay_paid,
+PE048,Overtime Bank Hol,bureau_custom,regular_overtime,
+PE049,Parking Refund,bureau_custom,expense_excluded,
+PE050,Time & a third,BrightPay,regular_overtime,
+PE051,Long Service Award,bureau_custom,bonus_non_regular,"AMBIGUOUS: One-off award for service is non-regular; recurring service-linked pay would differ, but an 'Award' is one-off."
+PE052,Basic Hours @ Std,BrightPay,basic,
+PE053,SAP,Sage50,statutory_excluded,
+PE054,Statutory Neonatal Care Pay,Staffology,statutory_excluded,
+PE055,Contracted Hrs,Staffology,basic,
+PE056,Location Allowance,bureau_custom,allowance,
+PE057,Regular OT,generic,regular_overtime,
+PE058,Fuel Reimbursement,Xero,expense_excluded,
+PE059,Profit Share,Sage50,bonus_non_regular,
+PE060,Bonus (one-off),Staffology,bonus_non_regular,
+PE061,Business Mileage,Sage50,expense_excluded,
+PE062,Holiday,Sage50,holiday_pay_paid,
+PE063,Mileage Allowance,BrightPay,expense_excluded,
+PE064,Sunday Premium OT,bureau_custom,regular_overtime,
+PE065,Season Ticket Loan,bureau_custom,deduction_excluded,
+PE066,Holiday Pay Untaken,bureau_custom,holiday_pay_paid,AMBIGUOUS: Payment for untaken leave on leaving: holiday pay paid (not statutory leaver exclusion).
+PE067,Bonus - Xmas,bureau_custom,bonus_non_regular,
+PE068,SSP,BrightPay,statutory_excluded,
+PE069,NI,generic,deduction_excluded,
+PE070,Sick Pay Adj - basic recalc,bureau_custom,basic,AMBIGUOUS: Looks statutory but 'basic recalc' marks a correction to ordinary pay; kept as basic.
+PE071,Sat Overtime,bureau_custom,regular_overtime,
+PE072,Statutory Redundancy,generic,statutory_excluded,
+PE073,Employee NIC,BrightPay,deduction_excluded,
+PE074,Gross Basic,Xero,basic,
+PE075,Night OT,bureau_custom,regular_overtime,
+PE076,Double Time,BrightPay,regular_overtime,
+PE077,Fire Warden Allw,bureau_custom,allowance,
+PE078,Incentive Pay,generic,commission,AMBIGUOUS: Result-linked incentive paid regularly is commission-like.
+PE079,SNCP,bureau_custom,statutory_excluded,
+PE080,Mileage 45p,bureau_custom,expense_excluded,
+PE081,Compensation for Loss of Office,bureau_custom,statutory_excluded,
+PE082,Bank Holiday Pay,bureau_custom,holiday_pay_paid,"AMBIGUOUS: Pay for bank holiday leave taken is holiday pay paid, not basic; engine needs it to identify what was paid for leave weeks."
+PE083,Holiday Taken,Staffology,holiday_pay_paid,
+PE084,OT 1.5,Sage50,regular_overtime,
+PE085,Dirty Work Allowance,bureau_custom,allowance,
+PE086,Basic Pay,Sage50,basic,
+PE087,Holday Pay,bureau_custom,holiday_pay_paid,typo
+PE088,O/T,generic,regular_overtime,
+PE089,SPP,bureau_custom,statutory_excluded,
+PE090,Notice Pay,bureau_custom,statutory_excluded,AMBIGUOUS: Payment during notice for work/leave not worked but paid: ambiguity; treated excluded as a termination-related payment.
+PE091,Pay - Normal,Sage50,basic,
+PE092,Pay for Hours Worked,generic,basic,
+PE093,Hrly Rate Pay,Xero,basic,
+PE094,Reimb. Travel,bureau_custom,expense_excluded,
+PE095,Employee Pension,BrightPay,deduction_excluded,
+PE096,Redundancy Pay,bureau_custom,statutory_excluded,
+PE097,OT Rate 1,Sage50,regular_overtime,
+PE098,Company Sick Pay,bureau_custom,statutory_excluded,AMBIGUOUS: Occupational sick pay replaces wages during sickness and is not pay for work done in the leave week reference; excluded alongside SSP.
+PE099,Welcome Payment,bureau_custom,bonus_non_regular,
+PE100,Rolled-up Hol,bureau_custom,holiday_pay_paid,
+PE101,Voluntary Overtime,Sage50,regular_overtime,"AMBIGUOUS: Voluntary overtime that is worked regularly counts (Bear Scotland); engine tests regularity, so category regular_overtime."
+PE102,Overtime Premium,Xero,regular_overtime,AMBIGUOUS: Premium part of overtime counts as part of overtime pay.
+PE103,Monthly Productivity Bonus,bureau_custom,commission,"AMBIGUOUS: Named bonus but paid regularly by reference to work done or results, which is commission-like normal pay; kept as commission."
+PE104,Weekly Wage,generic,basic,
+PE105,Occ Sick Pay,bureau_custom,statutory_excluded,
+PE106,Weekend Allowance,bureau_custom,allowance,
+PE107,Stand-by,bureau_custom,allowance,AMBIGUOUS: Stand-by/on-call payment is linked to the work arrangement and paid regularly; counts as an allowance linked to the work.
+PE108,Discretionary Bonus,Sage50,bonus_non_regular,
+PE109,SSP Weekly,Sage50,statutory_excluded,
+PE110,Stat Sick,bureau_custom,statutory_excluded,
+PE111,Spot Award,BrightPay,bonus_non_regular,
+PE112,OT1.5,bureau_custom,regular_overtime,
+PE113,Overnight Expenses,BrightPay,expense_excluded,
+PE114,Commission,generic,commission,
+PE115,Expenses,generic,expense_excluded,
+PE116,Day Rate,bureau_custom,basic,
+PE117,Bonus,generic,bonus_non_regular,
+PE118,Unsocial Hours,Sage50,allowance,
+PE119,Salry,bureau_custom,basic,typo
+PE120,Sign-on Bonus,bureau_custom,bonus_non_regular,
+PE121,Hol. Pay,Sage50,holiday_pay_paid,
+PE122,Income Tax,Xero,deduction_excluded,
+PE123,Student Loan,Xero,deduction_excluded,
+PE124,Call-out,bureau_custom,allowance,
+PE125,Wages,generic,basic,
+PE126,Comm - Monthly,bureau_custom,commission,
+PE127,Normal Hours,BrightPay,basic,
+PE128,Shift Allw,bureau_custom,allowance,
+PE129,Perf Commission,bureau_custom,commission,
+PE130,Ovrtime,bureau_custom,regular_overtime,typo
+PE131,Overtime @ 2,BrightPay,regular_overtime,
+PE132,Tax Refund,bureau_custom,deduction_excluded,AMBIGUOUS: Credit of tax is not pay for work; excluded with tax lines.
+PE133,Salary,BrightPay,basic,
+PE134,Travel Expenses,Sage50,expense_excluded,
+PE135,On-Call Allowance,Xero,allowance,
+PE136,Holiday Pay Rolled Up,bureau_custom,holiday_pay_paid,
+PE137,Overtime Hrs,Xero,regular_overtime,
+PE138,Danger Money,bureau_custom,allowance,
+PE139,Comm Q3,bureau_custom,commission,
+PE140,Bnus,bureau_custom,bonus_non_regular,typo
+PE141,SMP,bureau_custom,statutory_excluded,
+PE142,Training Costs Reimb,bureau_custom,expense_excluded,
+PE143,Team Leader Allw,bureau_custom,allowance,
+PE144,Leave Pay,generic,holiday_pay_paid,
+PE145,Childcare Vouchers,bureau_custom,deduction_excluded,
+PE146,Basic Salary,Xero,basic,
+PE147,Overtime Pay,Staffology,regular_overtime,
+PE148,Maternity Pay,bureau_custom,statutory_excluded,
+PE149,Hol Pay,bureau_custom,holiday_pay_paid,
+PE150,Expense Claim,Staffology,expense_excluded,
+PE151,Subsistence,bureau_custom,expense_excluded,
+PE152,Employer Pension,BrightPay,deduction_excluded,
+PE153,Xmas Bonus,bureau_custom,bonus_non_regular,
+PE154,AVC,generic,deduction_excluded,
+PE155,Union Dues,bureau_custom,deduction_excluded,
+PE156,Regular Hours,Xero,basic,
+PE157,Hourly Pay,BrightPay,basic,
+PE158,Uniform Allowance,bureau_custom,expense_excluded,"AMBIGUOUS: Reimbursement of cost, not linked to work done."
+PE159,Comms,bureau_custom,commission,
+PE160,Ex Gratia,Sage50,bonus_non_regular,"AMBIGUOUS: Gratuitous one-off payment, not contractual; non-regular bonus."
+PE161,Sales Commission,Xero,commission,
+PE162,Standby Pay,Staffology,allowance,
+PE163,Performance Bonus - Annual,Xero,bonus_non_regular,
+PE164,SALARY - FT,bureau_custom,basic,
+PE165,Annual Bonus,Xero,bonus_non_regular,
+PE166,Part-time salary,BrightPay,basic,
+PE167,Home Working Allw,bureau_custom,expense_excluded,
+PE168,Market Supplement,Sage50,allowance,
+PE169,Basic pay (hrs),Sage50,basic,
+PE170,Qualification Allowance,generic,allowance,
+PE171,Acting Up Allowance,bureau_custom,allowance,
+PE172,Accrued Holiday Payout,generic,holiday_pay_paid,
+PE173,Quarterly Commission,BrightPay,commission,
+PE174,Adoption Pay Statutory,generic,statutory_excluded,
+PE175,Net Pay,generic,deduction_excluded,"AMBIGUOUS: Net figure is a result, not pay element; mapped excluded with deductions as it must never be summed into holiday pay."
+PE176,Standard Pay,Staffology,basic,
+PE177,Car Allowance,bureau_custom,expense_excluded,"AMBIGUOUS: Cash car allowance is a contribution to a cost (not pay for work done), so expense_excluded."
+PE178,Special Payment,generic,bonus_non_regular,
+PE179,Commision,bureau_custom,commission,typo
+PE180,Night Shift Premium,bureau_custom,allowance,
+PE181,Sales Incentive,Xero,commission,"AMBIGUOUS: Incentive on sales results is commission, not discretionary bonus."
+PE182,On Call,Sage50,allowance,
+PE183,GAYE,bureau_custom,deduction_excluded,
+PE184,Mileage,bureau_custom,expense_excluded,
+PE185,OSP,Sage50,statutory_excluded,AMBIGUOUS: Occupational sick pay; same as Company Sick Pay.
+PE186,Contractual Overtime,generic,regular_overtime,
+PE187,Commission Paid,BrightPay,commission,
+PE188,Hols,bureau_custom,holiday_pay_paid,
+PE189,Responsibility Allowance,generic,allowance,
+PE190,PAYE Tax,Sage50,deduction_excluded,
+PE191,Employer NIC,Xero,deduction_excluded,
+PE192,Statutory Paternity,generic,statutory_excluded,
+PE193,Time and a quarter,BrightPay,regular_overtime,
+PE194,Statutory Maternity Pay,BrightPay,statutory_excluded,
+PE195,Skills Allowance,generic,allowance,
+PE196,London Weighting,BrightPay,allowance,
+PE197,Ad hoc OT,bureau_custom,regular_overtime,"AMBIGUOUS: Named ad hoc but still an overtime pay element; category is by element type, regularity test is done by the engine on the pay history."
+PE198,Phone Allowance,bureau_custom,expense_excluded,"AMBIGUOUS: Flat allowance towards a cost, not linked to work performed; treated as expense/excluded."
+PE199,Retention Bonus,generic,bonus_non_regular,
+PE200,Comm,Sage50,commission,
