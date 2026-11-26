@@ -53,12 +53,12 @@ Take worker W002 from the synthetic sample (`samples/generate.py` docstring, ass
 | Paid | `holiday_pay` row in the leave week (basic only) | 400.00 |
 | Output | `underpaid by £80.00`, with weeks used and the average in `report.md` | 80.00 |
 
-The other four sample workers show the other cases: correct (W001), overpaid by 10.00 because sick-pay-only weeks are skipped (W003), shortened history flag (W004, 50.00 under), mid-period pay rise (W005, 15.00 under). Totals: 3 underpayments of 145.00, 1 overpayment of 10.00.
+The other four sample workers show the other cases: correct (W001), overpaid by 10.00 (W003: paid 310.00 against 300.00 due; its sick-pay-only weeks are skipped, which keeps the average at 300.00), shortened history flag (W004, 50.00 under), mid-period pay rise (W005, 15.00 under). Totals: 3 underpayments of 145.00, 1 overpayment of 10.00.
 
 ## 4. How each part works
 
 ### 4.1 Ingest (`ingest/loader.py`, `ingest/FORMAT.md`)
-- Reads three CSVs: `history.csv` (worker, week ending, pay category, amount), `leave.csv` (worker, week), optional `workers.csv` (`variable_hours` default, or `fixed_pay` with a contract basic).
+- Reads three CSVs: `history.csv` (worker, week ending, pay category, amount), `leave.csv` (worker, week, optional `weeks` fraction such as 0.5 for half a week), optional `workers.csv` (`variable_hours` default, or `fixed_pay` with a contract basic).
 - Pay categories must already be one of: basic, regular_overtime, commission, bonus_non_regular, allowance, expense_excluded, holiday_pay, statutory (`engine/elements.py`, `CATEGORIES`).
 - Privacy: columns are an allowlist; name, NI number, address and date-of-birth style columns are refused; NI-shaped IDs are refused. FORMAT.md admits the NI check can be got round (e.g. `EMPAB123456C`), so "do not rely on it".
 - Negative amounts (clawbacks, corrections) are refused; the user must net them first.
@@ -73,12 +73,12 @@ The other four sample workers show the other cases: correct (W001), overpaid by 
 
 ### 4.3 Report (`report/builder.py`)
 - `audit()` picks exceptions: difference over threshold, or cannot-check; `--include-flagged` adds any flagged row.
-- `explain()` writes the plain-English working per exception; `write_outputs()` writes `exceptions.csv` and `report.md` together, atomically, owner-only permissions (0600) (`ingest/FORMAT.md`).
+- `explain()` writes the plain-English working per exception; `write_outputs()` writes `exceptions.csv` and `report.md` together, atomically, owner-only permissions (0600) (`ingest/FORMAT.md`). Atomic here means each file is swapped in whole and the pair is rolled back on a failed write; a machine crash mid-write is not covered.
 - Also warns about weeks missing from the export, holiday pay recorded but not in leave.csv, and ignored contract basics.
 - Spreadsheet-injection protection: `_safe()` prefixes risky cells; `_md()` escapes Markdown.
 
 ### 4.4 Tests and the proof test
-- Run: `python3 -I -m unittest discover -s tests -t . -v` (README.md). Security review counted 169 passing tests at commit 3d9f6da (`reviews/T-120-security.md`).
+- Run: `python3 -I -m unittest discover -s tests -t . -v` (README.md). On 2026-11-26 the suite ran 228 tests, all OK (run T-125).
 - `benchmark/KILL-TEST.md` was written before any code ran. **Part A (engine) PASSED**: 17+ gov.uk/Acas worked examples reproduced, 12 left out with written reasons, covering 3 of 4 required areas (no official example exists for regular overtime/commission, so it is unit-tested only). The gov.uk examples contain arithmetic slips that the engine does not copy (`benchmark/examples/SOURCES.md`, KILL-TEST results).
 - Part A alone does not move the score.
 
@@ -98,7 +98,7 @@ The other four sample workers show the other cases: correct (W001), overpaid by 
 
 1. **What does it cost?** Not set; selling locked (`CLAUDE.md` section 6). Only context: bureaux already bill holiday pay calculations as an extra (DCK £73.50/hour; Irwin Mitchell £1,500 + VAT per review), from the idea file. Not a quote.
 2. **What does it check today?** Whether holiday pay paid in each leave week equals the 52-week-average figure under the "first 4 weeks normal pay" assumption (`engine/lookback.py`). It does not yet check 12.07% accrual or rolled-up pay presentation (section 4.6).
-3. **Is it legal advice?** No. Output says "recalculated", is labelled not legal advice, and a payroll professional signs off (`report/builder.py`; validator guardrails in the idea file).
+3. **Is it legal advice?** No. The report shows Due / Paid / underpaid-by with the working and carries the line "Not legal advice; a payroll professional signs off." (`report/builder.py`). The idea file's guardrail of saying "recalculated" rather than "owed" is not built yet.
 4. **How accurate is it?** It reproduces the 17+ official gov.uk/Acas examples it encoded (KILL-TEST.md). On real payrolls: unknown, never tested. Rounding and "normal pay" rules are disputed between sources (idea file).
 5. **What if the data are wrong or incomplete?** Missing weeks are listed for you to confirm; unusable weeks are flagged "cannot be checked" rather than guessed (`report/builder.py`, `FLAG_TEXT`). Armstrong Watson note: payroll exports may lack leave data, so HR leave records must be joined in (idea file, T-23).
 6. **Which payroll systems does it support?** None directly. It reads a standard CSV (`ingest/FORMAT.md`). Mapping real exports (BrightPay, Xero, Sage 50) is the mapper's planned job and is unproven.
@@ -109,7 +109,7 @@ The other four sample workers show the other cases: correct (W001), overpaid by 
 
 ## 6. Demo script (synthetic sample only)
 
-Derived from `README.md`, `audit.py`, `tests/test_audit.py`; I could not run them. Run from the product folder. Sample files: `samples/history.csv`, `samples/leave.csv`, `samples/workers.csv` (generated by `samples/generate.py`).
+Derived from `README.md`, `audit.py`, `tests/test_audit.py`; Verified on 2026-11-26: the audit prints "5 leave weeks checked, 4 exceptions". Run from the product folder. Sample files: `samples/history.csv`, `samples/leave.csv`, `samples/workers.csv` (generated by `samples/generate.py`).
 
 ```
 python3 -I -m unittest discover -s tests -t . -v
@@ -150,7 +150,7 @@ What is open (all from `state/ideas/...` and `state/QUESTIONS.md`):
 4. How far back does the reference period reach, and how are no-pay weeks treated?
 5. What happens, and what exit code, if the input has a name column?
 6. Which pay-element categories count for "normal pay"?
-7. Why does the report say "recalculated" rather than "owed"?
+7. What line in the report marks the legal-advice boundary?
 8. What does Part B test, what is the pass line, and why is it not run?
 9. Name two things in the pitch that the CLI does not currently check.
 10. Which single outside event could cut Competition to 2?
@@ -162,7 +162,7 @@ What is open (all from `state/ideas/...` and `state/QUESTIONS.md`):
 4. Up to 52 paid weeks within 104 weeks; no-pay weeks (including only-SSP weeks) are skipped (`engine/reference.py`).
 5. Refused as personal data; exit 2; nothing written.
 6. basic, regular_overtime, commission, allowance (`engine/elements.py`, `COUNTS_FOR_NORMAL`).
-7. Legal-advice boundary: a calculation tool, with a professional signing off.
+7. "Not legal advice; a payroll professional signs off." (`report/builder.py`). The planned "recalculated, not owed" wording is not built yet.
 8. AI sorting 200 synthetic pay-item names at 95% or better; waits for Q-16 spend approval.
 9. 12.07% accrual and whether rolled-up pay is shown as a separate payslip item (engine code exists but is not called).
 10. The FWA publishing a free holiday pay calculator that accepts a whole payroll.
