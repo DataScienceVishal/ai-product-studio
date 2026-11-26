@@ -138,3 +138,4 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Recommended: A, because a pass is the evidence the parked idea needs whenever the government response lands, and it costs pennies.
 - If no answer: waits (spending is ask-first). Meanwhile the studio builds part A and freezes part B's test data, so B can run the same day you say yes.
 - Update 2026-11-26T02:35Z (run 84ae): part A passed and the part B sorter, guard and marker are built and reviewed (T-114). Only the paid run is left.
+- Update 2026-11-26T05:4xZ (run b543): the sorter now has a hard $2 cap that also counts earlier attempts (worst case about $0.31), https only (T-122, T-123, reviewer PASS). Still waits for a yes.
