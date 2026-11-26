@@ -9,3 +9,5 @@ Runs add one line per notable result. The Desk clears this back to the header af
 
 - Run 9953 (T-137): holiday-pay audit no longer misses underpayments after a recent pay rise when the payroll export has no contract rate. It now uses the latest basic before the leave and always lists any week where the rate had to be guessed. Long-sickness weeks no longer give a false overpayment. Reviewer PASS after two rounds of fixes; 314 tests green.
 - Run 9953 (T-138, T-139): follow-ups to the same fix. A week with some holiday in it no longer triggers a false "rate guessed" listing, and after a long unpaid gap the rate comes from the last full working week. Both passed review; 317 tests green.
+
+- 2026-11-26T13:25Z T-140 done: last surviving mutant in the holiday-pay rate fallback is now killed by a test (318 tests green).
