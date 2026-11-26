@@ -884,6 +884,8 @@ class TransportSecurityTests(unittest.TestCase):
         finally:
             first.shutdown()
             second.shutdown()
+            first.server_close()
+            second.server_close()
         self.assertEqual(hits, [])
         self.assertEqual(ctx.exception.http_code, 302)
         self.assertEqual(sleeps, [])  # not retried

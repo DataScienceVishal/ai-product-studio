@@ -1,6 +1,5 @@
 """T-127: per-worker leave_year_start (MM-DD, default 04-01), distinct-week counts and stdout wording."""
 import csv
-import gc
 import io
 import os
 import tempfile
@@ -25,7 +24,6 @@ def read(path):
 
 
 def run(*args):
-    gc.collect()   # unclosed sockets leaked by other test modules would otherwise warn on our captured stderr
     so, se = io.StringIO(), io.StringIO()
     with redirect_stdout(so), redirect_stderr(se):
         code = cli.main(list(args))
@@ -33,7 +31,11 @@ def run(*args):
 
 
 class DefaultUnchanged(Base):
-    """With no leave_year_start column the outputs are byte-identical to those of main before T-127."""
+    """With no leave_year_start column the look-back results are unchanged from main before T-127.
+
+    exceptions.csv (golden/main_exceptions.csv, main_nw_exceptions.csv) and the no-workers report (main_nw_report.md) are
+    byte-for-byte main's real output. golden/main_report.md is main's output with only the two rolled-up count lines in
+    the summary changed by T-127 (distinct worker-weeks; holiday_pay shown as its own group)."""
 
     def test_sample_with_workers_matches_main(self):
         out = os.path.join(self.tmp.name, "o")
@@ -161,6 +163,20 @@ class FirstFourWeeks(Base):
         self.assertTrue(all("holiday_pay_week_not_in_leave_file" not in r["flags"] for r in rows))
         rows, _ = audit(load_workers(h, l, self.write("w2.csv", W + "W1,variable_hours,,04-01\n")))
         self.assertTrue(all("holiday_pay_week_not_in_leave_file" in r["flags"] for r in rows))
+
+    def test_unlisted_holiday_week_between_custom_start_and_april_is_flagged(self):
+        # Fails if the unlisted-week check is hard-wired to 1 April: with a 01-01 start the unlisted holiday_pay week
+        # (2025-02-05) and the leave week (2025-03-12) are both in the year starting 2025-01-01, but an April year
+        # would put 2025-02-05 in the year starting 2024-04-01, so the flag would be lost.
+        weeks = [date(2024, 12, 4) + timedelta(days=7 * i) for i in range(15)]
+        self.assertIn(date(2025, 2, 5), weeks)
+        self.assertEqual(weeks[-1], date(2025, 3, 12))
+        hist = "".join(f"W1,{d},basic,100\n" for d in weeks if d not in (date(2025, 2, 5), date(2025, 3, 12)))
+        hist += "W1,2025-02-05,holiday_pay,100\nW1,2025-03-12,holiday_pay,100\n"
+        h, l = self.write("h.csv", H + hist), self.write("l.csv", L + "W1,2025-03-12\n")
+        rows, _ = audit(load_workers(h, l, self.write("w.csv", W + "W1,variable_hours,,01-01\n")))
+        self.assertEqual(len(rows), 1)
+        self.assertIn("holiday_pay_week_not_in_leave_file", rows[0]["flags"])
 
 
 class Invalid(Base):
