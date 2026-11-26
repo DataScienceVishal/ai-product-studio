@@ -6,8 +6,7 @@ from decimal import Decimal, InvalidOperation
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from ingest.loader import _mask_id   # noqa: E402
-from ingest import load_workers, ValidationError, name_like_id_warnings, excluded_week_with_pay   # noqa: E402
+from ingest import load_workers, ValidationError, name_like_id_warnings, excluded_week_with_pay, mask_id   # noqa: E402
 from report import audit, write_outputs, history_gaps, unlisted_holiday_pay, ignored_contract_basic, DEFAULT_THRESHOLD, split_rows, rolled_up_weeks_checked, rolled_up_leave_weeks, stray_rolled_up, holiday_pay_to_rolled_up, rolled_up_idle, rolled_up_leave_missing   # noqa: E402
 
 
@@ -50,7 +49,7 @@ def main(argv=None):
         print(msg, file=sys.stderr)
     if len(name_like) > MAX_ERRORS_SHOWN:
         print(f"... and {len(name_like) - MAX_ERRORS_SHOWN} more worker_id warning(s)", file=sys.stderr)
-    excluded_pay = [(_mask_id(w), d) for w, d in excluded_week_with_pay(workers).items()]
+    excluded_pay = [(mask_id(w), d) for w, d in excluded_week_with_pay(workers).items()]
     for masked, weeks in excluded_pay[:MAX_ERRORS_SHOWN]:
         print(f"warning: worker_id {masked}: excluded_week marked on a week that also has pay; the week was used as a normal week "
               f"(week ending {', '.join(str(d) for d in weeks[:10])}{f' and {len(weeks) - 10} more' if len(weeks) > 10 else ''})", file=sys.stderr)

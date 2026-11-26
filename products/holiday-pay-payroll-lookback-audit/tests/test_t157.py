@@ -83,6 +83,24 @@ class Case(unittest.TestCase):
         b = open(os.path.join(self.out, "exceptions.csv")).read()
         self.assertEqual(a, b)
 
+    def test_only_non_counting_pay_gives_no_warning(self):
+        l = self.f("l.csv", L + "W1,2025-02-22\n")
+        for cat in ("expense_excluded", "bonus_non_regular", "holiday_pay", "rolled_up_holiday_pay"):
+            h = self.f("h.csv", hist(extra=f"W1,2025-03-01,excluded_week,0\nW1,2025-03-01,{cat},50.00\n"))
+            rc, err = self.run_cli(h, l)
+            self.assertEqual(rc, 0, cat)
+            self.assertNotIn("excluded_week marked", err, cat)
+            self.assertNotIn("excluded_week on weeks", self.report(), cat)
+
+    def test_counting_pay_gives_warning(self):
+        l = self.f("l.csv", L + "W1,2025-02-22\n")
+        for cat in ("basic", "regular_overtime", "commission", "allowance"):
+            h = self.f("h.csv", H + "".join(f"W1,{d},basic,100.00\n" for d in weeks())
+                       + f"W1,2025-03-01,{cat},50.00\n" + "W1,2025-03-01,excluded_week,0\n")
+            rc, err = self.run_cli(h, l)
+            self.assertEqual(rc, 0, cat)
+            self.assertIn("excluded_week marked", err, cat)
+
     def test_excluded_week_alone_no_warning(self):
         h = self.f("h.csv", hist(extra="W1,2025-03-01,excluded_week,0\n"))
         rc, err = self.run_cli(h, self.f("l.csv", L + "W1,2025-02-22\n"))

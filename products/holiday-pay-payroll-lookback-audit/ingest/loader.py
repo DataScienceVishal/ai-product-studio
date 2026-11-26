@@ -10,6 +10,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Dict, List, Optional
 
 from engine import CATEGORIES, LeaveEntry
+from engine.elements import normal_pay
 from engine.lookback import INPUT_WORKER_TYPES as WORKER_TYPES
 
 HISTORY_COLS = (("worker_id", "week_ending", "element_category", "amount"), ())
@@ -78,9 +79,12 @@ def _looks_like_ni(wid):
     return False
 
 
-def _mask_id(wid):
+def mask_id(wid):
     """Worker IDs in messages: first 2 characters then ***, never the full ID."""
     return f"{str(wid)[:2]}***"
+
+
+_mask_id = mask_id   # older internal name
 
 
 _NAME_LIKE = re.compile(r"^[A-Za-z]{2,}(?:[._-][A-Za-z]{2,})+$")
@@ -100,12 +104,12 @@ def name_like_id_warnings(workers):
 
 
 def excluded_week_with_pay(workers):
-    """{worker_id: [week_ending]} for weeks carrying an excluded_week marker AND pay of another kind (amount > 0).
-    The engine treats such a week as a normal week; this only reports it."""
+    """{worker_id: [week_ending]} for weeks carrying an excluded_week marker AND pay that counts (the engine's own
+    normal_pay test: basic, regular_overtime, commission, allowance). The engine uses such a week; this only reports it."""
     out = {}
     for wid in sorted(workers):
         weeks = [d for d, cats in sorted(workers[wid].history.items())
-                 if "excluded_week" in cats and any(c != "excluded_week" and a > 0 for c, a in cats.items())]
+                 if "excluded_week" in cats and normal_pay(cats) > 0]
         if weeks:
             out[wid] = weeks
     return out
