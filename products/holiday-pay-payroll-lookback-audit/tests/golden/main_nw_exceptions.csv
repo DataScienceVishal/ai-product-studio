@@ -1,0 +1,5 @@
+worker_id,leave_week,paid,due,difference,direction,flags,ref_weeks_used,ref_weeks_skipped,ref_weeks_before_first_record,average,fixed_basic_rate,check
+W002,2025-08-09,400.00,480.00,80.00,underpaid,,52,0,0,480.00,,leave_lookback
+W003,2025-08-09,310.00,300.00,-10.00,overpaid,,52,5,0,300.00,,leave_lookback
+W004,2025-05-31,350.00,400.00,50.00,underpaid,shortened,47,0,57,400.00,,leave_lookback
+W005,2025-08-09,300.00,315.00,15.00,underpaid,,52,0,0,315.00,,leave_lookback

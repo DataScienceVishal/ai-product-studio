@@ -70,8 +70,9 @@ def audit(workers, threshold=DEFAULT_THRESHOLD, include_flagged=False):
         if w.worker_type == ROLLED_UP_TYPE:
             continue
         for r in lookback(w.history, w.leave, worker_type=w.worker_type,
-                          contract_weekly_basic=w.contract_weekly_basic):
-            if any(_leave_year_start(d, 4, 1) == r["leave_year_start"] and d < r["week_end"]
+                          contract_weekly_basic=w.contract_weekly_basic,
+                          leave_year_month=w.leave_year_start[0], leave_year_day=w.leave_year_start[1]):
+            if any(_leave_year_start(d, *w.leave_year_start) == r["leave_year_start"] and d < r["week_end"]
                    for d in unlisted.get(wid, ())):
                 r["flags"].append("holiday_pay_week_not_in_leave_file")
             rows.append({"worker_id": wid, "first_week": w.first_week, **r})
