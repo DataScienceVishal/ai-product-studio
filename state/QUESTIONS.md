@@ -131,7 +131,7 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - If no answer: B after 12 hours (reversible, no spend). A stays open, since only you can have the chat.
 - Answer: B (Telegram "1B", 2026-11-25T23:09:32Z). No buyer chat; the studio keeps desk rounds aimed at Vishal's edges only. T-106 (round 19) opened with a changed brief, since round 18 showed UK-deadline hunting finds incumbents first.
 
-## Q-16 (status: sent 2026-11-26T19:33Z as 1; earlier sent 2026-11-26T15:01Z as 1 and 08:03Z as 1)
+## Q-16 (status: answered A 2026-11-26T20:44:19Z via "1A"; was sent 2026-11-26T19:33Z as 1; earlier sent 2026-11-26T15:01Z as 1 and 08:03Z as 1)
 - Decision: May the studio spend up to $2 of Azure OpenAI (gpt-5-mini) on the holiday-pay AI mapping test (T-111 part B)?
 - Context: Holiday-pay look-back (64) is the best idea left. Its proof test was written down before any run (products/holiday-pay-payroll-lookback-audit/benchmark/KILL-TEST.md): part A, the pay calculator checked against gov.uk and Acas worked examples, costs nothing and is being built now; part B checks whether AI sorts 200 made-up pay-item names into the right holiday-pay groups (95% needed). Expected cost about $0.10; the cap is a safety margin.
 - Options: A) Yes, up to $2 on gpt-5-mini, test data only, logged in BUDGET.md (recommended) B) No spend; part A only, and the idea stays parked at 64 C) Yes, but only after the government responds to the consultation
@@ -140,7 +140,7 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Update 2026-11-26T02:35Z (run 84ae): part A passed and the part B sorter, guard and marker are built and reviewed (T-114). Only the paid run is left.
 - Update 2026-11-26T05:4xZ (run b543): the sorter now has a hard $2 cap that also counts earlier attempts (worst case about $0.31), https only (T-122, T-123, reviewer PASS). Still waits for a yes.
 
-## Q-17 (status: sent 2026-11-26T19:33Z as 2; default A due 2026-11-27T07:40Z, the time the digest gave; queued by run fda7, commit 19:24Z)
+## Q-17 (status: answered A 2026-11-26T20:44:42Z via "2A"; was sent 2026-11-26T19:33Z as 2; default A due 2026-11-27T07:40Z, the time the digest gave; queued by run fda7, commit 19:24Z)
 - Decision: May the top idea (holiday-pay look-back, 64) go to spec and a two-week demo build on made-up data before it reaches the 70 bar?
 - Context: 0 of 55 ideas passed G1. Two reviews (state/ideas/META-REVIEW-2.md) found that about 16 of the 100 points can only be earned by talking to buyers, and that's locked until `unlock selling`. So desk evidence tops out around 64-68, and real paying AI products score in the same band. Holiday-pay's calculator proof test passed. With the AI sorting test (Q-16) and a security sign-off it reaches about 68.
 - Options: A) Yes, a "conditional G1": only one idea at a time, at 64+ with a passed proof test, made-up data, no contact, a two-week build cap. A demand test is written before the build and run at the first contact you allow (for example a demo to your friend). If it fails, the idea is killed. The 70 bar still applies before G4 (recommended) B) No: keep the 70 bar, keep waiting, scout only on leads you send C) Yes, but only after the government publishes its holiday-pay consultation response

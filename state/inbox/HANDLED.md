@@ -21,3 +21,5 @@
 271771349 | "1B" = Q-13 answered B (restaurant proof test); T-80 claimed, T-81 blocked on studio email; QUESTIONS, DECISIONS, BOARD, HURDLES updated | 20261125T091934Z-run-d8d4
 271771350 | "2A" = Q-14 answered A (Vishal applies deploy role at next deploy); T-65 note, QUESTIONS, DECISIONS updated | 20261125T091934Z-run-d8d4
 271771352 | "1B" = Q-15 answered B (no buyer chat, edges-only desk rounds); QUESTIONS, DECISIONS updated; T-106 round 19 opened and claimed | 20261125T232013Z-run-8fd0
+271771354 | "1A" = Q-16 answered A ($2 cap for part B AI test); QUESTIONS, DECISIONS, BOARD updated; T-113 claimed | 20261126T211938Z-run-0abb
+271771355 | "2A" = Q-17 answered A (conditional G1, two-week demo build on made-up data); QUESTIONS, DECISIONS, BOARD updated; T-158 opened | 20261126T211938Z-run-0abb
