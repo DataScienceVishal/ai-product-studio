@@ -192,6 +192,91 @@ class NoAnswerTests(Tmp):
         self.assertEqual(info["reasoning_effort"], "low")
         self.assertEqual(quiet(run.main, self.args, client=ScriptedClient(reply)), 3)
 
+    def worst(self):
+        rows = run.read_names(self.p("n.csv"))
+        return run.preflight(rows, self.failing(ClientError("x")), 100.0)[0]
+
+    def test_cumulative_cap_refuses_rerun_before_any_call(self):
+        w = self.worst()
+        cap = ["--max-usd", repr(w * 1.5)]
+        self.assertEqual(quiet(run.main, self.args + cap, client=self.failing(ClientError("down"))), 4)
+        entry = json.loads(read(self.p("r/attempts.jsonl")).splitlines()[0])
+        self.assertAlmostEqual(entry["worst_case_usd"], w, places=5)
+        c = ScriptedClient("{}")
+        self.assertEqual(quiet(run.main, self.args + cap, client=c), 2)  # w + w > 1.5w
+        self.assertEqual(c.calls, 0)
+        self.assertFalse(os.path.exists(self.p("r/run.started")))
+
+    def test_cumulative_cap_boundary_allows_exact_fit_and_records_totals(self):
+        w = self.worst()
+        cap = ["--max-usd", repr(w * 2 + 1e-6)]  # exactly two worst cases fit
+        quiet(run.main, self.args + cap, client=self.failing(ClientError("down")))
+        reply = json.dumps({"mappings": [{"id": "1", "category": "basic"}, {"id": "2", "category": "basic"}]})
+        self.assertEqual(quiet(run.main, self.args + cap, client=ScriptedClient(reply)), 0)
+        info = json.loads(read(self.p("r/run.json")))
+        self.assertAlmostEqual(info["earlier_attempts_worst_case_usd"], w, places=5)
+        self.assertAlmostEqual(info["cumulative_worst_case_usd"], 2 * w, places=5)
+
+    def test_third_attempt_refused_when_two_already_spent(self):
+        w = self.worst()
+        cap = ["--max-usd", repr(w * 2.5)]
+        for expect in (4, 4, 2):
+            self.assertEqual(quiet(run.main, self.args + cap, client=self.failing(ClientError("down"))), expect)
+
+    def corrupt_case(self, line, rc=2):
+        import hashlib
+        with open(self.p("n.csv"), "rb") as h:
+            names_sha = hashlib.sha256(h.read()).hexdigest()
+        sha = config_sha256(run.MAX_OUTPUT_TOKENS, names_sha)
+        os.makedirs(self.p("r"), exist_ok=True)
+        with open(self.p("r/attempts.jsonl"), "w") as h:
+            h.write(line.replace("SHA", sha) + "\n")
+        c = ScriptedClient("{}")
+        self.assertEqual(quiet(run.main, self.args, client=c), rc, line)
+        self.assertEqual(c.calls, 0)
+
+    def test_corrupt_json_fails_closed(self):
+        self.corrupt_case("{not json", 3)
+
+    def test_non_object_entry_fails_closed(self):
+        self.corrupt_case("[1, 2]", 3)
+
+    def test_negative_worst_case_fails_closed(self):
+        self.corrupt_case('{"config_sha256": "SHA", "worst_case_usd": -1}')
+
+    def test_nan_worst_case_fails_closed(self):
+        self.corrupt_case('{"config_sha256": "SHA", "worst_case_usd": NaN}')
+
+    def test_inf_worst_case_fails_closed(self):
+        self.corrupt_case('{"config_sha256": "SHA", "worst_case_usd": Infinity}')
+
+    def test_string_worst_case_fails_closed(self):
+        self.corrupt_case('{"config_sha256": "SHA", "worst_case_usd": "0"}')
+
+    def test_bool_worst_case_fails_closed(self):
+        self.corrupt_case('{"config_sha256": "SHA", "worst_case_usd": true}')
+
+    def test_client_cap_is_remaining_budget(self):
+        w = self.worst()
+        cap = ["--max-usd", repr(w * 2 + 1e-6)]
+        quiet(run.main, self.args + cap, client=self.failing(ClientError("down")))
+        seen = []
+
+        class C(ScriptedClient):
+            def set_spend_cap(self, cap_usd, price):
+                seen.append(cap_usd)
+        quiet(run.main, self.args + cap, client=C("{}"))
+        self.assertAlmostEqual(seen[0], w + 1e-6, places=6)
+
+    def test_legacy_entry_without_worst_case_counts_at_this_runs_size(self):
+        w = self.worst()
+        os.makedirs(self.p("r"))
+        with open(self.p("r/attempts.jsonl"), "w") as h:
+            h.write(json.dumps({"timestamp_utc": "x"}) + "\n")
+        c = ScriptedClient("{}")
+        self.assertEqual(quiet(run.main, self.args + ["--max-usd", repr(w * 1.5)], client=c), 2)
+        self.assertEqual(c.calls, 0)
+
     def test_changed_setting_refused(self):
         quiet(run.main, self.args, client=self.failing(ClientError("down")))
         c = ScriptedClient("{}")
