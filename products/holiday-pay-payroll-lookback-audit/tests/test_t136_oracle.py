@@ -450,6 +450,21 @@ class HandComputed(unittest.TestCase):
         r = self.run_one(pay, 20, "fixed_pay", "", paid="100.00")
         self.assertEqual((r["difference"], r["direction"]), ("100.00", "underpaid"))
 
+    def test_report_md_explains_zero_difference_guessed_rate(self):
+        pay = {i: {"basic": Decimal(100 if i < 17 else 200)} for i in range(20)}
+        wk0 = date(2025, 1, 4)
+        hist = {wk0 + timedelta(days=7 * i): v for i, v in pay.items()}
+        ld = wk0 + timedelta(days=140)
+        hist[ld] = {"holiday_pay": Decimal("200.00")}
+        with tempfile.TemporaryDirectory() as tmp:
+            write_inputs(tmp, [("A1", "fixed_pay", (4, 1), "", hist)], [("A1", ld, "1")])
+            run_cli(tmp, Decimal("0.01"))
+            with open(os.path.join(tmp, "out", "report.md"), encoding="utf-8") as fh:
+                md = fh.read()
+        for text in ("or weekly rate guessed): 1", "Leave weeks with a guessed weekly rate: 1",
+                     "Listed although the difference is £0.00"):
+            self.assertIn(text, md)
+
     def test_f3_partial_latest_week_is_flagged_even_when_paid_equals_due(self):
         pay = {i: {"basic": Decimal(100 if i < 19 else 40)} for i in range(20)}
         rows = self.run_one(pay, 20, "fixed_pay", "", paid="40.00", all_rows=True)

@@ -72,3 +72,30 @@ No new input surface. Flags are engine-generated. The CSV `flags` cell still goe
 ## Docs vs code
 
 FORMAT.md, README and BRIEF match the code apart from the fallback wording (M2) and the summary label (M1). The F1 limitation line is present and accurate in all three.
+
+## Re-review (commit 401045d, delta `git diff 8a00370 401045d`)
+
+### Verdict: CHANGES (one test-only item)
+
+The code fixes are correct. The one item left is a test-only gap: the report lines added to fix M1 have no test, and mutating any of them leaves the suite green.
+
+- Full suite on 401045d: **Ran 313 tests in 41.8s, OK**.
+- **M1 code: fixed.** `builder.py:455` now reads "Exceptions (difference over £x, cannot be checked, or weekly rate guessed)". `:457` adds "Leave weeks with a guessed weekly rate: K". Both goldens are updated. I checked end to end through the CLI with a blank contract, a rise 3 weeks before the leave, and paid equal to the new rate. Result: exceptions.csv `0.00,correct`, summary "Exceptions ... : 1", "guessed weekly rate: 1", 0 under, 0 over. `explain()` prints the new "Listed although the difference is £0.00" line. The counts now add up.
+- **M2: fixed.** `lookback.py:75-79`: the fallback takes the latest non-statutory basic, then any basic, then 0. New tests: `test_fixed_pay_long_sickness_uses_last_full_pay_rate` (expects 500) and `test_fixed_pay_only_ssp_weeks_carry_basic` (expects 100, no `no_basic_pay_found`). The pinned SSP test now expects 500. `inferred_basic()` in the oracle is updated to match. BRIEF, FORMAT.md and the docstring all describe the new order.
+- **S1: done** (FLAG_TEXT now covers part and back-pay weeks). **S3: done** (explain line).
+
+### Mutants rerun
+
+All 12 engine and gate mutants are killed: oldest-in-window, no statutory filter, window 7 and 9, no fallback flag, `>2`, window skipping the latest week, no zero flag, `always_exception` removed, ambiguous not forced, plus 2 new ones (fallback ignores statutory again: 4 failures; no last-resort step: 1 failure).
+
+**Three report-layer mutants survive. Each one undoes part of the M1 fix without failing a test:**
+1. "Leave weeks with a guessed weekly rate" hard-coded to `0`. The goldens only cover 0.
+2. The "Exceptions" count with guessed-rate rows subtracted again, which brings back the original mismatch.
+3. The `explain()` "Listed although the difference is £0.00" line removed (`if False:`).
+
+### Must fix
+- **R1. Add one CLI test** for a zero-difference ambiguous row. In `HandComputed` (`tests/test_t136_oracle.py`), reuse the `test_f2_zero_difference_after_rise_is_still_an_exception` input (paid 200.00, threshold 0.01). Read `out/report.md` and assert all three of: it contains `- Exceptions (difference over £0.01, cannot be checked, or weekly rate guessed): 1`, it contains `- Leave weeks with a guessed weekly rate: 1`, and it contains `Listed although the difference is £0.00`. That kills all three surviving mutants. `run_cli` already writes `out/` into the temp dir, so only the read and the asserts are new.
+
+### Nit (non-blocking)
+- FORMAT.md, "Blank contract_weekly_basic": "If none of those 8 weeks has basic pay" should read "has basic pay outside an SSP/SMP week". With the new fallback the outcome is the same, but the trigger is described wrongly.
+- S2 (exclude part-leave weeks from the window) and S4 (unit test for `always_exception` with only `no_basic_pay_found`) are still open, and still optional.
