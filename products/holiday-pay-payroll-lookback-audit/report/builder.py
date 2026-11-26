@@ -350,8 +350,8 @@ def _rolled_up_notes(skipped_leave, idle=None, leave_missing=None):
                 + ", ".join(f"{_md(w)} ({c})" for w, c in skipped_leave.items()) + "."]
     if idle:
         out += ["", "## Note: irregular_rolled_up workers with nothing to check", "",
-                f"{len(idle)} irregular_rolled_up worker(s) were loaded but had no pay week to check (no pay that counts, "
-                "no rolled_up_holiday_pay and no holiday_pay row in any week): "
+                f"{len(idle)} irregular_rolled_up worker(s) were loaded but had no week that the rolled-up check applies to "
+                "(no pay that counts, or pay only in leave years before 2024 with no rolled_up_holiday_pay, and no holiday_pay row): "
                 + ", ".join(_md(w) for w in idle) + ". They were not skipped by mistake; confirm their history is complete."]
     if leave_missing:
         out += ["", "## Warning: leave week of an irregular_rolled_up worker missing from history", "",

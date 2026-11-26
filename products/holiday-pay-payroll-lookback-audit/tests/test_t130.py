@@ -49,6 +49,13 @@ class F1EmptyLeave(Case):
         self.assertEqual(code, 2)
         self.assertIn("no data rows", se)
 
+    def test_mixed_firm_header_only_leave_refused(self):
+        h = (H + "R1,2025-06-07,basic,400\nR1,2025-06-07,rolled_up_holiday_pay,48.28\n"
+             "V1,2025-06-07,basic,400\nV1,2025-06-14,holiday_pay,400\n")
+        code, so, se, rep = self.run_cli(h, LV, W + "R1,irregular_rolled_up,\n")
+        self.assertEqual(code, 2)
+        self.assertIn("no data rows", se)
+
     def test_header_only_leave_without_workers_file_refused(self):
         with self.assertRaises(ValidationError):
             load_workers(self.f("h.csv", H + "V1,2025-06-07,basic,1\n"), self.f("l.csv", LV))
@@ -75,11 +82,26 @@ class F2Visibility(Case):
     def test_no_note_when_nothing_to_say(self):
         h = H + "S1,2025-06-07,basic,400\n"
         code, so, se, rep = self.run_cli(h, LV + "S1,2025-06-07\n", W + "S1,irregular_rolled_up,\n")
+        self.assertEqual(code, 0, se)
         self.assertNotIn("note:", so)
         self.assertNotIn("nothing to check", rep)
 
 
+class S1PreRules(Case):
+    def test_pre_2024_only_worker_idle_note_is_accurate(self):
+        h = H + "R1,2023-06-03,basic,400\nR1,2023-06-10,basic,400\n"
+        code, so, se, rep = self.run_cli(h, LV, W + "R1,irregular_rolled_up,\n")
+        self.assertEqual(code, 0, se)
+        self.assertIn("note: 1 irregular_rolled_up worker(s) had no pay week to check", so)
+        self.assertIn("before 2024", rep)
+
+
 class F3Invisible(Case):
+    def test_directional_mark_not_echoed(self):
+        code, so, se, rep = self.run_cli(H + "W1,2025-06-07,basic,\u200e1x\n", LV + "W1,2025-06-07\n", W + "W1,variable_hours,\n")
+        self.assertEqual(code, 2)
+        self.assertNotIn("\u200e", se)
+
     def test_bom_in_leave_year_start_not_echoed(self):
         code, so, se, rep = self.run_cli(H + "W1,2025-06-07,basic,1\n", LV + "W1,2025-06-07\n",
                                          W + "W1,variable_hours,﻿04-01\n")
@@ -107,7 +129,7 @@ class L1CapReport(Case):
             ex = fh.read().splitlines()
         self.assertGreater(len(ex) - 1, 20)
         self.assertEqual(rep.count("(rolled-up holiday pay)"), 20)
-        self.assertIn("and ", rep)
+        self.assertRegex(rep, r"and 32 more rolled-up pay exception\(s\) \(rolled\\_up\\_before\\_2024\\_rules: 32\)")
         self.assertIn("more rolled-up pay exception(s)", rep)
         self.assertIn("exceptions.csv", rep)
         self.assertLess(len(rep), 20000)

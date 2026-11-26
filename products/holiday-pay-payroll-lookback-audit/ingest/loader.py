@@ -2,6 +2,7 @@
 import csv
 import os
 import re
+import unicodedata
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import date
@@ -15,7 +16,6 @@ HISTORY_COLS = (("worker_id", "week_ending", "element_category", "amount"), ())
 LEAVE_COLS = (("worker_id", "week_ending"), ("weeks",))
 WORKER_COLS = (("worker_id", "worker_type"), ("contract_weekly_basic", "leave_year_start"))
 DEFAULT_LEAVE_YEAR_START = (4, 1)
-_INVISIBLE = re.compile("[\ufeff\u200b\u200c\u200d\u2060]")
 _MMDD = re.compile(r"^[0-9]{2}-[0-9]{2}$")
 
 _DATE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
@@ -80,7 +80,7 @@ def _looks_like_ni(wid):
 def _mask(v):
     """Never echo a raw cell: first 2 characters and the length only."""
     v = str(v)
-    clean = _INVISIBLE.sub("", v)
+    clean = "".join(c for c in v if unicodedata.category(c) != "Cf")
     note = ", invisible characters removed" if clean != v else ""
     return f"'{clean[:2]}...' ({len(clean)} chars{note})"
 
@@ -281,9 +281,10 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
                     amt = None
                 workers[wid].contract_weekly_basic = amt
 
-    # An empty leave.csv is allowed when rolled-up workers have pay weeks to audit (T-130).
-    if leave_empty and not any(w.worker_type == "irregular_rolled_up" for w in workers.values()):
-        issues.append(Issue(lname, 0, "no data rows (a header-only leave.csv is accepted only when workers.csv sets an irregular_rolled_up worker)"))
+    # An empty leave.csv is allowed only for a firm whose every worker is irregular_rolled_up (T-130): otherwise
+    # an empty export would silently hide look-back leave and unlisted holiday pay.
+    if leave_empty and not (workers and all(w.worker_type == "irregular_rolled_up" for w in workers.values())):
+        issues.append(Issue(lname, 0, "no data rows (a header-only leave.csv is accepted only when every worker in history is set as irregular_rolled_up in workers.csv)"))
     if issues:
         raise ValidationError(issues)
     return workers
