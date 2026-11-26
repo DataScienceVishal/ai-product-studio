@@ -289,6 +289,20 @@ New incumbent claims: none found. A search for BrightPay, Xero, Sage or Moneysof
 
 Bottom line: nothing published since 2026-11-20 moves any of the three conditions. Competition stays 7, total 64, parked. Next re-check on publication of the response or the FWA calculator, otherwise monthly.
 
+## Evidence log 2026-11-26 (T-148, validator)
+
+**Kill test (item 6): add PayslipIQ for Business.** It is a trading name of GoldPaid Ltd (England and Wales, company no. 17382540). The validator fetched all four pages on 2026-11-26.
+- https://payslipiq.co.uk/business: "Not available yet", "nothing is for sale here", checks marked "Planned". The list names "holiday-pay miscalculations" with no method. The page has no 52-week, reference period, look-back, historic pay run or arrears wording. The checks run on each pay run "before anyone is paid", so they are forward checks.
+- https://payslipiq.co.uk/business/bureau: a waitlist by email. Coverage is PAYE, NI, pension, student loan, salary sacrifice, Irish PAYE/USC/PRSI and umbrella rate checks. No holiday pay or SSP.
+- https://payslipiq.co.uk/pricing: Free check £0 "Available now"; Pro Report £19 one-off "Not on sale yet"; the employer and bureau offer is "Planned, not live" with no price.
+- https://payslipiq.co.uk/: a free consumer payslip checker, "educational guidance only". No holiday pay.
+
+**Kill rule:** if PayslipIQ ships a whole-payroll holiday-pay look-back that lists past underpayments, Competition falls to 2.
+
+**Effect on the score: none. Competition stays 7, total 64.** It is an unlaunched waitlist with no method, no price and no date. Its only holiday-pay wording is one generic bullet, and its design is a pre-pay-run check, not a look-back. It is already covered by the T-57 reasons for 7 rather than 8 (a payroll-upload checker could add holiday pay, like Fair Work Solutions). It adds a second name to that risk, not new evidence that the gap has closed.
+
+**Part A gate re-check (scout T-148, accepted):** the consultation outcome is unpublished, the FWA calculator is planned with no scope, and there is no fixed enforcement date. All park conditions are still open.
+
 ## Gate log
 - 2026-11-23 scout round 3 (T-22): G0 drafted. Job-ad signal missing, flagged.
 - 2026-11-23 | validator | G0→G1 | REVISE 63 | Best of round 3, and the first idea with an incumbent gap confirmed on the vendors' own pages: BrightPay, Xero, Moneysoft and Sage 50 don't calculate holiday pay amounts, and no product documents a whole-workforce look-back. But FWA enforcement has no start date, the FWA is building its own free holiday pay calculator, and its look-back starts only at 18 Dec 2025. The core is a deterministic engine, and holding workers' pay and absence data cuts Risk to 5.
