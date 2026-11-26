@@ -93,7 +93,7 @@ class S1PreRules(Case):
         code, so, se, rep = self.run_cli(h, LV, W + "R1,irregular_rolled_up,\n")
         self.assertEqual(code, 0, se)
         self.assertIn("note: 1 irregular_rolled_up worker(s) had no pay week to check", so)
-        self.assertIn("before 2024", rep)
+        self.assertIn("before 1 April 2024", rep)
 
 
 class F3Invisible(Case):
@@ -144,6 +144,35 @@ class L1CapReport(Case):
         self.assertEqual(rep.count("(rolled-up holiday pay)"), 40)
         self.assertIn("### R1: and 5 more", rep.replace("\\", ""))
         self.assertIn("### R2: and 5 more", rep.replace("\\", ""))
+
+
+class S4GlobalCap(Case):
+    def test_total_cap_across_workers(self):
+        import report.builder as b
+        h, w = H, W
+        for k in range(80):
+            wid = f"R{k:03d}"
+            w += f"{wid},irregular_rolled_up,01-01\n"
+            for i in range(30):
+                d = (date(2024, 1, 6) + timedelta(days=7 * i)).isoformat()
+                h += f"{wid},{d},basic,100\n{wid},{d},rolled_up_holiday_pay,12.07\n"
+        code, so, se, rep = self.run_cli(h, LV, w)
+        self.assertEqual(code, 0, se)
+        n = rep.count("(rolled-up holiday pay)")
+        self.assertEqual(n, b.MAX_ROLLED_UP_TOTAL)
+        self.assertIn("further worker(s)", rep)
+        self.assertIn("Every exception is in exceptions.csv", rep)
+        with open(os.path.join(self.d, "out", "exceptions.csv")) as fh:
+            self.assertEqual(len(fh.read().splitlines()) - 1, 80 * 30)
+
+
+class RetentionDocs(unittest.TestCase):
+    def test_retention_rule_stated(self):
+        for rel in ("README.md", os.path.join("ingest", "FORMAT.md")):
+            with open(os.path.join(HERE, "..", rel), encoding="utf-8") as fh:
+                t = fh.read()
+            self.assertIn("keeps nothing", t)
+            self.assertIn("30 days", t)
 
 
 class I2Escape(unittest.TestCase):
