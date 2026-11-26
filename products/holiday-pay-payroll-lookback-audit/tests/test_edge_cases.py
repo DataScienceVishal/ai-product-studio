@@ -226,9 +226,23 @@ class Lookback(unittest.TestCase):
         for i in range(8):
             h[SAT - timedelta(days=7 * i)] = {"basic": 200 + i, "statutory": 50}
         r = lookback(h, [LeaveEntry(SAT + timedelta(days=7))], worker_type="fixed_pay")[0]
-        self.assertEqual(r["working"]["normal"]["current_basic"], D("200.00"))
+        self.assertEqual(r["working"]["normal"]["current_basic"], D("500.00"))   # latest NON-statutory basic, not the SSP one
         self.assertEqual(r["working"]["normal"]["basic_source"], "latest_week_fallback")
         self.assertIn("rate_inferred_ambiguous", r["flags"])
+
+    def test_fixed_pay_long_sickness_uses_last_full_pay_rate(self):
+        h = hist(60, {"basic": 500})
+        for i in range(10):                                   # 10 SSP weeks at basic 100 just before leave
+            h[SAT - timedelta(days=7 * i)] = {"basic": 100, "statutory": 99}
+        r = lookback(h, [LeaveEntry(SAT + timedelta(days=7))], worker_type="fixed_pay")[0]
+        self.assertEqual(r["working"]["normal"]["current_basic"], D("500.00"))
+        self.assertIn("rate_inferred_ambiguous", r["flags"])
+
+    def test_fixed_pay_only_ssp_weeks_carry_basic(self):
+        h = hist(8, {"basic": 100, "statutory": 99})
+        r = lookback(h, [LeaveEntry(SAT + timedelta(days=7))], worker_type="fixed_pay")[0]
+        self.assertEqual(r["working"]["normal"]["current_basic"], D("100.00"))
+        self.assertNotIn("no_basic_pay_found", r["flags"])
 
     def test_fixed_pay_no_basic_anywhere(self):
         h = hist(6, {"regular_overtime": 30})

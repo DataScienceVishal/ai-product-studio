@@ -10,7 +10,7 @@ Part 1 rules (oracle):
     the basic in the history moved (flag reference_week_basic_differs_from_contract when a reference week differs).
   * contract blank (T-137 rule, replaces the T-136 modal rule): rate inferred (flag rate_inferred_no_contract_basic) as the MOST
     RECENT basic > 0 among non-statutory (no SSP/SMP) weeks in the 8 calendar weeks before the leave week; if those 8 weeks hold no
-    such basic, the latest basic > 0 anywhere before the leave week (fallback). Flag rate_inferred_ambiguous when the 8-week window
+    such basic, the latest NON-statutory basic > 0 anywhere before the leave week, then any basic > 0 (fallback). Flag rate_inferred_ambiguous when the 8-week window
     holds more than one distinct basic, or the fallback was used; flag no_basic_pay_found when the rate is 0 (no basic anywhere).
     A row with either of those two flags is ALWAYS an exception, even with difference 0 (direction "correct").
 Part 2 rules (oracle): FORMAT.md "irregular_rolled_up" section, rolled-up pay = 12.07% x (basic + overtime + commission + allowance),
@@ -65,9 +65,10 @@ def inferred_basic(pay, lw):
              if p.get("basic", Decimal(0)) > 0 and p.get("statutory", Decimal(0)) <= 0]  # newest first
     if last8:
         return Fraction(last8[0]), len(set(last8)) > 1
-    for _, p in window_weeks(pay, lw, 104):
-        if p.get("basic", Decimal(0)) > 0:
-            return Fraction(p["basic"]), True
+    for stat_ok in (False, True):  # latest non-statutory basic first, then any basic
+        for _, p in window_weeks(pay, lw, 104):
+            if p.get("basic", Decimal(0)) > 0 and (stat_ok or p.get("statutory", Decimal(0)) <= 0):
+                return Fraction(p["basic"]), True
     return Fraction(0), True  # no basic anywhere in the history: rate 0.00 and flag no_basic_pay_found
 
 

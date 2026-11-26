@@ -9,8 +9,9 @@ Every figure here is recalculated under these settings. It is a calculation to c
 - Workers loaded: 8
 - Workers with leave: 5
 - Leave weeks checked: 5
-- Exceptions (difference over £0.01, or cannot be checked): 4
+- Exceptions (difference over £0.01, cannot be checked, or weekly rate guessed): 4
 - Leave weeks that could not be checked: 0
+- Leave weeks with a guessed weekly rate: 0
 - Underpayments: 3, total underpaid £145.00
 - Overpayments: 1, total overpaid £10.00
 - Workers with flags: 1 (W004)

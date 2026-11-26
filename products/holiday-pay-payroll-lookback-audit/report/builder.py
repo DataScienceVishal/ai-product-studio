@@ -28,7 +28,8 @@ FLAG_TEXT = {
     "rate_inferred_no_contract_basic": "no contract basic supplied; the rate was inferred from recent pay",
     "rate_inferred_ambiguous": "no contract basic was supplied and the rate is a guess that could change the answer: either the basic "
                                "changed in the 8 weeks before the leave (a pay rise?), so the most recent rate was used, or there "
-                               "was no basic in those 8 weeks, so the latest basic seen was used (which may be a short or part week). "
+                               "was no basic in those 8 weeks, so the latest earlier basic was used. A part week or a back-pay week as "
+                               "the latest week can push the result either way (too low or too high). "
                                "Check the rate with the employer and supply contract_weekly_basic",
     "no_basic_pay_found": "no contract basic was supplied and no basic pay appears anywhere before the leave, so the weekly basic "
                           "rate used is 0.00 and the recalculated figure is not reliable. Supply contract_weekly_basic",
@@ -188,6 +189,9 @@ def explain(r):
                      f"Result: {_direction(r['difference'])} by {_gbp(abs(r['difference']))}.")
     if "leave_week_without_holiday_pay" in r["flags"]:
         lines.append(f"- Pay in this week that was not marked as holiday pay: {_gbp(r['other_pay_in_leave_week'])}.")
+    if always_exception(r) and not cannot_check(r) and r["difference"] == 0:
+        lines.append("- Listed although the difference is £0.00: the weekly rate was a guess (see the flag below), so a "
+                     "matching figure does not prove the holiday pay was right.")
     for f in r["flags"]:
         lines.append(f"- Flag `{f}`: {FLAG_TEXT.get(f, f)}.")
     return "\n".join(lines) + "\n"
@@ -448,8 +452,9 @@ def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=N
         md.append(f"- Workers loaded: {workers_loaded}")
     md += [f"- Workers with leave: {with_leave}",
            f"- Leave weeks checked: {len(rows)}",
-           f"- Exceptions (difference over {_gbp(threshold)}, or cannot be checked): {len(lb_exc)}",
+           f"- Exceptions (difference over {_gbp(threshold)}, cannot be checked, or weekly rate guessed): {len(lb_exc)}",
            f"- Leave weeks that could not be checked: {len(unchecked)}",
+           f"- Leave weeks with a guessed weekly rate: {sum(1 for r in rows if always_exception(r))}",
            f"- Underpayments: {len(under)}, total underpaid {_gbp(sum((r['difference'] for r in under), Decimal(0)))}",
            f"- Overpayments: {len(over)}, total overpaid {_gbp(sum((-r['difference'] for r in over), Decimal(0)))}",
            f"- Workers with flags: {len(flagged)}" + (f" ({', '.join(_md(f) for f in flagged)})" if flagged else ""),

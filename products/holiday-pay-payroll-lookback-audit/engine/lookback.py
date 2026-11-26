@@ -54,8 +54,8 @@ def _fixed_pay_refs(recent_first, contract_basic=None):
 
     Rate: explicit contract_basic if given. Otherwise inferred as the MOST RECENT basic > 0 among
     non-statutory (no SSP/SMP) weeks in the last RATE_WINDOW weeks before the leave (the rate in force when the
-    leave is taken, source latest_basic_last_8_weeks); if none, the most recent week with basic pay anywhere before
-    the leave (source latest_week_fallback). Flags added: rate_inferred_no_contract_basic;
+    leave is taken, source latest_basic_last_8_weeks); if none, the most recent NON-statutory week with basic pay
+    anywhere before the leave, then any week with basic pay, then 0 (source latest_week_fallback). Flags added: rate_inferred_no_contract_basic;
     rate_inferred_ambiguous (inferred AND the window holds more than one distinct basic, or the fallback was used);
     no_basic_pay_found (rate is 0, no basic anywhere); latest-week mismatch; contract mismatch.
     """
@@ -72,7 +72,11 @@ def _fixed_pay_refs(recent_first, contract_basic=None):
             if len(set(cands)) > 1:
                 flags.append("rate_inferred_ambiguous")
         else:
-            current, source = next((b for b in basics if b > 0), Decimal(0)), "latest_week_fallback"
+            nonstat = (b for p, b in zip(recent_first, basics) if b > 0 and dec(p.get("statutory", 0)) <= 0)
+            current = next(nonstat, None)
+            if current is None:                      # only SSP/SMP weeks carry basic: last resort
+                current = next((b for b in basics if b > 0), Decimal(0))
+            source = "latest_week_fallback"
             flags.append("rate_inferred_ambiguous")
     if current == 0:
         flags.append("no_basic_pay_found")
