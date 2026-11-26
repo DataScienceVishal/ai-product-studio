@@ -34,3 +34,20 @@ The code is correct and the maths has not changed. But BRIEF.md still tells user
 ## Accepted as is
 
 The mapper's `statutory_excluded` label is a separate vocabulary for pay-element names. Nothing converts it into a history.csv `element_category`, and it is pinned by the prompt hash. The Lead's acceptance stands.
+
+## Re-review: b090af0 (2026-11-26)
+
+### Verdict: PASS
+
+Evidence:
+- **Suite:** `python3 -m unittest discover -s tests -q` on the exact b090af0 tree: `Ran 336 tests in 45.2s, OK`.
+- **Engine:** the same 1,500-worker comparison against main gives byte-identical output (ENGINE_SAME).
+- **Critical 1 (BRIEF.md):** fixed. Line 62 now lists `excluded_week` (amount 0) and `rolled_up_holiday_pay`. Line 70 uses excluded_week wording. No stray `statutory` is left in BRIEF.md, README.md or FORMAT.md.
+- **Suggestion 2 (hyphen):** fixed. `loader.py:85` is now `[._-]`, and FORMAT.md:5 and the docstring say `-`. The test count stayed at 336 because `john-smith` was added to the existing `test_t154.G8.test_detection`. That test's expected count went from 2 to 3. `john-smith` is the only new ID, so the test fails if hyphen detection breaks.
+- **Suggestions 3 and 4 (FORMAT.md:8 and :29):** fixed. The sentence now separates the column list from the worker_id `EM***` rule. It also says 1 and 2 character IDs are shown in full, which covers suggestion 7.
+- **Suggestion 5 (stale tests):** done in `test_edge_cases.py` (amounts set to 0) and in the comment and docstring text. The seeded generators in `test_differential.py` and `test_t136_oracle.py` still pass non-zero `excluded_week` amounts so the seeded cases stay the same. The CSV writers already write 0, and the engine tests presence only. Accepted.
+- **Suggestion 6 (DATA-DESIGN.md):** fixed. G1, G6 and G8 are marked closed by T-154. The attestation has no file in the repo yet, so that part was skipped. Accepted; it belongs with whatever task creates the upload attestation.
+
+Nits (non-blocking):
+- FORMAT.md:5 now says "(`JSmith1990` is not caught)" twice.
+- The G1 and G6 bullets in DATA-DESIGN.md keep their old "still has" wording after the "closed" tag.
