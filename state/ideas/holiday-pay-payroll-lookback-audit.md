@@ -323,3 +323,36 @@ Validator. Only the Competition row is re-scored, under the wedge rule in `playb
 - **Knock-on:** none justified. Pay stays 12, because a software price is still missing. Pain stays 15 (no response and no job ads). Risk stays 5, because the pseudonymised design is not signed off by security. AI 7 and Build 11 wait for the benchmark, and the Armstrong Watson data-gap point argues against raising Build.
 - **New total: 64** (15+12+7+7+11+7+5). **Verdict: REVISE (parked).** No red flag. In the 63 to 69 band, so the proof-test route is open, but a benchmark alone moves at most AI +1 and Build +1, to 66.
 - **The one piece of evidence that would move it:** the FWA calculator's published scope (or the government response), confirming it works one worker at a time and doesn't take a whole payroll. That would take Competition to 8 to 9. If it does take a whole payroll, Competition falls to 2.
+
+## Demand test (pre-registered, T-153)
+
+Written 2026-11-26, before any G2 work. Applies only if Q-17 is answered A. **No contact happens now.** Nothing below may be changed after the test starts; changes need a new dated section and reset the test.
+
+**Who is asked.** Up to 5 UK payroll bureaux, accountants running payroll, or in-house payroll leads at firms of 20 to 500 staff with irregular-hours or variable-pay workers: Vishal's friend's business, plus firms it introduces. At least 3 must be interviewed. Asked: the person who runs or signs off payroll.
+
+**First allowed contact.** A demo of the synthetic-data MVP to the friend's business or the firms it introduces, only after Vishal explicitly allows contact (a friend demo or `unlock selling`). No outreach, pricing offer or commitment before that. The 60-day clock starts at the first demo, not before.
+
+**Exact questions (asked in this order, answers written down verbatim by the studio, never paraphrased into a pass).**
+1. How do you calculate holiday pay for irregular-hours or variable-pay workers today? (Options read only after the open answer: payroll software automatically; spreadsheet; by hand; outsourced; not done.)
+2. When did you last re-check holiday pay for past pay runs, and how many hours did it take?
+3. Do you charge clients, or pay anyone, for holiday pay calculations? How much?
+4. (Before any price is shown) What would you pay per month for a tool that does this look-back with the working shown? A number, ex VAT.
+5. At what monthly price would it be too expensive to consider?
+6. Would you run it on your own pseudonymised export within 14 days? Who would sign off the results?
+7. What would stop you using it?
+
+**Pass mark (all must hold).**
+- At least 3 firms interviewed, and at least 3 of those (and over half of those interviewed) say in answer 1 that they calculate holiday pay manually or in a spreadsheet today; AND
+- those same 3 firms each name a monthly price of at least £49 ex VAT in answer 4, unprompted, before seeing any price from us; AND
+- at least 2 of those 3 say yes to answer 6 and name a sign-off person.
+
+Answers are scored from the written record only. "Interesting", "send me more" and hypothetical praise count as nothing.
+
+**What counts as a fail (a failed gate attempt; with the earlier REVISE, the idea is killed).**
+- Fewer than 3 firms meet any of the three pass lines above.
+- Fewer than 3 firms interviewed within 60 days of the first demo (no demand shown, not extended).
+- Median unprompted price below £49 ex VAT, or most answers to question 1 say software already does it automatically.
+- Any kill trigger meanwhile: the FWA calculator takes a whole payroll, or Fair Work Solutions, PayslipIQ, BrightPay, Xero or IRIS ships a look-back.
+If Vishal does not allow contact, the test does not start, the idea stays parked, and the clock does not run.
+
+**On a pass:** record the quoted prices and hours, give the Pain, Pay and Reach contact-only points (up to +2 each) to the validator, who re-scores. The 70 bar still applies before G4.
