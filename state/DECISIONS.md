@@ -327,3 +327,4 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Reversible: code on p/holiday-pay-payroll-lookback-audit/T-115 until reviewer PASS; the idea stays parked at 64.
 
 - 2026-11-26T04:35Z run 0339 | holiday-pay-payroll-lookback-audit | T-116 merged after reviewer PASS. Audit output files are now written mode 0600 (mkstemp default). Kept deliberately: outputs hold payroll data, so owner-only is the safer default; to be documented in T-117. Leave-file "no payroll history" messages are suppressed whenever the history file has any issue (the run still exits 2 and writes nothing).
+- 2026-11-26T04:28Z run 0339 | holiday-pay-payroll-lookback-audit | T-117 merged after reviewer re-review PASS. If restoring a backup fails during rollback, the backup is kept and the CLI names its path (exit 2) rather than deleting it; losing a user's previous report silently is worse than leaving a stray .bak.
