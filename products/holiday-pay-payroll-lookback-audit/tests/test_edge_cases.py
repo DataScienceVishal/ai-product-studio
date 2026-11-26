@@ -132,6 +132,94 @@ class Lookback(unittest.TestCase):
         v = lookback(h, [LeaveEntry(we)])[0]                  # variable-hours treatment averages
         self.assertEqual(v["due"], D("407.69"))
 
+    def _fixed(self, last_week, **kw):
+        h = hist(60, {"basic": 500})
+        h[SAT] = last_week
+        we = SAT + timedelta(days=7)
+        h[we] = {"holiday_pay": 500}
+        return lookback(h, [LeaveEntry(we)], worker_type="fixed_pay", **kw)[0]
+
+    def test_fixed_pay_sick_week_before_leave_ssp(self):
+        r = self._fixed({"basic": 100, "statutory": 99})
+        self.assertEqual((r["due"], r["difference"]), (D("500.00"), D("0.00")))
+        self.assertIn("latest_week_basic_differs_from_rate_used", r["flags"])
+
+    def test_fixed_pay_short_week_before_leave(self):
+        r = self._fixed({"basic": 100})
+        self.assertEqual((r["due"], r["difference"]), (D("500.00"), D("0.00")))
+        self.assertIn("latest_week_basic_differs_from_rate_used", r["flags"])
+        self.assertEqual(r["working"]["normal"]["basic_source"], "modal_last_8_weeks")
+
+    def test_fixed_pay_explicit_contract_basic(self):
+        r = self._fixed({"basic": 100}, contract_weekly_basic=520)
+        self.assertEqual(r["due"], D("520.00"))
+        self.assertEqual(r["working"]["normal"]["basic_source"], "contract")
+        self.assertIn("latest_week_basic_differs_from_rate_used", r["flags"])
+
+    def test_fixed_pay_no_flag_when_latest_matches(self):
+        self.assertNotIn("latest_week_basic_differs_from_rate_used", self._fixed({"basic": 500})["flags"])
+
+    def test_reference_week_dates_reported(self):
+        h = hist(60, {"basic": 100})
+        h[SAT - timedelta(days=7)] = {}                       # a no-pay week inside the period
+        we = SAT + timedelta(days=7)
+        r = lookback(h, [LeaveEntry(we)])[0]["working"]["normal"]
+        dates = r["weeks_used_dates"]
+        self.assertEqual(len(dates), 52)
+        self.assertEqual(dates[-1], SAT)                      # most recent week used
+        self.assertNotIn(SAT - timedelta(days=7), dates)      # skipped no-pay week
+        self.assertEqual(dates[0], SAT - timedelta(days=7 * 52))  # 53 back, one skipped
+        self.assertEqual(dates, sorted(dates))
+
+    def test_fixed_pay_back_pay_week_not_the_rate(self):
+        r = self._fixed({"basic": 1000})                      # one-off back pay week before leave
+        self.assertEqual((r["due"], r["difference"]), (D("500.00"), D("0.00")))
+        self.assertIn("rate_inferred_no_contract_basic", r["flags"])
+        self.assertIn("latest_week_basic_differs_from_rate_used", r["flags"])
+
+    def test_fixed_pay_contract_flags_deviating_reference_week(self):
+        r = self._fixed({"basic": 1000}, contract_weekly_basic=500)
+        self.assertEqual(r["due"], D("500.00"))
+        self.assertIn("reference_week_basic_differs_from_contract", r["flags"])
+        self.assertNotIn("rate_inferred_no_contract_basic", r["flags"])
+
+    def test_fixed_pay_rate_excludes_ssp_weeks(self):
+        h = hist(60, {"basic": 500})
+        for i in range(5):                                    # 5 of last 8 weeks are SSP weeks at basic 300
+            h[SAT - timedelta(days=7 * i)] = {"basic": 300, "statutory": 99}
+        we = SAT + timedelta(days=7)
+        r = lookback(h, [LeaveEntry(we)], worker_type="fixed_pay")[0]
+        self.assertEqual(r["working"]["normal"]["current_basic"], D("500.00"))
+
+    def test_fixed_pay_rate_window_is_8_weeks(self):
+        h = hist(60, {"basic": 400})
+        for i in range(2, 8):                                 # weeks 3-8 back at 500, week 1-2 at 400, older 400
+            h[SAT - timedelta(days=7 * i)] = {"basic": 500}
+        we = SAT + timedelta(days=7)
+        r = lookback(h, [LeaveEntry(we)], worker_type="fixed_pay")[0]
+        self.assertEqual(r["working"]["normal"]["current_basic"], D("500.00"))
+
+    def test_fixed_pay_modal_tie_goes_to_most_recent(self):
+        h = hist(60, {"basic": 400})
+        for i in range(4):
+            h[SAT - timedelta(days=7 * i)] = {"basic": 450}
+        r = lookback(h, [LeaveEntry(SAT + timedelta(days=7))], worker_type="fixed_pay")[0]
+        self.assertEqual(r["working"]["normal"]["current_basic"], D("450.00"))
+
+    def test_fixed_pay_dates_reported(self):
+        r = self._fixed({"basic": 500})
+        dates = r["working"]["normal"]["weeks_used_dates"]
+        self.assertEqual((len(dates), dates[-1]), (52, SAT))
+        self.assertEqual(r["working"]["basic"]["weeks_used_dates"], dates)
+
+    def test_fixed_pay_all_recent_weeks_ssp_fallback(self):
+        h = hist(60, {"basic": 500})
+        for i in range(8):
+            h[SAT - timedelta(days=7 * i)] = {"basic": 200 + i, "statutory": 50}
+        r = lookback(h, [LeaveEntry(SAT + timedelta(days=7))], worker_type="fixed_pay")[0]
+        self.assertEqual(r["working"]["normal"]["current_basic"], D("200.00"))
+        self.assertEqual(r["working"]["normal"]["basic_source"], "latest_week_fallback")
+
     def test_fixed_pay_plus_variable_average(self):
         h = hist(60, {"basic": 300, "regular_overtime": 60})
         we = SAT + timedelta(days=7)

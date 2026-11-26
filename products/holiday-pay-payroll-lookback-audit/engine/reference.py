@@ -26,6 +26,7 @@ class ReferenceResult:
     total: Decimal
     average: Decimal         # unrounded
     shortened: bool          # fewer than 52 paid weeks found
+    indices: tuple = ()      # 0-based positions (0 = most recent week) of the weeks used
 
     @property
     def average_rounded(self) -> Decimal:
@@ -44,7 +45,8 @@ def reference_average(weekly_pay_recent_first: Sequence, max_paid: int = MAX_PAI
     """
     total = Decimal(0)
     used = skipped = scanned = 0
-    for pay in weekly_pay_recent_first[:max_lookback]:
+    idx = []
+    for pos, pay in enumerate(weekly_pay_recent_first[:max_lookback]):
         pay = dec(pay)
         scanned += 1
         if pay < 0:
@@ -54,7 +56,8 @@ def reference_average(weekly_pay_recent_first: Sequence, max_paid: int = MAX_PAI
             continue
         total += pay
         used += 1
+        idx.append(pos)
         if used == max_paid:
             break
     avg = total / used if used else Decimal(0)
-    return ReferenceResult(used, scanned, skipped, total, avg, used < max_paid)
+    return ReferenceResult(used, scanned, skipped, total, avg, used < max_paid, tuple(idx))
