@@ -40,3 +40,17 @@ Fix: use the engine's own rule, so there is one source of truth: `normal_pay(cat
 
 ## Tests
 The new tests check behaviour through the CLI (exit codes, absence of secrets in stderr, nothing written, numbers unchanged, cap counts, line number of the bad byte). Good. Missing: the negative cases for C1 above, and a leak assertion on the excluded_week report section beyond `100.00`.
+
+## Re-review of d4fe745: PASS
+
+Changes since 3907779: `excluded_week_with_pay` now uses the engine's `normal_pay(cats) > 0` (`ingest/loader.py`), public `mask_id` exported from `ingest` and used in `audit.py` (`_mask_id` kept as an alias), FORMAT.md names the counting categories and the name-like paragraph moved into Privacy with the duplicate phrase removed, 2 new tests.
+
+Evidence:
+- Suite: `python3 -I -m unittest discover -s tests -t .` gave `Ran 347 tests in 39.212s`, `OK`.
+- C1 repros in `/tmp/claude-0/t157r`: excluded_week plus only `expense_excluded` (h_fp), `bonus_non_regular` (h_fp2), `holiday_pay` (h_hp) or `rolled_up_holiday_pay` (h_ru) gives no stderr warning and no report.md section. With `regular_overtime` (h_ot) and the original B2 repro (basic 5000.00), the warning and section are still present. No amounts in either.
+- New tests cover all four non-counting categories (no warning) and all four counting categories (warning), through the CLI.
+- Engine: samples at `--threshold 50` and `0` on a `git worktree add /tmp/claude-0/t157main main` checkout give byte-identical `exceptions.csv` and `report.md`. Worktree removed.
+
+Suggestions 3 (fixed_pay rate inference still reads the marker, so "used as a normal week" is slightly loose for fixed_pay) and 4 (`02-29 is not accepted` prints the literal value) are not blocking. Neither changes a number or leaks personal data. Log them for a later tidy.
+
+Verdict: PASS. Merge when ready.
