@@ -143,7 +143,8 @@ def _atomic_write_pair(out_dir, files):
       file is removed when there was no previous file;
     - no temp or backup files are left behind.
     Not covered: a crash or power loss in the middle of the renames can still leave a mismatched pair,
-    and a failure while rolling back is reported but cannot be repaired.
+    and if rolling back itself fails, the backup of the previous file is kept (never deleted) and the raised
+    OSError names its path and says the files may not match.
     Files are created owner-only (mode 0600) because mkstemp is used; see ingest/FORMAT.md.
     """
     os.makedirs(out_dir, exist_ok=True)
@@ -161,26 +162,36 @@ def _atomic_write_pair(out_dir, files):
                 tmp, dest = temps[0]
                 backup = None
                 if os.path.lexists(dest):
+                    # mkstemp reserves a unique random name; the empty placeholder is removed so the
+                    # hard link (or the copy fallback) can take its place.
                     fd, backup = tempfile.mkstemp(prefix="." + os.path.basename(dest) + ".", suffix=".bak", dir=out_dir)
                     os.close(fd)
                     leftovers.append(backup)
                     os.remove(backup)
                     try:
-                        os.link(dest, backup)
+                        os.link(dest, backup, follow_symlinks=False)
                     except OSError:
                         shutil.copy2(dest, backup)
                 os.replace(tmp, dest)
                 temps.pop(0)
                 backups.append((backup, dest))
-        except BaseException:
+        except BaseException as exc:
+            problems = []
             for backup, dest in reversed(backups):
                 try:
                     if backup:
                         os.replace(backup, dest)
                     else:
                         os.remove(dest)
-                except OSError:
-                    pass
+                except OSError as rb:
+                    if backup:
+                        leftovers.remove(backup)   # last copy of the previous file: never delete it
+                        problems.append(f"previous {os.path.basename(dest)} kept at {backup} ({rb})")
+                    else:
+                        problems.append(f"new {dest} could not be removed ({rb})")
+            if problems:
+                raise OSError(f"{exc}; rollback failed, the output files may not match: "
+                              + "; ".join(problems)) from exc
             raise
     finally:
         for tmp, _ in temps:
