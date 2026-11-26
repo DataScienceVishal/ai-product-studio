@@ -301,3 +301,9 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Decision: drop the capital-vs-revenue / capital-allowances classifier at the cheap kill test; no validator scoring and no proof-test run.
 - Why: no separate price for the job (bundled in year-end fees), no practitioner evidence of hours lost, the specialist CA-claims market is surveyor-led and one-off, and "cites the HMRC manual" is not a defensible wedge against Dext/AutoEntry adding a capex flag. A pass could not reach 70 (pipeline.md "score a pass first").
 - Consequence: three edges-only desk passes in a row (rounds 18, 19, T-107) have found nothing. Holiday-pay look-back (64, parked) stays rank 1.
+
+## 2026-11-26T00:25Z run a511: vet-cma-compliance-desk killed (T-108)
+- Decision: kill on its second G1 failure (REVISE 53, now 50), per pipeline.md kill rule.
+- Why: no wedge. Cheap/free incumbents (Pricebook.vet, Xonvet), a defence-society complaints platform (VetResolve) and Provet's roadmap cover the remedies; AI is near decorative.
+- Lesson: in a small regulated profession, check the defence society, professional bodies and practitioner-built free tools before scoring Competition.
+- Also: holiday-pay park re-check (T-109) unchanged; T-15 closed with conditional leftovers in T-110.
