@@ -81,3 +81,45 @@ Either option changes the prompt and payload, which is fine before any labels ar
 ## Top issue
 
 Issue 1: an HTTP 400 or similar failure before any answer exists locks the one-shot folder and writes all-UNMAPPED predictions that score as a B1 KILL. Make no-answer failures re-runnable with the same prompt sha only, enforced in code and logged in `attempts.jsonl`.
+
+---
+
+## Re-review: 0de8caf..0022fde (2026-11-26)
+
+Same rules as before: I did not read the labels branch or any gold.csv, and made no network calls. Lead decisions are on main (state/DECISIONS.md, 837cb1d). I took the gold format as the Lead confirmed it: header `id,pay_element_name,source_style,gold_category,note`, 200 unique ids, exactly the nine categories, 32 notes starting `AMBIGUOUS:`, and sequential ids with shuffled categories.
+
+```
+$ python3 -I -m unittest discover -s tests -t .
+Ran 121 tests in 0.063s
+OK
+```
+
+### Verdict: PASS
+
+| Item | Status | Evidence |
+|---|---|---|
+| C1 no-answer failure locks the one shot | Fixed | run.py 125-135: if no reply was parsed and the run did not crash, it appends to `attempts.jsonl`, removes `run.started`, writes no predictions or run.json, and exits 4. A re-run is refused if any logged attempt has a different `PROMPT_SHA256` (run.py 100-103). Once any reply is parsed, the folder stays locked (`test_invalid_reply_still_locks`). My probe: a mocked 400 gives rc 4 and only `attempts.jsonl` in the folder; a same-prompt re-run gives rc 0 with `failed_attempts` (1 entry) in run.json; a third run gives rc 3. |
+| C2 crashes on reply shape | Fixed | `_parse` (mapper.py 278-302) catches KeyError, IndexError, TypeError, AttributeError and ValueError, and keeps the usage figures. `http.client.HTTPException` is retried as a network error. A body that isn't JSON counts as no answer. run.py 119-124 writes run.json even when it crashes (exit 5). My probe: `choices: []` with 6,000 in and 9,000 out gives a locked folder, run.json with cost $0.0195 and all rows UNMAPPED. |
+| C3 scorer contract | Fixed | `check_inputs` (score.py) refuses on a wrong header (`gold_category`, which matches the Lead's confirmation), duplicate gold or prediction ids, gold categories outside the nine (with counts) and prediction ids not in gold. The AMBIGUOUS count is printed (exact prefix, case-sensitive, as the Lead confirmed). Each case is tested. |
+| C4 all-or-nothing parse | Fixed | Strict JSON schema with a nine-value `enum` on both APIs. Chat sends `response_format.json_schema {name, strict, schema}` and Responses sends `text.format {type: json_schema, ...}`. Every object has `additionalProperties: false` and lists all its properties as required, as strict mode needs. Still no repair. `PROMPT_VERSION` moved to v2. |
+| S1 run.json detail | Done | Transport attempts, finish reasons or Responses status and incomplete reason, settings, batch failures and failed attempts are all recorded. |
+| S2 reasoning effort | Done | Effort is `low`, sent as `reasoning_effort` (chat) or `reasoning.effort` (Responses), and recorded in run.json and DECISIONS.md. |
+| S3 diagnosable 4xx | Done | Azure's `[code] message`, truncated to 300 characters, with the key redacted (probe: `HTTP 400 [DeploymentNotFound] key [redacted] bad`). Headers are never included. |
+| S4 fake verdicts and sha warning | Done | A fake run reports B1 and B2 as `N/A (fake)`. A prompt sha that differs from the current one, or a names count that differs from the gold row count, adds a warning to the report. |
+| S5 headline pre-registered | Done | Lead decision recorded (nine categories). |
+| S6 extract_names | Done | Optional `--expect-sha`; refuses duplicate or empty ids. |
+| S7 tests | Done | Tests added for every path above. |
+
+### Builder's open point: should the guard hash the schema and settings, not only the system prompt?
+
+**Yes, but it doesn't block the merge. Do it before the live run.** The kill rule concerns anything that shapes the model's answers, and the system prompt is only part of that. The guard matters only for no-answer re-runs, and since no predictions existed at that point, a change couldn't have been informed by them. So the risk is small. Even so, binding everything makes the "identical prompt" claim auditable from run.json alone, without reading the git history. Recommendation:
+
+- Add `RUN_CONFIG_SHA256`: the sha256 of canonical JSON (`sort_keys`, no spaces) over `SYSTEM_PROMPT`, `RESPONSE_SCHEMA`, `SCHEMA_NAME`, `REASONING_EFFORT`, `MAX_OUTPUT_TOKENS`, the user-message template (the `build_user_message` prefix and its fields) and the sha256 of the names file. Store it in `attempts.jsonl` and `run.json`, and make the re-run guard compare it in place of `PROMPT_SHA256` (keep recording `PROMPT_SHA256` as well).
+- **Leave out** the endpoint, API flavour, deployment name, timeout and retries. Fixing those is exactly what a no-answer re-run is for. They are already recorded in `settings` and `deployment`, and the model that actually answered is in `reported_model`.
+- Add one test: changing `REASONING_EFFORT` or the schema between a no-answer attempt and a re-run is refused.
+
+### Remaining minor points (non-blocking)
+
+1. run.py 121-124: on the crash path, `result` is replaced with a fresh `MapResult`, so any usage counted before the crash is lost from `cost_usd`. Today only a bug inside `validate_reply` could reach this path, so the impact is small. If you want the figures, keep the partial result.
+2. `attempts.jsonl` tokens are not added to `cost_usd`. That is correct for B2, since a failed attempt produced nothing, but the Q-16 spend ledger should add them (they are 0 for 4xx).
+3. A 200 reply whose body isn't JSON is treated as no answer and can be re-run. That is acceptable (nothing was seen), but its token usage is unknown. The Azure spend report remains the source of truth, as the README already says.
