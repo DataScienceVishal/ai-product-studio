@@ -12,7 +12,18 @@ Hand-computed expectations (asserted in tests/test_audit.py):
        Leave 2025-05-31: due 400.00, paid 350.00 -> UNDERPAID 50.00.
   W005 pay rise 300 -> 330 from 2025-02-08. Leave 2025-08-09: the 52 weeks before it hold 26 weeks at 300
        and 26 at 330, average 315.00, paid 300.00 -> UNDERPAID 15.00.
-Totals: 5 workers, 5 leave weeks, 3 underpayments totalling 145.00, overpaid 10.00, 1 worker with flags.
+Totals for the five look-back workers: 5 leave weeks, 3 underpayments totalling 145.00, overpaid 10.00, 1 worker with flags.
+
+Irregular-hours workers paid rolled-up holiday pay (worker_type irregular_rolled_up). Each pay week is checked on its own:
+  W006 basic 200 a week, weeks ending 2024-03-16 to 2024-04-13, rolled-up pay 24.14 (12.07% of 200.00) every week.
+       The leave year starting 2023-04-01 covers 2024-03-16, -23 and -30: 3 weeks flagged rolled_up_before_2024_rules.
+       2024-04-06 and 2024-04-13 are in the leave year starting 2024-04-01 and are correct.
+  W007 basic 150 a week, weeks ending 2025-06-07 to 2025-06-28. Rolled-up pay 18.11 (12.07% of 150.00, rounded) is shown
+       in the first two weeks only: 2025-06-21 and -28 are flagged rolled_up_not_shown_separately.
+  W008 weeks ending 2025-06-07 to 2025-06-28, basic 200. Rolled-up pay 24.14 (correct), 20.00 (recalculated 24.14, underpaid
+       4.14), 30.00 (overpaid 5.86); the last week is a leave week with holiday_pay only, so nothing counts and nothing is checked.
+       Its leave row is not re-audited by the 52-week look-back.
+Totals: 8 workers, 6 leave rows, 12 rolled-up pay weeks checked, 7 rolled-up exceptions, 11 exceptions in all.
 """
 import csv
 import os
@@ -58,11 +69,24 @@ def build():
         else:
             add("W004", d, "basic", 350)
             add("W004", d, "commission", 50)
+    RU = "rolled_up_holiday_pay"
+    for d in weeks(date(2024, 3, 16), date(2024, 4, 13)):
+        add("W006", d, "basic", 200)
+        add("W006", d, RU, 24.14)
+    for i, d in enumerate(weeks(date(2025, 6, 7), date(2025, 6, 28))):
+        add("W007", d, "basic", 150)
+        if i < 2:
+            add("W007", d, RU, 18.11)
+    for d, ru in zip(weeks(date(2025, 6, 7), date(2025, 6, 21)), (24.14, 20.00, 30.00)):
+        add("W008", d, "basic", 200)
+        add("W008", d, RU, ru)
+    add("W008", date(2025, 6, 28), "holiday_pay", 200)
     h.sort()
     leave = [("W002", "2025-08-09"), ("W003", "2025-08-09"), ("W004", "2025-05-31"),
-             ("W005", "2025-08-09"), ("W001", "2025-08-09")]
+             ("W005", "2025-08-09"), ("W001", "2025-08-09"), ("W008", "2025-06-28")]
     workers = [("W001", "fixed_pay", "500.00"), ("W002", "variable_hours", ""), ("W003", "variable_hours", ""),
-               ("W004", "variable_hours", ""), ("W005", "variable_hours", "")]
+               ("W004", "variable_hours", ""), ("W005", "variable_hours", ""),
+               ("W006", "irregular_rolled_up", ""), ("W007", "irregular_rolled_up", ""), ("W008", "irregular_rolled_up", "")]
     return {
         "history.csv": (("worker_id", "week_ending", "element_category", "amount"), h),
         "leave.csv": (("worker_id", "week_ending"), sorted(leave)),
