@@ -61,6 +61,17 @@ First spot-check for a validator (about 20 minutes): fetch Taxnova's own site fo
 - The drinks DRS and the CLP reclassification are the only two with a hard 2027-28 date and no verified AI price for the exact job (DRS), but the DRS job is per-SKU data collection like pEPR. Re-check DRS after the DMO publishes its fee framework and portal specification.
 - Not tested this round and worth a search next: guaranteed-hours offers (still waiting on the government response, see T-143 candidate 5), and the holiday-pay look-back (rank 1, parked).
 
+## T-146 spot-check (2026-11-26): R&D claim narratives, verdict DROP
+
+Fetched (WebFetch, accessed 2026-11-26):
+- Taxnova https://taxnova-website.pages.dev/ : no price (book a demo); read-only links to engineering, finance and comms tools; produces evidence-linked narratives; live in UK, US, CA, FR, ES; aimed at finance and engineering leaders of tech firms, not accountancy firms; no mention of the AIF. Complements the company's own adviser.
+- Novel https://novelapp.co.uk/ : sold to R&D advisers and accountancy firms. AI technical narrative drafts from reports and call transcripts (DSIT references, hallucination check, human review), "Call Companion", AIF and CNF pre-filled from projects and checked against HMRC rules (page claims 30 to 10 minutes), plus tax computations, sign-off and a CT tracker. Price tiered, not shown. This is the studio idea already built, for the exact buyer.
+- HMRC AIF guidance https://www.gov.uk/guidance/submit-detailed-information-before-you-claim-research-and-development-rd-tax-relief (last updated 26 Sep 2025; no 2026 change shown): AIF mandatory, filed before or on the CT600 day or the claim is rejected; one form per period; agent may file; per project the field, baseline, advance, uncertainties and how they were resolved (max 10 projects covering at least half of spend). The rule is stable, so there is no forcing function.
+
+Search-summary only (not fetched; 403 or blocked host): Tax Cloud lists GBP 75 a month plus VAT (1-year term) with HMRC form handling, and GBP 1,499 per report with three write-ups; SmartClaim (AI narrative drafts from interview recordings, AccountingWeb); WhisperClaims (Wolters Kluwer, pay per report); Plio (AI R&D prep). Human fees (vendor or forum, not market data): Recoup Capital 25% of benefit (https://recoupcapital.co.uk/fees-charges), 15% to 24% reported on UK Business Forums, minimum fees up to GBP 6,000 on a GBP 20,000 claim, Swanson Reed hourly or fixed.
+
+Reasons to DROP: (1) at least four priced or live AI narrative and AIF tools already target advisers and accountants (Novel, SmartClaim, WhisperClaims, Plio), and Tax Cloud is GBP 75 a month, under the GBP 100 trigger; (2) no new rule or deadline; (3) annual per-company work, seasonal around CT600 dates; (4) sign-off and tax-advice liability. Not done: HMRC enquiry-rate statistics (out of time). A "defensibility check" angle would still need a wedge over Novel's hallucination check and compliance checks, none evidenced. No idea file or RANKING entry written.
+
 ## Housekeeping
 
 - A stray file `state/ideas/T-143-scout.md.keep-check` (one word, "placeholder") was created by mistake. The scout has no delete tool, so the lead should `git rm` or delete it before committing.
