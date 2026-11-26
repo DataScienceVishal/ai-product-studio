@@ -46,3 +46,20 @@ The test is good and can merge almost as it is. The QA report labels F-3 a doc a
 - The `avg_of_most_recent` docstring says "average rounded half-up", but it returns an unrounded Fraction. The code is right (F-6); fix the docstring.
 - The scenario isn't covered (QA lists it): `contract_weekly_basic` changing mid-history, and the rolled-up workers path.
 - The run adds about 27 s to the suite. That is fine now; if the suite grows, consider an environment variable to change N.
+
+## Re-review (commit 4ce528c): PASS
+
+Both critical issues from the first review are resolved.
+
+- **The fix matches the rule.** `engine/lookback.py:80` now reads `if normal_pay(p) <= 0: continue`. A paid week is now any week with basic, regular_overtime, commission or allowance above 0. This matches gov.uk ("52 weeks in which they were paid", skipping weeks with no pay) and matches variable_hours (`engine/reference.py`, pay > 0). Weeks with only SSP, a non-regular bonus, expenses or holiday_pay are still skipped, because `normal_pay` excludes those categories.
+- **The repro numbers are right.** Four weeks of 100+20 plus one overtime-only week of 40 give variable average (4x20+40)/5 = 24, so due is 124.00. With 60 instead of 40 the average is 28, so due is 128.00.
+- **The regression tests check behaviour.** `tests/test_t135.py` checks both the due amount and `weeks_used` (5, or 4 when there is an empty week and a week with only holiday_pay).
+- **The oracle was fixed independently.** The fixed_pay special case is gone, and the oracle now uses `s > 0` over its own category sums. It is not a copy of the engine.
+- **Goldens and samples are unchanged.** `git diff main...HEAD -- tests/golden samples` produces 0 lines.
+- **Suite:** `python3 -I -X dev -W error::ResourceWarning -m unittest discover -s tests -t .` gives `Ran 295 tests in 30.020s` / `OK` (30.2 s wall clock). `git status` is clean.
+- **Docs:** README.md and FORMAT.md now cover F-2 (the basic average uses a different set of weeks from `ref_weeks_used`) and the fixed_pay paid-week rule.
+
+Non-blocking follow-ups:
+- Overtime-only weeks are now in `idx`, so `reference_week_basic_differs_from_contract` (`engine/lookback.py:93`) fires for them, because their basic is 0 and not the contract rate. That is arguably a useful signal, but its text in `report/builder.py:30` doesn't explain it. With `include_flagged`, the row may also be listed. Consider changing the text to "some reference weeks have no basic or a basic different from the contract", or check only weeks with basic > 0.
+- `reviews/T-135-qa.md` line 14 still says "No engine bug found". Update it to say one engine bug was found and fixed (F-3).
+- The earlier suggestions about dead code and the docstring still stand.
