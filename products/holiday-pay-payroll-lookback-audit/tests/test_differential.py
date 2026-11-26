@@ -81,14 +81,11 @@ def oracle_worker(wid, wtype, contract, mmdd, pay, leaves, threshold):
         win = window_weeks(pay, lw)
         normal_sums = [sum((p.get(c, Decimal(0)) for c in NORMAL_CATS), Decimal(0)) for _, p in win]
         normal_paid = [s for s in normal_sums if s > 0]
-        if wtype == "fixed_pay":
-            # probed: a fixed_pay worker's paid weeks are the weeks with basic > 0 (overtime-only weeks do not count)
-            normal_paid = [s for s, (_, p) in zip(normal_sums, win) if p.get("basic", Decimal(0)) > 0]
         if not normal_paid:
             rows.append((wid, lw.isoformat(), q(paid), None, None, "cannot_check", 0))
             continue
         if wtype == "fixed_pay":
-            var = [s - p.get("basic", Decimal(0)) for s, (_, p) in zip(normal_sums, win) if p.get("basic", Decimal(0)) > 0]
+            var = [s - p.get("basic", Decimal(0)) for s, (_, p) in zip(normal_sums, win) if s > 0]
             avg_var, n = avg_of_most_recent(var)
             normal_rate = Fraction(contract) + avg_var
             basic_rate = Fraction(contract)

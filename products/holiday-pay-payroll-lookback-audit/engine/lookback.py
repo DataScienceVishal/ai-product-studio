@@ -49,7 +49,8 @@ RATE_WINDOW = 8
 
 
 def _fixed_pay_refs(recent_first, contract_basic=None):
-    """Fixed-pay worker: contractual basic rate + average variable elements over weeks worked.
+    """Fixed-pay worker: contractual basic rate + average variable elements over paid weeks
+    (any week with pay that counts for normal pay, so overtime-only weeks count).
 
     Rate: explicit contract_basic if given. Otherwise inferred as the most common basic among
     non-statutory (no SSP/SMP) weeks with basic pay in the last RATE_WINDOW weeks, ties going to
@@ -76,7 +77,7 @@ def _fixed_pay_refs(recent_first, contract_basic=None):
     used, var_total, scanned, idx = 0, Decimal(0), 0, []
     for pos, (p, b) in enumerate(zip(recent_first[:MAX_LOOKBACK_WEEKS], basics)):
         scanned += 1
-        if b == 0:
+        if normal_pay(p) <= 0:           # paid week = any pay that counts for normal pay, not only basic
             continue
         used += 1
         idx.append(pos)
