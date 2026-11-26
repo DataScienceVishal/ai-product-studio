@@ -52,10 +52,12 @@ def _fixed_pay_refs(recent_first, contract_basic=None):
     """Fixed-pay worker: contractual basic rate + average variable elements over paid weeks
     (any week with pay that counts for normal pay, so overtime-only weeks count).
 
-    Rate: explicit contract_basic if given. Otherwise inferred as the most common basic among
-    non-statutory (no SSP/SMP) weeks with basic pay in the last RATE_WINDOW weeks, ties going to
-    the most recent; if there are none, the most recent week with basic pay (fallback).
-    Returns a list of flags to add: inferred rate, latest-week mismatch, contract mismatch.
+    Rate: explicit contract_basic if given. Otherwise inferred as the MOST RECENT basic > 0 among
+    non-statutory (no SSP/SMP) weeks in the last RATE_WINDOW weeks before the leave (the rate in force when the
+    leave is taken, source latest_basic_last_8_weeks); if none, the most recent week with basic pay anywhere before
+    the leave (source latest_week_fallback). Flags added: rate_inferred_no_contract_basic;
+    rate_inferred_ambiguous (inferred AND the window holds more than one distinct basic, or the fallback was used);
+    no_basic_pay_found (rate is 0, no basic anywhere); latest-week mismatch; contract mismatch.
     """
     basics = [basic_pay(p) for p in recent_first]
     flags = []
@@ -63,17 +65,17 @@ def _fixed_pay_refs(recent_first, contract_basic=None):
         current, source = dec(contract_basic), "contract"
     else:
         flags.append("rate_inferred_no_contract_basic")
-        cands = [(i, b) for i, (p, b) in enumerate(zip(recent_first[:RATE_WINDOW], basics))
+        cands = [b for p, b in zip(recent_first[:RATE_WINDOW], basics[:RATE_WINDOW])
                  if b > 0 and dec(p.get("statutory", 0)) <= 0]
         if cands:
-            counts = {}
-            for i, b in cands:               # i ascending = most recent first
-                n, first = counts.get(b, (0, i))
-                counts[b] = (n + 1, first)
-            current = min(counts, key=lambda b: (-counts[b][0], counts[b][1]))
-            source = "modal_last_8_weeks"
+            current, source = cands[0], "latest_basic_last_8_weeks"   # recent_first: first = most recent
+            if len(set(cands)) > 1:
+                flags.append("rate_inferred_ambiguous")
         else:
             current, source = next((b for b in basics if b > 0), Decimal(0)), "latest_week_fallback"
+            flags.append("rate_inferred_ambiguous")
+    if current == 0:
+        flags.append("no_basic_pay_found")
     used, var_total, scanned, idx = 0, Decimal(0), 0, []
     for pos, (p, b) in enumerate(zip(recent_first[:MAX_LOOKBACK_WEEKS], basics)):
         scanned += 1
@@ -104,7 +106,7 @@ def lookback(history: Dict[date, dict], leave: Sequence[LeaveEntry],
     Raises ValueError if history keys are not all on one weekday or a leave
     week_end is not on that weekday, or leave weeks <= 0. Each row has `flags`:
     no_reference_weeks, shortened, leave_week_missing_from_history, leave_week_without_holiday_pay,
-    fixed_pay adds rate_inferred_no_contract_basic, latest_week_basic_differs_from_rate_used,
+    fixed_pay adds rate_inferred_no_contract_basic, rate_inferred_ambiguous, no_basic_pay_found, latest_week_basic_differs_from_rate_used,
     reference_week_basic_differs_from_contract. `working` lists weeks_used_dates.
     """
     if worker_type not in WORKER_TYPES:

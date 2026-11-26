@@ -67,12 +67,12 @@ The other four sample workers show the other cases: correct (W001), overpaid by 
 ### 4.2 Engine (`engine/`)
 - `lookback.py`, `lookback(history, leave, ...)`: per leave week returns `paid`, `due`, `difference` (positive = underpaid), flags and `working`.
 - Assumption (stated in the file): the first 4 leave weeks of a leave year (starting on the worker's `leave_year_start`, 1 April unless set) get "normal pay" (basic + regular overtime + commission + allowance); later weeks get basic only. Wrong if leave.csv omits weeks (FORMAT.md warns).
-- `fixed_pay` workers: contract basic rate plus 52-week average of variable elements; rate inferred (and flagged) if no contract basic given.
+- `fixed_pay` workers: contract basic rate plus 52-week average of variable elements; if no contract basic is given the rate is inferred as the most recent basic in the last 8 non-statutory weeks before the leave (else the latest basic seen) and flagged; `rate_inferred_ambiguous` (basic changed in the window, or fallback used) and `no_basic_pay_found` (rate 0.00) rows are always exceptions. A single contract basic applies to the whole history: give the rate in force for the leave audited; leave before a pay rise is flagged and may show a false underpayment.
 - Money is `Decimal`, rounded half-up to the penny (`engine/reference.py`, `money`).
 - Failure modes: misaligned weekdays raise an error; leave week with no earlier pay is flagged `no_reference_weeks` and reported "cannot be checked", never counted as an error.
 
 ### 4.3 Report (`report/builder.py`)
-- `audit()` picks exceptions: difference over threshold, or cannot-check; `--include-flagged` adds any flagged row.
+- `audit()` picks exceptions: difference over threshold, cannot-check, or a guessed rate (`rate_inferred_ambiguous`, `no_basic_pay_found`); `--include-flagged` adds any flagged row.
 - `explain()` writes the plain-English working per exception; `write_outputs()` writes `exceptions.csv` and `report.md` together, atomically, owner-only permissions (0600) (`ingest/FORMAT.md`). Atomic here means each file is swapped in whole and the pair is rolled back on a failed write; a machine crash mid-write is not covered.
 - Also warns about weeks missing from the export, holiday pay recorded but not in leave.csv, and ignored contract basics.
 - Spreadsheet-injection protection: `_safe()` prefixes risky cells; `_md()` escapes Markdown.

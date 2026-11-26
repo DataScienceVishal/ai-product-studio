@@ -145,10 +145,12 @@ class Lookback(unittest.TestCase):
         self.assertIn("latest_week_basic_differs_from_rate_used", r["flags"])
 
     def test_fixed_pay_short_week_before_leave(self):
+        # T-137: the rate is the most recent basic in the last 8 weeks, so a part week is used and flagged ambiguous
         r = self._fixed({"basic": 100})
-        self.assertEqual((r["due"], r["difference"]), (D("500.00"), D("0.00")))
-        self.assertIn("latest_week_basic_differs_from_rate_used", r["flags"])
-        self.assertEqual(r["working"]["normal"]["basic_source"], "modal_last_8_weeks")
+        self.assertEqual((r["due"], r["difference"]), (D("100.00"), D("-400.00")))
+        self.assertNotIn("latest_week_basic_differs_from_rate_used", r["flags"])   # the latest week IS the rate now
+        self.assertIn("rate_inferred_ambiguous", r["flags"])
+        self.assertEqual(r["working"]["normal"]["basic_source"], "latest_basic_last_8_weeks")
 
     def test_fixed_pay_explicit_contract_basic(self):
         r = self._fixed({"basic": 100}, contract_weekly_basic=520)
@@ -172,10 +174,10 @@ class Lookback(unittest.TestCase):
         self.assertEqual(dates, sorted(dates))
 
     def test_fixed_pay_back_pay_week_not_the_rate(self):
-        r = self._fixed({"basic": 1000})                      # one-off back pay week before leave
-        self.assertEqual((r["due"], r["difference"]), (D("500.00"), D("0.00")))
+        r = self._fixed({"basic": 1000})                      # one-off back pay week before leave: now used, but flagged (T-137)
+        self.assertEqual((r["due"], r["difference"]), (D("1000.00"), D("500.00")))
+        self.assertIn("rate_inferred_ambiguous", r["flags"])
         self.assertIn("rate_inferred_no_contract_basic", r["flags"])
-        self.assertIn("latest_week_basic_differs_from_rate_used", r["flags"])
 
     def test_fixed_pay_contract_flags_deviating_reference_week(self):
         r = self._fixed({"basic": 1000}, contract_weekly_basic=500)
@@ -197,14 +199,21 @@ class Lookback(unittest.TestCase):
             h[SAT - timedelta(days=7 * i)] = {"basic": 500}
         we = SAT + timedelta(days=7)
         r = lookback(h, [LeaveEntry(we)], worker_type="fixed_pay")[0]
+        self.assertEqual(r["working"]["normal"]["current_basic"], D("400.00"))   # most recent wins
+        self.assertIn("rate_inferred_ambiguous", r["flags"])
+        for i in range(8):                                    # all 8 weeks at 500, 400 only before the window
+            h[SAT - timedelta(days=7 * i)] = {"basic": 500}
+        r = lookback(h, [LeaveEntry(we)], worker_type="fixed_pay")[0]
         self.assertEqual(r["working"]["normal"]["current_basic"], D("500.00"))
+        self.assertNotIn("rate_inferred_ambiguous", r["flags"])
 
-    def test_fixed_pay_modal_tie_goes_to_most_recent(self):
+    def test_fixed_pay_rate_is_most_recent_not_most_common(self):
         h = hist(60, {"basic": 400})
         for i in range(4):
             h[SAT - timedelta(days=7 * i)] = {"basic": 450}
         r = lookback(h, [LeaveEntry(SAT + timedelta(days=7))], worker_type="fixed_pay")[0]
         self.assertEqual(r["working"]["normal"]["current_basic"], D("450.00"))
+        self.assertIn("rate_inferred_ambiguous", r["flags"])
 
     def test_fixed_pay_dates_reported(self):
         r = self._fixed({"basic": 500})
@@ -219,6 +228,19 @@ class Lookback(unittest.TestCase):
         r = lookback(h, [LeaveEntry(SAT + timedelta(days=7))], worker_type="fixed_pay")[0]
         self.assertEqual(r["working"]["normal"]["current_basic"], D("200.00"))
         self.assertEqual(r["working"]["normal"]["basic_source"], "latest_week_fallback")
+        self.assertIn("rate_inferred_ambiguous", r["flags"])
+
+    def test_fixed_pay_no_basic_anywhere(self):
+        h = hist(6, {"regular_overtime": 30})
+        r = lookback(h, [LeaveEntry(SAT + timedelta(days=7))], worker_type="fixed_pay")[0]
+        self.assertEqual(r["working"]["normal"]["current_basic"], D("0.00"))
+        self.assertIn("no_basic_pay_found", r["flags"])
+        self.assertIn("rate_inferred_ambiguous", r["flags"])
+
+    def test_fixed_pay_contract_given_no_new_flags(self):
+        r = self._fixed({"basic": 100}, contract_weekly_basic=500)
+        self.assertNotIn("rate_inferred_ambiguous", r["flags"])
+        self.assertNotIn("no_basic_pay_found", r["flags"])
 
     def test_fixed_pay_plus_variable_average(self):
         h = hist(60, {"basic": 300, "regular_overtime": 60})

@@ -26,6 +26,12 @@ FLAG_TEXT = {
     "holiday_pay_week_not_in_leave_file": "an earlier week in this leave year carries holiday_pay but is not listed in leave.csv, "
                                           "so the count of the first 4 leave weeks (normal pay) may be wrong",
     "rate_inferred_no_contract_basic": "no contract basic supplied; the rate was inferred from recent pay",
+    "rate_inferred_ambiguous": "no contract basic was supplied and the rate is a guess that could change the answer: either the basic "
+                               "changed in the 8 weeks before the leave (a pay rise?), so the most recent rate was used, or there "
+                               "was no basic in those 8 weeks, so the latest basic seen was used (which may be a short or part week). "
+                               "Check the rate with the employer and supply contract_weekly_basic",
+    "no_basic_pay_found": "no contract basic was supplied and no basic pay appears anywhere before the leave, so the weekly basic "
+                          "rate used is 0.00 and the recalculated figure is not reliable. Supply contract_weekly_basic",
     "latest_week_basic_differs_from_rate_used": "the latest week's basic differs from the rate used",
     "reference_week_basic_differs_from_contract": "basic in some reference weeks (weeks with basic pay) differs from the contract basic",
 }
@@ -55,6 +61,14 @@ def cannot_check(r):
     return "no_reference_weeks" in r["flags"]
 
 
+ALWAYS_EXCEPTION_FLAGS = ("rate_inferred_ambiguous", "no_basic_pay_found")
+
+
+def always_exception(r):
+    """The weekly rate was a guess that could change the answer: never hidden, even when paid equals due."""
+    return any(f in r["flags"] for f in ALWAYS_EXCEPTION_FLAGS)
+
+
 def audit(workers, threshold=DEFAULT_THRESHOLD, include_flagged=False):
     """Return (all_rows, exceptions); each row is an engine row plus worker_id.
 
@@ -62,7 +76,8 @@ def audit(workers, threshold=DEFAULT_THRESHOLD, include_flagged=False):
     and follow the look-back rows. The look-back skips those workers' leave weeks: their holiday pay is paid
     as rolled-up pay in each wage packet, so the 52-week average does not apply to them.
 
-    A row that cannot be checked (no reference weeks) is always an exception, never dropped.
+    A row that cannot be checked (no reference weeks) is always an exception, never dropped. So is a row with
+    rate_inferred_ambiguous or no_basic_pay_found (the rate was a guess), whatever the difference.
     """
     rows = []
     unlisted = unlisted_holiday_pay(workers)
@@ -77,7 +92,7 @@ def audit(workers, threshold=DEFAULT_THRESHOLD, include_flagged=False):
                    for d in unlisted.get(wid, ())):
                 r["flags"].append("holiday_pay_week_not_in_leave_file")
             rows.append({"worker_id": wid, "first_week": w.first_week, **r})
-    exceptions = [r for r in rows if cannot_check(r) or abs(r["difference"]) > threshold
+    exceptions = [r for r in rows if cannot_check(r) or always_exception(r) or abs(r["difference"]) > threshold
                   or (include_flagged and r["flags"])]
     ru_rows, ru_exc = audit_rolled_up(workers, threshold)
     return rows + ru_rows, exceptions + ru_exc
