@@ -16,7 +16,10 @@ from engine.lookback import ROLLED_UP_TYPE, _leave_year_start
 
 BEFORE_2024 = "rolled_up_before_2024_rules"
 NOT_SEPARATE = "rolled_up_not_shown_separately"
+HOLIDAY_PAID = "holiday_pay_paid_to_rolled_up_worker"
 FLAG_TEXT = {
+    HOLIDAY_PAID: "holiday_pay was paid in this week to a worker whose holiday pay is rolled up into each wage packet; "
+                  "check whether this is a second payment of the same holiday pay or whether the worker is not on rolled-up pay",
     BEFORE_2024: "rolled-up holiday pay is recorded in a leave year that started before 1 April 2024; "
                  "the rolled-up method only applies to leave years starting on or after that date, so no recalculation is made",
     NOT_SEPARATE: "this week has pay that counts but no rolled_up_holiday_pay row; rolled-up holiday pay must be shown "
@@ -55,6 +58,16 @@ def check_week(worker_id, week_end, pay, threshold):
     return row
 
 
+def holiday_pay_row(worker_id, week_end, pay):
+    """An exception row when an irregular_rolled_up worker has holiday_pay above 0 in a week, else None."""
+    amount = money(dec(pay.get("holiday_pay", 0)))
+    if amount <= 0:
+        return None
+    return {"kind": "rolled_up", "worker_id": worker_id, "week_end": week_end,
+            "leave_year_start": _leave_year_start(week_end, 4, 1), "paid": amount, "counts": money(normal_pay(pay)),
+            "due": None, "difference": None, "flags": [HOLIDAY_PAID], "exception": True}
+
+
 def audit_rolled_up(workers, threshold):
     """Return (checked_rows, exceptions) over every irregular_rolled_up worker's pay weeks, in worker then week order."""
     checked = []
@@ -66,12 +79,27 @@ def audit_rolled_up(workers, threshold):
             r = check_week(wid, d, w.history[d], threshold)
             if r is not None:
                 checked.append(r)
+            h = holiday_pay_row(wid, d, w.history[d])
+            if h is not None:
+                checked.append(h)
     return checked, [r for r in checked if r["exception"]]
 
 
 def rolled_up_leave_weeks(workers):
     """{worker_id: number of leave.csv weeks} for irregular_rolled_up workers; the look-back does not re-audit them."""
     return {wid: len(w.leave) for wid, w in sorted(workers.items()) if w.worker_type == ROLLED_UP_TYPE and w.leave}
+
+
+def holiday_pay_to_rolled_up(workers):
+    """{worker_id: [week endings with holiday_pay above 0]} for irregular_rolled_up workers."""
+    out = {}
+    for wid in sorted(workers):
+        w = workers[wid]
+        if w.worker_type == ROLLED_UP_TYPE:
+            weeks = sorted(d for d, p in w.history.items() if dec(p.get("holiday_pay", 0)) > 0)
+            if weeks:
+                out[wid] = weeks
+    return out
 
 
 def stray_rolled_up(workers):
@@ -87,9 +115,13 @@ def stray_rolled_up(workers):
     return out
 
 
-def explain_rolled_up(r, gbp):
-    """Plain-English working for one result row; gbp formats pounds."""
-    lines = [f"### {r['worker_id']}, pay week ending {r['week_end']} (rolled-up holiday pay)", "",
+def explain_rolled_up(r, gbp, esc=str):
+    """Plain-English working for one result row; gbp formats pounds, esc escapes untrusted text."""
+    if r["flags"] == [HOLIDAY_PAID]:
+        return (f"### {esc(r['worker_id'])}, pay week ending {r['week_end']} (rolled-up holiday pay)\n\n"
+                f"- holiday_pay recorded: {gbp(r['paid'])}. Pay that counts this week: {gbp(r['counts'])}.\n"
+                f"- Flag `{HOLIDAY_PAID}`: {FLAG_TEXT[HOLIDAY_PAID]}.\n")
+    lines = [f"### {esc(r['worker_id'])}, pay week ending {r['week_end']} (rolled-up holiday pay)", "",
              f"- Leave year starting {r['leave_year_start']}. Pay that counts this week: {gbp(r['counts'])}. "
              f"Rolled-up holiday pay recorded: {gbp(r['paid'])}."]
     if r["due"] is not None:

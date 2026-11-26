@@ -21,9 +21,10 @@ Irregular-hours workers paid rolled-up holiday pay (worker_type irregular_rolled
   W007 basic 150 a week, weeks ending 2025-06-07 to 2025-06-28. Rolled-up pay 18.11 (12.07% of 150.00, rounded) is shown
        in the first two weeks only: 2025-06-21 and -28 are flagged rolled_up_not_shown_separately.
   W008 weeks ending 2025-06-07 to 2025-06-28, basic 200. Rolled-up pay 24.14 (correct), 20.00 (recalculated 24.14, underpaid
-       4.14), 30.00 (overpaid 5.86); the last week is a leave week with holiday_pay only, so nothing counts and nothing is checked.
+       4.14), 30.00 (overpaid 5.86); the last week is a leave week with holiday_pay 200.00 only: nothing counts, but the
+       holiday_pay itself is flagged holiday_pay_paid_to_rolled_up_worker (possible double payment).
        Its leave row is not re-audited by the 52-week look-back.
-Totals: 8 workers, 6 leave rows, 12 rolled-up pay weeks checked, 7 rolled-up exceptions, 11 exceptions in all.
+Totals: 8 workers, 6 leave rows, 13 rolled-up pay weeks checked, 8 rolled-up exceptions, 12 exceptions in all.
 """
 import csv
 import os

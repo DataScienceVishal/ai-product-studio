@@ -460,7 +460,10 @@ class OutputHandling(Base):
         out = os.path.join(self.tmp.name, "out")
         self.assertEqual(run_cli(*self.args(out), "--workers", f"{SAMPLES}/workers.csv")[0], 0)
         with open(f"{out}/report.md", encoding="utf-8") as fh:
-            self.assertNotIn("## Warning", fh.read())
+            md = fh.read()
+        # the only warning is the holiday_pay one for the rolled-up sample worker W008 (T-126)
+        self.assertEqual(md.count("## Warning"), 1)
+        self.assertIn("## Warning: holiday_pay recorded for an irregular_rolled_up worker", md)
 
     def test_history_file_error_suppresses_no_history_noise(self):
         iss = self.issues(H + "W1,not-a-date,basic,1\n", leave=L + "W1,2025-06-14\nW2,2025-06-14\n")
