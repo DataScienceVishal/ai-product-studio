@@ -104,7 +104,7 @@ AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
 | `BILLING_PROVIDER` | `mock` (default) or `stripe` (test keys only; live keys are refused) |
 | `BILLING_WEBHOOK_SECRET`, `STRIPE_SECRET_KEY` | leave the secret unset with mock billing (a random one is made); with Stripe, its `whsec_` value and a test key |
 | `MOCK_CHECKOUT_ENABLED` | `false` (default); `true` only for demos, where "Pay (test)" grants a plan with trial-sized AI allowances |
-| `AI_GLOBAL_DAILY_TOKENS`, `AI_TRIAL_SHARE` | studio-wide AI budget per UTC day (default 98,000; the Bicep default too), and the share all free trials may use together (0.5). Size it from the price, see "Sizing the daily AI cap" |
+| `AI_GLOBAL_DAILY_TOKENS`, `AI_TRIAL_SHARE` | studio-wide AI budget per UTC day (default 98,000; the Bicep default too), and the share all free trials may use together (0.5). Size it from the price, see "Sizing the daily AI cap". On the Responses API `AI_REASONING_HEADROOM` raises the answer part of each summary's reservation from 1,200 to 2,700 tokens (whole call: 1 KB note about 2,504 on chat, 4,004 on Responses); a hold only, the cap still counts settled tokens |
 | `AI_PRICE_PER_MILLION_TOKENS`, `AI_MONTHLY_BUDGET_USD` | optional explicit blended USD price per million tokens (unset: looked up by `AZURE_OPENAI_DEPLOYMENT` in the table in `app/aicost.py`; an unknown deployment must set it), and the monthly AI budget (default 6.10). With `AI_PROVIDER=azure` the app refuses to start when `AI_GLOBAL_DAILY_TOKENS` x 31 x price is above the budget. `fake` needs no price. The deploy guard applies the same rule |
 | `AI_REASONING_HEADROOM` | extra output tokens (default 1500) added to each Responses-API call and to its token reservation, so reasoning cannot use up the answer's room; ignored for chat completions |
 | `AI_CONCURRENT_CALLS`, `AI_CALLS_PER_TENANT_AT_ONCE` | at most 8 AI calls at once per process, 2 per customer |
@@ -212,11 +212,18 @@ tokens actually used. The reservation is `system prompt (287 bytes) + note bytes
 `/openai/v1/responses`). So the cap is not a daily call count: a call is refused once less than its reservation is
 left, and `cap / reservation` is a floor (calls that all run at once, or each use their full budget). Short answers
 leave room for more.
+
 Worked example (Responses API, 1 KB note): reservation about 287 + 1,000 + 17 + 2,700 = 4,004, so 98,000 admits at
 least 24 such calls (98,000 / 4,004). A 20,000-character note reserves 23k to 83k (multibyte text), which can exceed the 30k trial cap on
 its own. Until `unlock selling`, `LIMITED_PROVIDERS` (mock, Stripe test) makes every tenant draw on the trial half
 (`AI_TRIAL_SHARE` 0.5, 49,000 of 98,000). Size the cap from the reservation of your typical note, then check the cost
 with the formula above.
+
+**The cap formula is unaffected by the headroom.** Caps count settled tokens (what the call actually used), and the
+reservation is only a hold placed before the call and replaced by `settle()`. The headroom (answer part 1,200 to 2,700 on
+the Responses API) changes how many calls can be held at once, not what the cap costs: the monthly ceiling is still
+`AI_GLOBAL_DAILY_TOKENS` x 31 x price. For scale, an empty note reserves 287 + 17 + 2,700 = 3,004 on the Responses API
+(1,504 on chat), so 98,000 holds at most 32 such calls at once (98,000 / 3,004 = 32.6) instead of 65 (98,000 / 1,504 = 65.2).
 
 ## Azure OpenAI sign-in
 

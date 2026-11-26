@@ -60,7 +60,8 @@ param aiPricePerMillionTokens string = ''
 
 @description('Tokens recorded for all tenants together per UTC day. Every call is checked against it with its upper-bound estimate, so the total stays under it. At the gpt-5-mini price (2.00 per million) 98,000 tokens cost at most $0.196 a day (about $6.08 a month over 31 days), inside the $6.10 budget in state/BUDGET.md. A pricier deployment needs a lower cap: size it as 6.10 / (31 x price) x 1,000,000; the app and cost-guard.sh refuse a cap that costs more. Trials share half.')
 // Sizing: a call reserves 287 + note bytes + 17 + 1,200 (+1,500 on the Responses API only) before it runs, then settles to actual use,
-// so cap / reservation is a floor on calls, not a daily limit. Until selling is unlocked all tenants share the trial half. See README, "Sizing the daily AI cap".
+// so cap / reservation is a floor on calls, not a daily limit. The Responses API's +1,500 lifts the answer part of the hold from 1,200 to 2,700
+// (a hold only: caps count settled tokens, so the cap formula is unchanged). Until selling is unlocked all tenants share the trial half. See README, "Sizing the daily AI cap".
 param aiGlobalDailyTokens int = 98000
 
 @description('mock or stripe (test mode only). The workflow only offers these two values.')
