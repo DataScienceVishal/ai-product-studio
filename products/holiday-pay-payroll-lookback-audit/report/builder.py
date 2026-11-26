@@ -27,7 +27,7 @@ FLAG_TEXT = {
                                           "so the count of the first 4 leave weeks (normal pay) may be wrong",
     "rate_inferred_no_contract_basic": "no contract basic supplied; the rate was inferred from recent pay",
     "latest_week_basic_differs_from_rate_used": "the latest week's basic differs from the rate used",
-    "reference_week_basic_differs_from_contract": "basic in some reference weeks differs from the contract basic",
+    "reference_week_basic_differs_from_contract": "basic in some reference weeks (weeks with basic pay) differs from the contract basic",
 }
 
 
@@ -137,8 +137,10 @@ def _csv_row(r):
                 "ref_weeks_skipped": "", "ref_weeks_before_first_record": "", "average": "", "fixed_basic_rate": "",
                 "check": CHECK_ROLLED_UP}
     n = r["working"]["normal"]
+    blank = cannot_check(r)  # no reference weeks: any recalculated figure would be a fake under/overpayment
     return {"worker_id": _safe(r["worker_id"]), "leave_week": r["week_end"].isoformat(),
-            "paid": f"{r['paid']:.2f}", "due": f"{r['due']:.2f}", "difference": f"{r['difference']:.2f}",
+            "paid": f"{r['paid']:.2f}", "due": "" if blank else f"{r['due']:.2f}",
+            "difference": "" if blank else f"{r['difference']:.2f}",
             "direction": _direction(r["difference"], r), "flags": _safe(";".join(r["flags"])),
             "ref_weeks_used": n["weeks_used"], "ref_weeks_skipped": _split_skipped(r)[1],
             "ref_weeks_before_first_record": _split_skipped(r)[0],
@@ -165,7 +167,7 @@ def explain(r):
             lines.append(f"- Basic-only weekly pay (for the remaining leave): {_gbp(b['average'])}.")
     if cannot_check(r):
         lines.append(f"- CANNOT BE CHECKED: no paid weeks before this leave week, so there is nothing to average. "
-                     f"Paid in the leave week: {_gbp(r['paid'])}. Any recalculated figure shown is not reliable.")
+                     f"Paid in the leave week: {_gbp(r['paid'])}. No recalculated figure is given (due and difference are blank in exceptions.csv).")
     else:
         lines.append(f"- Recalculated under these settings: {_gbp(r['due'])}. Paid in the leave week: {_gbp(r['paid'])}. "
                      f"Result: {_direction(r['difference'])} by {_gbp(abs(r['difference']))}.")

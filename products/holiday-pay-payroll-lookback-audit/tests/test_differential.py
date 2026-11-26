@@ -60,7 +60,7 @@ def window_weeks(pay, leave_week):
 
 
 def avg_of_most_recent(values):
-    """values newest first, only paid weeks; returns (average rounded half-up, n) or None."""
+    """values newest first, only paid weeks; returns (unrounded Fraction average, n) or None; rounding happens once, at the end."""
     vals = values[:52]
     if not vals:
         return None
@@ -162,7 +162,7 @@ def gen_worker(rng, wid, base, case_kind):
     return dict(blank=blank, type=wtype, contract=contract, mmdd=mmdd, pay=pay, leaves=leaves, first=first)
 
 
-def finish_paid(rng, wid, w, threshold):
+def finish_paid(rng, wid, w):
     """Insert holiday_pay rows using the oracle's due (so exact, near and wrong payments all occur)."""
     pay = w["pay"]
     fr = [(d, Decimal(f or "1")) for d, f in w["leaves"]]
@@ -183,7 +183,6 @@ def finish_paid(rng, wid, w, threshold):
         else:
             amount = max(Decimal(0), due + money(rng, -40, 40))
         pay[d] = {"holiday_pay": q(amount)}  # leave weeks carry holiday_pay only
-    return fr
 
 
 def write_inputs(tmp, workers, with_weeks_col):
@@ -232,9 +231,6 @@ def cli_rows(rows):
     return sorted(res, key=lambda t: (t[0], t[1]))
 
 
-LAST_TYPES = {}
-
-
 def run_case(seed):
     rng = random.Random(seed)
     base = date(2022, 1, 1) + timedelta(days=7 * rng.randint(0, 60) + rng.randint(0, 6))  # any weekday
@@ -244,7 +240,7 @@ def run_case(seed):
     for i in range(rng.randint(1, 3)):
         wid = "EMP%03d%d" % (seed % 1000, i)
         w = gen_worker(rng, wid, base, rng.choice(kinds))
-        fr = finish_paid(rng, wid, w, threshold)
+        finish_paid(rng, wid, w)
         workers.append((wid, w))
     with_weeks = any(f for _, w in workers for _, f in w["leaves"]) or rng.random() < 0.5
     expected = []
@@ -252,7 +248,6 @@ def run_case(seed):
         fr = [(d, Decimal(f or "1")) for d, f in w["leaves"]]
         expected += oracle_worker(wid, w["type"], w["contract"], w["mmdd"], w["pay"], fr, threshold)
     expected.sort(key=lambda t: (t[0], t[1]))
-    LAST_TYPES.update({wid: w["type"] for wid, w in workers})
     with tempfile.TemporaryDirectory() as tmp:
         write_inputs(tmp, workers, with_weeks)
         got = cli_rows(run_cli(tmp, threshold))

@@ -82,6 +82,13 @@ class CannotCheck(Run):
                 ("W1", "2025-05-31", "holiday_pay", "100.00")]
         _, _, ex, report = self.go(hist_csv(rows), L + "W1,2025-05-31\n")
         self.assertIn("Overpayments: 0", report)
+        self.assertIn("Underpayments: 0", report)
+
+    def test_f1_cannot_check_row_has_blank_due_and_difference(self):
+        rows = [("W1", "2025-06-07", "basic", "400.00"), ("W1", "2025-06-14", "basic", "400.00"),
+                ("W1", "2025-05-31", "holiday_pay", "100.00")]
+        _, _, ex, _ = self.go(hist_csv(rows), L + "W1,2025-05-31\n")
+        self.assertEqual((ex[0]["paid"], ex[0]["due"], ex[0]["difference"]), ("100.00", "", ""))
 
 
 class CliBounds(Run):

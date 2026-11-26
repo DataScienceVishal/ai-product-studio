@@ -90,7 +90,7 @@ def _fixed_pay_refs(recent_first, contract_basic=None):
             "current_basic": money(current), "basic_source": source}
     if basics[0] != current:
         flags.append("latest_week_basic_differs_from_rate_used")
-    if contract_basic is not None and any(basics[i] != current for i in idx):
+    if contract_basic is not None and any(basics[i] > 0 and basics[i] != current for i in idx):
         flags.append("reference_week_basic_differs_from_contract")
     return current + var_avg, current, work, dict(work), tuple(idx), flags
 
