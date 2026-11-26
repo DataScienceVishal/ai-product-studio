@@ -14,7 +14,9 @@ Official examples and where the published figures disagree with their own method
 Data retention (DRAFT): inputs are your files; the tool keeps nothing beyond `out/exceptions.csv` and `out/report.md`. Delete them after sign-off; any hosted version must delete uploaded inputs within 30 days. Details in `ingest/FORMAT.md`.
 Not legal advice; a payroll professional signs off. Assumptions: weekly history is complete, `allowance` counts only if status-related.
 
-Assumptions for adviser sign-off: the first 4 weeks of leave taken in each leave year are treated as the normal-pay (reg 13) weeks, and a leave week belongs to the leave year containing its week-ending date (the year starts 1 April unless the worker has a `leave_year_start`). `worker_type="variable_hours"` (default, s224 averaging) or `"fixed_pay"` (current basic rate plus 52-week average of variable elements). Misaligned dates raise; rows carry `flags` (`no_reference_weeks`, `shortened`, `leave_week_missing_from_history`).
+Leave weeks after the first 4 in a leave year (basic only) use the average of basic over the 52 most recent weeks with basic pay (within 104 weeks), which can differ from the weeks used for normal pay; for `fixed_pay` they use the current basic rate.
+
+Assumptions for adviser sign-off: the first 4 weeks of leave taken in each leave year are treated as the normal-pay (reg 13) weeks, and a leave week belongs to the leave year containing its week-ending date (the year starts 1 April unless the worker has a `leave_year_start`). `worker_type="variable_hours"` (default, s224 averaging) or `"fixed_pay"` (current basic rate plus the average of variable elements over the 52 most recent paid weeks within 104 weeks; a paid week is any week with pay that counts for normal pay, so an overtime-only week counts and a week with no such pay is skipped). Misaligned dates raise; rows carry `flags` (`no_reference_weeks`, `shortened`, `leave_week_missing_from_history`).
 
 ## Run an audit (T-115)
 

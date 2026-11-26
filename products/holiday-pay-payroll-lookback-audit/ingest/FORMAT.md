@@ -47,7 +47,7 @@ Rule flags are always exceptions, whatever the threshold.
 **Wording:** outputs never say "compliant", "owed" or "liable". Figures are recalculated under the settings you gave; "Not legal advice; a payroll professional signs off." stays on every report.
 
 ## Output columns: reference weeks (exceptions.csv)
-- `ref_weeks_used`: paid weeks that went into the average.
+- `ref_weeks_used`: paid weeks that went into the average (the normal-pay average). Leave weeks after the first 4 in a leave year (basic only) use the average of basic over the 52 most recent weeks with basic pay (within 104 weeks); that set can differ from `ref_weeks_used`. For `fixed_pay` workers a paid week is any week with pay that counts for normal pay (basic, regular overtime, commission or allowance > 0), so an overtime-only week counts; weeks with none of these are skipped. The rate is the contractual basic plus the average of the variable elements over the paid weeks (52 most recent, within 104 weeks).
 - `ref_weeks_skipped`: weeks inside the worker's history (on or after their first payroll row) that were looked at but did not count because there was no pay that counts (no pay at all, or only excluded items such as SSP).
 - `ref_weeks_before_first_record`: look-back weeks earlier than the worker's first payroll row. There is no data for them, so they are not counted and not treated as skipped.
 
