@@ -320,3 +320,8 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Lead check of the frozen gold file (no labels shown to the mapper author): header id,pay_element_name,source_style,gold_category,note; 200 unique ids; exactly the nine category ids; 32 notes start "AMBIGUOUS:"; ids are sequential with categories shuffled, so id order gives no hint. source_style (package name) is sent to the model, as it would be known in real use.
 - Why: the reviewer found a single format quirk or a 400 from the wrong API flavour would have produced an automatic KILL without testing the AI at all.
 - Reversible: until the live run (still waits for Q-16).
+
+## 2026-11-26T03:25Z run c317: T-115 holiday-pay ingest + report CLI (no spend)
+- Decision: with every board task blocked on Vishal (Q-16 spend, Azure OIDC/roles) and run 8fd0's rule of no round 20 without new evidence, build the missing piece between the holiday-pay engine and a demo: canonical payroll-history CSV ingest with row-level validation, and a per-worker exceptions report (CSV + Markdown) with the working shown, on synthetic data.
+- Why: it reuses the reviewed engine, needs no spend or contact, and turns the rank-1 idea into something that can be demoed on the day its G1 evidence lands. Vendor-specific export adapters (BrightPay, Xero, Sage) stay in T-25.
+- Reversible: code on p/holiday-pay-payroll-lookback-audit/T-115 until reviewer PASS; the idea stays parked at 64.
