@@ -98,7 +98,7 @@ def lookback(history: Dict[date, dict], leave: Sequence[LeaveEntry],
 
     Raises ValueError if history keys are not all on one weekday or a leave
     week_end is not on that weekday, or leave weeks <= 0. Each row has `flags`:
-    no_reference_weeks, shortened, leave_week_missing_from_history,
+    no_reference_weeks, shortened, leave_week_missing_from_history, leave_week_without_holiday_pay,
     fixed_pay adds rate_inferred_no_contract_basic, latest_week_basic_differs_from_rate_used,
     reference_week_basic_differs_from_contract. `working` lists weeks_used_dates.
     """
@@ -148,10 +148,13 @@ def lookback(history: Dict[date, dict], leave: Sequence[LeaveEntry],
         flags.extend(extra_flags)
         if entry.week_end not in history:
             flags.append("leave_week_missing_from_history")
+        elif "holiday_pay" not in history[entry.week_end]:
+            flags.append("leave_week_without_holiday_pay")
+        other_pay = sum((dec(v) for k, v in history.get(entry.week_end, {}).items() if k != "holiday_pay"), Decimal(0))
         rows.append({
             "week_end": entry.week_end, "leave_year_start": lys, "leave_weeks": weeks,
             "normal_weeks": normal_w, "basic_weeks": basic_w, "worker_type": worker_type,
             "paid": money(paid), "due": money(due), "difference": money(due) - money(paid),  # positive = underpaid
-            "flags": flags, "working": {"normal": wn, "basic": wb},
+            "flags": flags, "other_pay_in_leave_week": money(other_pay), "working": {"normal": wn, "basic": wb},
         })
     return rows

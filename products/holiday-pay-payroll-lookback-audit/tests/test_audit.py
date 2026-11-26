@@ -50,7 +50,7 @@ class Validation(Base):
                           "W1,2025-06-07,basic,NaN\nW1,2025-06-07,basic,Infinity\nW1,2025-06-07,basic,-5\n")
         for line in range(2, 8):
             self.has(iss, f"h.csv:{line}:")
-        self.has(iss, "valid YYYY-MM-DD"); self.has(iss, "unknown element_category 'bogus'")
+        self.has(iss, "valid YYYY-MM-DD"); self.has(iss, "unknown element_category 'bo...' (5 chars)")
         self.has(iss, "NaN"); self.has(iss, "Infinity")
 
     def test_missing_and_extra_columns(self):
@@ -94,7 +94,7 @@ class Validation(Base):
         iss = self.issues(H + "W1,2025-06-07,basic,1\n", leave=L.strip() + ",weeks\nW9,2025-06-07,1\nW1,2025-06-07,0\n",
                           workers="worker_id,worker_type\nW1,magic\nW1,fixed_pay\nW8,fixed_pay\n")
         self.has(iss, "l.csv:2", "no payroll history"); self.has(iss, "l.csv:3", "greater than 0")
-        self.has(iss, "w.csv:2", "worker_type 'magic'"); self.has(iss, "w.csv:3", "duplicate settings")
+        self.has(iss, "w.csv:2", "worker_type 'ma...' (5 chars)"); self.has(iss, "w.csv:3", "duplicate settings")
         self.has(iss, "w.csv:4", "no payroll history")
 
 

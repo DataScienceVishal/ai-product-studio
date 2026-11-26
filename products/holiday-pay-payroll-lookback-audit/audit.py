@@ -7,17 +7,21 @@ from decimal import Decimal, InvalidOperation
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from ingest import load_workers, ValidationError   # noqa: E402
-from report import audit, write_outputs, history_gaps, DEFAULT_THRESHOLD   # noqa: E402
+from report import audit, write_outputs, history_gaps, unlisted_holiday_pay, DEFAULT_THRESHOLD   # noqa: E402
+
+
+MAX_ERRORS_SHOWN = 50
+MAX_THRESHOLD = Decimal(1000000)
 
 
 def _threshold(s):
     try:
         v = Decimal(s)
-        if v.is_finite() and v >= 0:
+        if v.is_finite() and 0 <= v <= MAX_THRESHOLD:
             return v
     except InvalidOperation:
         pass
-    raise argparse.ArgumentTypeError(f"invalid threshold '{s}'")
+    raise argparse.ArgumentTypeError(f"invalid threshold {s[:20]!r}: use a number of pounds from 0 to {MAX_THRESHOLD}")
 
 
 def main(argv=None):
@@ -34,13 +38,20 @@ def main(argv=None):
     try:
         workers = load_workers(a.history, a.leave, a.workers)
     except ValidationError as e:
-        for issue in e.issues:
+        for issue in e.issues[:MAX_ERRORS_SHOWN]:
             print(issue, file=sys.stderr)
+        if len(e.issues) > MAX_ERRORS_SHOWN:
+            print(f"... and {len(e.issues) - MAX_ERRORS_SHOWN} more", file=sys.stderr)
         print(f"{len(e.issues)} validation error(s); nothing written.", file=sys.stderr)
         return 2
-    rows, exceptions = audit(workers, a.threshold, a.include_flagged)
     try:
-        write_outputs(a.out, rows, exceptions, a.threshold, history_gaps(workers), len(workers))
+        rows, exceptions = audit(workers, a.threshold, a.include_flagged)
+    except (ValueError, OverflowError) as e:
+        print(f"cannot audit this data: {e}", file=sys.stderr)
+        return 2
+    try:
+        write_outputs(a.out, rows, exceptions, a.threshold, history_gaps(workers), len(workers),
+                      unlisted_holiday_pay(workers))
     except OSError as e:
         print(f"cannot write output to '{a.out}': {e.strerror or e}", file=sys.stderr)
         return 2

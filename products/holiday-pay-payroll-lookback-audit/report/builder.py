@@ -8,6 +8,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from engine import lookback, money
+from engine.lookback import _leave_year_start
 
 DEFAULT_THRESHOLD = Decimal("0.01")
 DISCLAIMER = "Not legal advice; a payroll professional signs off."
@@ -17,21 +18,51 @@ FLAG_TEXT = {
     "no_reference_weeks": "no paid weeks before the leave, so nothing to average",
     "shortened": "fewer than 52 paid weeks were available, so the average uses what exists",
     "leave_week_missing_from_history": "the leave week has no payroll row, so nothing counts as paid",
+    "leave_week_without_holiday_pay": "the leave week has pay but none of it is marked holiday_pay, so nothing counts as paid; "
+                                      "if that pay was the holiday pay, re-export it as holiday_pay",
+    "holiday_pay_week_not_in_leave_file": "an earlier week in this leave year carries holiday_pay but is not listed in leave.csv, "
+                                          "so the count of the first 4 leave weeks (normal pay) may be wrong",
     "rate_inferred_no_contract_basic": "no contract basic supplied; the rate was inferred from recent pay",
     "latest_week_basic_differs_from_rate_used": "the latest week's basic differs from the rate used",
     "reference_week_basic_differs_from_contract": "basic in some reference weeks differs from the contract basic",
 }
 
 
+def unlisted_holiday_pay(workers):
+    """{worker_id: [week endings with a holiday_pay row that is not in leave.csv]}, only for workers with leave."""
+    out = {}
+    for wid in sorted(workers):
+        w = workers[wid]
+        if not w.leave:
+            continue
+        listed = {e.week_end for e in w.leave}
+        weeks = sorted(d for d, p in w.history.items() if "holiday_pay" in p and d not in listed)
+        if weeks:
+            out[wid] = weeks
+    return out
+
+
+def cannot_check(r):
+    return "no_reference_weeks" in r["flags"]
+
+
 def audit(workers, threshold=DEFAULT_THRESHOLD, include_flagged=False):
-    """Return (all_rows, exceptions); each row is an engine row plus worker_id."""
+    """Return (all_rows, exceptions); each row is an engine row plus worker_id.
+
+    A row that cannot be checked (no reference weeks) is always an exception, never dropped.
+    """
     rows = []
+    unlisted = unlisted_holiday_pay(workers)
     for wid in sorted(workers):
         w = workers[wid]
         for r in lookback(w.history, w.leave, worker_type=w.worker_type,
                           contract_weekly_basic=w.contract_weekly_basic):
+            if any(_leave_year_start(d, 4, 1) == r["leave_year_start"] and d < r["week_end"]
+                   for d in unlisted.get(wid, ())):
+                r["flags"].append("holiday_pay_week_not_in_leave_file")
             rows.append({"worker_id": wid, "first_week": w.first_week, **r})
-    exceptions = [r for r in rows if abs(r["difference"]) > threshold or (include_flagged and r["flags"])]
+    exceptions = [r for r in rows if cannot_check(r) or abs(r["difference"]) > threshold
+                  or (include_flagged and r["flags"])]
     return rows, exceptions
 
 
@@ -57,7 +88,9 @@ def _gbp(x):
     return f"£{money(x):,.2f}"
 
 
-def _direction(diff):
+def _direction(diff, r=None):
+    if r is not None and cannot_check(r):
+        return "cannot_check"
     return "underpaid" if diff > 0 else "overpaid" if diff < 0 else "correct"
 
 
@@ -65,7 +98,7 @@ def _csv_row(r):
     n = r["working"]["normal"]
     return {"worker_id": _safe(r["worker_id"]), "leave_week": r["week_end"].isoformat(),
             "paid": f"{r['paid']:.2f}", "due": f"{r['due']:.2f}", "difference": f"{r['difference']:.2f}",
-            "direction": _direction(r["difference"]), "flags": _safe(";".join(r["flags"])),
+            "direction": _direction(r["difference"], r), "flags": _safe(";".join(r["flags"])),
             "ref_weeks_used": n["weeks_used"], "ref_weeks_skipped": _split_skipped(r)[1],
             "ref_weeks_before_first_record": _split_skipped(r)[0],
             "average": f"{n['average']:.2f}",
@@ -89,8 +122,14 @@ def explain(r):
         lines.append(f"- Normal weekly pay: average ({scope}) = {_gbp(n['total'])} / {n['weeks_used']} = {_gbp(n['average'])}.")
         if r["basic_weeks"]:
             lines.append(f"- Basic-only weekly pay (for the remaining leave): {_gbp(b['average'])}.")
-    lines.append(f"- Due: {_gbp(r['due'])}. Paid in the leave week: {_gbp(r['paid'])}. "
-                 f"Result: {_direction(r['difference'])} by {_gbp(abs(r['difference']))}.")
+    if cannot_check(r):
+        lines.append(f"- CANNOT BE CHECKED: no paid weeks before this leave week, so there is nothing to average. "
+                     f"Paid in the leave week: {_gbp(r['paid'])}. Any due figure shown is not reliable.")
+    else:
+        lines.append(f"- Due: {_gbp(r['due'])}. Paid in the leave week: {_gbp(r['paid'])}. "
+                     f"Result: {_direction(r['difference'])} by {_gbp(abs(r['difference']))}.")
+    if "leave_week_without_holiday_pay" in r["flags"]:
+        lines.append(f"- Pay in this week that was not marked as holiday pay: {_gbp(r['other_pay_in_leave_week'])}.")
     for f in r["flags"]:
         lines.append(f"- Flag `{f}`: {FLAG_TEXT.get(f, f)}.")
     return "\n".join(lines) + "\n"
@@ -215,9 +254,22 @@ def _atomic_write_pair(out_dir, files):
                 pass
 
 
-def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=None, workers_loaded=None):
-    under = [r for r in rows if r["difference"] > threshold]
-    over = [r for r in rows if r["difference"] < -threshold]
+def _unlisted_section(unlisted):
+    if not unlisted:
+        return []
+    out = ["", "## Warning: holiday pay recorded but no leave row", "",
+           "These weeks carry a holiday_pay row but are not listed in leave.csv. The first 4 leave weeks of a leave year "
+           "get normal pay and later weeks basic-only pay, so a missing leave row can change the result. "
+           "Add the weeks to leave.csv if they were leave, then re-run. Affected leave weeks are flagged "
+           "`holiday_pay_week_not_in_leave_file`.", ""]
+    out += [f"- {_md(wid)}: {len(ws)} week(s): {', '.join(_week_ranges(ws))}" for wid, ws in unlisted.items()]
+    return out
+
+
+def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=None, workers_loaded=None, unlisted=None):
+    under = [r for r in rows if not cannot_check(r) and r["difference"] > threshold]
+    over = [r for r in rows if not cannot_check(r) and r["difference"] < -threshold]
+    unchecked = [r for r in rows if cannot_check(r)]
     flagged = sorted({r["worker_id"] for r in rows if r["flags"]})
     with_leave = len({r["worker_id"] for r in rows})
     md = [f"# Holiday pay look-back audit", "", f"**{DISCLAIMER}**", "", "## Summary", ""]
@@ -225,16 +277,20 @@ def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=N
         md.append(f"- Workers loaded: {workers_loaded}")
     md += [f"- Workers with leave: {with_leave}",
            f"- Leave weeks checked: {len(rows)}",
-           f"- Exceptions (difference over {_gbp(threshold)}): {len(exceptions)}",
+           f"- Exceptions (difference over {_gbp(threshold)}, or cannot be checked): {len(exceptions)}",
+           f"- Leave weeks that could not be checked: {len(unchecked)}",
            f"- Underpayments: {len(under)}, total underpaid {_gbp(sum((r['difference'] for r in under), Decimal(0)))}",
            f"- Overpayments: {len(over)}, total overpaid {_gbp(sum((-r['difference'] for r in over), Decimal(0)))}",
-           f"- Workers with flags: {len(flagged)}" + (f" ({', '.join(flagged)})" if flagged else ""),
+           f"- Workers with flags: {len(flagged)}" + (f" ({', '.join(_md(f) for f in flagged)})" if flagged else ""),
            ]
     if gaps is not None:
         md.append(f"- Workers with weeks missing from the export: {len(gaps)}")
+    if unlisted:
+        md.append(f"- Workers with holiday pay outside leave.csv: {len(unlisted)}")
     md += ["", "## Exceptions", ""]
     md += [explain(r) for r in exceptions] or ["None.\n"]
     md += _gap_section(gaps)
+    md += _unlisted_section(unlisted)
 
     def write_csv(fh):
         w = csv.DictWriter(fh, COLUMNS, lineterminator="\n")
