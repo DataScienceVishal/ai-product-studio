@@ -56,3 +56,23 @@ There is no new I/O, network access or dependency. Output files are written thro
 ## Test quality
 
 The tests are good. They exercise behaviour: the leave-year boundary on 31 March and 1 April, a zero rolled-up row, a zero pay-that-counts week, exclusions, the strict threshold including 0, rule flags at a huge threshold, penny rounding, the CLI on the samples with exact CSV rows, a mixed-type pipeline, the stray warning, and the banned-words regex across all outputs. The gaps are C1 (no test for irregular_rolled_up with a basic) and S1.
+
+## Re-review at 259176cb: PASS
+
+Checked in a fresh scratch worktree at 259176c, which has since been removed.
+
+- **Suite:** `python3 -I -m unittest discover -s tests -t .` runs **251 tests, OK**. That is 4 new tests: rolled-up wording for a contract basic, holiday_pay flagged, holiday_pay in a pre-2024 week alongside a difference, and no warning for other worker types.
+- **mapper/ and benchmark/:** `git diff main...HEAD --stat` over both is **empty**. `samples/generate.py` reproduces the sample CSVs exactly (`git status` clean).
+- **C1 fixed.** I ran it with workers.csv `W1,irregular_rolled_up,300`, then with `0`, each time alongside `W2,variable_hours,10`.
+  - stderr: `contract_weekly_basic ignored for 2 worker(s) not set as fixed_pay`.
+  - report.md gives each type its own sentence. irregular_rolled_up gets "rolled-up pay is checked as 12.07% of pay that counts, so a weekly basic is not used", with no advice to change worker type. The lines read `W1: ... ignored (irregular_rolled_up)` and `W2: ... ignored (variable_hours)`.
+- **S1 fixed.** The sample CLI prints `5 leave weeks checked, 12 exceptions` and `13 rolled-up pay weeks checked, 8 ...`. exceptions.csv has the new row `W008,2025-06-28,200.00,,,rule_flag,holiday_pay_paid_to_rolled_up_worker,...,rolled_up_pay`. report.md adds a summary line and a "holiday_pay recorded for an irregular_rolled_up worker" warning. The holiday_pay flag also fires in pre-2024 weeks and alongside a difference row, and there is a test for each case.
+- **S2 documented, not built.** The 1 April leave-year assumption and its false-negative case are explained in FORMAT.md. That is acceptable for this task. A leave-year-start option should become a board task before the seeded-error demo.
+- **Heading escape fixed.** `explain_rolled_up` now takes `esc` and builder passes `_md`.
+
+Non-blocking nits:
+- "Rolled-up pay weeks checked" counts the holiday_pay flag row as an extra week. A week that has both a rolled-up row and holiday_pay is counted twice: 2 pay weeks showed as "3 rolled-up pay weeks checked".
+- The summary counts `holiday_pay_paid_to_rolled_up_worker` among the "rule flags".
+- In that row's CSV `paid` column, the value is the holiday_pay amount. FORMAT.md documents this.
+
+Verdict: **PASS.** The branch can merge to main once it is rebased cleanly on main.
