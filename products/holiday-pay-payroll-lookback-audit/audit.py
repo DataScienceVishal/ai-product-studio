@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from ingest import load_workers, ValidationError   # noqa: E402
 from report import audit, write_outputs, DEFAULT_THRESHOLD   # noqa: E402
+from report.builder import history_gaps   # noqa: E402
 
 
 def _threshold(s):
@@ -39,7 +40,11 @@ def main(argv=None):
         print(f"{len(e.issues)} validation error(s); nothing written.", file=sys.stderr)
         return 2
     rows, exceptions = audit(workers, a.threshold, a.include_flagged)
-    write_outputs(a.out, rows, exceptions, a.threshold)
+    try:
+        write_outputs(a.out, rows, exceptions, a.threshold, history_gaps(workers), len(workers))
+    except OSError as e:
+        print(f"cannot write output to '{a.out}': {e.strerror or e}", file=sys.stderr)
+        return 2
     print(f"{len(rows)} leave weeks checked, {len(exceptions)} exceptions. Written to {a.out}")
     return 0
 

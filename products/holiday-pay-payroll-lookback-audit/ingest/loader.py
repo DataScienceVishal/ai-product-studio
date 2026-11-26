@@ -168,6 +168,7 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
             if d.weekday() != pattern[wid]:
                 issues.append(Issue(hname, hist_lines[wid][d], f"week_ending {d} is a {d:%A} but {wid}'s weeks end on {_DAYS[pattern[wid]]}"))
 
+    history_failed = any(i.file == hname for i in issues)
     lrows = _read(leave_path, LEAVE_COLS, issues)
     if not lrows and not any(i.file == lname for i in issues):
         issues.append(Issue(lname, 0, "no data rows"))
@@ -180,7 +181,8 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
         if wid is None or d is None or weeks is None:
             continue
         if wid not in workers:
-            issues.append(Issue(lname, line, f"leave for worker '{wid}' who has no payroll history"))
+            if not history_failed:   # otherwise this is just noise on top of the real history error
+                issues.append(Issue(lname, line, f"leave for worker '{wid}' who has no payroll history"))
         elif d in leave_lines[wid]:
             issues.append(Issue(lname, line, f"duplicate leave week for {wid} {d} (first at line {leave_lines[wid][d]})"))
         elif d.weekday() != pattern[wid]:
