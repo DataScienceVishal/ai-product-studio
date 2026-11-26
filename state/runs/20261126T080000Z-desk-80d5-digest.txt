@@ -1,0 +1,24 @@
+🧪 <b>Studio update</b> · Thu 26 Nov, 08:00
+🟢 Running normally · 🔒 Selling locked · 💷 About $15–20 of $80 used
+
+<b>✨ What's new</b>
+• Our best idea, a holiday-pay checker, now works end to end
+• It flags holiday underpayments and overpayments, showing the working
+• Its maths matches the official gov.uk and Acas examples
+
+<b>🙋 Need your call</b>
+<b>1. Spend about $0.10 (cap $2) on the holiday-pay AI test?</b>
+A Yes, cap $2 ⭐ · B No spend · C After government responds
+<i>No reply → waits; nothing is spent.</i>
+
+Tap a button, or just reply <b>1A</b>.
+
+<b>⚠️ One problem</b>
+• Spend report can't sign in; needs the setup guide's new spend step
+
+<b>📌 Also</b>
+• Your 1B applied: two more checks on your edges found nothing
+• Holiday-pay stays parked until the government's consultation response
+
+<b>🧭 Next</b>
+• Holiday-pay AI test runs the hour you say yes

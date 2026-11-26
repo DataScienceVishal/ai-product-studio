@@ -346,3 +346,10 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Board had only Vishal-blocked or trigger-only tasks (T-60 OIDC spend run still failing, last run 2026-11-25 17:10Z; Q-16 spend still open), so took Always-On #2 and #4 on the code merged since the last QA/security pass (T-124..T-127).
 - T-130 C-1: a header-only leave.csv is accepted only when every worker is irregular_rolled_up; a mixed firm still exits 2, so look-back workers are never silently audited as "0 exceptions". Reversible.
 - report.md caps detailed rolled-up sections at 20 per worker with an "and K more" line; exceptions.csv stays complete. Overall cap deferred to T-131. Reversible.
+
+## 2026-11-26T08:04Z, desk 80d5: 08:00 digest
+- No question defaults were due: Q-8 and Q-16 are ask-first (directory change, spending) and wait for Vishal. No new Telegram messages.
+- Q-16 sent for the first time, as 1 (only open question). Q-8 not re-sent: it is a setup step he already leans A on, not a choice.
+- Problem slot: the spend report. azure-spend run 7 (2026-11-25T17:10Z, scheduled) failed with AADSTS700213 like run 6; no green run since 2026-11-24T17:39Z. The digest points Vishal at the SETUP.md id-github-spend step (it registers the immutable-ID subject GitHub presents) plus AZURE_SPEND_CLIENT_ID, which fixes the report without widening the deploy identity.
+- Header shows the hand-kept token count ("About $15–20 of $80 used", BUDGET.md token log) instead of "spend not reported yet", since the automated report is down and nothing else is billed yet. Reversible.
+- Committed to main directly (CLAUDE.md section 9 and Vishal's push-to-main instruction, DECISIONS 2026-11-23T21:49Z); the session branch is kept level.
