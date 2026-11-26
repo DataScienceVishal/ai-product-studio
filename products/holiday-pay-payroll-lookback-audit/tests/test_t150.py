@@ -125,7 +125,7 @@ class ReviewFixes(Case):
         code, so, se, rep = self.run_cli(h, l, w)
         self.assertEqual(code, 0, se)
         self.assertEqual(_csv_rows(self.d), 55 * 200)
-        self.assertIn("more range(s), are in exceptions.csv", rep)
+        self.assertIn("more range(s). All of them are in exceptions.csv", rep)
         self.assertLess(len(rep.encode("utf-8")), 1_000_000)
         combined = rep[rep.index("further worker(s)"):]
         self.assertIn("within £0.01 with a guessed weekly rate", combined)

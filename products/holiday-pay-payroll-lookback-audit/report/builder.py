@@ -399,6 +399,28 @@ def _ranges_text(weeks):
     return ", ".join(rs[:MAX_SUMMARY_RANGES]) + f" and {len(rs) - MAX_SUMMARY_RANGES} more range(s)"
 
 
+MAX_EXCLUDED_PAY_WORKERS = 20
+
+
+def _weeks_in_csv(rs):
+    """Sentence naming the week endings of the exceptions left out of report.md; all of them are in exceptions.csv."""
+    return f"Their week endings: {_ranges_text(r['week_end'] for r in rs)}. All of them are in exceptions.csv."
+
+
+def _excluded_with_pay_section(excluded_pay):
+    """excluded_pay is [(masked worker id, [week_ending])]. Note for excluded_week markers placed on weeks that also carry pay: the engine used those weeks as normal weeks."""
+    if not excluded_pay:
+        return []
+    out = ["## excluded_week on weeks that also have pay", "",
+           "excluded_week marked on a week that also has pay; the week was used as a normal week. "
+           "To skip a week, remove its pay rows and keep only the excluded_week row. Worker and week endings:", ""]
+    for masked, weeks in excluded_pay[:MAX_EXCLUDED_PAY_WORKERS]:
+        out.append(f"- {_md(masked)}: {_ranges_text(weeks)}")
+    if len(excluded_pay) > MAX_EXCLUDED_PAY_WORKERS:
+        out.append(f"- and {len(excluded_pay) - MAX_EXCLUDED_PAY_WORKERS} more worker(s)")
+    return out + [""]
+
+
 def _cap_text(per_worker, total):
     return f"at most {per_worker} per worker and {total} in the whole report"
 
@@ -469,8 +491,8 @@ def _lookback_more_line(wid, rs, threshold=DEFAULT_THRESHOLD):
     detail = f" Flags: {', '.join(f'{_md(f)}: {c}' for f, c in sorted(flags.items()))}." if flags else ""
     return (f"### {_md(wid)}: and {len(rs)} more look-back exception(s)\n\n"
             f"Not written out above ({_cap_text(MAX_LOOKBACK_DETAILS, MAX_LOOKBACK_TOTAL)}; the largest "
-            f"underpayments are shown first): {_lookback_counts(rs, threshold)}.{detail} All of them, "
-            f"{_ranges_text(r['week_end'] for r in rs)}, are in exceptions.csv.\n")
+            f"underpayments are shown first): {_lookback_counts(rs, threshold)}.{detail} "
+            f"{_weeks_in_csv(rs)}\n")
 
 
 def _lookback_sections(lb, threshold):
@@ -509,8 +531,8 @@ def _rolled_up_sections(ru):
         flags = Counter(f for r in rs for f in r["flags"])
         detail = f" ({', '.join(f'{_md(f)}: {c}' for f, c in sorted(flags.items()))})" if flags else ""
         out.append(f"### {_md(wid)}: and {len(rs)} more rolled-up pay exception(s){detail}\n\n"
-                   f"The rest are not written out above ({_cap_text(MAX_ROLLED_UP_DETAILS, MAX_ROLLED_UP_TOTAL)}). All of them, "
-                   f"{_ranges_text(r['week_end'] for r in rs)}, are in exceptions.csv.\n")
+                   f"The rest are not written out above ({_cap_text(MAX_ROLLED_UP_DETAILS, MAX_ROLLED_UP_TOTAL)}). "
+                   f"{_weeks_in_csv(rs)}\n")
     rest = items[MAX_ROLLED_UP_SUMMARIES:]
     if rest:
         out.append(f"### and {sum(len(rs) for _, rs in rest)} more rolled-up pay exception(s) for {len(rest)} further worker(s)\n\n"
@@ -551,7 +573,7 @@ def _leave_years_line(starts):
 
 def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=None, workers_loaded=None, unlisted=None,
                   ignored_basic=None, stray_rolled=None, skipped_leave=None, holiday_paid=None,
-                  rolled_up_idle_workers=None, rolled_up_leave_missing_weeks=None, leave_year_starts=None):
+                  rolled_up_idle_workers=None, rolled_up_leave_missing_weeks=None, leave_year_starts=None, excluded_pay=None, name_like=0):
     rows, ru_rows = split_rows(rows)
     lb_exc, ru_exc = split_rows(exceptions)
     under = [r for r in rows if not cannot_check(r) and r["difference"] > threshold]
@@ -576,6 +598,10 @@ def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=N
     leave_years = _leave_years_line(leave_year_starts)
     if leave_years:
         md.append(leave_years)
+    if name_like:
+        md.append(f"- Worker IDs that look like a person's name: {name_like} (use pseudonymous payroll IDs)")
+    if excluded_pay:
+        md.append(f"- Workers with excluded_week on a week that also has pay: {len(excluded_pay)}")
     if gaps is not None:
         md.append(f"- Workers with weeks missing from the export: {len(gaps)}")
     if unlisted:
@@ -595,6 +621,7 @@ def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=N
         md.append(f"- Workers with rolled-up pay but not set as irregular_rolled_up: {len(stray_rolled)}")
     md += ["", "## Exceptions", ""]
     md += _exception_sections(exceptions, threshold) or ["None.\n"]
+    md += _excluded_with_pay_section(excluded_pay)
     md += _gap_section(gaps)
     md += _unlisted_section(unlisted)
     md += _ignored_basic_section(ignored_basic)
