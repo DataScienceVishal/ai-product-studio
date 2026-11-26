@@ -72,3 +72,14 @@ The code is correct. Two small fixes are needed before merge: a test that does n
 ## Cleanup
 
 Scratch worktrees (branch and main) removed. `git worktree list` shows only the main checkout. I made no product code edits.
+
+## Re-review at f06e43e: PASS
+
+Diff 5ba1570..f06e43e: `ingest/FORMAT.md` (1 line), `tests/test_t127.py`, `tests/test_mapper.py` (+2 lines), and this review file. `git diff main...f06e43e --stat` for `engine/`, `mapper/` and `benchmark/`: empty. No production code changed since the first review.
+
+- **C1 fixed.** The new test is `FirstFourWeeks.test_unlisted_holiday_week_between_custom_start_and_april_is_flagged`: start 01-01, unlisted holiday_pay in week 2025-02-05, leave week 2025-03-12, flag asserted. In a scratch worktree at f06e43e I changed `report/builder.py:75` back to `_leave_year_start(d, 4, 1)` and ran the full suite: `FAILED (failures=1)`. The only failure is the new test. Reverted, the suite is green. Mutant M1 is now caught. Nit: it does not assert that the flag is absent under 04-01, but the existing test plus the mutant kill cover it.
+- **C2 fixed.** FORMAT.md now says exceptions.csv is identical and report.md is identical apart from the two rolled-up count lines changed in T-127. The `DefaultUnchanged` docstring says which goldens are main's real output and that `main_report.md` is main's output plus the two count lines. Both statements are accurate: re-running the samples at f06e43e matches all goldens byte for byte, and the first review showed main vs branch differs only on report.md lines 18-19.
+- **Socket leak fixed at the root.** `test_mapper.py` now calls `server_close()` after `shutdown()`, and gc.collect() is gone from `test_t127.py`. Verbose run: 0 `unclosed <socket` warnings. The 3 remaining ResourceWarnings are the pre-existing `unclosed file` ones in `tests/test_t124.py:18` (suggestion 1). They are not blocking.
+- **Full suite** (scratch worktree, product dir, `python3 -I -m unittest discover -s tests -t . -v`): **Ran 269 tests, OK**. CLI on samples: `5 leave weeks checked, 4 exceptions.` / `13 rolled-up pay weeks checked, 8 exceptions.` with `--workers`, and `6 leave weeks checked, 4 exceptions.` without. Both exit 0.
+
+Suggestions 2 to 6 from the first review are still open and non-blocking. Scratch worktree removed.
