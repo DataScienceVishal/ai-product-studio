@@ -5,11 +5,12 @@ import shutil
 import sys
 import tempfile
 from datetime import timedelta
+from collections import Counter
 from decimal import Decimal
 
 from engine import lookback, money
 from engine.lookback import _leave_year_start, ROLLED_UP_TYPE
-from .rolled_up import HOLIDAY_PAID, audit_rolled_up, rolled_up_leave_weeks, stray_rolled_up, explain_rolled_up, holiday_pay_to_rolled_up
+from .rolled_up import HOLIDAY_PAID, audit_rolled_up, rolled_up_leave_weeks, stray_rolled_up, explain_rolled_up, holiday_pay_to_rolled_up, md_escape, rolled_up_idle, rolled_up_leave_missing
 
 DEFAULT_THRESHOLD = Decimal("0.01")
 DISCLAIMER = "Not legal advice; a payroll professional signs off."
@@ -97,9 +98,8 @@ def split_rows(rows):
     return [r for r in rows if not is_rolled_up(r)], [r for r in rows if is_rolled_up(r)]
 
 
-def _md(text):
-    """Escape Markdown-special characters in untrusted text."""
-    return re.sub(r"([\\`*_{}\[\]()#+!|<>~-])", r"\\\1", str(text))
+_md = md_escape
+MAX_ROLLED_UP_DETAILS = 20   # detailed report.md sections per rolled-up worker; exceptions.csv is always complete
 
 
 def _safe(cell):
@@ -339,19 +339,53 @@ def _stray_section(stray):
     return out + [f"- {_md(wid)}: {len(ws)} week(s): {', '.join(_week_ranges(ws))}" for wid, ws in stray.items()]
 
 
-def _rolled_up_notes(skipped_leave):
-    if not skipped_leave:
-        return []
-    n = sum(skipped_leave.values())
-    return ["", "## Note: leave weeks of irregular_rolled_up workers", "",
-            f"{n} leave week(s) listed in leave.csv for {len(skipped_leave)} irregular_rolled_up worker(s) "
-            "were not re-audited by the 52-week look-back, because their holiday pay is paid as rolled-up pay in "
-            "each wage packet. Their pay weeks are checked under the rolled-up rules above: "
-            + ", ".join(f"{_md(w)} ({c})" for w, c in skipped_leave.items()) + "."]
+def _rolled_up_notes(skipped_leave, idle=None, leave_missing=None):
+    out = []
+    if skipped_leave:
+        n = sum(skipped_leave.values())
+        out += ["", "## Note: leave weeks of irregular_rolled_up workers", "",
+                f"{n} leave week(s) listed in leave.csv for {len(skipped_leave)} irregular_rolled_up worker(s) "
+                "were not re-audited by the 52-week look-back, because their holiday pay is paid as rolled-up pay in "
+                "each wage packet. Their pay weeks are checked under the rolled-up rules above: "
+                + ", ".join(f"{_md(w)} ({c})" for w, c in skipped_leave.items()) + "."]
+    if idle:
+        out += ["", "## Note: irregular_rolled_up workers with nothing to check", "",
+                f"{len(idle)} irregular_rolled_up worker(s) were loaded but had no week that the rolled-up check applies to "
+                "(no pay that counts, or pay only in leave years before 2024 with no rolled_up_holiday_pay, and no holiday_pay row): "
+                + ", ".join(_md(w) for w in idle) + ". They were not skipped by mistake; confirm their history is complete."]
+    if leave_missing:
+        out += ["", "## Warning: leave week of an irregular_rolled_up worker missing from history", "",
+                "These leave.csv weeks have no payroll row in history.csv. Rolled-up workers' leave weeks are not "
+                "re-audited, so check the export is complete.", ""]
+        out += [f"- {_md(wid)}: {len(ws)} week(s): {', '.join(_week_ranges(ws))}" for wid, ws in leave_missing.items()]
+    return out
+
+
+def _exception_sections(exceptions):
+    """Detailed sections: all look-back exceptions, and at most MAX_ROLLED_UP_DETAILS per rolled-up worker."""
+    out, shown, more = [], {}, {}
+    for r in exceptions:
+        if not is_rolled_up(r):
+            out.append(explain(r))
+            continue
+        wid = r["worker_id"]
+        if shown.get(wid, 0) < MAX_ROLLED_UP_DETAILS:
+            shown[wid] = shown.get(wid, 0) + 1
+            out.append(explain_rolled_up(r, _gbp, _md))
+        else:
+            more.setdefault(wid, []).append(r)
+    for wid, rs in more.items():
+        flags = Counter(f for r in rs for f in r["flags"])
+        detail = f" ({', '.join(f'{_md(f)}: {c}' for f, c in sorted(flags.items()))})" if flags else ""
+        out.append(f"### {_md(wid)}: and {len(rs)} more rolled-up pay exception(s){detail}\n\n"
+                   f"Only the first {MAX_ROLLED_UP_DETAILS} are written out above. All of them, "
+                   f"{', '.join(_week_ranges(sorted({r['week_end'] for r in rs})))}, are in exceptions.csv.\n")
+    return out
 
 
 def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=None, workers_loaded=None, unlisted=None,
-                  ignored_basic=None, stray_rolled=None, skipped_leave=None, holiday_paid=None):
+                  ignored_basic=None, stray_rolled=None, skipped_leave=None, holiday_paid=None,
+                  rolled_up_idle_workers=None, rolled_up_leave_missing_weeks=None):
     rows, ru_rows = split_rows(rows)
     lb_exc, ru_exc = split_rows(exceptions)
     under = [r for r in rows if not cannot_check(r) and r["difference"] > threshold]
@@ -390,11 +424,11 @@ def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=N
     if stray_rolled:
         md.append(f"- Workers with rolled-up pay but not set as irregular_rolled_up: {len(stray_rolled)}")
     md += ["", "## Exceptions", ""]
-    md += [explain_rolled_up(r, _gbp, _md) if is_rolled_up(r) else explain(r) for r in exceptions] or ["None.\n"]
+    md += _exception_sections(exceptions) or ["None.\n"]
     md += _gap_section(gaps)
     md += _unlisted_section(unlisted)
     md += _ignored_basic_section(ignored_basic)
-    md += _rolled_up_notes(skipped_leave)
+    md += _rolled_up_notes(skipped_leave, rolled_up_idle_workers, rolled_up_leave_missing_weeks)
     md += _holiday_paid_section(holiday_paid)
     md += _stray_section(stray_rolled)
 

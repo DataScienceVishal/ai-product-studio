@@ -2,6 +2,7 @@
 import csv
 import os
 import re
+import unicodedata
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import date
@@ -79,7 +80,9 @@ def _looks_like_ni(wid):
 def _mask(v):
     """Never echo a raw cell: first 2 characters and the length only."""
     v = str(v)
-    return f"'{v[:2]}...' ({len(v)} chars)"
+    clean = "".join(c for c in v if unicodedata.category(c) != "Cf")
+    note = ", invisible characters removed" if clean != v else ""
+    return f"'{clean[:2]}...' ({len(clean)} chars{note})"
 
 
 def _trunc(v, n=20):
@@ -226,8 +229,7 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
 
     history_failed = any(i.file == hname for i in issues)
     lrows = _read(leave_path, LEAVE_COLS, issues)
-    if not lrows and not any(i.file == lname for i in issues):
-        issues.append(Issue(lname, 0, "no data rows"))
+    leave_empty = not lrows and not any(i.file == lname for i in issues)
     for line, row in lrows:
         wid, d = _worker_id(lname, line, row, issues), _date(lname, line, row, issues)
         weeks = _amount(lname, line, "weeks", row.get("weeks") or "1", issues)
@@ -279,6 +281,10 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
                     amt = None
                 workers[wid].contract_weekly_basic = amt
 
+    # An empty leave.csv is allowed only for a firm whose every worker is irregular_rolled_up (T-130): otherwise
+    # an empty export would silently hide look-back leave and unlisted holiday pay.
+    if leave_empty and not (workers and all(w.worker_type == "irregular_rolled_up" for w in workers.values())):
+        issues.append(Issue(lname, 0, "no data rows (a header-only leave.csv is accepted only when every worker in history is set as irregular_rolled_up in workers.csv)"))
     if issues:
         raise ValidationError(issues)
     return workers
