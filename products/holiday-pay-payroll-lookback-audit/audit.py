@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from ingest import load_workers, ValidationError, name_like_id_warnings   # noqa: E402
+from ingest import load_workers, ValidationError, name_like_id_warnings, excluded_week_with_pay, mask_id   # noqa: E402
 from report import audit, write_outputs, history_gaps, unlisted_holiday_pay, ignored_contract_basic, DEFAULT_THRESHOLD, split_rows, rolled_up_weeks_checked, rolled_up_leave_weeks, stray_rolled_up, holiday_pay_to_rolled_up, rolled_up_idle, rolled_up_leave_missing   # noqa: E402
 
 
@@ -44,8 +44,17 @@ def main(argv=None):
             print(f"... and {len(e.issues) - MAX_ERRORS_SHOWN} more", file=sys.stderr)
         print(f"{len(e.issues)} validation error(s); nothing written.", file=sys.stderr)
         return 2
-    for msg in name_like_id_warnings(workers)[:MAX_ERRORS_SHOWN]:
+    name_like = name_like_id_warnings(workers)
+    for msg in name_like[:MAX_ERRORS_SHOWN]:
         print(msg, file=sys.stderr)
+    if len(name_like) > MAX_ERRORS_SHOWN:
+        print(f"... and {len(name_like) - MAX_ERRORS_SHOWN} more worker_id warning(s)", file=sys.stderr)
+    excluded_pay = [(mask_id(w), d) for w, d in excluded_week_with_pay(workers).items()]
+    for masked, weeks in excluded_pay[:MAX_ERRORS_SHOWN]:
+        print(f"warning: worker_id {masked}: excluded_week marked on a week that also has pay; the week was used as a normal week "
+              f"(week ending {', '.join(str(d) for d in weeks[:10])}{f' and {len(weeks) - 10} more' if len(weeks) > 10 else ''})", file=sys.stderr)
+    if len(excluded_pay) > MAX_ERRORS_SHOWN:
+        print(f"... and {len(excluded_pay) - MAX_ERRORS_SHOWN} more excluded_week warning(s)", file=sys.stderr)
     try:
         rows, exceptions = audit(workers, a.threshold, a.include_flagged)
     except (ValueError, OverflowError) as e:
@@ -61,7 +70,8 @@ def main(argv=None):
         write_outputs(a.out, rows, exceptions, a.threshold, history_gaps(workers), len(workers),
                       unlisted_holiday_pay(workers), ignored, stray_rolled_up(workers), rolled_up_leave_weeks(workers),
                       holiday_pay_to_rolled_up(workers), idle, leave_missing,
-                      {wid: w.leave_year_start for wid, w in workers.items()})
+                      {wid: w.leave_year_start for wid, w in workers.items()},
+                      excluded_pay, len(name_like))
     except OSError as e:
         print(f"cannot write output to '{a.out}': {e.strerror or e}", file=sys.stderr)
         return 2

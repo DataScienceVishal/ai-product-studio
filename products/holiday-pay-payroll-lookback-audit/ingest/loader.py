@@ -10,6 +10,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Dict, List, Optional
 
 from engine import CATEGORIES, LeaveEntry
+from engine.elements import normal_pay
 from engine.lookback import INPUT_WORKER_TYPES as WORKER_TYPES
 
 HISTORY_COLS = (("worker_id", "week_ending", "element_category", "amount"), ())
@@ -57,6 +58,7 @@ class WorkerData:
     contract_weekly_basic: Optional[Decimal] = None
     leave_year_start: tuple = DEFAULT_LEAVE_YEAR_START   # (month, day) the worker's leave year starts
     first_week: Optional[date] = None   # earliest week_ending in the history file
+    first_line: int = 0                 # history.csv line of the worker's first row
 
 
 def _looks_like_ni(wid):
@@ -77,9 +79,12 @@ def _looks_like_ni(wid):
     return False
 
 
-def _mask_id(wid):
+def mask_id(wid):
     """Worker IDs in messages: first 2 characters then ***, never the full ID."""
     return f"{str(wid)[:2]}***"
+
+
+_mask_id = mask_id   # older internal name
 
 
 _NAME_LIKE = re.compile(r"^[A-Za-z]{2,}(?:[._-][A-Za-z]{2,})+$")
@@ -87,9 +92,27 @@ _NAME_LIKE = re.compile(r"^[A-Za-z]{2,}(?:[._-][A-Za-z]{2,})+$")
 
 def name_like_id_warnings(workers):
     """Non-fatal G8 warnings: worker_ids made only of letters joined by '.', '_' or '-' (john.smith) look like names.
-    IDs are masked; the check is a hint, not a guarantee (JSmith1990 is not caught)."""
-    return [f"warning: worker_id {_mask_id(wid)} ({len(wid)} chars) looks like a person's name. Use a pseudonymous payroll ID"
-            for wid in sorted(workers) if _NAME_LIKE.match(wid)]
+    IDs are masked; the check is a hint, not a guarantee (JSmith1990 is not caught). Identical masked warnings are
+    made distinguishable by the line of the worker's first history row."""
+    out = []
+    for wid in sorted(workers):
+        if _NAME_LIKE.match(wid):
+            line = getattr(workers[wid], "first_line", 0)
+            where = f", first row at history line {line}" if line else ""
+            out.append(f"warning: worker_id {_mask_id(wid)} ({len(wid)} chars{where}) looks like a person's name. Use a pseudonymous payroll ID")
+    return out
+
+
+def excluded_week_with_pay(workers):
+    """{worker_id: [week_ending]} for weeks carrying an excluded_week marker AND pay that counts (the engine's own
+    normal_pay test: basic, regular_overtime, commission, allowance). The engine uses such a week; this only reports it."""
+    out = {}
+    for wid in sorted(workers):
+        weeks = [d for d, cats in sorted(workers[wid].history.items())
+                 if "excluded_week" in cats and normal_pay(cats) > 0]
+        if weeks:
+            out[wid] = weeks
+    return out
 
 
 def _mask(v):
@@ -100,15 +123,29 @@ def _mask(v):
     return f"'{clean[:2]}...' ({len(clean)} chars{note})"
 
 
-def _trunc(v, n=20):
-    """Header names are structural, so show up to n characters (a data row mistaken for a header stays short)."""
-    v = str(v)
-    return v if len(v) <= n else f"{v[:n]}...({len(v)} chars)"
+def _header_hint(pos):
+    """A header cell that is not a known column name is never echoed: a file with its header row deleted would
+    otherwise print the first data row (worker id, date, amount)."""
+    return f"column {pos} is not a recognised header; the file may be missing its header row"
 
 
 def _is_personal_header(h: str) -> bool:
     n = re.sub(r"[^a-z0-9]", "", h.lower())
     return n in ("ni", "dob") or any(p in n for p in _PERSONAL_PARTS)
+
+
+def _bad_utf8_line(path):
+    """1-based line of the first byte sequence that is not valid UTF-8, or 0 if it cannot be found."""
+    try:
+        with open(path, "rb") as fh:
+            for n, raw in enumerate(fh, 1):
+                try:
+                    raw.decode("utf-8")
+                except UnicodeDecodeError:
+                    return n
+    except OSError:
+        pass
+    return 0
 
 
 def _read(path, spec, issues):
@@ -124,20 +161,20 @@ def _read(path, spec, issues):
                 return []
             header = [c.strip() for c in header]
             bad = False
-            for c in header:
+            for pos, c in enumerate(header, 1):
                 if _is_personal_header(c):
-                    issues.append(Issue(name, 1, f"column '{_trunc(c)}' looks like personal data; use pseudonymous IDs only. Refused"))
+                    issues.append(Issue(name, 1, f"column {pos} looks like personal data; use pseudonymous IDs only. Refused"))
                     bad = True
                 elif c not in required + optional:
-                    issues.append(Issue(name, 1, f"unexpected column '{_trunc(c)}'"))
+                    issues.append(Issue(name, 1, _header_hint(pos)))
                     bad = True
             for c in required:
                 if c not in header:
                     issues.append(Issue(name, 1, f"missing column '{c}'"))
                     bad = True
             for c, n in Counter(header).items():
-                if n > 1:
-                    issues.append(Issue(name, 1, f"duplicate column '{_trunc(c)}'"))
+                if n > 1 and c in required + optional:
+                    issues.append(Issue(name, 1, f"duplicate column '{c}'"))
                     bad = True
             if bad:
                 return []
@@ -150,7 +187,10 @@ def _read(path, spec, issues):
                     continue
                 rows.append((reader.line_num, dict(zip(header, (c.strip() for c in rec)))))
             return rows
-    except (OSError, UnicodeDecodeError) as e:
+    except UnicodeDecodeError:
+        issues.append(Issue(name, _bad_utf8_line(path), "the file is not valid UTF-8; save the file as UTF-8 (CSV UTF-8 in Excel)"))
+        return []
+    except OSError as e:
         issues.append(Issue(name, 0, f"cannot read file: {e}"))
         return []
     except csv.Error as e:
@@ -236,7 +276,7 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
             issues.append(Issue(hname, line, f"duplicate row for {_mask_id(wid)} {d} {cat} (first at line {seen[key]})"))
             continue
         seen[key] = line
-        w = workers.setdefault(wid, WorkerData(wid))
+        w = workers.setdefault(wid, WorkerData(wid, first_line=line))
         w.history.setdefault(d, {})[cat] = amt
         hist_lines[wid].setdefault(d, line)
 
@@ -291,7 +331,8 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
             if lys:
                 parsed = _leave_year_start_value(lys)
                 if parsed is None:
-                    issues.append(Issue(wname, line, f"leave_year_start {_mask(lys)} must be a real calendar date as MM-DD (for example 01-01 or 04-01); 02-29 is not accepted"))
+                    issues.append(Issue(wname, line, f"leave_year_start {_mask(lys)} must be a real calendar date as MM-DD (for example 01-01 or 04-01)"
+                                        + ("; 02-29 is not accepted" if lys == "02-29" else "")))
                 else:
                     workers[wid].leave_year_start = parsed
             basic = row.get("contract_weekly_basic", "")

@@ -56,7 +56,8 @@ class Validation(Base):
     def test_missing_and_extra_columns(self):
         iss = self.issues("worker_id,week_ending,amount,colour\nW1,2025-06-07,1,red\n")
         self.has(iss, "h.csv:1", "missing column 'element_category'")
-        self.has(iss, "unexpected column 'colour'")
+        self.has(iss, "column 4 is not a recognised header")
+        self.assertFalse(any('colour' in i for i in iss))
 
     def test_bad_field_count(self):
         self.has(self.issues(H + "W1,2025-06-07,basic\n"), "h.csv:2", "expected 4 fields")
