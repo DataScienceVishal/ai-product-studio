@@ -8,10 +8,12 @@ from __future__ import annotations
 
 import http.client
 import json
+import math
 import os
 import re
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 
@@ -23,8 +25,40 @@ from mapper.prompt import (CATEGORIES, REASONING_EFFORT, RESPONSE_SCHEMA, SCHEMA
                            build_user_message)
 
 UNMAPPED = "UNMAPPED"
+_LOCAL_HOSTS = ("localhost", "127.0.0.1", "::1")
 DEFAULT_BATCH_SIZE = 200
 MAX_OUTPUT_TOKENS = 16000  # reasoning tokens count inside this on gpt-5-mini; 200 answers need only ~4,000
+
+
+def estimate_input_tokens(system: str, user: str) -> int:
+    """Deliberately high estimate (3 characters per token, English averages about 4) for the pre-send spend cap."""
+    return math.ceil((len(system) + len(user)) / 3)
+
+
+def worst_case_usd(input_tokens: int, max_output_tokens: int, price: tuple[float, float]) -> float:
+    """Dollars if the request used every token it may: the whole estimated input plus the full output cap."""
+    return (input_tokens * price[0] + max_output_tokens * price[1]) / 1_000_000
+
+
+def check_price(price) -> tuple[float, float]:
+    """The price config must be two finite numbers above zero, or no spend can be bounded."""
+    try:
+        pin, pout = float(price[0]), float(price[1])
+    except (TypeError, ValueError, IndexError, KeyError):
+        raise ValueError("price config is missing or unreadable: no spend cap can be computed") from None
+    if not (math.isfinite(pin) and math.isfinite(pout)) or pin <= 0 or pout <= 0:
+        raise ValueError("price config must be above zero for input and output: no spend cap can be computed")
+    return pin, pout
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Never follow a redirect: it would carry the api-key header to another host. A 3xx surfaces as HTTPError."""
+
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+_NO_REDIRECT_OPENER = urllib.request.build_opener(_NoRedirect)
 
 
 class ClientError(Exception):
@@ -189,9 +223,16 @@ class AzureOpenAIClient:
 
     def __init__(self, endpoint: str, deployment: str = "gpt-5-mini", api_key: str = "", api: str = "auto",
                  timeout: float = 180.0, retries: int = 2, sleep=time.sleep, opener=None,
-                 max_output_tokens: int = MAX_OUTPUT_TOKENS, reasoning_effort: str = REASONING_EFFORT):
+                 max_output_tokens: int = MAX_OUTPUT_TOKENS, reasoning_effort: str = REASONING_EFFORT,
+                 allow_insecure_localhost: bool = False):
         if not endpoint:
             raise ValueError("AZURE_OPENAI_ENDPOINT is not set")
+        parts = urllib.parse.urlsplit(endpoint.strip())
+        local_ok = allow_insecure_localhost and parts.scheme == "http" and (parts.hostname or "") in _LOCAL_HOSTS
+        if parts.scheme != "https" and not local_ok:
+            raise ValueError("AZURE_OPENAI_ENDPOINT must start with https:// (the api-key is sent in a header)")
+        if not parts.hostname:
+            raise ValueError("AZURE_OPENAI_ENDPOINT has no host name")
         if api == "auto":
             api = "responses" if endpoint.strip().rstrip("/").lower().endswith("/openai/v1/responses") else "chat"
         if api not in ("chat", "responses"):
@@ -202,15 +243,25 @@ class AzureOpenAIClient:
         self._key = api_key
         self._headers = {"api-key": api_key or "proxy-injected", "Content-Type": "application/json"}
         self.timeout, self.retries, self.sleep = timeout, retries, sleep
-        self.opener = opener or urllib.request.urlopen
+        self.opener = opener or _NO_REDIRECT_OPENER.open
+        self.spend_cap_usd: float | None = None
+        self.price: tuple[float, float] | None = None
+        self.committed_usd = 0.0  # worst case of every attempt sent so far, retries included
         self.max_output_tokens, self.reasoning_effort = max_output_tokens, reasoning_effort
         self.reported_model = ""
 
     @classmethod
-    def from_env(cls, env=None) -> "AzureOpenAIClient":
+    def from_env(cls, env=None, allow_insecure_localhost: bool = False) -> "AzureOpenAIClient":
         env = os.environ if env is None else env
         return cls(env.get("AZURE_OPENAI_ENDPOINT", ""), env.get("AZURE_OPENAI_DEPLOYMENT") or "gpt-5-mini",
-                   env.get("AZURE_OPENAI_API_KEY", ""), env.get("AZURE_OPENAI_API") or "auto")
+                   env.get("AZURE_OPENAI_API_KEY", ""), env.get("AZURE_OPENAI_API") or "auto",
+                   allow_insecure_localhost=allow_insecure_localhost)
+
+    def set_spend_cap(self, cap_usd: float, price: tuple[float, float]) -> None:
+        self.price = check_price(price)
+        if not (math.isfinite(cap_usd) and cap_usd > 0):
+            raise ValueError("spend cap must be above zero")
+        self.spend_cap_usd = float(cap_usd)
 
     def settings(self) -> dict:
         return {"api": self.api, "max_output_tokens": self.max_output_tokens, "reasoning_effort": self.reasoning_effort,
@@ -243,7 +294,15 @@ class AzureOpenAIClient:
     def complete(self, system: str, user: str) -> Completion:
         body = json.dumps(self._payload(system, user)).encode("utf-8")
         last, code = "unknown error", None
+        worst = 0.0
+        if self.spend_cap_usd is not None:
+            worst = worst_case_usd(estimate_input_tokens(system, user), self.max_output_tokens, self.price)
         for attempt in range(self.retries + 1):
+            if self.spend_cap_usd is not None:  # every attempt, a retry too, may be billed in full
+                if self.committed_usd + worst > self.spend_cap_usd + 1e-9:
+                    raise ClientError(f"spend cap ${self.spend_cap_usd:.2f} would be exceeded: request not sent",
+                                      attempts=attempt)
+                self.committed_usd += worst
             if attempt:
                 self.sleep(min(2 ** attempt, 20))  # same request again: backoff 2s, 4s
             request = urllib.request.Request(self.url, data=body, headers=self._headers, method="POST")
