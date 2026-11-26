@@ -326,6 +326,68 @@ class OutputHandling(Base):
                 self.assertEqual(fh.read(), "OLD " + n)
         self.assertEqual(sorted(os.listdir(out)), ["exceptions.csv", "report.md"])
 
+    def _old_outputs(self):
+        out = os.path.join(self.tmp.name, "out")
+        os.makedirs(out)
+        for n in ("exceptions.csv", "report.md"):
+            with open(os.path.join(out, n), "w") as fh:
+                fh.write("OLD " + n)
+        return out
+
+    def test_only_link_fails_copy_fallback_succeeds(self):
+        from unittest import mock
+        import errno
+        import report.builder as b
+        out = self._old_outputs()
+
+        def nolink(*a, **k):
+            raise OSError(errno.EPERM, "no links")
+        with mock.patch.object(b.os, "link", nolink):
+            code, err = run_cli(*self.args(out))
+        self.assertEqual(code, 0, err)
+        self.assertEqual(sorted(os.listdir(out)), ["exceptions.csv", "report.md"])
+        with open(os.path.join(out, "exceptions.csv")) as fh:
+            self.assertTrue(fh.read().startswith("worker_id,"))
+        with open(os.path.join(out, "report.md")) as fh:
+            self.assertIn("# Holiday pay look-back audit", fh.read())
+
+    def test_link_not_implemented_uses_copy_fallback(self):
+        from unittest import mock
+        import report.builder as b
+
+        def nolink(*a, **k):
+            raise NotImplementedError("follow_symlinks")
+        out = self._old_outputs()
+        with mock.patch.object(b.os, "link", nolink):
+            code, err = run_cli(*self.args(out))
+        self.assertEqual(code, 0, err)
+        self.assertEqual(sorted(os.listdir(out)), ["exceptions.csv", "report.md"])
+
+    def test_interrupt_with_failed_rollback_reraises_interrupt_and_keeps_backup(self):
+        from unittest import mock
+        import report.builder as b
+        out = self._old_outputs()
+        real = os.replace
+
+        def flaky(src, dst):
+            if src.endswith(".bak"):
+                raise OSError("replace refused")
+            if os.path.basename(dst) == "report.md" and src.endswith(".tmp"):
+                raise KeyboardInterrupt()
+            return real(src, dst)
+        err = io.StringIO()
+        with mock.patch.object(b.os, "replace", flaky), redirect_stderr(err):
+            with self.assertRaises(KeyboardInterrupt) as cm:
+                b.write_outputs(out, [], [])
+        baks = [n for n in os.listdir(out) if n.endswith(".bak")]
+        self.assertEqual(len(baks), 1)
+        with open(os.path.join(out, baks[0])) as fh:
+            self.assertEqual(fh.read(), "OLD exceptions.csv")
+        self.assertIn(os.path.join(out, baks[0]), err.getvalue())
+        if hasattr(cm.exception, "__notes__"):
+            self.assertIn("kept at", "\n".join(cm.exception.__notes__))
+        self.assertFalse([n for n in os.listdir(out) if n.endswith(".tmp")])
+
     def test_second_rename_failure_without_old_files_leaves_nothing(self):
         out = os.path.join(self.tmp.name, "fresh")
         with self._fail_second_replace():
