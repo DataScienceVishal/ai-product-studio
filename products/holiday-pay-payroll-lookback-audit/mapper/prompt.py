@@ -77,6 +77,19 @@ RESPONSE_SCHEMA = {
 }
 
 
+USER_TEMPLATE = "Classify these pay elements:\n{json array of {id, pay_element_name, source_style}}"
+
+
+def config_sha256(max_output_tokens: int, names_sha256: str) -> str:
+    """Fingerprint of everything that shapes the answer: system prompt, schema and its name, reasoning effort, output
+    cap, user-message template and the names file. Endpoint, API type, deployment, timeout and retries are left out."""
+    import json
+    blob = json.dumps({"system_prompt": SYSTEM_PROMPT, "schema_name": SCHEMA_NAME, "schema": RESPONSE_SCHEMA,
+                       "reasoning_effort": REASONING_EFFORT, "max_output_tokens": max_output_tokens,
+                       "user_template": USER_TEMPLATE, "names_sha256": names_sha256}, sort_keys=True)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
 def build_user_message(rows: list[dict]) -> str:
     """The names to classify, as a JSON array of {id, pay_element_name, source_style}. Nothing else is sent."""
     import json

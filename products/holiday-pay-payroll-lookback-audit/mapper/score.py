@@ -170,6 +170,9 @@ def main(argv: list[str] | None = None) -> int:
         warnings = []
         if run.get("prompt_sha256") != PROMPT_SHA256:
             warnings.append("run.json prompt sha256 differs from the current mapper/prompt.py")
+        cfg = {a.get("config_sha256") for a in run.get("failed_attempts") or []} | {run.get("config_sha256")}
+        if len(cfg) > 1 or None in cfg:
+            warnings.append("run config sha256 missing or differs between the failed attempts and the final run")
         if run.get("names") != len(gold):
             warnings.append(f"run.json names ({run.get('names')}) differs from gold rows ({len(gold)})")
         for w in warnings:

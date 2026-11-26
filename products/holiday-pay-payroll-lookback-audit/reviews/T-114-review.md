@@ -123,3 +123,16 @@ OK
 1. run.py 121-124: on the crash path, `result` is replaced with a fresh `MapResult`, so any usage counted before the crash is lost from `cost_usd`. Today only a bug inside `validate_reply` could reach this path, so the impact is small. If you want the figures, keep the partial result.
 2. `attempts.jsonl` tokens are not added to `cost_usd`. That is correct for B2, since a failed attempt produced nothing, but the Q-16 spend ledger should add them (they are 0 for 4xx).
 3. A 200 reply whose body isn't JSON is treated as no answer and can be re-run. That is acceptable (nothing was seen), but its token usage is unknown. The Azure spend report remains the source of truth, as the README already says.
+
+---
+
+## Follow-up review: 647a8d1..bb5f1a2 (run-config sha guard, crash usage kept)
+
+Same rules: I did not read any labels or gold.csv and made no network calls. Test run: `python3 -I -m unittest discover -s tests -t .` gives `Ran 126 tests ... OK`.
+
+### Verdict: PASS
+
+- **Config guard:** this matches the recommendation. `config_sha256` (prompt.py) hashes canonical JSON (`sort_keys`) over the system prompt, schema name, schema, reasoning effort, output cap, user template and the names-file sha. It leaves out the endpoint, API type, deployment, timeout and retries. run.py compares it against every `attempts.jsonl` entry before writing anything, and records it, together with `names_sha256`, in both `attempts.jsonl` and `run.json`. An older attempt entry without the field is refused, which is the safe side. Tests cover a changed setting, a changed names file, each input to the hash, and the sha being recorded. score.py warns if the sha is missing or differs between the failed attempts and the final run.
+- **Usage kept on crash:** `map_names(..., into=result)` fills the result in place, so tokens counted before a crash stay in `run.json` and `cost_usd`. Missing ids are filled with UNMAPPED. A crash still locks the folder (exit 5). The test checks that 11 in and 22 out tokens are kept and costed.
+
+Minor (non-blocking): `USER_TEMPLATE` is a hand-written string, separate from `build_user_message`. Someone could change the message prefix or its fields and forget to update the template, and the hash would not change. A safer version derives it from the code, e.g. `USER_TEMPLATE = build_user_message([{"id": "<id>", "pay_element_name": "<name>", "source_style": "<style>"}])`, defined after the function. The names-file sha already covers the data, so the remaining gap is a code change, and git history would show that.

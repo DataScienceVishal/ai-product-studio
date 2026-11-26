@@ -41,5 +41,5 @@ A bad reply is never repaired, re-asked or re-prompted: invalid or missing items
 If the API gives NO answer at all (HTTP 400/5xx, network failure, unreadable body) nothing is scored and the shot is
 not used: the run exits 4, writes no predictions or run.json, logs the attempt in `results/attempts.jsonl` and removes
 `run.started`. Fix the cause (endpoint, deployment, `AZURE_OPENAI_API`) and re-run with the IDENTICAL prompt; a re-run is
-refused if any logged attempt used a different prompt sha. The client's own retry is the same request after a network error, 429 or 5xx.
+refused if any logged attempt used a different run config sha256 (system prompt, schema and name, reasoning effort, output cap, message template, names file; not endpoint, API type, deployment, timeout or retries). The client's own retry is the same request after a network error, 429 or 5xx.
 Cost uses gpt-5-mini at $0.25 in / $2.00 out per million tokens (state/BUDGET.md). Worst case per attempt is about $0.10.
