@@ -10,7 +10,7 @@ Part 1 rules (oracle):
     the basic in the history moved (flag reference_week_basic_differs_from_contract when a reference week differs).
   * contract blank (T-137 rule, replaces the T-136 modal rule): rate inferred (flag rate_inferred_no_contract_basic) as the MOST
     RECENT basic > 0 among non-statutory (no SSP/SMP) weeks in the 8 calendar weeks before the leave week; if those 8 weeks hold no
-    such basic, the latest NON-statutory basic > 0 anywhere before the leave week, then any basic > 0 (fallback). Flag rate_inferred_ambiguous when the 8-week window
+    such basic (weeks containing holiday_pay are also left out of the window, T-138), the latest NON-statutory basic > 0 anywhere before the leave week, then any basic > 0 (fallback). Flag rate_inferred_ambiguous when the 8-week window
     holds more than one distinct basic, or the fallback was used; flag no_basic_pay_found when the rate is 0 (no basic anywhere).
     A row with either of those two flags is ALWAYS an exception, even with difference 0 (direction "correct").
 Part 2 rules (oracle): FORMAT.md "irregular_rolled_up" section, rolled-up pay = 12.07% x (basic + overtime + commission + allowance),
@@ -62,7 +62,8 @@ def window_weeks(pay, lw, n=104):
 def inferred_basic(pay, lw):
     """Blank contract (T-137): (rate, ambiguous). Most recent basic>0 in the last 8 non-statutory weeks; else latest basic>0."""
     last8 = [p.get("basic", Decimal(0)) for _, p in window_weeks(pay, lw, 8)
-             if p.get("basic", Decimal(0)) > 0 and p.get("statutory", Decimal(0)) <= 0]  # newest first
+             if p.get("basic", Decimal(0)) > 0 and p.get("statutory", Decimal(0)) <= 0
+             and p.get("holiday_pay", Decimal(0)) <= 0]  # newest first; weeks with holiday pay (part leave) are left out (T-138)
     if last8:
         return Fraction(last8[0]), len(set(last8)) > 1
     for stat_ok in (False, True):  # latest non-statutory basic first, then any basic
@@ -183,6 +184,8 @@ def finish_paid(rng, wid, w):
         else:
             amt = max(Decimal(0), due + money(rng, -40, 40))
         pay[d] = {"holiday_pay": q(amt)}  # leave weeks carry holiday_pay only
+        if rng.random() < 0.25:
+            pay[d]["basic"] = money(rng, 10, 90)  # part-leave week: reduced basic beside the holiday pay (T-138)
 
 
 # ----------------------------------------------------------------------------- part 2 oracle
@@ -464,6 +467,22 @@ class HandComputed(unittest.TestCase):
         for text in ("or weekly rate guessed): 1", "Leave weeks with a guessed weekly rate: 1",
                      "Listed although the difference is £0.00"):
             self.assertIn(text, md)
+
+    def test_part_leave_week_in_window_is_not_ambiguous(self):
+        # weeks 0-17 basic 100; week 18 is a part-leave week (basic 40 + holiday_pay, leave listed); leave week 20
+        wk0 = date(2025, 1, 4)
+        hist = {wk0 + timedelta(days=7 * i): {"basic": Decimal(100)} for i in range(18)}
+        hist[wk0 + timedelta(days=7 * 18)] = {"basic": Decimal(40), "holiday_pay": Decimal("40.00")}
+        ld = wk0 + timedelta(days=7 * 20)
+        hist[ld] = {"holiday_pay": Decimal("90.00")}  # underpaid, so the row is listed and shows the rate
+        leave = [("A1", wk0 + timedelta(days=7 * 18), "1"), ("A1", ld, "1")]
+        with tempfile.TemporaryDirectory() as tmp:
+            write_inputs(tmp, [("A1", "fixed_pay", (4, 1), "", hist)], leave)
+            rows, _, _ = run_cli(tmp, Decimal("0.00"))
+        r = [x for x in rows if x["leave_week"] == ld.isoformat()]
+        self.assertEqual(len(r), 1)
+        self.assertEqual((r[0]["fixed_basic_rate"], r[0]["due"]), ("100.00", "100.00"))
+        self.assertNotIn("rate_inferred_ambiguous", r[0]["flags"])
 
     def test_f3_partial_latest_week_is_flagged_even_when_paid_equals_due(self):
         pay = {i: {"basic": Decimal(100 if i < 19 else 40)} for i in range(20)}
