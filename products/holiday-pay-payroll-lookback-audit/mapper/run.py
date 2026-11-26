@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import os
 import sys
@@ -19,7 +20,8 @@ if __package__ in (None, ""):
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from mapper.mapper import UNMAPPED, AzureOpenAIClient, FakeClient, MapResult, map_names
-from mapper.prompt import PROMPT_SHA256, PROMPT_VERSION, REASONING_EFFORT
+from mapper.mapper import MAX_OUTPUT_TOKENS
+from mapper.prompt import PROMPT_SHA256, PROMPT_VERSION, REASONING_EFFORT, config_sha256
 
 # gpt-5-mini USD per million tokens. Input $0.25 and output $2.00 (reasoning bills as output): the figures recorded in
 # state/BUDGET.md (run bb8d, T-56). products/_starter/backend/app/aicost.py keeps only the $2.00 output price as a
@@ -85,6 +87,8 @@ def main(argv: list[str] | None = None, client=None, now=None) -> int:
         print("error: duplicate ids in names file", file=sys.stderr)
         return 2
     live = not args.fake
+    with open(args.names, "rb") as handle:
+        names_sha = hashlib.sha256(handle.read()).hexdigest()
     out_dir = args.out if live else os.path.join(args.out, "fake")
     earlier: list[dict] = []
     if live:
@@ -97,10 +101,6 @@ def main(argv: list[str] | None = None, client=None, now=None) -> int:
         except (OSError, ValueError):
             print("refused: attempts.jsonl is unreadable", file=sys.stderr)
             return 3
-        if any(a.get("prompt_sha256") != PROMPT_SHA256 for a in earlier):
-            print("refused: an earlier no-answer attempt used a different prompt sha. A re-run is allowed only with "
-                  "the identical prompt.", file=sys.stderr)
-            return 3
     if not live:
         client = FakeClient()
     elif client is None:
@@ -109,6 +109,12 @@ def main(argv: list[str] | None = None, client=None, now=None) -> int:
         except ValueError as error:
             print(f"error: {error}", file=sys.stderr)
             return 2
+    config_sha = config_sha256(getattr(client, "max_output_tokens", MAX_OUTPUT_TOKENS), names_sha)
+    if live and any(a.get("config_sha256") != config_sha for a in earlier):
+        print("refused: an earlier no-answer attempt used a different run config (prompt, schema, reasoning effort, "
+              "output cap, message template or names file). A re-run is allowed only with the identical config.",
+              file=sys.stderr)
+        return 3
     os.makedirs(out_dir, exist_ok=True)
     marker = os.path.join(out_dir, "run.started")
     if live:  # written before the call, so a crash after spend still blocks a second run
@@ -116,15 +122,17 @@ def main(argv: list[str] | None = None, client=None, now=None) -> int:
             handle.write("live run started\n")
     stamp = _utc(now)
     crashed = ""
+    result = MapResult(predictions={})
     try:
-        result = map_names(rows, client)
+        map_names(rows, client, into=result)
     except Exception as error:  # map_names handles per-batch failures itself; this is a bug or a reply-handling crash
         crashed = type(error).__name__
-        result = MapResult(predictions={r["id"]: UNMAPPED for r in rows}, requests=1)
-        result.errors.append(f"crashed: {crashed}")
+        result.errors.append(f"crashed: {crashed}")  # tokens counted before the crash stay in result
+    for row in rows:
+        result.predictions.setdefault(row["id"], UNMAPPED)
     if live and result.replies == 0 and not crashed:
         # No answer at all: nothing was learnt, so the shot is not used. Log it, release the lock, fail.
-        entry = {"timestamp_utc": stamp, "prompt_sha256": PROMPT_SHA256, "failures": result.failures,
+        entry = {"timestamp_utc": stamp, "prompt_sha256": PROMPT_SHA256, "config_sha256": config_sha, "failures": result.failures,
                  "input_tokens": result.input_tokens, "output_tokens": result.output_tokens}
         with open(os.path.join(out_dir, "attempts.jsonl"), "a", encoding="utf-8") as handle:
             handle.write(json.dumps(entry) + "\n")
@@ -145,6 +153,8 @@ def main(argv: list[str] | None = None, client=None, now=None) -> int:
         "deployment": client.deployment,
         "prompt_version": PROMPT_VERSION,
         "prompt_sha256": PROMPT_SHA256,
+        "config_sha256": config_sha,
+        "names_sha256": names_sha,
         "reasoning_effort": REASONING_EFFORT,
         "settings": client.settings() if hasattr(client, "settings") else {},
         "names": len(rows),

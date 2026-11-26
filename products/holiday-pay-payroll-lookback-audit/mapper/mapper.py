@@ -98,11 +98,12 @@ def validate_reply(text: str, expected_ids: list[str]) -> tuple[dict[str, str], 
     return result, problems
 
 
-def map_names(rows: list[dict], client, batch_size: int = DEFAULT_BATCH_SIZE) -> MapResult:
+def map_names(rows: list[dict], client, batch_size: int = DEFAULT_BATCH_SIZE, into: MapResult | None = None) -> MapResult:
+    """`into`: a result to fill in place, so a caller keeps what was counted if this raises."""
     ids = [r["id"] for r in rows]
     if len(set(ids)) != len(ids):
         raise ValueError("input ids are not unique")
-    out = MapResult(predictions={})
+    out = into if into is not None else MapResult(predictions={})
     for start in range(0, len(rows), batch_size):
         batch = rows[start:start + batch_size]
         batch_ids = [r["id"] for r in batch]

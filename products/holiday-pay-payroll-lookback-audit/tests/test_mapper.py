@@ -12,7 +12,7 @@ import urllib.error
 from mapper import extract_names, run, score
 import http.client
 from mapper.mapper import AzureOpenAIClient, ClientError, Completion, FakeClient, map_names, validate_reply
-from mapper.prompt import CATEGORIES, PROMPT_SHA256, SYSTEM_PROMPT
+from mapper.prompt import CATEGORIES, PROMPT_SHA256, SYSTEM_PROMPT, config_sha256
 
 
 def write_csv(path, header, rows):
@@ -190,6 +190,41 @@ class NoAnswerTests(Tmp):
         self.assertEqual(info["reasoning_effort"], "low")
         self.assertEqual(quiet(run.main, self.args, client=ScriptedClient(reply)), 3)
 
+    def test_changed_setting_refused(self):
+        quiet(run.main, self.args, client=self.failing(ClientError("down")))
+        c = ScriptedClient("{}")
+        c.max_output_tokens = 999  # a different output cap changes the run config
+        self.assertEqual(quiet(run.main, self.args, client=c), 3)
+        self.assertEqual(c.calls, 0)
+
+    def test_changed_names_file_refused(self):
+        quiet(run.main, self.args, client=self.failing(ClientError("down")))
+        write_csv(self.p("n.csv"), ["id", "pay_element_name", "source_style"], [["1", "Salary", "a"], ["2", "Overtime!", "a"]])
+        self.assertEqual(quiet(run.main, self.args, client=ScriptedClient("{}")), 3)
+
+    def test_config_sha_covers_each_input(self):
+        base = config_sha256(100, "n")
+        self.assertEqual(base, config_sha256(100, "n"))
+        self.assertNotEqual(base, config_sha256(101, "n"))
+        self.assertNotEqual(base, config_sha256(100, "m"))
+        import mapper.prompt as pr
+        for attr, val in (("REASONING_EFFORT", "high"), ("SCHEMA_NAME", "x"), ("SYSTEM_PROMPT", "x"), ("USER_TEMPLATE", "x")):
+            old = getattr(pr, attr)
+            setattr(pr, attr, val)
+            try:
+                self.assertNotEqual(base, config_sha256(100, "n"), attr)
+            finally:
+                setattr(pr, attr, old)
+
+    def test_config_sha_recorded_in_attempts_and_run_json(self):
+        quiet(run.main, self.args, client=self.failing(ClientError("down")))
+        a = json.loads(read(self.p("r/attempts.jsonl")).splitlines()[0])
+        reply = json.dumps({"mappings": [{"id": "1", "category": "basic"}, {"id": "2", "category": "basic"}]})
+        quiet(run.main, self.args, client=ScriptedClient(reply))
+        info = json.loads(read(self.p("r/run.json")))
+        self.assertEqual(info["config_sha256"], a["config_sha256"])
+        self.assertEqual(len(info["names_sha256"]), 64)
+
     def test_changed_prompt_sha_refused(self):
         os.makedirs(self.p("r"))
         with open(self.p("r/attempts.jsonl"), "w") as h:
@@ -216,7 +251,7 @@ class NoAnswerTests(Tmp):
                 raise ClientError("down", input_tokens=2, output_tokens=3)
         import mapper.mapper as mm
         orig = mm.map_names
-        run.map_names = lambda rows, c: orig(rows, c, batch_size=1)
+        run.map_names = lambda rows, c, into=None: orig(rows, c, batch_size=1, into=into)
         try:
             self.assertEqual(quiet(run.main, self.args, client=Half()), 0)
         finally:
@@ -227,12 +262,17 @@ class NoAnswerTests(Tmp):
 
     def test_crash_in_map_names_writes_run_json_and_locks(self):
         orig = run.map_names
-        run.map_names = lambda rows, c: (_ for _ in ()).throw(RuntimeError("bug"))
+        def crash(rows, c, into=None):
+            into.input_tokens, into.output_tokens, into.requests = 11, 22, 1
+            raise RuntimeError("bug")
+        run.map_names = crash
         try:
             self.assertEqual(quiet(run.main, self.args, client=ScriptedClient("{}")), 5)
         finally:
             run.map_names = orig
-        self.assertEqual(json.loads(read(self.p("r/run.json")))["crashed"], "RuntimeError")
+        info = json.loads(read(self.p("r/run.json")))
+        self.assertEqual((info["crashed"], info["input_tokens"], info["output_tokens"]), ("RuntimeError", 11, 22))
+        self.assertAlmostEqual(info["cost_usd"], run.cost_usd(11, 22))
         self.assertTrue(os.path.exists(self.p("r/run.started")))
 
     def test_duplicate_names_ids_refused(self):
@@ -355,6 +395,11 @@ class ScoreRefusalTests(Tmp):
         text = read(self.p("R.md"))
         self.assertIn("**N/A (fake)**", text)
         self.assertNotIn("**PASS**", text)
+
+    def test_config_sha_mismatch_warns(self):
+        self.assertEqual(self.go([["1", "a", "s", "basic", ""]], [["1", "basic"]],
+                                 {"config_sha256": "a", "failed_attempts": [{"config_sha256": "b"}]}), 0)
+        self.assertIn("WARNING: run config sha256", read(self.p("R.md")))
 
     def test_prompt_sha_mismatch_warns_in_report(self):
         self.assertEqual(self.go([["1", "a", "s", "basic", ""]], [["1", "basic"]], {"prompt_sha256": "bad"}), 0)
