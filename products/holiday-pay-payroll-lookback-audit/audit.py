@@ -7,7 +7,7 @@ from decimal import Decimal, InvalidOperation
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from ingest import load_workers, ValidationError   # noqa: E402
-from report import audit, write_outputs, history_gaps, unlisted_holiday_pay, DEFAULT_THRESHOLD   # noqa: E402
+from report import audit, write_outputs, history_gaps, unlisted_holiday_pay, ignored_contract_basic, DEFAULT_THRESHOLD   # noqa: E402
 
 
 MAX_ERRORS_SHOWN = 50
@@ -49,9 +49,12 @@ def main(argv=None):
     except (ValueError, OverflowError) as e:
         print(f"cannot audit this data: {e}", file=sys.stderr)
         return 2
+    ignored = ignored_contract_basic(workers)
+    if ignored:
+        print(f"note: contract_weekly_basic ignored for {len(ignored)} variable_hours worker(s); see report.md", file=sys.stderr)
     try:
         write_outputs(a.out, rows, exceptions, a.threshold, history_gaps(workers), len(workers),
-                      unlisted_holiday_pay(workers))
+                      unlisted_holiday_pay(workers), ignored)
     except OSError as e:
         print(f"cannot write output to '{a.out}': {e.strerror or e}", file=sys.stderr)
         return 2

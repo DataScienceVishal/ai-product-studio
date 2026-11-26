@@ -251,7 +251,11 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
                 workers[wid].worker_type = row["worker_type"]
             basic = row.get("contract_weekly_basic", "")
             if basic:
-                workers[wid].contract_weekly_basic = _amount(wname, line, "contract_weekly_basic", basic, issues)
+                amt = _amount(wname, line, "contract_weekly_basic", basic, issues)
+                if amt is not None and amt == 0 and workers[wid].worker_type == "fixed_pay":
+                    issues.append(Issue(wname, line, f"contract_weekly_basic must be greater than 0 for a fixed_pay worker ({wid}); leave it blank to infer the rate"))
+                    amt = None
+                workers[wid].contract_weekly_basic = amt
 
     if issues:
         raise ValidationError(issues)
