@@ -70,3 +70,21 @@ There are four problems to fix before merge. One input lets a single leave row i
 - No network access, no `eval`, no unsafe deserialisation.
 - Personal-data refusal works for headers and the NI pattern. The `worker_id` allowlist in item 2 also closes the email and name-in-ID cases.
 - `--out` is a local CLI argument chosen by the operator, so path traversal is not a concern.
+
+## Re-review (2ffe174)
+
+**Verdict: PASS**
+
+The builder's fixes are in 2ffe174 (fetched; parent is 9fd4fea, the original review). Test suite: `python3 -I -m unittest discover -s tests -t . -v` gives `Ran 149 tests in 0.163s / OK`. The sample CLI output is unchanged: W002 +80.00, W003 -10.00, W004 +50.00 `shortened`, W005 +15.00.
+
+| # | Item | Status | Evidence |
+|---|---|---|---|
+| 1 | Leave `weeks` greater than 1 | Fixed | `loader.py` now requires `0 < weeks <= 1`. The `weeks=50` probe now exits 2 with "l6.csv:2: weeks must be greater than 0 and at most 1", and nothing is written. |
+| 2 | Formula and Markdown injection | Fixed | `worker_id` is checked against the allowlist `_ID`. The `=HYPERLINK(...)`, email and `<script>` probes all exit 2 with "worker_id must be ...". As a second layer, `_safe()` prefixes `'` on CSV cells starting with `= + - @ \t \r`, and `_md()` escapes the report heading. Hyphenated NI numbers (`QQ-12-34-56-C`) are now refused too. |
+| 3 | Tracebacks instead of exit 2 | Fixed | The amount regex is now `[0-9]{1,9}(\.[0-9]{1,2})?`, which allows ASCII digits only. The 33-digit amount and `١٠٠` both exit 2 with a line-level error. A 200,000-character field gives "h11.csv:2: malformed CSV: field larger than field limit", exit 2. |
+| 4 | W004 skipped-week wording | Fixed | The report now reads "47 paid week(s) found looking back 104 week(s): 0 week(s) with no pay that counts skipped (no pay, or only excluded items such as SSP), 57 week(s) before the first payroll record in the file not counted (no data)". The CSV has a new `ref_weeks_before_first_record` column: W004 shows skipped 0 and before 57, and W003 shows 5 and 0. Both are asserted in the tests. |
+| 5 | Test gaps | Fixed | I re-ran the earlier mutations and seven new ones, and the tests now catch all of them. The three that survived before (duplicate column, `contract_weekly_basic` validation, too many fields) are caught. New mutations caught: the `weeks` upper bound removed, the ID allowlist turned off, `_safe` turned off, `csv.Error` no longer caught, the before-first-record count set to 0, and the money regex reverted. The NI, duplicate-row and weekday mutations are still caught. |
+
+Notes, not blocking:
+- `ref_weeks_skipped` in exceptions.csv now leaves out the weeks before the first record. The new column makes this visible, but anyone reading earlier output should know the meaning changed.
+- The earlier suggestions are still open: `--out` errors still raise a traceback and outputs are not written atomically, mid-history gaps are not warned about, and "Workers" still counts only workers with leave rows.
