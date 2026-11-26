@@ -99,3 +99,17 @@ All 12 engine and gate mutants are killed: oldest-in-window, no statutory filter
 ### Nit (non-blocking)
 - FORMAT.md, "Blank contract_weekly_basic": "If none of those 8 weeks has basic pay" should read "has basic pay outside an SSP/SMP week". With the new fallback the outcome is the same, but the trigger is described wrongly.
 - S2 (exclude part-leave weeks from the window) and S4 (unit test for `always_exception` with only `no_basic_pay_found`) are still open, and still optional.
+
+## Re-review 2 (commit 4fd53a7, delta `git diff 401045d 4fd53a7`)
+
+### Verdict: PASS
+
+- **R1: done.** `tests/test_t136_oracle.py` adds `HandComputed.test_report_md_explains_zero_difference_guessed_rate`. It runs the CLI and checks report.md for the summary label count, the "guessed weekly rate: 1" line and the explain() line.
+- The 3 report-code mutants that survived the last re-review all now fail that test:
+  - count hard-coded to 0: 1 failure;
+  - Exceptions count with the guessed-rate rows subtracted again: 1 failure;
+  - explain() line removed: 1 failure.
+- The 12 engine and gate mutants were caught in the previous re-review. The engine code has not changed since.
+- **FORMAT.md nit: fixed.** The text now reads "has basic pay outside an SSP/SMP week".
+- Full suite on 4fd53a7: **Ran 314 tests in 48.2s, OK**.
+- Still optional: S2 (leave part-leave weeks out of the rate window) and S4 (a unit test for `always_exception` with only `no_basic_pay_found`).
