@@ -51,3 +51,23 @@ This contradicts the README's "holiday pay not in leave.csv ... never silently d
 ## Verdict: CHANGES
 
 Blocking: C-1. A header-only leave.csv must be refused unless every worker is `irregular_rolled_up`, with a mixed-firm regression test. F2, F3, L-1, I-1 and I-2 are fixed correctly. Stdout line 1 still counts look-back exceptions only. The cap math is right and nothing is escaped twice. S-1 is a one-line wording fix and should go in the same change.
+
+## Re-review at 687aacc (delta 39fb05d..687aacc)
+
+Fresh worktree `/tmp/claude-0/rev-t130b` (now removed). **Tests: Ran 284 tests, OK** (281 + 3 new). `mapper/` and `benchmark/` are still untouched against main.
+
+| Item | Fix | Result |
+|---|---|---|
+| C-1 | `loader.py:284-287`: an empty leave.csv is accepted only if `workers` is non-empty and **all** workers are `irregular_rolled_up`. The message, FORMAT.md, README and the comment are updated. | **Fixed.** Probes: the mixed repro (R1 rolled-up, V1 variable with `holiday_pay`) exits 2 with `no data rows (...every worker in history...)`. The same data with V1 also set rolled-up exits 0 (`3 rolled-up pay weeks checked, 2 exceptions.`). The `workers and` guard keeps `all([])` from accepting an empty leave.csv when history failed to load. New test `test_mixed_firm_header_only_leave_refused` covers it. |
+| S-1 | The idle note now reads "no week that the rolled-up check applies to (no pay that counts, or pay only in leave years before 2024 with no rolled_up_holiday_pay, and no holiday_pay row)". | **Fixed**, with test `S1PreRules`. Nit: "leave years starting before 1 April 2024" would be more exact. |
+| S-3 | `_mask` drops every `unicodedata` category `Cf` character. | **Fixed.** Probe: a soft hyphen (U+00AD) prints as `'1x...' (2 chars, invisible characters removed)`. Test added for U+200E. |
+| S-5 | `code == 0` assert added. The trivial `"and "` assert is replaced by an exact `and 32 more ... (rolled\_up\_before\_2024\_rules: 32)` regex, which also checks the flag-count sum. | **Fixed.** |
+
+**Skipped items. All three are acceptable to leave out of T-130:**
+- **S-2 (stdout vs stderr notes).** This is a consistency nit. Stdout line 1 is unchanged, and the new notes come after line 2. It should be settled when the CLI output contract is next touched.
+- **S-4 (global cap, in-memory join).** The per-worker cap cuts the T-129 repro report by about 10x. What is left is a hosted-scale concern, not a correctness one. Open a board follow-up for it, alongside the still-open T-120 L-5.
+- **S-6 (md_escape module).** Cosmetic.
+
+## Re-review verdict: PASS
+
+C-1 and S-1 are fixed, with regression tests that check behaviour. 284 tests pass. No regressions were found in the delta.
