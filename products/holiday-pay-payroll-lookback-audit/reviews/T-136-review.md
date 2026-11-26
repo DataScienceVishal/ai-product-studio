@@ -68,3 +68,49 @@ None.
 - **S-4** `README.md:27`: add "and every leave week that cannot be checked (`direction` = `cannot_check`)" to the exceptions.csv description.
 
 Verdict: PASS (non-blocking follow-ups: engine/lookback.py:93, tests/test_t135.py:38, report/builder.py:170, README.md:27)
+
+## Second pass (HEAD 551e8a4)
+
+Scope: 8203d5e..551e8a4. That is ef0c4bd (Lead's fixes for S-2, S-3 and S-4) plus the merge of 7f00f82 (QA blind oracle `tests/test_t136_oracle.py` and `reviews/T-136-qa.md`). No engine code changed in this delta.
+
+Test run, from the product folder:
+
+```
+python3 -I -X dev -W error::ResourceWarning -m unittest discover -s tests -t .
+Ran 306 tests in 43.262s
+OK
+```
+
+That is 7 more tests than the first pass, and about 13 s more runtime, almost all of it from the oracle's CLI subprocess runs (115 cases). The runtime is acceptable. There are no ResourceWarnings.
+
+### Nit fixes (ef0c4bd)
+- **S-2** `tests/test_t135.py:38-45`: done. It now uses widths 1, 1, 1, 0.5, 1, which are rows the CLI accepts. The first four rows are checked as all-normal, and the fifth as 0.5/0.5 with due 150.00. This pins the cross-row accumulation that FORMAT.md:20 describes.
+- **S-3** `report/builder.py:170`: done. The new wording is accurate: no figure is given, and due and difference are blank in the CSV.
+- **S-4** `README.md:27`: done. The README now names the `cannot_check` rows and their blank due and difference.
+
+### QA oracle (7f00f82)
+- **Deterministic.** Every random draw comes from a seeded `random.Random(seed)`, and the base dates are fixed. The sets that get iterated are sorted first (`sorted(leave)` at :151, and `rng.sample(sorted(...))` at :343). No code path depends on `today()` or `now()`, in the test or in the engine, report or ingest code.
+- **Exercises the program.** It is black-box: it writes CSVs, runs `audit.py` in a subprocess with `-I` and a 60 s timeout, and parses exceptions.csv and stdout. It then compares the rows field by field with an independent Fraction-based oracle. The QA mutation table shows the oracle catches realistic slips. The one mutation it misses is the 104-week boundary, which is covered elsewhere (test_differential.py).
+- **Oracle gap (minor).** The engine leaves weeks carrying `statutory` pay out of the inferred-rate mode (`engine/lookback.py:66`). The fixed-pay generator never produces statutory rows, because `statutory` is only added in the rolled-up generator at :218. So nothing in the oracle tests that exclusion.
+
+### Are F1 to F5 really engine bugs?
+QA files all five as documentation ambiguities. My view of each:
+
+- **F1 (one contract rate for the whole history).** This is a design limitation. With the usual input (today's contract rate), it overstates what was due for leave taken before a rise: a false "underpaid", and the flag fires. It understates only if the user gives a stale rate. It is not silent. A FORMAT.md sentence is enough for now. An effective-dated rate column could come later.
+- **F2 (blank contract, rise 1 to 3 weeks before leave).** This is a real understatement and is effectively silent by default. `engine/lookback.py:63-73` takes the mode of basic over the last 8 weeks, so a rise 3 weeks before the leave gives the old rate as due. If the employer also paid the old rate, the difference is 0 and the row is not an exception (`report/builder.py:80-81`: flags only count when `--include-flagged` is set). It shows up only as a worker name under "Workers with flags" in report.md. gov.uk says the rate in force when the leave is taken applies. This is exactly the underpayment the product exists to find. The case is common: annual pay rises, and exports with no contract column.
+- **F3.** This is the same mechanism as F2, through the long-gap fallback. Same treatment as F2.
+- **F4 (noisy `latest_week_basic_differs_from_rate_used`).** This is noise only. It causes no wrong money figure. Low priority.
+- **F5 (fixed_pay with no basic anywhere gives rate 0.00).** This understates due for a fixed-pay worker (due is the overtime average only). The case is rare and usually means a mapping error. It deserves a dedicated flag that always makes the row an exception, rather than a quiet 0.00.
+
+The pinning tests are honest. `tests/test_t136_oracle.py:419-430` name the behaviour in the test name, and the QA file says to flip them if the owner rules F2 or F5 a bug. They do not present the figures as the correct legal result. A one-line comment on each saying "known limitation, see T136-F2/F5, flip when fixed" would make that clear to a reader who never opens the QA file.
+
+### Blocking or not
+This delta adds tests and docs only. Merging it does not make main worse, and the F2 and F5 behaviour was already on main before this branch. I am therefore not blocking this merge on them. But F2 is an engine accuracy defect that understates holiday pay due, and it should not reach G4 as it stands.
+
+### Follow-ups
+- **R2-1 (high, new board task before G4)** `engine/lookback.py:63-73` together with `report/builder.py:80-81`: when the contract is blank and the latest basic is above the inferred rate, either use the latest basic (rate in force at the time of leave) or always make the row an exception. Then flip `tests/test_t136_oracle.py:419-425` and update the oracle's `inferred_basic` (:58-71).
+- **R2-2 (medium)** `engine/lookback.py:76`: for a fixed_pay worker with no basic anywhere, add a flag such as `no_basic_found_for_fixed_pay` that always makes the row an exception. Then flip `tests/test_t136_oracle.py:427-430`.
+- **R2-3 (low)** `ingest/FORMAT.md`: document the inference rule (8-week mode, tie goes to the most recent value, fallback to the latest basic), the single-value contract limit (F1), and the list of flag names (F4).
+- **R2-4 (low)** `tests/test_t136_oracle.py`: add `statutory` weeks to the fixed-pay generator, and add "known limitation" comments on the F1, F2 and F5 pinning tests.
+
+Verdict: PASS (the delta merges as is; R2-1 at engine/lookback.py:63-73 and report/builder.py:80-81 must become a board task before G4)
