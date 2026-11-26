@@ -1,6 +1,7 @@
 import csv
 import os
 import re
+import shutil
 import tempfile
 from datetime import timedelta
 from decimal import Decimal
@@ -109,6 +110,18 @@ def history_gaps(workers):
     return gaps
 
 
+def _week_ranges(weeks):
+    """Group sorted week endings into runs of consecutive weeks: 'a to b (n weeks)', or 'a' for a single week."""
+    runs = []
+    for d in weeks:
+        if runs and d - runs[-1][-1] == timedelta(days=7):
+            runs[-1].append(d)
+        else:
+            runs.append([d])
+    return [r[0].isoformat() if len(r) == 1 else f"{r[0].isoformat()} to {r[-1].isoformat()} ({len(r)} weeks)"
+            for r in runs]
+
+
 def _gap_section(gaps):
     if not gaps:
         return []
@@ -116,27 +129,68 @@ def _gap_section(gaps):
            "These weeks fall between the worker's first and last record but have no rows at all. "
            "Confirm these were genuinely unpaid weeks and not missing from the export; "
            "the results above treat them as unpaid.", ""]
-    out += [f"- {_md(wid)}: {len(ws)} week(s): {', '.join(d.isoformat() for d in ws)}" for wid, ws in gaps.items()]
+    out += [f"- {_md(wid)}: {len(ws)} week(s): {', '.join(_week_ranges(ws))}" for wid, ws in gaps.items()]
     return out
 
 
 def _atomic_write_pair(out_dir, files):
-    """files: [(name, writer(fh))]. Write all to temp files, then rename all into place."""
+    """files: [(name, writer(fh), open_kwargs)]. Write all to temp files, then move all into place.
+
+    Guarantees, for any Python exception (including a failing os.replace):
+    - the folder ends up holding either the complete new set of files or exactly what it held before.
+      If a later rename fails after an earlier one succeeded, the earlier file is rolled back: the previous
+      file is restored from a hard-linked backup (or a copy where hard links are unavailable), or the new
+      file is removed when there was no previous file;
+    - no temp or backup files are left behind.
+    Not covered: a crash or power loss in the middle of the renames can still leave a mismatched pair,
+    and a failure while rolling back is reported but cannot be repaired.
+    Files are created owner-only (mode 0600) because mkstemp is used; see ingest/FORMAT.md.
+    """
     os.makedirs(out_dir, exist_ok=True)
-    temps = []
+    temps = []      # (tmp path, dest path) not yet moved into place
+    backups = []    # (backup path or None, dest path) for each dest already replaced
+    leftovers = []  # backup files to remove at the end
     try:
         for name, writer, kw in files:
             fd, tmp = tempfile.mkstemp(prefix="." + name + ".", suffix=".tmp", dir=out_dir)
             temps.append((tmp, os.path.join(out_dir, name)))
             with os.fdopen(fd, "w", **kw) as fh:
                 writer(fh)
-        for tmp, dest in temps:
-            os.replace(tmp, dest)
-            temps = [t for t in temps if t[0] != tmp]
+        try:
+            while temps:
+                tmp, dest = temps[0]
+                backup = None
+                if os.path.lexists(dest):
+                    fd, backup = tempfile.mkstemp(prefix="." + os.path.basename(dest) + ".", suffix=".bak", dir=out_dir)
+                    os.close(fd)
+                    leftovers.append(backup)
+                    os.remove(backup)
+                    try:
+                        os.link(dest, backup)
+                    except OSError:
+                        shutil.copy2(dest, backup)
+                os.replace(tmp, dest)
+                temps.pop(0)
+                backups.append((backup, dest))
+        except BaseException:
+            for backup, dest in reversed(backups):
+                try:
+                    if backup:
+                        os.replace(backup, dest)
+                    else:
+                        os.remove(dest)
+                except OSError:
+                    pass
+            raise
     finally:
         for tmp, _ in temps:
             try:
                 os.remove(tmp)
+            except OSError:
+                pass
+        for bak in leftovers:
+            try:
+                os.remove(bak)
             except OSError:
                 pass
 
@@ -155,8 +209,10 @@ def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=N
            f"- Underpayments: {len(under)}, total underpaid {_gbp(sum((r['difference'] for r in under), Decimal(0)))}",
            f"- Overpayments: {len(over)}, total overpaid {_gbp(sum((-r['difference'] for r in over), Decimal(0)))}",
            f"- Workers with flags: {len(flagged)}" + (f" ({', '.join(flagged)})" if flagged else ""),
-           f"- Workers with weeks missing from the export: {len(gaps or {})}", "",
-           "## Exceptions", ""]
+           ]
+    if gaps is not None:
+        md.append(f"- Workers with weeks missing from the export: {len(gaps)}")
+    md += ["", "## Exceptions", ""]
     md += [explain(r) for r in exceptions] or ["None.\n"]
     md += _gap_section(gaps)
 
