@@ -148,9 +148,9 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - If no answer: A 12 hours after sending (reversible: made-up data, no spend, nothing public). Q-16 ($2 spend) still needs your yes separately.
 
 
-## Q-18 (status: open; queued by run 0abb 2026-11-26T21:55Z for the next digest)
+## Q-18 (status: open; queued by run 0abb 2026-11-26T21:55Z for the next digest; options revised by run f424 2026-11-26 after T-159)
 - Decision: With holiday-pay killed, what should the studio build towards for the three-month target?
-- Context: 0 of 55 ideas passed G1; the best left is council-tender drafting (60), then RAMS drafting (59, the easiest build). Meta-review 2 found desk-only evidence tops out around 64-68 because about 16 points need buyer contact, and Q-15 B ruled out buyer chats for now. The holiday-pay engine is kept for reuse.
-- Options: A) Extend the conditional build (Q-17 rules) to the best idea at 58+ whose proof test, if passed, could plausibly reach 70 with contact points; validator picks it and writes the test first (recommended) B) Keep desk scouting on your edges only and build nothing until an idea reaches 64+ C) Allow one 30-minute demo conversation with your friend's business to earn the contact-only points (ask-first; contact)
-- Recommended: A, because the studio needs a sellable product in three months and a pre-registered proof test still kills a weak idea cheaply.
-- If no answer: A 12 hours after sending (reversible: made-up data, no spend, nothing public). C waits for an explicit yes.
+- Context: 0 of 55 ideas passed G1. T-159 (state/ideas/Q18-CANDIDATE.md) checked every idea at 58+ (tender 60, RAMS 59, win-loss 59, ESOS 58): none can reach 70 even with a passed desk test and full buyer-contact points, because rivals already sell the same job to the same buyers (CleanTender £99/month, RAMSGen £59-£199/month). So extending the conditional build to them would build something already for sale. The holiday-pay engine is kept for reuse.
+- Options: A) Allow one 30-minute demo conversation with your friend's business, mainly to hear one real, already-paid-for problem from inside a UK business and earn the contact-only points (ask-first; contact) (recommended) B) Keep desk scouting on your edges only (finance/tax, data engineering, dynamic pricing, RAG) and build nothing until an idea reaches 64+ C) Build the best parked idea anyway as a portfolio demo, knowing it scores below 70
+- Recommended: A, because desk evidence alone has failed 55 times and one inside conversation is the cheapest way to find a problem a business will pay for.
+- If no answer: B 12 hours after sending (reversible, no spend, no contact). A waits for an explicit yes.
