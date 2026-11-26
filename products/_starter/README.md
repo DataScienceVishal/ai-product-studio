@@ -201,7 +201,7 @@ fails the deploy workflow's check job, when `AI_GLOBAL_DAILY_TOKENS` x 31 x pric
 deployment name not in the table needs `AI_PRICE_PER_MILLION_TOKENS` (app) or the repository variable of the same name (workflow);
 an explicit price can only raise a table price, never lower it (a lower price needs a reviewed change to the table). Error messages
 never print the deployment name or any setting value. Those checks price the deployment *name*, which is free text, so at
-runtime the app also compares the model each reply reports (`model`, matched to the table by longest prefix, date suffix
+runtime the app also compares the model each reply reports (`model`, matched to the table by exact name, one date suffix
 ignored) with the price the startup check used (T-100 M1). A dearer model, or an unknown or missing one with no explicit
 price, logs one error and switches AI off for the process: the call that revealed it is kept and recorded, later calls get
 503 `ai_budget_reached` until the config is fixed and the app restarted. A cheaper model is fine.

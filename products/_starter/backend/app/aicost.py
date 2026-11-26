@@ -67,19 +67,17 @@ def resolve_price(deployment: str, explicit_price: object = None) -> float:
                      "to its blended USD price per million tokens, using its output price to be safe")
 
 
-_DATE_SUFFIX = re.compile(r"-(\d{4}-\d{2}-\d{2}|\d{8})$")
+_DATE_SUFFIX = re.compile(r"-([0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{8})$")  # ASCII digits only
 
 
 def reported_model_price(model: object) -> float | None:
     """Table price of the model a provider says it ran (T-100 M1), or None when it is not in the table.
-    Lower-cases, drops a trailing date (`gpt-5.4-pro-2026-03-05` -> `gpt-5.4-pro`) and takes the longest table name
-    that is the whole name or is followed by `-` (so `gpt-5.4` is unknown, not priced as `gpt-5`)."""
+    Lower-cases, drops ONE trailing date (`gpt-5.4-pro-2026-03-05` -> `gpt-5.4-pro`) and then needs an exact table name.
+    Any other suffix makes it a different model (T-162): `gpt-5-mini-pro` is unknown, not priced as `gpt-5-mini`, and
+    `gpt-5.4` is unknown, not priced as `gpt-5`. Unknown fails closed in ai.py (AI off unless a price is set)."""
     if not isinstance(model, str):
         return None
-    name = _DATE_SUFFIX.sub("", model.strip().lower())
-    best = max((key for key in MODEL_PRICES_PER_MILLION if name == key or name.startswith(key + "-")),
-               key=len, default=None)
-    return None if best is None else MODEL_PRICES_PER_MILLION[best]
+    return MODEL_PRICES_PER_MILLION.get(_DATE_SUFFIX.sub("", model.strip().lower(), count=1))
 
 
 def monthly_cost(daily_tokens: int, price: float) -> float:

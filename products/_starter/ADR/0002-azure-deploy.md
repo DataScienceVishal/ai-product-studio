@@ -420,7 +420,7 @@ draw on one credit and one OpenAI deployment, so the product lines in `state/BUD
 deployment the release will use, before any Azure sign-in. Only the global cap is used because every call is reserved against it.
 
 The name-based check can be wrong, because deployment names are free text (T-100 M1). So the app also checks the model each reply
-reports (`AzureOpenAI._check_reported_model`, table lookup by longest prefix with the date suffix dropped, `aicost.reported_model_price`).
+reports (`AzureOpenAI._check_reported_model`, table lookup by exact name with one date suffix dropped (T-162), `aicost.reported_model_price`).
 A dearer model, or an unknown or missing one when no explicit price was set, logs one error (model name only) and sets the provider's
 `disabled` flag for the process. The call that exposed it is recorded as normal; later summarise calls get 503 `ai_budget_reached`
 (the exhausted-budget code the frontend already handles) until the config is fixed and the app restarts. An unknown model with an explicit
