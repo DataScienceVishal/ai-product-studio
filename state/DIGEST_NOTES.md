@@ -11,3 +11,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - Run 9953 (T-138, T-139): follow-ups to the same fix. A week with some holiday in it no longer triggers a false "rate guessed" listing, and after a long unpaid gap the rate comes from the last full working week. Both passed review; 317 tests green.
 
 - 2026-11-26T13:25Z T-140 done: last surviving mutant in the holiday-pay rate fallback is now killed by a test (318 tests green).
+- 2026-11-26T13:28Z T-141 scout round 20 (jobs SMEs already outsource): 0 of 8 survive; near miss is UK food suppliers disputing supermarket deductions, price check queued as T-142.
