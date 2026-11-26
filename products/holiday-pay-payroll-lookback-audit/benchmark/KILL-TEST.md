@@ -26,3 +26,8 @@ PASS on A and B: AI 7 to 8 and Build 11 to 12 (64 to 66). Part A alone moves not
 
 ---
 ## Results (append only)
+
+### Part A result (2026-11-26T01:32Z, run cf48)
+PASS on A1-A4 (reviewer re-review PASS, reviews/T-111-review.md; merged to main e888e54; merged tree `Ran 46 tests ... OK`). 17+ official gov.uk/Acas examples encoded and matched (E12/E12b/E13 from published monthly inputs, all 52 weekly figures), 12 left out with reasons (benchmark/examples/SOURCES.md). A2 covers 3 of 4 areas: no official numeric example exists for regular overtime/commission, so that area is unit-tested only. gov.uk arithmetic slips recorded, not fudged (Table 5 £231.34 vs £231.54; Table 7 leaver rounding; £14,606.66 vs .67). Reviewer mutation tests: 18 of 19 caught. Score effect: none (part A alone moves nothing).
+### Part B status
+Gold labels frozen on branch p/holiday-pay-payroll-lookback-audit/T-111-labels (ec262b5, sha256 in FROZEN.md), deliberately not on main so the mapper author can't see them. 200 names, 9 categories (adds deduction_excluded; fold into expense_excluded if scoring on 8). Only BrightPay's import layouts are public; Xero and Sage 50 export layouts could not be fetched, so B1's layout half covers BrightPay only. Run waits for Q-16.
