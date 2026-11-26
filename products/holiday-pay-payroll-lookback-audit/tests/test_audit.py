@@ -98,6 +98,44 @@ class Validation(Base):
         self.has(iss, "w.csv:4", "no payroll history")
 
 
+class Hardening(Base):
+    def test_duplicate_column(self):
+        self.has(self.issues("worker_id,week_ending,amount,element_category,amount\nW1,2025-06-07,1,basic,1\n"),
+                 "h.csv:1", "duplicate column 'amount'")
+
+    def test_bad_contract_basic(self):
+        for bad in ("abc", "-1"):
+            self.has(self.issues(H + "W1,2025-06-07,basic,1\n", workers=f"worker_id,worker_type,contract_weekly_basic\nW1,fixed_pay,{bad}\n"),
+                     "w.csv:2", "contract_weekly_basic")
+
+    def test_too_many_fields(self):
+        self.has(self.issues(H + "W1,2025-06-07,basic,1,extra\n"), "h.csv:2", "expected 4 fields, found 5")
+
+    def test_leave_weeks_above_one_rejected(self):
+        iss = self.issues(H + "W1,2025-06-07,basic,100\n", leave="worker_id,week_ending,weeks\nW1,2025-06-07,50\nW1,2025-06-14,1.5\n")
+        self.has(iss, "l.csv:2", "at most 1"); self.has(iss, "l.csv:3", "at most 1")
+
+    def test_worker_id_allowlist(self):
+        for bad in ('=HYPERLINK("x")', "a@b.com", "<script>", "-1", "bob smith"):
+            self.has(self.issues(H + f'"{bad.replace(chr(34), chr(34)*2)}",2025-06-07,basic,1\n'), "h.csv:2", "worker_id must be")
+
+    def test_output_escaping(self):
+        from report.builder import _safe, _md
+        self.assertEqual([_safe(c) for c in ("=1", "+1", "-1", "@x", "\tx", "\rx", "ok")],
+                         ["'=1", "'+1", "'-1", "'@x", "'\tx", "'\rx", "ok"])
+        self.assertEqual(_md("a_b*c#"), "a\\_b\\*c\\#")
+
+    def test_no_tracebacks_on_hostile_numbers(self):
+        for amt in ("1" * 40, "\u0661\u0660\u0660", "1e5", '"1,000"', "1.123"):
+            self.has(self.issues(H + f"W1,2025-06-07,basic,{amt}\n"), "h.csv:2", "amount")
+
+    def test_oversized_field_is_a_row_error(self):
+        import csv as _csv
+        old = _csv.field_size_limit(1000)
+        self.addCleanup(_csv.field_size_limit, old)
+        self.has(self.issues(H + "W1,2025-06-07,basic," + "9" * 2000 + "\n"), "h.csv:", "malformed CSV")
+
+
 def run_cli(*args):
     out, err = io.StringIO(), io.StringIO()
     with redirect_stdout(out), redirect_stderr(err):
@@ -129,13 +167,16 @@ class EndToEnd(Base):
             "W004": ("350.00", "400.00", "50.00", "underpaid"),
             "W005": ("300.00", "315.00", "15.00", "underpaid")})
         self.assertEqual(by["W004"]["flags"], "shortened")
-        self.assertEqual((by["W003"]["ref_weeks_used"], by["W003"]["ref_weeks_skipped"]), ("52", "5"))
+        self.assertEqual((by["W003"]["ref_weeks_used"], by["W003"]["ref_weeks_skipped"],
+                          by["W003"]["ref_weeks_before_first_record"]), ("52", "5", "0"))
+        self.assertEqual((by["W004"]["ref_weeks_skipped"], by["W004"]["ref_weeks_before_first_record"]), ("0", "57"))
         with open(f"{out}/report.md", encoding="utf-8") as fh:
             md = fh.read()
         self.assertIn("Not legal advice; a payroll professional signs off", md.split("\n")[2])
         for s in ("Workers: 5", "Leave weeks checked: 5", "Underpayments: 3, total underpaid £145.00",
                   "Overpayments: 1, total overpaid £10.00", "Workers with flags: 1 (W004)",
-                  "### W002, week ending 2025-08-09", "underpaid by £80.00"):
+                  "### W002, week ending 2025-08-09", "underpaid by £80.00",
+                  "57 week(s) before the first payroll record in the file not counted"):
             self.assertIn(s, md)
 
     def test_threshold(self):

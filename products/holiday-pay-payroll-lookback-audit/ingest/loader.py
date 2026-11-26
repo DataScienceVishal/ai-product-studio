@@ -15,9 +15,10 @@ HISTORY_COLS = (("worker_id", "week_ending", "element_category", "amount"), ())
 LEAVE_COLS = (("worker_id", "week_ending"), ("weeks",))
 WORKER_COLS = (("worker_id", "worker_type"), ("contract_weekly_basic",))
 
-_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-_NUM = re.compile(r"^\d+(\.\d+)?$")
-_NI = re.compile(r"^[A-Za-z]{2}\s?\d{2}\s?\d{2}\s?\d{2}\s?[A-Za-z]$")
+_DATE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+_MONEY = re.compile(r"^[0-9]{1,9}(\.[0-9]{1,2})?$")
+_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")
+_NI = re.compile(r"^[A-Za-z]{2}[\s-]?[0-9]{2}[\s-]?[0-9]{2}[\s-]?[0-9]{2}[\s-]?[A-Za-z]$")
 _PERSONAL_PARTS = ("name", "nino", "ninumber", "insurance", "birth", "dob", "address", "postcode",
                    "email", "phone", "mobile", "surname")
 
@@ -45,6 +46,7 @@ class WorkerData:
     leave: List[LeaveEntry] = field(default_factory=list)
     worker_type: str = "variable_hours"
     contract_weekly_basic: Optional[Decimal] = None
+    first_week: Optional[date] = None   # earliest week_ending in the history file
 
 
 def _is_personal_header(h: str) -> bool:
@@ -94,6 +96,9 @@ def _read(path, spec, issues):
     except (OSError, UnicodeDecodeError) as e:
         issues.append(Issue(name, 0, f"cannot read file: {e}"))
         return []
+    except csv.Error as e:
+        issues.append(Issue(name, reader.line_num, f"malformed CSV: {e}"))
+        return []
 
 
 def _worker_id(name, line, row, issues):
@@ -102,6 +107,8 @@ def _worker_id(name, line, row, issues):
         issues.append(Issue(name, line, "worker_id is empty"))
     elif _NI.match(wid):
         issues.append(Issue(name, line, "worker_id looks like a National Insurance number. Refused; use a pseudonymous payroll ID"))
+    elif not _ID.match(wid):
+        issues.append(Issue(name, line, "worker_id must be 1-64 letters, digits, '_', '.' or '-', starting with a letter or digit"))
     else:
         return wid
     return None
@@ -119,9 +126,9 @@ def _date(name, line, row, issues):
 
 
 def _amount(name, line, col, v, issues):
-    if _NUM.match(v):
+    if _MONEY.match(v):
         return Decimal(v)
-    issues.append(Issue(name, line, f"{col} '{v}' is not a non-negative number (NaN, Infinity, signs and exponents are refused)"))
+    issues.append(Issue(name, line, f"{col} '{v[:30]}' must be a plain non-negative number: up to 9 digits and 2 decimal places (no NaN, Infinity, signs, exponents or separators)"))
     return None
 
 
@@ -156,6 +163,7 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
     # the worker's week pattern is the commonest weekday in their history
     pattern = {wid: Counter(d.weekday() for d in w.history).most_common(1)[0][0] for wid, w in workers.items()}
     for wid, w in workers.items():
+        w.first_week = min(w.history)
         for d in w.history:
             if d.weekday() != pattern[wid]:
                 issues.append(Issue(hname, hist_lines[wid][d], f"week_ending {d} is a {d:%A} but {wid}'s weeks end on {_DAYS[pattern[wid]]}"))
@@ -166,8 +174,8 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
     for line, row in lrows:
         wid, d = _worker_id(lname, line, row, issues), _date(lname, line, row, issues)
         weeks = _amount(lname, line, "weeks", row.get("weeks") or "1", issues)
-        if weeks is not None and weeks <= 0:
-            issues.append(Issue(lname, line, "weeks must be greater than 0"))
+        if weeks is not None and not 0 < weeks <= 1:
+            issues.append(Issue(lname, line, "weeks must be greater than 0 and at most 1 (one row per leave week)"))
             weeks = None
         if wid is None or d is None or weeks is None:
             continue
