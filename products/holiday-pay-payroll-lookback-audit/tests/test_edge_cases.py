@@ -314,5 +314,16 @@ class Lookback(unittest.TestCase):
         self.assertEqual(rows[0]["working"]["normal"]["weeks_skipped"], 4)
 
 
+class AlwaysException(unittest.TestCase):
+    def test_always_exception_flags(self):
+        from report.builder import always_exception
+        self.assertTrue(always_exception({"flags": ["rate_inferred_ambiguous"]}))
+        self.assertTrue(always_exception({"flags": ["no_basic_pay_found"]}))
+        self.assertTrue(always_exception({"flags": ["shortened", "rate_inferred_ambiguous", "no_basic_pay_found"]}))
+        self.assertFalse(always_exception({"flags": []}))
+        self.assertFalse(always_exception({"flags": ["rate_inferred_no_contract_basic", "shortened", "no_reference_weeks"]}))
+
+
 if __name__ == "__main__":
     unittest.main()
+

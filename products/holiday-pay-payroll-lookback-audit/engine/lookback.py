@@ -53,7 +53,7 @@ def _fixed_pay_refs(recent_first, contract_basic=None):
     (any week with pay that counts for normal pay, so overtime-only weeks count).
 
     Rate: explicit contract_basic if given. Otherwise inferred as the MOST RECENT basic > 0 among
-    non-statutory (no SSP/SMP) weeks in the last RATE_WINDOW weeks before the leave (the rate in force when the
+    non-statutory (no SSP/SMP) weeks without holiday pay (a part-leave week is left out) in the last RATE_WINDOW weeks before the leave (the rate in force when the
     leave is taken, source latest_basic_last_8_weeks); if none, the most recent NON-statutory week with basic pay
     anywhere before the leave, then any week with basic pay, then 0 (source latest_week_fallback). Flags added: rate_inferred_no_contract_basic;
     rate_inferred_ambiguous (inferred AND the window holds more than one distinct basic, or the fallback was used);
@@ -66,7 +66,7 @@ def _fixed_pay_refs(recent_first, contract_basic=None):
     else:
         flags.append("rate_inferred_no_contract_basic")
         cands = [b for p, b in zip(recent_first[:RATE_WINDOW], basics[:RATE_WINDOW])
-                 if b > 0 and dec(p.get("statutory", 0)) <= 0]
+                 if b > 0 and dec(p.get("statutory", 0)) <= 0 and dec(p.get("holiday_pay", 0)) <= 0]
         if cands:
             current, source = cands[0], "latest_basic_last_8_weeks"   # recent_first: first = most recent
             if len(set(cands)) > 1:
