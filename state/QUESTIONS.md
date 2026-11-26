@@ -147,3 +147,10 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Recommended: A, because without it the studio can't build anything for the three-month target, and the demand test still kills a weak idea at the first real conversation.
 - If no answer: A 12 hours after sending (reversible: made-up data, no spend, nothing public). Q-16 ($2 spend) still needs your yes separately.
 
+
+## Q-18 (status: open; queued by run 0abb 2026-11-26T21:55Z for the next digest)
+- Decision: With holiday-pay killed, what should the studio build towards for the three-month target?
+- Context: 0 of 55 ideas passed G1; the best left is council-tender drafting (60), then RAMS drafting (59, the easiest build). Meta-review 2 found desk-only evidence tops out around 64-68 because about 16 points need buyer contact, and Q-15 B ruled out buyer chats for now. The holiday-pay engine is kept for reuse.
+- Options: A) Extend the conditional build (Q-17 rules) to the best idea at 58+ whose proof test, if passed, could plausibly reach 70 with contact points; validator picks it and writes the test first (recommended) B) Keep desk scouting on your edges only and build nothing until an idea reaches 64+ C) Allow one 30-minute demo conversation with your friend's business to earn the contact-only points (ask-first; contact)
+- Recommended: A, because the studio needs a sellable product in three months and a pre-registered proof test still kills a weak idea cheaply.
+- If no answer: A 12 hours after sending (reversible: made-up data, no spend, nothing public). C waits for an explicit yes.
