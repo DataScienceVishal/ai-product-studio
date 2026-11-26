@@ -42,6 +42,11 @@ def unlisted_holiday_pay(workers):
     return out
 
 
+def ignored_contract_basic(workers):
+    """Worker ids that are variable_hours but were given a contract_weekly_basic, which the engine ignores."""
+    return sorted(w for w, d in workers.items() if d.worker_type != "fixed_pay" and d.contract_weekly_basic is not None)
+
+
 def cannot_check(r):
     return "no_reference_weeks" in r["flags"]
 
@@ -266,7 +271,17 @@ def _unlisted_section(unlisted):
     return out
 
 
-def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=None, workers_loaded=None, unlisted=None):
+def _ignored_basic_section(ignored):
+    if not ignored:
+        return []
+    out = ["", "## Warning: contract_weekly_basic ignored", "",
+           "These workers are variable_hours, so the contract_weekly_basic you gave is ignored: their rate is the "
+           "52-week average. Set worker_type to fixed_pay if the contract rate should be used, or remove the value.", ""]
+    return out + [f"- {_md(wid)}: contract_weekly_basic ignored (variable_hours)" for wid in ignored]
+
+
+def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=None, workers_loaded=None, unlisted=None,
+                  ignored_basic=None):
     under = [r for r in rows if not cannot_check(r) and r["difference"] > threshold]
     over = [r for r in rows if not cannot_check(r) and r["difference"] < -threshold]
     unchecked = [r for r in rows if cannot_check(r)]
@@ -287,10 +302,13 @@ def write_outputs(out_dir, rows, exceptions, threshold=DEFAULT_THRESHOLD, gaps=N
         md.append(f"- Workers with weeks missing from the export: {len(gaps)}")
     if unlisted:
         md.append(f"- Workers with holiday pay outside leave.csv: {len(unlisted)}")
+    if ignored_basic:
+        md.append(f"- Workers whose contract_weekly_basic was ignored: {len(ignored_basic)}")
     md += ["", "## Exceptions", ""]
     md += [explain(r) for r in exceptions] or ["None.\n"]
     md += _gap_section(gaps)
     md += _unlisted_section(unlisted)
+    md += _ignored_basic_section(ignored_basic)
 
     def write_csv(fh):
         w = csv.DictWriter(fh, COLUMNS, lineterminator="\n")
