@@ -97,3 +97,39 @@ The sample CLI output is byte-identical to `main`.
   mode 0600, and hard-linked backups keep the original inode's mode. Hard links are removed on success, so the
   number of links to user files returns to what it was.
 - **Performance:** one extra link and unlink per output file. Negligible.
+
+## Re-review (1553475)
+
+**Verdict: PASS.** The must-fix is resolved, and nothing new blocks the merge.
+
+### Evidence
+- Full suite on the exact tree (HEAD = 1553475), `python3 -I -m unittest discover -s tests -t . -v` from the product
+  folder: `Ran 166 tests in 0.216s` / `OK`.
+- Sample CLI: `5 leave weeks checked, 4 exceptions`. `exceptions.csv` and `report.md` are byte-identical to `main`
+  (W002 +80.00, W003 -10.00, W004 +50.00 `shortened`, W005 +15.00).
+- Forced rollback-failure probe re-run (2nd rename fails and `os.replace` from `.bak` fails):
+  `OSError: 2nd fail; rollback failed, the output files may not match: previous exceptions.csv kept at
+  <out>/.exceptions.csv.986ph4hq.bak (rollback fail)`. The `.bak` survives with the OLD content. The CLI prints this
+  message because the new `OSError` has no `strerror`, so `e.strerror or e` falls through to `str(e)`. The new test
+  `test_failed_rollback_keeps_backup_and_names_it` checks exit 2, the path in stderr, the backup content and that no
+  `.tmp` files are left.
+- I re-ran all the other probes (stale `.bak` and user files, copy fallback, symlink success and rollback with
+  `follow_symlinks=False`, dangling symlink, directory dest, KeyboardInterrupt, backup creation failure). The results
+  are the same as before and all correct.
+- The docstring now matches the behaviour.
+
+### Mutation M6 still survives (non-blocking)
+With `shutil.copy2(dest, backup)` replaced by `raise`, the suite still passes. The new
+`test_link_unavailable_uses_copy_fallback_and_rolls_back` combines no-links with a 2nd-rename failure. A broken
+fallback aborts before any rename, so it produces the same end state (OLD pair, exit 2) and the test cannot tell the
+two apart. I confirmed this by hand: with links unavailable and no other failure, the mutated code raises
+`[Errno 1] no links` and the real code succeeds. **Suggested fix:** add a test where `os.link` raises EPERM and
+nothing else fails, and assert exit 0 with the new files written and no `.bak` left. This kills M6.
+
+### Other notes (non-blocking)
+- If the original exception is a KeyboardInterrupt and the rollback also fails, the new chained `OSError` replaces
+  the interrupt. The CLI then prints the message and exits 2 instead of stopping on the interrupt. This is acceptable
+  because the message is more useful, but a re-raise of non-`Exception` types could be considered.
+- `os.link(..., follow_symlinks=False)` raises `NotImplementedError` (not `OSError`) on platforms that do not support
+  it, such as Windows, and the copy fallback would not catch it. Deployment is Linux, so this is fine. Catch
+  `(OSError, NotImplementedError)` if Windows support is ever needed.
