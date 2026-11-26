@@ -8,16 +8,21 @@ MAX_PAID_WEEKS = 52
 MAX_LOOKBACK_WEEKS = 104
 
 
+def dec(x) -> Decimal:
+    """Decimal from int/str/Decimal; floats go via str() so binary noise never enters."""
+    return Decimal(str(x)) if isinstance(x, float) else Decimal(x)
+
+
 def money(x) -> Decimal:
     """Round to the penny, half up (published rounding)."""
-    return Decimal(x).quantize(PENNY, rounding=ROUND_HALF_UP)
+    return dec(x).quantize(PENNY, rounding=ROUND_HALF_UP)
 
 
 @dataclass(frozen=True)
 class ReferenceResult:
     weeks_used: int          # paid weeks in the average
     weeks_scanned: int       # calendar weeks looked at (<= 104)
-    weeks_skipped: int       # no-pay weeks skipped inside the scan
+    weeks_skipped: int       # no-pay weeks skipped, counted only up to the point 52 paid weeks were found
     total: Decimal
     average: Decimal         # unrounded
     shortened: bool          # fewer than 52 paid weeks found
@@ -40,7 +45,7 @@ def reference_average(weekly_pay_recent_first: Sequence, max_paid: int = MAX_PAI
     total = Decimal(0)
     used = skipped = scanned = 0
     for pay in weekly_pay_recent_first[:max_lookback]:
-        pay = Decimal(pay)
+        pay = dec(pay)
         scanned += 1
         if pay < 0:
             raise ValueError("negative weekly pay")

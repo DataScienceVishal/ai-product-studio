@@ -4,14 +4,10 @@ from datetime import date
 from decimal import Decimal as D
 
 from engine import (reference_average, money, statutory_entitlement_days, accrual_hours,
-                    rolled_up_pay, part_year_entitlement_weeks)
+                    rolled_up_pay, part_year_entitlement_weeks, weekly_pay_from_monthly)
+from tests import fixtures_gov_monthly as F
 
 NEW = date(2024, 4, 1)
-
-TABLE4 = """309.52 433.33 247.62 185.71 273.81 350 100 250 150 220 330 110 440 350 250 350 400 228.13
-118.75 178.13 237.5 299.5 434 558 124 372 158.33 158.33 211.11 316.67 218.6 169.57 452.17 339.13 283.78
-519.23 288.46 403.85 230.77 238.64 238.64 286.36 190.91 245.45 250 300 300 200 373.33 280 373.33 280""".split()
-
 
 class OfficialExamples(unittest.TestCase):
     def test_E1_part_time_3_days(self):                       # gov.uk: 3 x 5.6 = 16.8
@@ -57,17 +53,23 @@ class OfficialExamples(unittest.TestCase):
         # The published figure is 231.34; 12040/52 is 231.54 (arithmetic error in source, see SOURCES.md).
         self.assertEqual(r.average_rounded, D("231.54"))
 
-    def test_E12_table4_monthly_worker(self):                 # gov.uk Table 4: 14,606.66 / 52 = 280.90
-        pay = [D(x) for x in TABLE4]
-        self.assertEqual(len(pay), 52)
-        r = reference_average(pay)
-        self.assertEqual(r.total, D("14606.66"))
-        self.assertEqual(r.average_rounded, D("280.90"))
+    def test_E12_table4_monthly_worker(self):                 # gov.uk Tables 3-4: from monthly pay/hours
+        weekly = weekly_pay_from_monthly(F.MONTHS, F.WEEKS)
+        self.assertEqual([money(w) for w in weekly], [D(x) for x in F.PUBLISHED_WEEKLY])
+        # published total 14,606.66 is the sum of the penny-rounded weekly figures (unrounded sum is 14,606.67)
+        rounded = [money(w) for w in weekly]
+        self.assertEqual(sum(rounded), D("14606.66"))
+        self.assertEqual(reference_average(rounded).average_rounded, D("280.90"))
+        self.assertEqual(reference_average(weekly).average_rounded, D("280.90"))
+
+    def test_E12b_table4_weeks_9_to_43_average(self):         # gov.uk: weeks 9-43 average 281.56
+        weekly = weekly_pay_from_monthly(F.MONTHS, F.WEEKS)
+        self.assertEqual(reference_average(weekly[8:43]).average_rounded, D("281.56"))
 
     def test_E13_hourly_rate_from_monthly(self):              # 1250/130h; weekly from unrounded rate
-        rate = D(1250) / D(130)
-        self.assertEqual(money(rate), D("9.62"))
-        self.assertEqual([money(rate * h) for h in (25, 20, 35)], [D("240.38"), D("192.31"), D("336.54")])
+        out = weekly_pay_from_monthly({"m": (1250, 130)}, [[("m", 25)], [("m", 20)], [("m", 35)], [("m", 35)]])
+        self.assertEqual([money(x) for x in out], [D("240.38"), D("192.31"), D("336.54"), D("336.54")])
+        self.assertEqual(money(D(1250) / 130), D("9.62"))
 
     def test_E14_ben_45_of_104(self):                         # gov.uk: paid 45 of 104 weeks -> 45 weeks
         w = ([100] * 5 + [0] * 5) * 9 + [0] * 14               # 45 paid within 104 weeks
@@ -76,11 +78,10 @@ class OfficialExamples(unittest.TestCase):
         self.assertEqual((r.weeks_used, r.weeks_scanned), (45, 104))
 
     def test_E15_amy_75_of_104(self):                         # gov.uk: paid 75 of 104 -> most recent 52 paid
-        w = ([100] * 3 + [0] * 1) * 26 
-        w = w + [0] * (104 - len(w))
+        w = [100] * 75 + [0] * 29                                # 75 paid weeks in 104
         r = reference_average(w)
         self.assertEqual(r.weeks_used, 52)
-        self.assertLessEqual(r.weeks_scanned, 104)
+        self.assertEqual(r.weeks_scanned, 52)
 
     def test_E16_rachel_20_weeks(self):                       # gov.uk: 20 weeks of service -> average of 20
         r = reference_average([200] * 20)

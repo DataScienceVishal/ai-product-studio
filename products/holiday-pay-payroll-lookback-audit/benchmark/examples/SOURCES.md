@@ -28,8 +28,9 @@ Test IDs refer to `tests/test_official_examples.py`.
 | E9 | A3 | Pat (sick) | 52-week average 36 | 36 per week | E9 | match |
 | E10 | G3/A4 | Fixed hours | 37h, 500 a week | 500 | E10 | match |
 | E11 | G4 Table 5 | Paid and unpaid weeks | 59 weeks, 7 unpaid, total 12,040 over 52 paid weeks | 231.34 | E11 | DISAGREES, see below |
-| E12 | G4 Tables 3-4 | Monthly-paid worker, 52 weekly figures | total 14,606.66 | average 280.90 | E12 | match (total and average) |
-| E13 | G4 | Monthly worker hourly rate | 1,250 / 130h | 9.62/h; weeks 240.38, 192.31, 336.54 | E13 | match using the unrounded rate (see below) |
+| E12 | G4 Tables 3-4 | Monthly-paid worker | published monthly pay/hours and weekly hours with month splits | all 52 weekly figures, total 14,606.66, average 280.90 | E12 | match via `weekly_pay_from_monthly`; note the published total is the sum of penny-rounded weeks (unrounded sum 14,606.67) |
+| E12b | G4 Table 4 | Weeks 9-43 average | same inputs | 281.56 | E12b | match |
+| E13 | G4 | Monthly worker hourly rate | 1,250 / 130h; 25, 20, 35, 35 hours | 240.38, 192.31, 336.54, 336.54 | E13 | match via `weekly_pay_from_monthly` using the unrounded rate (see below) |
 | E14 | G4 Ben | Paid in 45 of last 104 weeks | | average over 45 weeks | E14 | match (structural) |
 | E15 | G4 Amy | Paid in 75 of last 104 weeks | | most recent 52 paid weeks | E15 | match (structural) |
 | E16 | G4 Rachel | Started 20 weeks ago | | average of 20 weeks | E16 | match (structural) |
@@ -47,7 +48,6 @@ Test IDs refer to `tests/test_official_examples.py`.
 |---|---|---|
 | G4 | Joe (variable pay, 52 weeks) | no numeric answer |
 | G4 | Table 1 shift worker, leave 26-28 Oct 2020, week date ranges | date-range logic only, no pay figure |
-| G4 | Table 3/4 "simplified" average 281.56 (weeks 9-43) | partial table in the guidance, illustrative, not a full 52-week calculation |
 | G4 | Table 6 unpaid parental leave week | no numeric pay answer; engine skips no-pay weeks (covered by tests) |
 | G4 | Table 9 regular vs no-regular hours holiday week | no numeric answer; encoded as option `holiday_weeks_count` |
 | G4 | Term-time music teacher | no numeric answer; Brazel v Harpur Trust says reference-period averaging, not 12.07%. Averaging covered by E11/E14 style tests |

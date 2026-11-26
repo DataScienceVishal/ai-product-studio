@@ -8,9 +8,11 @@ pay itself and statutory payments (SSP/SMP etc) are excluded. Treating
 seniority); non-status allowances need adviser review.
 """
 from decimal import Decimal
+from .reference import dec
 
 CATEGORIES = ("basic", "regular_overtime", "commission", "bonus_non_regular",
               "allowance", "expense_excluded", "holiday_pay", "statutory")
+VARIABLE = frozenset({"regular_overtime", "commission", "allowance"})
 COUNTS_FOR_NORMAL = frozenset({"basic", "regular_overtime", "commission", "allowance"})
 BASIC_ONLY = frozenset({"basic"})
 
@@ -19,7 +21,7 @@ def _sum(pay: dict, cats) -> Decimal:
     unknown = set(pay) - set(CATEGORIES)
     if unknown:
         raise ValueError(f"unknown pay category: {sorted(unknown)}")
-    return sum((Decimal(v) for k, v in pay.items() if k in cats), Decimal(0))
+    return sum((dec(v) for k, v in pay.items() if k in cats), Decimal(0))
 
 
 def normal_pay(pay: dict, include_holiday_pay: bool = False) -> Decimal:
