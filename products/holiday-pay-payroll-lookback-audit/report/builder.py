@@ -364,7 +364,9 @@ def _rolled_up_notes(skipped_leave, idle=None, leave_missing=None):
 
 
 def _exception_sections(exceptions):
-    """Detailed sections: all look-back exceptions, and at most MAX_ROLLED_UP_DETAILS per rolled-up worker."""
+    """Detailed sections: all look-back exceptions; rolled-up ones at most MAX_ROLLED_UP_DETAILS per worker and
+    MAX_ROLLED_UP_TOTAL overall. Left-out ones get an 'and K more' line for the first MAX_ROLLED_UP_SUMMARIES workers,
+    then one combined line. exceptions.csv is never capped."""
     out, shown, more, total = [], {}, {}, 0
     for r in exceptions:
         if not is_rolled_up(r):
