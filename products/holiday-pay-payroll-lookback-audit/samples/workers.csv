@@ -1,0 +1,6 @@
+worker_id,worker_type,contract_weekly_basic
+W001,fixed_pay,500.00
+W002,variable_hours,
+W003,variable_hours,
+W004,variable_hours,
+W005,variable_hours,
