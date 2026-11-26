@@ -15,8 +15,8 @@ Every figure here is recalculated under these settings. It is a calculation to c
 - Overpayments: 1, total overpaid £10.00
 - Workers with flags: 1 (W004)
 - Workers with weeks missing from the export: 0
-- Rolled-up pay weeks checked: 13
-- Rolled-up pay exceptions: 8 (6 rule flags, 2 differences from 12.07% of pay that counts)
+- Rolled-up pay weeks checked (worker-weeks, each counted once): 13
+- Rolled-up pay exceptions: 8 (5 rule flags, 2 differences from 12.07% of pay that counts, 1 holiday_pay week(s) paid to a rolled-up worker)
 - Workers with holiday_pay recorded while on rolled-up pay: 1
 
 ## Exceptions

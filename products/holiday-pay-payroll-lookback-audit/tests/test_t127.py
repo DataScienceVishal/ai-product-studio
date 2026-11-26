@@ -204,5 +204,46 @@ class Invalid(Base):
             self.assertEqual(load_workers(h, l, self.write("w.csv", W + f"W1,variable_hours,,{v}\n"))["W1"].leave_year_start, parsed)
 
 
+class Counts(Base):
+    """Report and stdout counts are unambiguous (T-127)."""
+
+    def files(self):
+        # W1: week 06-07 has a rolled-up row (correct) AND holiday_pay; 06-14 is a rule flag (no rolled-up row);
+        # 06-21 underpaid. Distinct worker-weeks: 3. Exceptions: 1 holiday_pay + 1 rule flag + 1 difference.
+        h = H + ("W1,2025-06-07,basic,100\nW1,2025-06-07,rolled_up_holiday_pay,12.07\nW1,2025-06-07,holiday_pay,50\n"
+                 "W1,2025-06-14,basic,100\n"
+                 "W1,2025-06-21,basic,100\nW1,2025-06-21,rolled_up_holiday_pay,5.00\n"
+                 "W2,2025-06-07,basic,100\nW2,2025-06-14,basic,100\nW2,2025-06-21,holiday_pay,80\n")
+        return (self.write("h.csv", h), self.write("l.csv", L + "W2,2025-06-21\n"),
+                self.write("w.csv", W + "W1,irregular_rolled_up,,\nW2,variable_hours,,\n"))
+
+    def test_week_with_rolled_up_and_holiday_pay_counts_once(self):
+        h, l, w = self.files()
+        out = os.path.join(self.tmp.name, "o")
+        code, so, se = run("--history", h, "--leave", l, "--workers", w, "--out", out)
+        self.assertEqual((code, se), (0, ""))
+        with open(f"{out}/report.md", encoding="utf-8") as fh:
+            md = fh.read()
+        self.assertIn("- Rolled-up pay weeks checked (worker-weeks, each counted once): 3\n", md)
+        self.assertIn("- Rolled-up pay exceptions: 3 (1 rule flags, 1 differences from 12.07% of pay that counts, "
+                      "1 holiday_pay week(s) paid to a rolled-up worker)\n", md)
+
+    def test_stdout_first_line_counts_lookback_exceptions_only(self):
+        h, l, w = self.files()
+        out = os.path.join(self.tmp.name, "o")
+        code, so, se = run("--history", h, "--leave", l, "--workers", w, "--out", out)
+        self.assertEqual(so, f"1 leave weeks checked, 1 exceptions. Written to {out}\n"
+                             "3 rolled-up pay weeks checked, 3 exceptions.\n")
+        with open(f"{out}/exceptions.csv", newline="") as fh:
+            rows = list(csv.DictReader(fh))
+        self.assertEqual([r["check"] for r in rows].count("leave_lookback"), 1)
+        self.assertEqual(len(rows), 4)    # look-back 1 + rolled-up 3
+
+    def test_no_rolled_up_line_without_rolled_up_workers(self):
+        out = os.path.join(self.tmp.name, "o")
+        code, so, se = run("--history", f"{SAMPLES}/history.csv", "--leave", f"{SAMPLES}/leave.csv", "--out", out)
+        self.assertEqual(so, f"6 leave weeks checked, 4 exceptions. Written to {out}\n")
+
+
 if __name__ == "__main__":
     unittest.main()

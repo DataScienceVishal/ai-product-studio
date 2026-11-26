@@ -7,7 +7,7 @@ from decimal import Decimal, InvalidOperation
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from ingest import load_workers, ValidationError   # noqa: E402
-from report import audit, write_outputs, history_gaps, unlisted_holiday_pay, ignored_contract_basic, DEFAULT_THRESHOLD, split_rows, rolled_up_leave_weeks, stray_rolled_up, holiday_pay_to_rolled_up   # noqa: E402
+from report import audit, write_outputs, history_gaps, unlisted_holiday_pay, ignored_contract_basic, DEFAULT_THRESHOLD, split_rows, rolled_up_weeks_checked, rolled_up_leave_weeks, stray_rolled_up, holiday_pay_to_rolled_up   # noqa: E402
 
 
 MAX_ERRORS_SHOWN = 50
@@ -60,9 +60,10 @@ def main(argv=None):
         print(f"cannot write output to '{a.out}': {e.strerror or e}", file=sys.stderr)
         return 2
     lb_rows, ru_rows = split_rows(rows)
-    print(f"{len(lb_rows)} leave weeks checked, {len(exceptions)} exceptions. Written to {a.out}")
+    lb_exc, ru_exc = split_rows(exceptions)
+    print(f"{len(lb_rows)} leave weeks checked, {len(lb_exc)} exceptions. Written to {a.out}")
     if ru_rows:
-        print(f"{len(ru_rows)} rolled-up pay weeks checked, {len(split_rows(exceptions)[1])} of the exceptions are rolled-up pay.")
+        print(f"{rolled_up_weeks_checked(ru_rows)} rolled-up pay weeks checked, {len(ru_exc)} exceptions.")
     return 0
 
 

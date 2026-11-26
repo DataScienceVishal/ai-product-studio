@@ -29,7 +29,7 @@ Glossary (first use):
 - **Look-back**: re-checking holiday pay that was already paid in past payroll runs.
 - **Leave week**: a week in which a worker took holiday.
 - **Reference period / 52-week average**: for workers with variable pay, holiday pay is their average weekly pay over up to 52 paid weeks before the leave, skipping weeks with no pay, never reaching back more than 104 weeks (`engine/reference.py`, `reference_average`).
-- **Exception**: a leave week where what was paid differs from what the rules give by more than a threshold (default 1p).
+- **Exception**: a row in `exceptions.csv`. For a leave week it is one where what was paid differs from what the rules give by more than a threshold (default 1p), or one that cannot be checked (no paid week before it, direction `cannot_check`). For rolled-up pay it is a rule flag or a difference over the threshold, or a week with `holiday_pay` paid to a rolled-up worker.
 - **Pseudonymous ID**: a payroll ID that does not identify a person by itself.
 
 ## 2. The 60-second story
@@ -58,15 +58,15 @@ The other four sample workers show the other cases: correct (W001), overpaid by 
 ## 4. How each part works
 
 ### 4.1 Ingest (`ingest/loader.py`, `ingest/FORMAT.md`)
-- Reads three CSVs: `history.csv` (worker, week ending, pay category, amount), `leave.csv` (worker, week, optional `weeks` fraction such as 0.5 for half a week), optional `workers.csv` (`variable_hours` default, or `fixed_pay` with a contract basic).
+- Reads three CSVs: `history.csv` (worker, week ending, pay category, amount), `leave.csv` (worker, week, optional `weeks` fraction such as 0.5 for half a week), optional `workers.csv` (`variable_hours` default, `fixed_pay` with a contract basic, or `irregular_rolled_up`), plus an optional per-worker `leave_year_start` (MM-DD, default 04-01).
 - Pay categories must already be one of: basic, regular_overtime, commission, bonus_non_regular, allowance, expense_excluded, holiday_pay, statutory (`engine/elements.py`, `CATEGORIES`).
 - Privacy: columns are an allowlist; name, NI number, address and date-of-birth style columns are refused; NI-shaped IDs are refused. FORMAT.md admits the NI check can be got round (e.g. `EMPAB123456C`), so "do not rely on it".
 - Negative amounts (clawbacks, corrections) are refused; the user must net them first.
-- Failure: exit code 2, up to 50 errors to stderr with file and line and masked values, nothing written (`audit.py`, `main`).
+- Failure: exit code 2, up to 50 errors to stderr with file and line and masked values, nothing written (`audit.py`, `main`). Data the engine rejects after loading (for example a pay week it cannot compute) also exits 2 with `cannot audit this data`, nothing written.
 
 ### 4.2 Engine (`engine/`)
 - `lookback.py`, `lookback(history, leave, ...)`: per leave week returns `paid`, `due`, `difference` (positive = underpaid), flags and `working`.
-- Assumption (stated in the file): the first 4 leave weeks of a leave year (starting 1 April) get "normal pay" (basic + regular overtime + commission + allowance); later weeks get basic only. Wrong if leave.csv omits weeks (FORMAT.md warns).
+- Assumption (stated in the file): the first 4 leave weeks of a leave year (starting on the worker's `leave_year_start`, 1 April unless set) get "normal pay" (basic + regular overtime + commission + allowance); later weeks get basic only. Wrong if leave.csv omits weeks (FORMAT.md warns).
 - `fixed_pay` workers: contract basic rate plus 52-week average of variable elements; rate inferred (and flagged) if no contract basic given.
 - Money is `Decimal`, rounded half-up to the penny (`engine/reference.py`, `money`).
 - Failure modes: misaligned weekdays raise an error; leave week with no earlier pay is flagged `no_reference_weeks` and reported "cannot be checked", never counted as an error.
@@ -93,7 +93,7 @@ The other four sample workers show the other cases: correct (W001), overpaid by 
 ### 4.6 What is NOT connected
 - `audit.py` and `report/` never import `mapper/`. The audit expects categories already assigned. The mapper README says a person must confirm the mapping table before it feeds an audit (prompt-injection risk from hostile pay-item names).
 - `engine/monthly.py` is exported and tested against official examples but not called by the CLI.
-- **Connected in T-126:** `engine/accrual.py` is now called by `report/rolled_up.py` for workers marked `irregular_rolled_up` in `workers.csv`. Per pay week it flags rolled-up pay in a leave year that started before 1 April 2024 (`rolled_up_before_2024_rules`), flags pay with no separate `rolled_up_holiday_pay` row (`rolled_up_not_shown_separately`), and otherwise compares the amount paid with 12.07% of pay that counts. Their leave weeks are not re-audited by the 52-week look-back. Not covered: the 12.07% accrual of holiday hours (`accrual_hours`), and deciding who is an irregular-hours worker (the user sets it).
+- **Connected in T-126:** `engine/accrual.py` is now called by `report/rolled_up.py` for workers marked `irregular_rolled_up` in `workers.csv`. Per pay week (leave year taken from the worker's `leave_year_start`, default 1 April; T-127) it flags rolled-up pay in a leave year that started before 1 April 2024 (`rolled_up_before_2024_rules`), flags pay with no separate `rolled_up_holiday_pay` row (`rolled_up_not_shown_separately`), and otherwise compares the amount paid with 12.07% of pay that counts. Their leave weeks are not re-audited by the 52-week look-back. Not covered: the 12.07% accrual of holiday hours (`accrual_hours`), and deciding who is an irregular-hours worker (the user sets it).
 
 ## 5. Buyer Q&A (honest; no live product exists)
 
@@ -110,14 +110,14 @@ The other four sample workers show the other cases: correct (W001), overpaid by 
 
 ## 6. Demo script (synthetic sample only)
 
-Derived from `README.md`, `audit.py`, `tests/test_audit.py`. Updated in T-126 (verified by test, `tests/test_rolled_up.py`): the audit prints "5 leave weeks checked, 12 exceptions" and a second line "13 rolled-up pay weeks checked, 8 of the exceptions are rolled-up pay." Run from the product folder. Sample files: `samples/history.csv`, `samples/leave.csv`, `samples/workers.csv` (generated by `samples/generate.py`).
+Derived from `README.md`, `audit.py`, `tests/test_audit.py`. Updated in T-126 (verified by test, `tests/test_rolled_up.py`): the audit prints "5 leave weeks checked, 4 exceptions." (look-back only) and a second line "13 rolled-up pay weeks checked, 8 exceptions." (T-127 wording) Run from the product folder. Sample files: `samples/history.csv`, `samples/leave.csv`, `samples/workers.csv` (generated by `samples/generate.py`).
 
 ```
 python3 -I -m unittest discover -s tests -t . -v
 python3 audit.py --history samples/history.csv --leave samples/leave.csv \
     --workers samples/workers.csv --out out/
 ```
-Expected terminal line (from the code, `audit.py`): `5 leave weeks checked, 12 exceptions. Written to out/`, then `13 rolled-up pay weeks checked, 8 of the exceptions are rolled-up pay.` The 12 = 4 look-back exceptions (W002, W003, W004, W005) + 8 rolled-up pay exceptions (W006: 3 before the 2024 rules, W007: 2 not shown separately, W008: 1 underpaid, 1 overpaid, 1 holiday_pay paid to a rolled-up worker). Then open `out/report.md` and `out/exceptions.csv`.
+Expected terminal lines (from the code, `audit.py`): `5 leave weeks checked, 4 exceptions. Written to out/`, then `13 rolled-up pay weeks checked, 8 exceptions.` The first line counts look-back exceptions only (W002, W003, W004, W005); the second counts distinct worker-weeks checked and the 8 rolled-up pay exceptions; exceptions.csv holds all 12 rows (W006: 3 before the 2024 rules, W007: 2 not shown separately, W008: 1 underpaid, 1 overpaid, 1 holiday_pay paid to a rolled-up worker). Then open `out/report.md` and `out/exceptions.csv`.
 
 Optional second runs:
 - `... --threshold 20` shows only the 80.00 and 50.00 rows (`tests/test_audit.py`, `test_threshold`).
@@ -159,7 +159,7 @@ What is open (all from `state/ideas/...` and `state/QUESTIONS.md`):
 ### Answers
 1. G0, parked, 64 (`state/ideas/RANKING.md`, idea file).
 2. Underpaid: due minus paid is positive (`engine/lookback.py`).
-3. First 4 leave weeks in each leave year (from 1 April): normal pay; later: basic only. Needs every leave week listed.
+3. First 4 leave weeks in each leave year (from 1 April unless the worker has a `leave_year_start`): normal pay; later: basic only. Needs every leave week listed.
 4. Up to 52 paid weeks within 104 weeks; no-pay weeks (including only-SSP weeks) are skipped (`engine/reference.py`).
 5. Refused as personal data; exit 2; nothing written.
 6. basic, regular_overtime, commission, allowance (`engine/elements.py`, `COUNTS_FOR_NORMAL`).

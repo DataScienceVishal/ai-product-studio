@@ -194,8 +194,8 @@ class SampleCli(Base):
 
     def test_new_stdout_lines(self):
         out, stdout = self.run_sample()
-        self.assertEqual(stdout, f"5 leave weeks checked, 12 exceptions. Written to {out}\n"
-                                 "13 rolled-up pay weeks checked, 8 of the exceptions are rolled-up pay.\n")
+        self.assertEqual(stdout, f"5 leave weeks checked, 4 exceptions. Written to {out}\n"
+                                 "13 rolled-up pay weeks checked, 8 exceptions.\n")
 
     def test_sample_rolled_up_exceptions(self):
         out, _ = self.run_sample()
@@ -212,7 +212,7 @@ class SampleCli(Base):
             ("W008", "2025-06-28", "200.00", "", "", "rule_flag", "holiday_pay_paid_to_rolled_up_worker")])
         with open(f"{out}/report.md", encoding="utf-8") as fh:
             md = fh.read()
-        for s in ("Rolled-up pay weeks checked: 13", "Rolled-up pay exceptions: 8 (6 rule flags, 2 differences", "## Warning: holiday_pay recorded for an irregular_rolled_up worker", "- W008: 1 week(s): 2025-06-28",
+        for s in ("Rolled-up pay weeks checked (worker-weeks, each counted once): 13", "Rolled-up pay exceptions: 8 (5 rule flags, 2 differences from 12.07% of pay that counts, 1 holiday_pay week(s) paid to a rolled-up worker)", "## Warning: holiday_pay recorded for an irregular_rolled_up worker", "- W008: 1 week(s): 2025-06-28",
                   "12.07% x £200.00 = £24.14", "underpaid by £4.14", "overpaid by £5.86",
                   "W008 (1)", "Not legal advice; a payroll professional signs off."):
             self.assertIn(s, md)
