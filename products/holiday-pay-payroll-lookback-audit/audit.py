@@ -7,7 +7,7 @@ from decimal import Decimal, InvalidOperation
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from ingest import load_workers, ValidationError   # noqa: E402
-from report import audit, write_outputs, history_gaps, unlisted_holiday_pay, ignored_contract_basic, DEFAULT_THRESHOLD, split_rows, rolled_up_weeks_checked, rolled_up_leave_weeks, stray_rolled_up, holiday_pay_to_rolled_up   # noqa: E402
+from report import audit, write_outputs, history_gaps, unlisted_holiday_pay, ignored_contract_basic, DEFAULT_THRESHOLD, split_rows, rolled_up_weeks_checked, rolled_up_leave_weeks, stray_rolled_up, holiday_pay_to_rolled_up, rolled_up_idle, rolled_up_leave_missing   # noqa: E402
 
 
 MAX_ERRORS_SHOWN = 50
@@ -50,20 +50,28 @@ def main(argv=None):
         print(f"cannot audit this data: {e}", file=sys.stderr)
         return 2
     ignored = ignored_contract_basic(workers)
+    ru_workers = any(w.worker_type == "irregular_rolled_up" for w in workers.values())
+    idle = rolled_up_idle(workers, split_rows(rows)[1])
+    leave_missing = rolled_up_leave_missing(workers)
     if ignored:
         print(f"note: contract_weekly_basic ignored for {len(ignored)} worker(s) not set as fixed_pay; see report.md", file=sys.stderr)
     try:
         write_outputs(a.out, rows, exceptions, a.threshold, history_gaps(workers), len(workers),
                       unlisted_holiday_pay(workers), ignored, stray_rolled_up(workers), rolled_up_leave_weeks(workers),
-                      holiday_pay_to_rolled_up(workers))
+                      holiday_pay_to_rolled_up(workers), idle, leave_missing)
     except OSError as e:
         print(f"cannot write output to '{a.out}': {e.strerror or e}", file=sys.stderr)
         return 2
     lb_rows, ru_rows = split_rows(rows)
     lb_exc, ru_exc = split_rows(exceptions)
     print(f"{len(lb_rows)} leave weeks checked, {len(lb_exc)} exceptions. Written to {a.out}")
-    if ru_rows:
+    if ru_rows or ru_workers:
         print(f"{rolled_up_weeks_checked(ru_rows)} rolled-up pay weeks checked, {len(ru_exc)} exceptions.")
+    if idle:
+        print(f"note: {len(idle)} irregular_rolled_up worker(s) had no pay week to check; see report.md")
+    if leave_missing:
+        print(f"note: {sum(len(v) for v in leave_missing.values())} leave week(s) of irregular_rolled_up worker(s) "
+              "are missing from history; see report.md")
     return 0
 
 

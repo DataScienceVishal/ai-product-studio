@@ -9,6 +9,7 @@ Rules (the engine decides lawfulness by leave year, see engine.accrual.accrual_a
 A week with no pay that counts and no rolled-up row has nothing to check and produces no row.
 Leave years start on the worker's leave_year_start (default 1 April) and a week belongs to the year containing its week-ending date.
 """
+import re
 from decimal import Decimal
 
 from engine import accrual_applies, normal_pay, rolled_up_pay, ROLLED_UP, money, dec
@@ -115,8 +116,13 @@ def stray_rolled_up(workers):
     return out
 
 
-def explain_rolled_up(r, gbp, esc=str):
-    """Plain-English working for one result row; gbp formats pounds, esc escapes untrusted text."""
+def md_escape(text):
+    """Escape Markdown-special characters in untrusted text."""
+    return re.sub(r"([\\`*_{}\[\]()#+!|<>~-])", r"\\\1", str(text))
+
+
+def explain_rolled_up(r, gbp, esc=md_escape):
+    """Plain-English working for one result row; gbp formats pounds, esc escapes untrusted text (Markdown by default)."""
     if r["flags"] == [HOLIDAY_PAID]:
         return (f"### {esc(r['worker_id'])}, pay week ending {r['week_end']} (rolled-up holiday pay)\n\n"
                 f"- holiday_pay recorded: {gbp(r['paid'])}. Pay that counts this week: {gbp(r['counts'])}.\n"
@@ -131,3 +137,21 @@ def explain_rolled_up(r, gbp, esc=str):
     for f in r["flags"]:
         lines.append(f"- Flag `{f}`: {FLAG_TEXT[f]}.")
     return "\n".join(lines) + "\n"
+
+
+def rolled_up_idle(workers, ru_rows):
+    """[worker_id] of irregular_rolled_up workers whose pay weeks produced no checked row (nothing to check)."""
+    seen = {r["worker_id"] for r in ru_rows}
+    return [wid for wid in sorted(workers) if workers[wid].worker_type == ROLLED_UP_TYPE and wid not in seen]
+
+
+def rolled_up_leave_missing(workers):
+    """{worker_id: [leave.csv weeks with no payroll row in history]} for irregular_rolled_up workers."""
+    out = {}
+    for wid in sorted(workers):
+        w = workers[wid]
+        if w.worker_type == ROLLED_UP_TYPE:
+            weeks = sorted(e.week_end for e in w.leave if e.week_end not in w.history)
+            if weeks:
+                out[wid] = weeks
+    return out

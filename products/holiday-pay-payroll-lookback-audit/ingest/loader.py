@@ -15,6 +15,7 @@ HISTORY_COLS = (("worker_id", "week_ending", "element_category", "amount"), ())
 LEAVE_COLS = (("worker_id", "week_ending"), ("weeks",))
 WORKER_COLS = (("worker_id", "worker_type"), ("contract_weekly_basic", "leave_year_start"))
 DEFAULT_LEAVE_YEAR_START = (4, 1)
+_INVISIBLE = re.compile("[\ufeff\u200b\u200c\u200d\u2060]")
 _MMDD = re.compile(r"^[0-9]{2}-[0-9]{2}$")
 
 _DATE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
@@ -79,7 +80,9 @@ def _looks_like_ni(wid):
 def _mask(v):
     """Never echo a raw cell: first 2 characters and the length only."""
     v = str(v)
-    return f"'{v[:2]}...' ({len(v)} chars)"
+    clean = _INVISIBLE.sub("", v)
+    note = ", invisible characters removed" if clean != v else ""
+    return f"'{clean[:2]}...' ({len(clean)} chars{note})"
 
 
 def _trunc(v, n=20):
@@ -226,8 +229,7 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
 
     history_failed = any(i.file == hname for i in issues)
     lrows = _read(leave_path, LEAVE_COLS, issues)
-    if not lrows and not any(i.file == lname for i in issues):
-        issues.append(Issue(lname, 0, "no data rows"))
+    leave_empty = not lrows and not any(i.file == lname for i in issues)
     for line, row in lrows:
         wid, d = _worker_id(lname, line, row, issues), _date(lname, line, row, issues)
         weeks = _amount(lname, line, "weeks", row.get("weeks") or "1", issues)
@@ -279,6 +281,9 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
                     amt = None
                 workers[wid].contract_weekly_basic = amt
 
+    # An empty leave.csv is allowed when rolled-up workers have pay weeks to audit (T-130).
+    if leave_empty and not any(w.worker_type == "irregular_rolled_up" for w in workers.values()):
+        issues.append(Issue(lname, 0, "no data rows (a header-only leave.csv is accepted only when workers.csv sets an irregular_rolled_up worker)"))
     if issues:
         raise ValidationError(issues)
     return workers
