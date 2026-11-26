@@ -6,7 +6,7 @@ Hand-computed expectations (asserted in tests/test_audit.py):
   W001 fixed pay, contract basic 500.00, no variable pay. Due 500.00, paid 500.00. No exception.
   W002 basic 400 + commission 30 + overtime alternating 40/60 (so 52 weeks average 50.00).
        Leave 2025-08-09: due 400+30+50 = 480.00, paid 400.00 -> UNDERPAID 80.00.
-  W003 basic 300 but 5 weeks (2025-01-04..02-01) of statutory sick pay only (no basic): those weeks are skipped, so the
+  W003 basic 300 but 5 weeks (2025-01-04..02-01) marked excluded_week (no basic): those weeks are skipped, so the
        average stays 300.00. Leave 2025-08-09 paid 310.00 -> OVERPAID 10.00.
   W004 leaver: basic 350 + commission 50, history 2024-07-06..2025-06-14 (only 47 weeks before the leave, so flag `shortened`).
        Leave 2025-05-31: due 400.00, paid 350.00 -> UNDERPAID 50.00.
@@ -60,7 +60,7 @@ def build():
         add("W002", d, "commission", 30)
         add("W002", d, "regular_overtime", 40 if ((d - START).days // 7) % 2 else 60)
         if date(2025, 1, 4) <= d < date(2025, 2, 8):
-            add("W003", d, "statutory", 116.75)
+            add("W003", d, "excluded_week", 0)
         else:
             add("W003", d, "basic", 300)
         add("W005", d, "basic", 330 if d >= date(2025, 2, 8) else 300)

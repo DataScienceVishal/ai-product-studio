@@ -9,8 +9,8 @@ Part 1 rules (oracle):
   * contract given: normal rate = contract + 52-paid-week average of the variable elements; basic rate = contract, however
     the basic in the history moved (flag reference_week_basic_differs_from_contract when a reference week differs).
   * contract blank (T-137 rule, replaces the T-136 modal rule): rate inferred (flag rate_inferred_no_contract_basic) as the MOST
-    RECENT basic > 0 among non-statutory (no SSP/SMP) weeks in the 8 calendar weeks before the leave week; if those 8 weeks hold no
-    such basic (weeks containing holiday_pay are also left out of the window, T-138), the latest NON-statutory basic > 0 anywhere before the leave week, then any basic > 0 (fallback). Flag rate_inferred_ambiguous when the 8-week window
+    RECENT basic > 0 among non-excluded weeks in the 8 calendar weeks before the leave week; if those 8 weeks hold no
+    such basic (weeks containing holiday_pay are also left out of the window, T-138), the latest NON-excluded basic > 0 anywhere before the leave week, then any basic > 0 (fallback). Flag rate_inferred_ambiguous when the 8-week window
     holds more than one distinct basic, or the fallback was used; flag no_basic_pay_found when the rate is 0 (no basic anywhere).
     A row with either of those two flags is ALWAYS an exception, even with difference 0 (direction "correct").
 Part 2 rules (oracle): FORMAT.md "irregular_rolled_up" section, rolled-up pay = 12.07% x (basic + overtime + commission + allowance),
@@ -60,15 +60,15 @@ def window_weeks(pay, lw, n=104):
 
 
 def inferred_basic(pay, lw):
-    """Blank contract (T-137): (rate, ambiguous). Most recent basic>0 in the last 8 non-statutory weeks; else latest basic>0."""
+    """Blank contract (T-137): (rate, ambiguous). Most recent basic>0 in the last 8 non-excluded weeks; else latest basic>0."""
     last8 = [p.get("basic", Decimal(0)) for _, p in window_weeks(pay, lw, 8)
-             if p.get("basic", Decimal(0)) > 0 and p.get("statutory", Decimal(0)) <= 0
+             if p.get("basic", Decimal(0)) > 0 and "excluded_week" not in p
              and p.get("holiday_pay", Decimal(0)) <= 0]  # newest first; weeks with holiday pay (part leave) are left out (T-138)
     if last8:
         return Fraction(last8[0]), len(set(last8)) > 1
-    stat = lambda p: p.get("statutory", Decimal(0)) > 0
+    stat = lambda p: "excluded_week" in p
     hol = lambda p: p.get("holiday_pay", Decimal(0)) > 0
-    for skip in (lambda p: stat(p) or hol(p), stat, lambda p: False):  # full week, then non-statutory, then any basic (T-139)
+    for skip in (lambda p: stat(p) or hol(p), stat, lambda p: False):  # full week, then non-excluded, then any basic (T-139)
         for _, p in window_weeks(pay, lw, 104):
             if p.get("basic", Decimal(0)) > 0 and not skip(p):
                 return Fraction(p["basic"]), True
@@ -147,11 +147,11 @@ def gen_fixed(rng, wid, base, mode):
             continue
         r_stat = rng.random()
         if r_stat < 0.05:
-            pay[d] = {"statutory": money(rng, 50, 120)}  # SSP/SMP only week: not a paid week, no basic
+            pay[d] = {"excluded_week": money(rng, 50, 120)}  # SSP/SMP only week: not a paid week, no basic
             continue
         rec = {"basic": levels[i]}
         if r_stat < 0.12:
-            rec = {"basic": max(Decimal("10"), levels[i] / 2).quantize(CENT), "statutory": money(rng, 30, 100)}  # part-basic sick week
+            rec = {"basic": max(Decimal("10"), levels[i] / 2).quantize(CENT), "excluded_week": money(rng, 30, 100)}  # part-basic sick week
         for c in VARIABLE_CATS:
             if rng.random() < 0.3:
                 rec[c] = money(rng, 1, 70)
@@ -235,7 +235,7 @@ def gen_rolled(rng, wid, base):
         for c in VARIABLE_CATS:
             if rng.random() < 0.25:
                 rec[c] = money(rng, 1, 60)
-        for c in ("bonus_non_regular", "expense_excluded", "statutory"):
+        for c in ("bonus_non_regular", "expense_excluded", "excluded_week"):
             if rng.random() < 0.1:
                 rec[c] = money(rng, 1, 150)
         counts = sum((rec.get(c, Decimal(0)) for c in NORMAL_CATS), Decimal(0))
@@ -268,7 +268,7 @@ def write_inputs(tmp, workers, leave_rows):
         for wid, _, _, _, pay in workers:
             for d in sorted(pay):
                 for c, a in sorted(pay[d].items()):
-                    w.writerow([wid, d.isoformat(), c, f"{a:.2f}"])
+                    w.writerow([wid, d.isoformat(), c, f"{(0 if c == 'excluded_week' else a):.2f}"])
     with open(os.path.join(tmp, "leave.csv"), "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh, lineterminator="\n")
         w.writerow(["worker_id", "week_ending", "weeks"])

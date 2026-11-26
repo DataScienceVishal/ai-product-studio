@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from ingest import load_workers, ValidationError   # noqa: E402
+from ingest import load_workers, ValidationError, name_like_id_warnings   # noqa: E402
 from report import audit, write_outputs, history_gaps, unlisted_holiday_pay, ignored_contract_basic, DEFAULT_THRESHOLD, split_rows, rolled_up_weeks_checked, rolled_up_leave_weeks, stray_rolled_up, holiday_pay_to_rolled_up, rolled_up_idle, rolled_up_leave_missing   # noqa: E402
 
 
@@ -44,6 +44,8 @@ def main(argv=None):
             print(f"... and {len(e.issues) - MAX_ERRORS_SHOWN} more", file=sys.stderr)
         print(f"{len(e.issues)} validation error(s); nothing written.", file=sys.stderr)
         return 2
+    for msg in name_like_id_warnings(workers)[:MAX_ERRORS_SHOWN]:
+        print(msg, file=sys.stderr)
     try:
         rows, exceptions = audit(workers, a.threshold, a.include_flagged)
     except (ValueError, OverflowError) as e:

@@ -77,6 +77,21 @@ def _looks_like_ni(wid):
     return False
 
 
+def _mask_id(wid):
+    """Worker IDs in messages: first 2 characters then ***, never the full ID."""
+    return f"{str(wid)[:2]}***"
+
+
+_NAME_LIKE = re.compile(r"^[A-Za-z]{2,}(?:[._ ][A-Za-z]{2,})+$")
+
+
+def name_like_id_warnings(workers):
+    """Non-fatal G8 warnings: worker_ids made only of letters joined by '.', '_' or space (john.smith) look like names.
+    IDs are masked; the check is a hint, not a guarantee (JSmith1990 is not caught)."""
+    return [f"warning: worker_id {_mask_id(wid)} ({len(wid)} chars) looks like a person's name. Use a pseudonymous payroll ID"
+            for wid in sorted(workers) if _NAME_LIKE.match(wid)]
+
+
 def _mask(v):
     """Never echo a raw cell: first 2 characters and the length only."""
     v = str(v)
@@ -205,14 +220,20 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
     for line, row in hrows:
         wid, d = _worker_id(hname, line, row, issues), _date(hname, line, row, issues)
         cat = row["element_category"]
-        if cat not in CATEGORIES:
+        if cat == "statutory":
+            issues.append(Issue(hname, line, "element_category 'statutory' is no longer accepted: it reveals why a week is excluded. "
+                                "Replace it with 'excluded_week' and amount 0 (no reason, no amount)"))
+        elif cat not in CATEGORIES:
             issues.append(Issue(hname, line, f"unknown element_category {_mask(cat)} (allowed: {', '.join(CATEGORIES)})"))
         amt = _amount(hname, line, "amount", row["amount"], issues)
+        if cat == "excluded_week" and amt is not None and amt != 0:
+            issues.append(Issue(hname, line, "excluded_week must have amount 0: the amount of a leave payment can reveal its reason"))
+            amt = None
         if wid is None or d is None or cat not in CATEGORIES or amt is None:
             continue
         key = (wid, d, cat)
         if key in seen:
-            issues.append(Issue(hname, line, f"duplicate row for {wid} {d} {cat} (first at line {seen[key]})"))
+            issues.append(Issue(hname, line, f"duplicate row for {_mask_id(wid)} {d} {cat} (first at line {seen[key]})"))
             continue
         seen[key] = line
         w = workers.setdefault(wid, WorkerData(wid))
@@ -225,7 +246,7 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
         w.first_week = min(w.history)
         for d in w.history:
             if d.weekday() != pattern[wid]:
-                issues.append(Issue(hname, hist_lines[wid][d], f"week_ending {d} is a {d:%A} but {wid}'s weeks end on {_DAYS[pattern[wid]]}"))
+                issues.append(Issue(hname, hist_lines[wid][d], f"week_ending {d} is a {d:%A} but {_mask_id(wid)}'s weeks end on {_DAYS[pattern[wid]]}"))
 
     history_failed = any(i.file == hname for i in issues)
     lrows = _read(leave_path, LEAVE_COLS, issues)
@@ -240,11 +261,11 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
             continue
         if wid not in workers:
             if not history_failed:   # otherwise this is just noise on top of the real history error
-                issues.append(Issue(lname, line, f"leave for worker '{wid}' who has no payroll history"))
+                issues.append(Issue(lname, line, f"leave for worker '{_mask_id(wid)}' who has no payroll history"))
         elif d in leave_lines[wid]:
-            issues.append(Issue(lname, line, f"duplicate leave week for {wid} {d} (first at line {leave_lines[wid][d]})"))
+            issues.append(Issue(lname, line, f"duplicate leave week for {_mask_id(wid)} {d} (first at line {leave_lines[wid][d]})"))
         elif d.weekday() != pattern[wid]:
-            issues.append(Issue(lname, line, f"week_ending {d} is a {d:%A} but {wid}'s weeks end on {_DAYS[pattern[wid]]}"))
+            issues.append(Issue(lname, line, f"week_ending {d} is a {d:%A} but {_mask_id(wid)}'s weeks end on {_DAYS[pattern[wid]]}"))
         else:
             leave_lines[wid][d] = line
             workers[wid].leave.append(LeaveEntry(d, weeks))
@@ -256,11 +277,11 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
             if wid is None:
                 continue
             if wid in wseen:
-                issues.append(Issue(wname, line, f"duplicate settings for {wid} (first at line {wseen[wid]})"))
+                issues.append(Issue(wname, line, f"duplicate settings for {_mask_id(wid)} (first at line {wseen[wid]})"))
                 continue
             wseen[wid] = line
             if wid not in workers:
-                issues.append(Issue(wname, line, f"settings for worker '{wid}' who has no payroll history"))
+                issues.append(Issue(wname, line, f"settings for worker '{_mask_id(wid)}' who has no payroll history"))
                 continue
             if row["worker_type"] not in WORKER_TYPES:
                 issues.append(Issue(wname, line, f"worker_type {_mask(row['worker_type'])} must be one of {', '.join(WORKER_TYPES)}"))
@@ -277,7 +298,7 @@ def load_workers(history_path, leave_path, workers_path=None) -> Dict[str, Worke
             if basic:
                 amt = _amount(wname, line, "contract_weekly_basic", basic, issues)
                 if amt is not None and amt == 0 and workers[wid].worker_type == "fixed_pay":
-                    issues.append(Issue(wname, line, f"contract_weekly_basic must be greater than 0 for a fixed_pay worker ({wid}); leave it blank to infer the rate"))
+                    issues.append(Issue(wname, line, f"contract_weekly_basic must be greater than 0 for a fixed_pay worker ({_mask_id(wid)}); leave it blank to infer the rate"))
                     amt = None
                 workers[wid].contract_weekly_basic = amt
 
