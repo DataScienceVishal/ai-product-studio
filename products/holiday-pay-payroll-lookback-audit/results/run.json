@@ -1,0 +1,44 @@
+{
+  "fake": false,
+  "model": "gpt-5-mini",
+  "deployment": "gpt-5-mini",
+  "prompt_version": "mapper-prompt-v2",
+  "prompt_sha256": "ae175fa9c2fa89f244dba58854abe9ea0739d86ea35cfe9a917b746b88a4a5ed",
+  "config_sha256": "64d65d58f3a0765ba10b288409f87ddb207b8a0600080162d5390ad0bc53150e",
+  "names_sha256": "1fce5e3d15d66de1a1bb400ea3aa072ff495d856e40c873309e1ec48b9c2d82b",
+  "reasoning_effort": "low",
+  "settings": {
+    "api": "responses",
+    "max_output_tokens": 16000,
+    "reasoning_effort": "low",
+    "structured_output": "json_schema strict",
+    "timeout_s": 180.0,
+    "transport_retries": 2
+  },
+  "names": 200,
+  "requests": 1,
+  "replies": 1,
+  "transport_attempts": [
+    1
+  ],
+  "finish_reasons": [
+    "completed"
+  ],
+  "input_tokens": 5738,
+  "output_tokens": 2222,
+  "price_per_million_usd": {
+    "input": 0.25,
+    "output": 2.0
+  },
+  "cost_usd": 0.005879,
+  "spend_cap_usd": 2.0,
+  "worst_case_estimate_usd": 0.100952,
+  "earlier_attempts_worst_case_usd": 0.0,
+  "cumulative_worst_case_usd": 0.100952,
+  "unmapped": 0,
+  "problems": [],
+  "failed_attempts": [],
+  "batch_failures": [],
+  "crashed": false,
+  "timestamp_utc": "2026-11-26T21:20:42Z"
+}

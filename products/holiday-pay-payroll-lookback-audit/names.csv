@@ -1,0 +1,201 @@
+id,pay_element_name,source_style
+PE001,Sales Comm,Staffology
+PE002,Commission (Basic Rate),Sage50
+PE003,Pension - EE,Sage50
+PE004,BASIC,bureau_custom
+PE005,Advance Repayment,bureau_custom
+PE006,ShPP,Staffology
+PE007,Piece Rate,bureau_custom
+PE008,Target Commission,generic
+PE009,Tools Allowance,bureau_custom
+PE010,Referral Bonus - staff,BrightPay
+PE011,Cycle to Work,bureau_custom
+PE012,Holiday Pay - AL,Xero
+PE013,TOIL paid,bureau_custom
+PE014,Christmas Bonus,BrightPay
+PE015,Annual Leave,BrightPay
+PE016,Bsic Pay,bureau_custom
+PE017,Allowance,generic
+PE018,First Aider Allw,bureau_custom
+PE019,Overtime @1.5,BrightPay
+PE020,Attachment of Earnings,Sage50
+PE021,Year End Bonus,bureau_custom
+PE022,Parental Bereavement Pay,Staffology
+PE023,Student Loan Plan 2,BrightPay
+PE024,Time Worked,Staffology
+PE025,Salary Sacrifice Pension,bureau_custom
+PE026,Retro Salary,BrightPay
+PE027,PILON,bureau_custom
+PE028,Shift Allowance,BrightPay
+PE029,Severance,bureau_custom
+PE030,Gift Voucher Taxable,bureau_custom
+PE031,Expenses Reimbursed,Xero
+PE032,Bonus Q4 discretionary,bureau_custom
+PE033,Court Order,Sage50
+PE034,Overtime,generic
+PE035,Referral Comm,bureau_custom
+PE036,Comm True-up,Staffology
+PE037,Statutory Sick Pay,Xero
+PE038,Monthly Salary,BrightPay
+PE039,Comm Q1,bureau_custom
+PE040,Staff Bonus Scheme,generic
+PE041,Back Pay,Sage50
+PE042,Meal Allowance,Sage50
+PE043,Length of Service Payment,bureau_custom
+PE044,AL Paid,bureau_custom
+PE045,OT2.0,bureau_custom
+PE046,Time and a Half,BrightPay
+PE047,Holiday Pay,generic
+PE048,Overtime Bank Hol,bureau_custom
+PE049,Parking Refund,bureau_custom
+PE050,Time & a third,BrightPay
+PE051,Long Service Award,bureau_custom
+PE052,Basic Hours @ Std,BrightPay
+PE053,SAP,Sage50
+PE054,Statutory Neonatal Care Pay,Staffology
+PE055,Contracted Hrs,Staffology
+PE056,Location Allowance,bureau_custom
+PE057,Regular OT,generic
+PE058,Fuel Reimbursement,Xero
+PE059,Profit Share,Sage50
+PE060,Bonus (one-off),Staffology
+PE061,Business Mileage,Sage50
+PE062,Holiday,Sage50
+PE063,Mileage Allowance,BrightPay
+PE064,Sunday Premium OT,bureau_custom
+PE065,Season Ticket Loan,bureau_custom
+PE066,Holiday Pay Untaken,bureau_custom
+PE067,Bonus - Xmas,bureau_custom
+PE068,SSP,BrightPay
+PE069,NI,generic
+PE070,Sick Pay Adj - basic recalc,bureau_custom
+PE071,Sat Overtime,bureau_custom
+PE072,Statutory Redundancy,generic
+PE073,Employee NIC,BrightPay
+PE074,Gross Basic,Xero
+PE075,Night OT,bureau_custom
+PE076,Double Time,BrightPay
+PE077,Fire Warden Allw,bureau_custom
+PE078,Incentive Pay,generic
+PE079,SNCP,bureau_custom
+PE080,Mileage 45p,bureau_custom
+PE081,Compensation for Loss of Office,bureau_custom
+PE082,Bank Holiday Pay,bureau_custom
+PE083,Holiday Taken,Staffology
+PE084,OT 1.5,Sage50
+PE085,Dirty Work Allowance,bureau_custom
+PE086,Basic Pay,Sage50
+PE087,Holday Pay,bureau_custom
+PE088,O/T,generic
+PE089,SPP,bureau_custom
+PE090,Notice Pay,bureau_custom
+PE091,Pay - Normal,Sage50
+PE092,Pay for Hours Worked,generic
+PE093,Hrly Rate Pay,Xero
+PE094,Reimb. Travel,bureau_custom
+PE095,Employee Pension,BrightPay
+PE096,Redundancy Pay,bureau_custom
+PE097,OT Rate 1,Sage50
+PE098,Company Sick Pay,bureau_custom
+PE099,Welcome Payment,bureau_custom
+PE100,Rolled-up Hol,bureau_custom
+PE101,Voluntary Overtime,Sage50
+PE102,Overtime Premium,Xero
+PE103,Monthly Productivity Bonus,bureau_custom
+PE104,Weekly Wage,generic
+PE105,Occ Sick Pay,bureau_custom
+PE106,Weekend Allowance,bureau_custom
+PE107,Stand-by,bureau_custom
+PE108,Discretionary Bonus,Sage50
+PE109,SSP Weekly,Sage50
+PE110,Stat Sick,bureau_custom
+PE111,Spot Award,BrightPay
+PE112,OT1.5,bureau_custom
+PE113,Overnight Expenses,BrightPay
+PE114,Commission,generic
+PE115,Expenses,generic
+PE116,Day Rate,bureau_custom
+PE117,Bonus,generic
+PE118,Unsocial Hours,Sage50
+PE119,Salry,bureau_custom
+PE120,Sign-on Bonus,bureau_custom
+PE121,Hol. Pay,Sage50
+PE122,Income Tax,Xero
+PE123,Student Loan,Xero
+PE124,Call-out,bureau_custom
+PE125,Wages,generic
+PE126,Comm - Monthly,bureau_custom
+PE127,Normal Hours,BrightPay
+PE128,Shift Allw,bureau_custom
+PE129,Perf Commission,bureau_custom
+PE130,Ovrtime,bureau_custom
+PE131,Overtime @ 2,BrightPay
+PE132,Tax Refund,bureau_custom
+PE133,Salary,BrightPay
+PE134,Travel Expenses,Sage50
+PE135,On-Call Allowance,Xero
+PE136,Holiday Pay Rolled Up,bureau_custom
+PE137,Overtime Hrs,Xero
+PE138,Danger Money,bureau_custom
+PE139,Comm Q3,bureau_custom
+PE140,Bnus,bureau_custom
+PE141,SMP,bureau_custom
+PE142,Training Costs Reimb,bureau_custom
+PE143,Team Leader Allw,bureau_custom
+PE144,Leave Pay,generic
+PE145,Childcare Vouchers,bureau_custom
+PE146,Basic Salary,Xero
+PE147,Overtime Pay,Staffology
+PE148,Maternity Pay,bureau_custom
+PE149,Hol Pay,bureau_custom
+PE150,Expense Claim,Staffology
+PE151,Subsistence,bureau_custom
+PE152,Employer Pension,BrightPay
+PE153,Xmas Bonus,bureau_custom
+PE154,AVC,generic
+PE155,Union Dues,bureau_custom
+PE156,Regular Hours,Xero
+PE157,Hourly Pay,BrightPay
+PE158,Uniform Allowance,bureau_custom
+PE159,Comms,bureau_custom
+PE160,Ex Gratia,Sage50
+PE161,Sales Commission,Xero
+PE162,Standby Pay,Staffology
+PE163,Performance Bonus - Annual,Xero
+PE164,SALARY - FT,bureau_custom
+PE165,Annual Bonus,Xero
+PE166,Part-time salary,BrightPay
+PE167,Home Working Allw,bureau_custom
+PE168,Market Supplement,Sage50
+PE169,Basic pay (hrs),Sage50
+PE170,Qualification Allowance,generic
+PE171,Acting Up Allowance,bureau_custom
+PE172,Accrued Holiday Payout,generic
+PE173,Quarterly Commission,BrightPay
+PE174,Adoption Pay Statutory,generic
+PE175,Net Pay,generic
+PE176,Standard Pay,Staffology
+PE177,Car Allowance,bureau_custom
+PE178,Special Payment,generic
+PE179,Commision,bureau_custom
+PE180,Night Shift Premium,bureau_custom
+PE181,Sales Incentive,Xero
+PE182,On Call,Sage50
+PE183,GAYE,bureau_custom
+PE184,Mileage,bureau_custom
+PE185,OSP,Sage50
+PE186,Contractual Overtime,generic
+PE187,Commission Paid,BrightPay
+PE188,Hols,bureau_custom
+PE189,Responsibility Allowance,generic
+PE190,PAYE Tax,Sage50
+PE191,Employer NIC,Xero
+PE192,Statutory Paternity,generic
+PE193,Time and a quarter,BrightPay
+PE194,Statutory Maternity Pay,BrightPay
+PE195,Skills Allowance,generic
+PE196,London Weighting,BrightPay
+PE197,Ad hoc OT,bureau_custom
+PE198,Phone Allowance,bureau_custom
+PE199,Retention Bonus,generic
+PE200,Comm,Sage50
