@@ -167,7 +167,7 @@ def explain(r):
             lines.append(f"- Basic-only weekly pay (for the remaining leave): {_gbp(b['average'])}.")
     if cannot_check(r):
         lines.append(f"- CANNOT BE CHECKED: no paid weeks before this leave week, so there is nothing to average. "
-                     f"Paid in the leave week: {_gbp(r['paid'])}. Any recalculated figure shown is not reliable.")
+                     f"Paid in the leave week: {_gbp(r['paid'])}. No recalculated figure is given (due and difference are blank in exceptions.csv).")
     else:
         lines.append(f"- Recalculated under these settings: {_gbp(r['due'])}. Paid in the leave week: {_gbp(r['paid'])}. "
                      f"Result: {_direction(r['difference'])} by {_gbp(abs(r['difference']))}.")

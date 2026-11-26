@@ -35,11 +35,14 @@ class StraddleAndFlags(unittest.TestCase):
         # basic-only average differs from normal pay: overtime in every week
         h = {d: {"basic": 100, "regular_overtime": 100} for d in h}
         leave = SAT + timedelta(days=7 * 10)
-        entries = [LeaveEntry(leave + timedelta(days=7 * i), w) for i, w in enumerate([D("3.5"), D("1")])]
+        # rows the CLI accepts (at most 1 week each): 1 + 1 + 1 + 0.5 = 3.5, then a 1.0 row straddles
+        widths = [D("1"), D("1"), D("1"), D("0.5"), D("1")]
+        entries = [LeaveEntry(leave + timedelta(days=7 * i), w) for i, w in enumerate(widths)]
         rows = lookback(h, entries)
-        self.assertEqual((rows[0]["normal_weeks"], rows[0]["basic_weeks"]), (D("3.5"), 0))
-        self.assertEqual((rows[1]["normal_weeks"], rows[1]["basic_weeks"]), (D("0.5"), D("0.5")))
-        self.assertEqual(rows[1]["due"], D("150.00"))      # 0.5 x 200 normal + 0.5 x 100 basic
+        for r, w in zip(rows[:4], widths[:4]):
+            self.assertEqual((r["normal_weeks"], r["basic_weeks"]), (w, 0))
+        self.assertEqual((rows[4]["normal_weeks"], rows[4]["basic_weeks"]), (D("0.5"), D("0.5")))
+        self.assertEqual(rows[4]["due"], D("150.00"))      # 0.5 x 200 normal + 0.5 x 100 basic
 
     def test_overtime_only_week_does_not_fire_basic_differs_flag(self):
         weeks = [{"basic": 100, "regular_overtime": 20}] * 4 + [{"regular_overtime": 40}]
