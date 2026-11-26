@@ -72,10 +72,16 @@ def _fixed_pay_refs(recent_first, contract_basic=None):
             if len(set(cands)) > 1:
                 flags.append("rate_inferred_ambiguous")
         else:
-            nonstat = (b for p, b in zip(recent_first, basics) if b > 0 and dec(p.get("statutory", 0)) <= 0)
-            current = next(nonstat, None)
-            if current is None:                      # only SSP/SMP weeks carry basic: last resort
-                current = next((b for b in basics if b > 0), Decimal(0))
+            # order: full week (no statutory, no holiday_pay), then non-statutory week, then any week with basic, then 0
+            tiers = (lambda p: dec(p.get("statutory", 0)) <= 0 and dec(p.get("holiday_pay", 0)) <= 0,
+                     lambda p: dec(p.get("statutory", 0)) <= 0,
+                     lambda p: True)
+            current = Decimal(0)
+            for ok in tiers:
+                hit = next((b for p, b in zip(recent_first, basics) if b > 0 and ok(p)), None)
+                if hit is not None:
+                    current = hit
+                    break
             source = "latest_week_fallback"
             flags.append("rate_inferred_ambiguous")
     if current == 0:

@@ -66,9 +66,11 @@ def inferred_basic(pay, lw):
              and p.get("holiday_pay", Decimal(0)) <= 0]  # newest first; weeks with holiday pay (part leave) are left out (T-138)
     if last8:
         return Fraction(last8[0]), len(set(last8)) > 1
-    for stat_ok in (False, True):  # latest non-statutory basic first, then any basic
+    stat = lambda p: p.get("statutory", Decimal(0)) > 0
+    hol = lambda p: p.get("holiday_pay", Decimal(0)) > 0
+    for skip in (lambda p: stat(p) or hol(p), stat, lambda p: False):  # full week, then non-statutory, then any basic (T-139)
         for _, p in window_weeks(pay, lw, 104):
-            if p.get("basic", Decimal(0)) > 0 and (stat_ok or p.get("statutory", Decimal(0)) <= 0):
+            if p.get("basic", Decimal(0)) > 0 and not skip(p):
                 return Fraction(p["basic"]), True
     return Fraction(0), True  # no basic anywhere in the history: rate 0.00 and flag no_basic_pay_found
 
