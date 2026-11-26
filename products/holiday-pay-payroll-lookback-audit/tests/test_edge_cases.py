@@ -248,6 +248,15 @@ class Lookback(unittest.TestCase):
         self.assertEqual(r["working"]["normal"]["basic_source"], "latest_week_fallback")
         self.assertIn("rate_inferred_ambiguous", r["flags"])
 
+    def test_fixed_pay_fallback_tier2_prefers_part_leave_over_newer_ssp(self):
+        h = hist(60, {"regular_overtime": 20})                # no full week with basic anywhere
+        h[SAT] = {"basic": 80, "statutory": 99}               # SSP week, most recent
+        h[SAT - timedelta(days=7 * 3)] = {"basic": 200, "holiday_pay": 300}   # older part-leave week
+        r = lookback(h, [LeaveEntry(SAT + timedelta(days=7))], worker_type="fixed_pay")[0]
+        self.assertEqual(r["working"]["normal"]["current_basic"], D("200.00"))   # tier 2, not tier 3's 80
+        self.assertEqual(r["working"]["normal"]["basic_source"], "latest_week_fallback")
+        self.assertIn("rate_inferred_ambiguous", r["flags"])
+
     def test_fixed_pay_only_ssp_weeks_carry_basic(self):
         h = hist(8, {"basic": 100, "statutory": 99})
         r = lookback(h, [LeaveEntry(SAT + timedelta(days=7))], worker_type="fixed_pay")[0]
