@@ -10,6 +10,7 @@ import unittest
 import urllib.error
 
 from mapper import extract_names, run, score
+import http.client
 from mapper.mapper import AzureOpenAIClient, ClientError, Completion, FakeClient, map_names, validate_reply
 from mapper.prompt import CATEGORIES, PROMPT_SHA256, SYSTEM_PROMPT
 
@@ -64,7 +65,7 @@ class PromptTests(unittest.TestCase):
 
 class ExtractTests(Tmp):
     def test_strips_other_columns(self):
-        write_csv(self.p("g.csv"), ["id", "pay_element_name", "source_style", "category", "note"],
+        write_csv(self.p("g.csv"), ["id", "pay_element_name", "source_style", "gold_category", "note"],
                   [["1", "Basic Pay", "brightpay", "basic", "AMBIGUOUS: x"], ["2", "PAYE", "sage", "deduction_excluded", ""]])
         self.assertEqual(quiet(extract_names.main, ["--in", self.p("g.csv"), "--out", self.p("n.csv")]), 0)
         text = read(self.p("n.csv"))
@@ -86,7 +87,7 @@ class ExtractTests(Tmp):
 
 class ValidateTests(unittest.TestCase):
     def test_valid(self):
-        r, probs = validate_reply('[{"id":"a","category":"basic"},{"id":"b","category":"commission"}]', ["a", "b"])
+        r, probs = validate_reply('{"mappings":[{"id":"a","category":"basic"},{"id":"b","category":"commission"}]}', ["a", "b"])
         self.assertEqual(r, {"a": "basic", "b": "commission"})
         self.assertEqual(probs, [])
 
@@ -96,27 +97,27 @@ class ValidateTests(unittest.TestCase):
         self.assertTrue(probs)
 
     def test_fenced_json_is_not_repaired(self):
-        r, _ = validate_reply('```json\n[{"id":"a","category":"basic"}]\n```', ["a"])
+        r, _ = validate_reply('```json\n{"mappings":[{"id":"a","category":"basic"}]}\n```', ["a"])
         self.assertEqual(r["a"], "UNMAPPED")
 
     def test_not_array(self):
-        self.assertEqual(validate_reply('{"id":"a"}', ["a"])[0], {"a": "UNMAPPED"})
+        self.assertEqual(validate_reply('[{"id":"a","category":"basic"}]', ["a"])[0], {"a": "UNMAPPED"})
 
     def test_missing_id(self):
-        r, probs = validate_reply('[{"id":"a","category":"basic"}]', ["a", "b"])
+        r, probs = validate_reply('{"mappings":[{"id":"a","category":"basic"}]}', ["a", "b"])
         self.assertEqual(r, {"a": "basic", "b": "UNMAPPED"})
         self.assertIn("id b missing", probs)
 
     def test_duplicate_id_unmapped_even_if_same(self):
-        r, _ = validate_reply('[{"id":"a","category":"basic"},{"id":"a","category":"basic"}]', ["a"])
+        r, _ = validate_reply('{"mappings":[{"id":"a","category":"basic"},{"id":"a","category":"basic"}]}', ["a"])
         self.assertEqual(r["a"], "UNMAPPED")
 
     def test_unknown_category(self):
-        r, _ = validate_reply('[{"id":"a","category":"Basic"},{"id":"b","category":"salary"}]', ["a", "b"])
+        r, _ = validate_reply('{"mappings":[{"id":"a","category":"Basic"},{"id":"b","category":"salary"}]}', ["a", "b"])
         self.assertEqual(r, {"a": "UNMAPPED", "b": "UNMAPPED"})
 
     def test_extra_id_ignored(self):
-        r, probs = validate_reply('[{"id":"a","category":"basic"},{"id":"zz","category":"basic"}]', ["a"])
+        r, probs = validate_reply('{"mappings":[{"id":"a","category":"basic"},{"id":"zz","category":"basic"}]}', ["a"])
         self.assertEqual(r, {"a": "basic"})
         self.assertTrue(probs)
 
@@ -149,6 +150,96 @@ class ValidateTests(unittest.TestCase):
                                "bonus_non_regular", "expense_excluded", "allowance", "basic"])
 
 
+class NoAnswerTests(Tmp):
+    """A failure with no reply must not use the one shot."""
+
+    def setUp(self):
+        super().setUp()
+        write_csv(self.p("n.csv"), ["id", "pay_element_name", "source_style"], [["1", "Salary", "a"], ["2", "Overtime", "a"]])
+        self.args = ["--names", self.p("n.csv"), "--out", self.p("r")]
+
+    def failing(self, error):
+        class C:
+            deployment = "d"
+
+            def complete(self, s, u):
+                raise error
+        return C()
+
+    def test_http_400_leaves_no_lock_and_logs_attempt(self):
+        rc = quiet(run.main, self.args, client=self.failing(ClientError("HTTP 400 [x] nope", http_code=400, attempts=1)))
+        self.assertEqual(rc, 4)
+        for f in ("predictions.csv", "run.json", "run.started"):
+            self.assertFalse(os.path.exists(self.p("r/" + f)), f)
+        entry = json.loads(read(self.p("r/attempts.jsonl")).splitlines()[0])
+        self.assertEqual(entry["prompt_sha256"], PROMPT_SHA256)
+        self.assertEqual(entry["failures"][0]["http_code"], 400)
+        self.assertTrue(entry["timestamp_utc"].endswith("Z"))
+
+    def test_unexpected_exception_class_is_no_answer(self):
+        self.assertEqual(quiet(run.main, self.args, client=self.failing(IndexError("boom"))), 4)
+        self.assertFalse(os.path.exists(self.p("r/run.started")))
+        self.assertIn("IndexError", read(self.p("r/attempts.jsonl")))
+
+    def test_same_prompt_rerun_allowed_and_failed_attempt_recorded(self):
+        quiet(run.main, self.args, client=self.failing(ClientError("down")))
+        reply = json.dumps({"mappings": [{"id": "1", "category": "basic"}, {"id": "2", "category": "basic"}]})
+        self.assertEqual(quiet(run.main, self.args, client=ScriptedClient(reply)), 0)
+        info = json.loads(read(self.p("r/run.json")))
+        self.assertEqual(len(info["failed_attempts"]), 1)
+        self.assertEqual(info["reasoning_effort"], "low")
+        self.assertEqual(quiet(run.main, self.args, client=ScriptedClient(reply)), 3)
+
+    def test_changed_prompt_sha_refused(self):
+        os.makedirs(self.p("r"))
+        with open(self.p("r/attempts.jsonl"), "w") as h:
+            h.write(json.dumps({"prompt_sha256": "0" * 64}) + "\n")
+        client = ScriptedClient("{}")
+        self.assertEqual(quiet(run.main, self.args, client=client), 3)
+        self.assertEqual(client.calls, 0)
+
+    def test_invalid_reply_still_locks(self):
+        self.assertEqual(quiet(run.main, self.args, client=ScriptedClient("garbage", 70, 30)), 0)
+        info = json.loads(read(self.p("r/run.json")))
+        self.assertEqual((info["unmapped"], info["input_tokens"], info["output_tokens"]), (2, 70, 30))
+        self.assertEqual(quiet(run.main, self.args, client=ScriptedClient("{}")), 3)
+
+    def test_partial_failure_locks_and_records_usage(self):
+        class Half:
+            deployment = "d"
+            n = 0
+
+            def complete(self, s, u):
+                Half.n += 1
+                if Half.n == 1:
+                    return Completion(json.dumps({"mappings": [{"id": "1", "category": "basic"}]}), 5, 6, "stop")
+                raise ClientError("down", input_tokens=2, output_tokens=3)
+        import mapper.mapper as mm
+        orig = mm.map_names
+        run.map_names = lambda rows, c: orig(rows, c, batch_size=1)
+        try:
+            self.assertEqual(quiet(run.main, self.args, client=Half()), 0)
+        finally:
+            run.map_names = orig
+        info = json.loads(read(self.p("r/run.json")))
+        self.assertEqual((info["input_tokens"], info["output_tokens"], info["unmapped"]), (7, 9, 1))
+        self.assertEqual(len(info["batch_failures"]), 1)
+
+    def test_crash_in_map_names_writes_run_json_and_locks(self):
+        orig = run.map_names
+        run.map_names = lambda rows, c: (_ for _ in ()).throw(RuntimeError("bug"))
+        try:
+            self.assertEqual(quiet(run.main, self.args, client=ScriptedClient("{}")), 5)
+        finally:
+            run.map_names = orig
+        self.assertEqual(json.loads(read(self.p("r/run.json")))["crashed"], "RuntimeError")
+        self.assertTrue(os.path.exists(self.p("r/run.started")))
+
+    def test_duplicate_names_ids_refused(self):
+        write_csv(self.p("n.csv"), ["id", "pay_element_name", "source_style"], [["1", "a", "s"], ["1", "b", "s"]])
+        self.assertEqual(quiet(run.main, self.args, client=ScriptedClient("{}")), 2)
+
+
 class RunTests(Tmp):
     def names(self):
         write_csv(self.p("n.csv"), ["id", "pay_element_name", "source_style"],
@@ -172,7 +263,7 @@ class RunTests(Tmp):
 
     def test_live_one_shot_guard(self):
         self.names()
-        reply = json.dumps([{"id": "1", "category": "basic"}, {"id": "2", "category": "regular_overtime"}])
+        reply = json.dumps({"mappings": [{"id": "1", "category": "basic"}, {"id": "2", "category": "regular_overtime"}]})
         client = ScriptedClient(reply, 1000, 500)
         args = ["--names", self.p("n.csv"), "--out", self.p("r")]
         self.assertEqual(quiet(run.main, args, client=client), 0)
@@ -188,8 +279,8 @@ class RunTests(Tmp):
     def test_guard_trips_on_started_marker_after_crash(self):
         self.names()
         os.makedirs(self.p("r"))
-        read(self.p("r/run.started")) if False else open(self.p("r/run.started"), "w").close()
-        client = ScriptedClient("[]")
+        open(self.p("r/run.started"), "w").close()
+        client = ScriptedClient("{}")
         self.assertEqual(quiet(run.main, ["--names", self.p("n.csv"), "--out", self.p("r")], client=client), 3)
         self.assertEqual(client.calls, 0)
 
@@ -220,14 +311,82 @@ GOLD_ROWS = [  # invented: id, name, style, category, note
 ]
 
 
+class ScoreRefusalTests(Tmp):
+    def go(self, gold_rows, pred_rows, run_extra=None, fake=False):
+        write_csv(self.p("gold.csv"), ["id", "pay_element_name", "source_style", "gold_category", "note"], gold_rows)
+        write_csv(self.p("pred.csv"), ["id", "category"], pred_rows)
+        info = {"fake": fake, "names": len(gold_rows), "prompt_sha256": PROMPT_SHA256, "cost_usd": 0.0001}
+        info.update(run_extra or {})
+        with open(self.p("run.json"), "w") as h:
+            json.dump(info, h)
+        sha = hashlib.sha256(read(self.p("gold.csv"), "rb")).hexdigest()
+        return quiet(score.main, ["--gold", self.p("gold.csv"), "--pred", self.p("pred.csv"), "--run", self.p("run.json"),
+                                  "--expect-sha", sha, "--out", self.p("R.md")])
+
+    def test_ok_baseline(self):
+        self.assertEqual(self.go([["1", "a", "s", "basic", ""]], [["1", "basic"]]), 0)
+
+    def test_gold_category_outside_nine(self):
+        self.assertEqual(self.go([["1", "a", "s", "ssp_smp_excluded", ""]], [["1", "basic"]]), 3)
+        self.assertFalse(os.path.exists(self.p("R.md")))
+
+    def test_duplicate_gold_ids(self):
+        self.assertEqual(self.go([["1", "a", "s", "basic", ""], ["1", "b", "s", "basic", ""]], [["1", "basic"]]), 3)
+
+    def test_extra_pred_id(self):
+        self.assertEqual(self.go([["1", "a", "s", "basic", ""]], [["1", "basic"], ["9", "basic"]]), 3)
+
+    def test_duplicate_pred_id(self):
+        self.assertEqual(self.go([["1", "a", "s", "basic", ""]], [["1", "basic"], ["1", "basic"]]), 3)
+
+    def test_missing_pred_counts_unmapped_not_refused(self):
+        self.assertEqual(self.go([["1", "a", "s", "basic", ""], ["2", "b", "s", "basic", ""]], [["1", "basic"]]), 0)
+        self.assertIn("UNMAPPED (invalid or missing, counted wrong): 1", read(self.p("R.md")))
+
+    def test_old_category_header_refused(self):
+        write_csv(self.p("gold.csv"), ["id", "category"], [["1", "basic"]])
+        write_csv(self.p("pred.csv"), ["id", "category"], [["1", "basic"]])
+        sha = hashlib.sha256(read(self.p("gold.csv"), "rb")).hexdigest()
+        self.assertEqual(quiet(score.main, ["--gold", self.p("gold.csv"), "--pred", self.p("pred.csv"), "--run", "x",
+                                            "--expect-sha", sha, "--out", self.p("R.md")]), 3)
+
+    def test_fake_run_verdicts_na(self):
+        self.assertEqual(self.go([["1", "a", "s", "basic", ""]], [["1", "basic"]], fake=True), 0)
+        text = read(self.p("R.md"))
+        self.assertIn("**N/A (fake)**", text)
+        self.assertNotIn("**PASS**", text)
+
+    def test_prompt_sha_mismatch_warns_in_report(self):
+        self.assertEqual(self.go([["1", "a", "s", "basic", ""]], [["1", "basic"]], {"prompt_sha256": "bad"}), 0)
+        self.assertIn("WARNING: run.json prompt sha256 differs", read(self.p("R.md")))
+
+    def test_ambiguous_prefix_is_case_sensitive(self):
+        m = score.compute([{"id": "1", "gold_category": "basic", "note": "ambiguous: x"},
+                           {"id": "2", "gold_category": "basic", "note": "AMBIGUOUS: x"}], {})
+        self.assertEqual(m["ambiguous"]["n"], 1)
+
+
+class ExtractMoreTests(Tmp):
+    def test_duplicate_ids_refused(self):
+        write_csv(self.p("g.csv"), ["id", "pay_element_name", "source_style"], [["1", "a", "s"], ["1", "b", "s"]])
+        self.assertNotEqual(quiet(extract_names.main, ["--in", self.p("g.csv"), "--out", self.p("n.csv")]), 0)
+
+    def test_expect_sha(self):
+        write_csv(self.p("g.csv"), ["id", "pay_element_name", "source_style"], [["1", "a", "s"]])
+        sha = hashlib.sha256(read(self.p("g.csv"), "rb")).hexdigest()
+        self.assertEqual(quiet(extract_names.main, ["--in", self.p("g.csv"), "--out", self.p("n.csv"), "--expect-sha", sha]), 0)
+        self.assertNotEqual(quiet(extract_names.main, ["--in", self.p("g.csv"), "--out", self.p("m.csv"), "--expect-sha", "0" * 64]), 0)
+        self.assertFalse(os.path.exists(self.p("m.csv")))
+
+
 class ScoreTests(Tmp):
     def setUp(self):
         super().setUp()
-        write_csv(self.p("gold.csv"), ["id", "pay_element_name", "source_style", "category", "note"], GOLD_ROWS)
+        write_csv(self.p("gold.csv"), ["id", "pay_element_name", "source_style", "gold_category", "note"], GOLD_ROWS)
         self.sha = hashlib.sha256(read(self.p("gold.csv"), "rb")).hexdigest()
         self.run_json = self.p("run.json")
         with open(self.run_json, "w") as h:
-            json.dump({"fake": False, "model": "m", "deployment": "d", "prompt_version": "v", "prompt_sha256": "x",
+            json.dump({"fake": False, "model": "m", "deployment": "d", "prompt_version": "v", "prompt_sha256": PROMPT_SHA256,
                        "names": 8, "input_tokens": 1, "output_tokens": 1, "cost_usd": 0.004, "timestamp_utc": "t"}, h)
 
     def pred(self, mapping):
@@ -323,7 +482,7 @@ class AzureClientTests(unittest.TestCase):
         return c, seen, sleeps
 
     def test_chat_request_shape_and_usage(self):
-        c, seen, _ = self.make([FakeResponse({"model": "gpt-5-mini-2025", "choices": [{"message": {"content": " [] "}}],
+        c, seen, _ = self.make([FakeResponse({"model": "gpt-5-mini-2025", "choices": [{"finish_reason": "stop", "message": {"content": " [] "}}],
                                               "usage": {"prompt_tokens": 11, "completion_tokens": 7}})])
         out = c.complete("SYS", "USR")
         req, timeout = seen[0]
@@ -332,6 +491,11 @@ class AzureClientTests(unittest.TestCase):
         self.assertEqual(req.get_header("Api-key"), "SECRETKEY")
         self.assertEqual(req.get_method(), "POST")
         self.assertNotIn("temperature", body)
+        self.assertEqual(body["reasoning_effort"], "low")
+        rf = body["response_format"]["json_schema"]
+        self.assertTrue(rf["strict"])
+        self.assertEqual(rf["schema"]["properties"]["mappings"]["items"]["properties"]["category"]["enum"], list(CATEGORIES))
+        self.assertEqual(out.finish_reason, "stop")
         self.assertEqual(body["model"], "gpt-5-mini")
         self.assertEqual(body["messages"][0], {"role": "system", "content": "SYS"})
         self.assertIn("max_completion_tokens", body)
@@ -351,6 +515,9 @@ class AzureClientTests(unittest.TestCase):
         self.assertTrue(seen[0].full_url.endswith("/openai/v1/responses"))
         self.assertEqual(body["instructions"], "SYS")
         self.assertNotIn("temperature", body)
+        self.assertEqual(body["reasoning"], {"effort": "low"})
+        self.assertTrue(body["text"]["format"]["strict"])
+        self.assertEqual(body["text"]["format"]["type"], "json_schema")
         self.assertEqual((out.text, out.input_tokens, out.output_tokens), ("[1]", 5, 9))
 
     def test_retries_5xx_with_backoff_then_succeeds(self):
@@ -376,10 +543,49 @@ class AzureClientTests(unittest.TestCase):
         self.assertEqual(len(seen), 3)
         self.assertNotIn("https://x", str(cm.exception))
 
-    def test_unreadable_reply(self):
-        c, _, _ = self.make([FakeResponse({"unexpected": 1})])
+    def test_wrong_shape_keeps_usage_and_gives_empty_text(self):
+        for payload in ({"unexpected": 1, "usage": {"prompt_tokens": 6, "completion_tokens": 9}},
+                        {"choices": [], "usage": {"prompt_tokens": 6, "completion_tokens": 9}}):
+            c, _, _ = self.make([FakeResponse(payload)])
+            out = c.complete("s", "u")
+            self.assertEqual((out.text, out.input_tokens, out.output_tokens), ("", 6, 9))
+
+    def test_responses_non_dict_output_item(self):
+        c = AzureOpenAIClient("https://r.example/openai/v1/responses", "d", "k", opener=lambda r, timeout=None: FakeResponse(
+            {"output": ["junk"], "usage": {"input_tokens": 4, "output_tokens": 8}}))
+        out = c.complete("s", "u")
+        self.assertEqual((out.text, out.input_tokens, out.output_tokens), ("", 4, 8))
+
+    def test_responses_incomplete_status_recorded(self):
+        c = AzureOpenAIClient("https://r.example/openai/v1/responses", "d", "k", opener=lambda r, timeout=None: FakeResponse(
+            {"status": "incomplete", "incomplete_details": {"reason": "max_output_tokens"}, "output": [],
+             "usage": {"input_tokens": 1, "output_tokens": 2}}))
+        self.assertEqual(c.complete("s", "u").finish_reason, "incomplete:max_output_tokens")
+
+    def test_not_json_body_is_no_answer(self):
+        class Raw(FakeResponse):
+            def __init__(self):
+                self.raw = b"<html>"
+        c, _, _ = self.make([Raw()])
         with self.assertRaises(ClientError):
             c.complete("s", "u")
+
+    def test_incomplete_read_is_retried_as_network_error(self):
+        ok = FakeResponse({"choices": [{"message": {"content": "{}"}}], "usage": {}})
+        c, seen, _ = self.make([http.client.IncompleteRead(b"x"), ok])
+        self.assertEqual(c.complete("s", "u").attempts, 2)
+
+    def test_4xx_detail_included_and_key_redacted(self):
+        body = io.BytesIO(json.dumps({"error": {"code": "unsupported_value",
+                                                "message": "bad SECRETKEY param " + "x" * 500}}).encode())
+        c, _, _ = self.make([urllib.error.HTTPError("u", 400, "bad", {}, body)])
+        with self.assertRaises(ClientError) as cm:
+            c.complete("s", "u")
+        msg = str(cm.exception)
+        self.assertIn("unsupported_value", msg)
+        self.assertNotIn("SECRETKEY", msg)
+        self.assertLess(len(msg), 450)
+        self.assertEqual(cm.exception.http_code, 400)
 
     def test_from_env_defaults(self):
         c = AzureOpenAIClient.from_env({"AZURE_OPENAI_ENDPOINT": "https://r.example", "AZURE_OPENAI_API_KEY": "k"})
@@ -388,7 +594,7 @@ class AzureClientTests(unittest.TestCase):
             AzureOpenAIClient.from_env({})
 
     def test_end_to_end_through_map_names(self):
-        reply = json.dumps([{"id": "1", "category": "basic"}])
+        reply = json.dumps({"mappings": [{"id": "1", "category": "basic"}]})
         c, _, _ = self.make([FakeResponse({"choices": [{"message": {"content": reply}}],
                                            "usage": {"prompt_tokens": 3, "completion_tokens": 4}})])
         res = map_names([{"id": "1", "pay_element_name": "Salary", "source_style": "s"}], c)

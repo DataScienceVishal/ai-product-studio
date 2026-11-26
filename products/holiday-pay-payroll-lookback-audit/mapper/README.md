@@ -24,10 +24,22 @@ Note: `python3 -I -m mapper.run` cannot work (`-I` removes the current directory
 `python3 -m mapper.run --names names.csv --out /tmp/try --fake` checks the plumbing with the keyword baseline and no
 network; it writes only to `<out>/fake/`. Fake results are not kill-test evidence.
 
+## Pre-registered settings (fixed before any label was seen)
+
+Structured output on both APIs (JSON schema, strict, wrapper `{"mappings":[{"id","category"}]}`, category an enum of the
+nine); reasoning effort `low`; no temperature; replies are never repaired (no fence stripping). B1 is judged on
+nine-category accuracy; eight-category is reported alongside. Gold header: `id,pay_element_name,source_style,gold_category,note`,
+ambiguous rows noted with the exact prefix `AMBIGUOUS:`. The scorer refuses unknown gold categories, duplicate ids and
+prediction ids that are not the gold ids.
+
 ## No-retry rule
 
-One live run. It is refused if the results folder already holds `run.started`, `predictions.csv` or a live `run.json`.
+One live run. Once any reply has been received (even an invalid one) the results folder is locked: `run.started`,
+`predictions.csv` and `run.json` (with tokens, finish reasons, settings) exist and a second live run is refused.
 A bad reply is never repaired, re-asked or re-prompted: invalid or missing items become `UNMAPPED` and count as wrong.
-The prompt must not change after labels are seen; a changed prompt after seeing labels is a KILL (KILL-TEST.md).
-The client's only retry is the same request after a network error, 429 or 5xx (before any answer exists).
-Cost uses gpt-5-mini at $0.25 in / $2.00 out per million tokens (state/BUDGET.md).
+
+If the API gives NO answer at all (HTTP 400/5xx, network failure, unreadable body) nothing is scored and the shot is
+not used: the run exits 4, writes no predictions or run.json, logs the attempt in `results/attempts.jsonl` and removes
+`run.started`. Fix the cause (endpoint, deployment, `AZURE_OPENAI_API`) and re-run with the IDENTICAL prompt; a re-run is
+refused if any logged attempt used a different prompt sha. The client's own retry is the same request after a network error, 429 or 5xx.
+Cost uses gpt-5-mini at $0.25 in / $2.00 out per million tokens (state/BUDGET.md). Worst case per attempt is about $0.10.

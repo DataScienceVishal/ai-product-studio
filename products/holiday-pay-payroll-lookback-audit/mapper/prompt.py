@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import hashlib
 
-PROMPT_VERSION = "mapper-prompt-v1"
+PROMPT_VERSION = "mapper-prompt-v2"
 
 CATEGORIES = (
     "basic", "regular_overtime", "commission", "bonus_non_regular", "allowance",
@@ -56,11 +56,25 @@ Guidance:
 - If a name is genuinely ambiguous, choose the single most likely category. Never invent a new category and never
   leave a name out.
 
-Output: reply with ONLY a JSON array, no prose and no code fences. One object for every input item, in the same order,
-each of the form {{"id": "<the id exactly as given>", "category": "<one category id>"}}."""
+Output: a JSON object {{"mappings": [...]}} (the API enforces this schema). It holds one entry for every input item, in
+the same order, each of the form {{"id": "<the id exactly as given>", "category": "<one category id>"}}."""
 
 SYSTEM_PROMPT = _RULES.format(definitions="\n".join(f"- {c}: {DEFINITIONS[c]}" for c in CATEGORIES))
 PROMPT_SHA256 = hashlib.sha256(SYSTEM_PROMPT.encode("utf-8")).hexdigest()
+
+
+# Pre-registered before any label was seen (Lead decision): structured outputs, strict, category is an enum of the nine;
+# low reasoning effort for gpt-5-mini. The reply is never repaired (no fence stripping).
+REASONING_EFFORT = "low"
+SCHEMA_NAME = "holiday_pay_mapping"
+RESPONSE_SCHEMA = {
+    "type": "object",
+    "properties": {"mappings": {"type": "array", "items": {
+        "type": "object",
+        "properties": {"id": {"type": "string"}, "category": {"type": "string", "enum": list(CATEGORIES)}},
+        "required": ["id", "category"], "additionalProperties": False}}},
+    "required": ["mappings"], "additionalProperties": False,
+}
 
 
 def build_user_message(rows: list[dict]) -> str:
