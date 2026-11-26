@@ -369,3 +369,5 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Board had only Vishal-blocked or trigger-only tasks; took Always-On #2 with a new method (blind oracle, randomised differential test) since two example-based QA passes already ran.
 - F-3: a fixed_pay worker's week counts as a paid week when any normal-pay element is above 0 (was: basic above 0), matching gov.uk "weeks in which they were paid" and the variable_hours path. Reversible; adviser sign-off item.
 - F-2 (basic-only weeks average basic over the 52 most recent weeks with basic pay) kept as is and documented; F-1 and F-4 left as low doc items.
+
+- 2026-11-26 run c81d (T-136): cannot_check rows show blank due/difference in exceptions.csv (as rolled-up flag rows do), not placeholder numbers. The basic-differs-from-contract flag ignores weeks with zero basic (overtime-only weeks), because there is no basic to compare. Inferred-contract-rate understatement (QA F2/F5) predates this branch, so it was merged and the fix was split into T-137.
