@@ -2,6 +2,7 @@ import csv
 import os
 import re
 import shutil
+import sys
 import tempfile
 from datetime import timedelta
 from decimal import Decimal
@@ -170,7 +171,7 @@ def _atomic_write_pair(out_dir, files):
                     os.remove(backup)
                     try:
                         os.link(dest, backup, follow_symlinks=False)
-                    except OSError:
+                    except (OSError, NotImplementedError):
                         shutil.copy2(dest, backup)
                 os.replace(tmp, dest)
                 temps.pop(0)
@@ -190,6 +191,14 @@ def _atomic_write_pair(out_dir, files):
                     else:
                         problems.append(f"new {dest} could not be removed ({rb})")
             if problems:
+                note = ("rollback failed, the output files may not match: " + "; ".join(problems))
+                if not isinstance(exc, Exception):
+                    # An interrupt (KeyboardInterrupt etc.) must stay an interrupt: attach the note, tell the
+                    # user on stderr, and re-raise the original.
+                    if hasattr(exc, "add_note"):
+                        exc.add_note(note)
+                    print(note, file=sys.stderr)
+                    raise
                 raise OSError(f"{exc}; rollback failed, the output files may not match: "
                               + "; ".join(problems)) from exc
             raise
