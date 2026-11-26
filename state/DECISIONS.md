@@ -341,3 +341,8 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Reversible: branch only until reviewer PASS; the idea stays parked at 64.
 - 2026-11-26T06:40Z run 0965 (T-126): merged after reviewer CHANGES then PASS. Choices kept: rule flags (pre-2024 rolled-up, not shown separately, holiday_pay to a rolled-up worker) are always exceptions regardless of --threshold, because they are rule breaches, not amounts; exceptions.csv keeps the column name `due` (prose says "recalculated under these settings") and gains a trailing `check` column, to avoid breaking consumers; leave weeks of irregular_rolled_up workers are not re-audited by the 52-week look-back. Leave year still fixed at 1 April (documented; T-127).
 - 2026-11-26T06:42Z run 0965 (T-127): merged after reviewer CHANGES then PASS. leave_year_start is one MM-DD per worker for all years (a mid-history change is not modelled, documented); 02-29 refused; blank = 04-01. Stdout line 1 now counts look-back exceptions only; all rows stay in exceptions.csv.
+
+## 2026-11-26T07:40Z run 1c4b: T-128..T-131 holiday-pay QA and security pass
+- Board had only Vishal-blocked or trigger-only tasks (T-60 OIDC spend run still failing, last run 2026-11-25 17:10Z; Q-16 spend still open), so took Always-On #2 and #4 on the code merged since the last QA/security pass (T-124..T-127).
+- T-130 C-1: a header-only leave.csv is accepted only when every worker is irregular_rolled_up; a mixed firm still exits 2, so look-back workers are never silently audited as "0 exceptions". Reversible.
+- report.md caps detailed rolled-up sections at 20 per worker with an "and K more" line; exceptions.csv stays complete. Overall cap deferred to T-131. Reversible.
