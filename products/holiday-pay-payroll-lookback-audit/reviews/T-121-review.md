@@ -60,3 +60,21 @@ Every finding in scope is fixed and the tests cover the fixes. However, the new 
 4. **Dead code.** `audit.py:21` calls `v.quantize(Decimal("0.01"))` and discards the result. With the upper bound in place it cannot raise, so delete it.
 5. **Private import.** `report/builder.py` imports `engine.lookback._leave_year_start` and hard-codes April 1. This is consistent today, because `audit()` never passes a leave year. Expose the function publicly, or take the leave-year start from the engine row (`r["leave_year_start"]`), so the two cannot drift apart.
 6. **Still open (as the builder said):** QA L3 `contract_weekly_basic` validation (ignored for `variable_hours`, 0 accepted for `fixed_pay`). Track it as a board task.
+
+## Re-review: `0d9ac76` (2026-11-26)
+
+### Verdict: PASS
+
+- **C-1 fixed.** `_looks_like_ni` now stops extending a run of parts once the joined value passes 9 characters (`ingest/loader.py:69-70`). Each start position joins at most about 9 characters' worth of parts, so the total work is linear in the cell length.
+  - My 3,000-word `worker_id` repro now runs in 0.06 s end to end (22.6 s before).
+  - Direct calls on 130,000-character cells (65,000 dash-separated parts, one 131,000-character token, 40,000 space-separated words) took 0.14 s, 0.001 s and 0.05 s.
+  - NI detection is unchanged: the same 34-ID probe set gives exactly the same refused and allowed sets as at `a8e7a27`.
+  - Mutation: with the `break` removed, the suite hangs (killed after 300 s), so the new timing tests catch the regression.
+- **Other changes are correct.**
+  - The dead `quantize` is removed.
+  - The summary label now reads "Exceptions (difference over £X, or cannot be checked)".
+  - The new summary line "Workers with holiday pay outside leave.csv: N" appears only when such weeks exist. On the M1 repro (`unl`) it shows 1.
+- **Samples:** `exceptions.csv` is byte-identical to main. `report.md` differs only in the reworded Exceptions label and the "could not be checked: 0" line.
+- **Suite:** `Ran 189 tests ... OK`.
+
+Remaining suggestions 3 and 5 (blank `difference` for `cannot_check` rows, the private `_leave_year_start` import) and QA L3 (`contract_weekly_basic` validation) are non-blocking follow-ups.
