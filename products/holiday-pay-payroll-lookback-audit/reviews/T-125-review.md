@@ -65,3 +65,16 @@ OK
 4. Glossary "Exception" (BRIEF.md:32): also include leave weeks that cannot be checked, to match section 4.3.
 5. Engine exit 2 also covers data the engine rejects (for example misaligned weekdays): `audit.py:47-51` prints "cannot audit this data". Section 4.2 could mention the exit code.
 6. Refusal demo: the stderr output also lists 5 "settings for worker ... who has no payroll history" lines from workers.csv. Either warn the presenter about them or drop `--workers` from that demo run.
+
+## Re-review (commit ab4a1a5)
+
+Reviewer, 2026-11-26. Diff checked: `git show ab4a1a5 -- BRIEF.md` (8 lines changed). I re-read the rest of the file; nothing else changed. Tests were re-run on this tree: `Ran 228 tests ... OK`.
+
+### Verdict: PASS
+
+- **W1 fixed.** Buyer Q3 (BRIEF.md:101) now quotes the real report wording, "Due / Paid / underpaid-by" and "Not legal advice; a payroll professional signs off." (`report/builder.py:14, 134-135`), and says the "recalculated, not owed" guardrail is not built yet. Quiz Q7 and its answer (BRIEF.md:153, 165) now ask about and quote the DISCLAIMER line. "recalculat" now appears only in the two sentences that say it is not built.
+- **W2 fixed.** W003 (BRIEF.md:56): "paid 310.00 against 300.00 due; its sick-pay-only weeks are skipped, which keeps the average at 300.00". This matches the CLI output and `samples/generate.py:9-10`.
+- Suggestion 1 done: 228 tests, matching my run, and the demo now states the verified line "5 leave weeks checked, 4 exceptions" (matches `audit.py:61` output).
+- Suggestion 2 done: leave.csv has an optional `weeks` fraction such as 0.5 (FORMAT.md:18: above 0, at most 1).
+- Suggestion 3 done: the atomic-write caveat matches `builder.py:184-192` (rollback on failure; a crash mid-write is not covered).
+- Not taken, still non-blocking: suggestions 4-6 (glossary "Exception" also covers cannot-check rows; engine-rejection exit 2; noisy workers.csv lines in the refusal demo). Nit: BRIEF.md:112 has "; Verified" with a capital V after a semicolon.
