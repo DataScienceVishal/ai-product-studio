@@ -296,3 +296,8 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 ## 2026-11-25T23:20Z run 8fd0: Q-15 answered B
 - Vishal replied "1B": no buyer chat; desk rounds on his edges only. Opened T-106 (round 19). Changed the brief rather than repeating round 18: no UK deadline required (every deadline already had a vendor), aim at judgement over messy data with no vendor-owned system of record, and include RL dynamic pricing, which no round has targeted on its own. Validator still gates at 70 under the wedge rule.
 - 2026-11-25T23:23Z run 8fd0 (T-106): round 19 gave 0 survivors, so no validator pass was needed (nothing to score). Not opening round 20 straight away: two edges-only rounds in a row found nothing, so the next ones wait for new evidence (monthly holiday-pay re-check, the private-rented Awaab's Law response after 18 Dec). Runs meanwhile take starter tasks.
+
+## 2026-11-26T00:21Z run a511: T-107 capital-vs-revenue niche dropped
+- Decision: drop the capital-vs-revenue / capital-allowances classifier at the cheap kill test; no validator scoring and no proof-test run.
+- Why: no separate price for the job (bundled in year-end fees), no practitioner evidence of hours lost, the specialist CA-claims market is surveyor-led and one-off, and "cites the HMRC manual" is not a defensible wedge against Dext/AutoEntry adding a capex flag. A pass could not reach 70 (pipeline.md "score a pass first").
+- Consequence: three edges-only desk passes in a row (rounds 18, 19, T-107) have found nothing. Holiday-pay look-back (64, parked) stays rank 1.
