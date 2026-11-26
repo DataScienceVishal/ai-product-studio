@@ -50,3 +50,19 @@ The task was to make the wording accurate, and FORMAT.md is the document a custo
 ## Verdict: CHANGES
 
 Blocking: C-1. Update FORMAT.md:38, README.md:25 and the `_exception_sections` docstring to describe the 500-section global cap and the 50-summary limit. This is a documentation-only change. The code, the cap math, the "before 1 April 2024" wording and the retention claims about the tool are correct, and 286 tests pass. S-1 (README "must delete") should go in the same change.
+
+## Re-review at f84e408 (delta dfad741..f84e408)
+
+The delta is docs and a docstring only: README.md, ingest/FORMAT.md, and the `report/builder.py` docstring. No code logic changed. Fresh worktree `/tmp/claude-0/rev-t131b` (now removed). **Tests: Ran 286 tests, OK.**
+
+- **C-1: fixed.** FORMAT.md:38, README.md:25 and the `_exception_sections` docstring now all describe the same behaviour:
+  - at most 20 detailed sections per worker and 500 in total;
+  - an `and K more` line for each of the first 50 affected workers;
+  - one combined line for the rest;
+  - exceptions.csv is never capped.
+
+  This matches the code and the probe above (500 / 1,000 / 900 = 2,400).
+- **S-1: fixed.** README now says hosted versions "must delete uploaded inputs within 30 days", which matches FORMAT.md.
+- S-2 and S-3 were not taken. They are minor and do not block: the heading reads oddly for a worker with 0 sections shown, and the cap test does not assert the exact numbers.
+
+## Re-review verdict: PASS
