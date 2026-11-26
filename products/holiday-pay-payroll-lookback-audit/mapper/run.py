@@ -41,8 +41,11 @@ MAX_REQUEST_CHARS = 100_000  # one request's user message
 
 
 def preflight(rows: list[dict], client, max_usd: float, price: tuple[float, float] = DEFAULT_PRICE,
-              batch_size: int = 200) -> tuple[float, str]:
-    """(worst-case USD, "") or (0, reason to refuse). Pure: sends nothing."""
+              batch_size: int = 200, earlier: list[dict] | None = None) -> tuple[float, str]:
+    """(worst-case USD, "") or (0, reason to refuse). Pure: sends nothing.
+
+    The cap is cumulative over the out dir: earlier no-answer attempts count at their recorded worst case
+    (a legacy entry without one counts at this run's worst case), so re-runs cannot each spend a full cap."""
     if len(rows) > MAX_NAMES:
         return 0.0, f"{len(rows)} names is over the limit of {MAX_NAMES}"
     for row in rows:
@@ -62,7 +65,29 @@ def preflight(rows: list[dict], client, max_usd: float, price: tuple[float, floa
         total += worst_case_usd(estimate_input_tokens(SYSTEM_PROMPT, user), max_out, price) * attempts
     if total > max_usd:
         return total, f"worst-case spend ${total:.4f} (all retries counted) is over the cap ${max_usd:.2f}"
+    try:
+        before = earlier_worst_case(earlier or [], total)
+    except ValueError as error:
+        return 0.0, f"attempts.jsonl is corrupt ({error})"
+    if before + total > max_usd:
+        return total, (f"cumulative worst-case spend ${before + total:.4f} (earlier attempts ${before:.4f} + this run "
+                       f"${total:.4f}) is over the cap ${max_usd:.2f}")
     return total, ""
+
+
+def earlier_worst_case(earlier: list[dict], this_run: float) -> float:
+    """Sum of earlier attempts' recorded worst-case USD. Raises ValueError on anything malformed (fail closed)."""
+    total = 0.0
+    for entry in earlier:
+        if not isinstance(entry, dict):
+            raise ValueError("an entry is not an object")
+        value = entry.get("worst_case_usd")
+        if value is None:
+            value = this_run  # legacy entry: assume it was as big as this run
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not (0 <= value < float("inf")):
+            raise ValueError("an entry has an invalid worst_case_usd")
+        total += value
+    return total
 
 
 def cost_usd(input_tokens: int, output_tokens: int, price: tuple[float, float] = DEFAULT_PRICE) -> float:
@@ -97,7 +122,10 @@ def read_attempts(out_dir: str) -> list[dict]:
     if not os.path.exists(path):
         return []
     with open(path, encoding="utf-8") as handle:
-        return [json.loads(line) for line in handle if line.strip()]
+        entries = [json.loads(line) for line in handle if line.strip()]
+    if not all(isinstance(entry, dict) for entry in entries):
+        raise ValueError("attempts.jsonl holds a line that is not an object")
+    return entries
 
 
 def _utc(now) -> str:
@@ -154,10 +182,11 @@ def main(argv: list[str] | None = None, client=None, now=None) -> int:
         except ValueError as error:
             print(f"error: {error}", file=sys.stderr)
             return 2
-    estimate, reason = preflight(rows, client, args.max_usd)
+    estimate, reason = preflight(rows, client, args.max_usd, earlier=earlier)
     if reason:
         print(f"refused before any call: {reason}", file=sys.stderr)
         return 2
+    before_usd = earlier_worst_case(earlier, estimate)  # validated by preflight
     if live and hasattr(client, "set_spend_cap"):
         try:
             client.set_spend_cap(args.max_usd, DEFAULT_PRICE)
@@ -187,7 +216,8 @@ def main(argv: list[str] | None = None, client=None, now=None) -> int:
         result.predictions.setdefault(row["id"], UNMAPPED)
     if live and result.replies == 0 and not crashed:
         # No answer at all: nothing was learnt, so the shot is not used. Log it, release the lock, fail.
-        entry = {"timestamp_utc": stamp, "prompt_sha256": PROMPT_SHA256, "config_sha256": config_sha, "failures": result.failures,
+        entry = {"timestamp_utc": stamp, "prompt_sha256": PROMPT_SHA256, "config_sha256": config_sha, "worst_case_usd": round(estimate, 6),
+                 "failures": result.failures,
                  "input_tokens": result.input_tokens, "output_tokens": result.output_tokens}
         with open(os.path.join(out_dir, "attempts.jsonl"), "a", encoding="utf-8") as handle:
             handle.write(json.dumps(entry) + "\n")
@@ -223,6 +253,8 @@ def main(argv: list[str] | None = None, client=None, now=None) -> int:
         "cost_usd": cost,
         "spend_cap_usd": args.max_usd,
         "worst_case_estimate_usd": round(estimate, 6),
+        "earlier_attempts_worst_case_usd": round(before_usd, 6),
+        "cumulative_worst_case_usd": round(before_usd + estimate, 6),
         "unmapped": result.unmapped,
         "problems": result.errors,
         "failed_attempts": earlier,

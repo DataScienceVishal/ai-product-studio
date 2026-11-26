@@ -192,6 +192,57 @@ class NoAnswerTests(Tmp):
         self.assertEqual(info["reasoning_effort"], "low")
         self.assertEqual(quiet(run.main, self.args, client=ScriptedClient(reply)), 3)
 
+    def worst(self):
+        rows = run.read_names(self.p("n.csv"))
+        return run.preflight(rows, self.failing(ClientError("x")), 100.0)[0]
+
+    def test_cumulative_cap_refuses_rerun_before_any_call(self):
+        w = self.worst()
+        cap = ["--max-usd", repr(w * 1.5)]
+        self.assertEqual(quiet(run.main, self.args + cap, client=self.failing(ClientError("down"))), 4)
+        entry = json.loads(read(self.p("r/attempts.jsonl")).splitlines()[0])
+        self.assertAlmostEqual(entry["worst_case_usd"], w, places=5)
+        c = ScriptedClient("{}")
+        self.assertEqual(quiet(run.main, self.args + cap, client=c), 2)  # w + w > 1.5w
+        self.assertEqual(c.calls, 0)
+        self.assertFalse(os.path.exists(self.p("r/run.started")))
+
+    def test_cumulative_cap_boundary_allows_exact_fit_and_records_totals(self):
+        w = self.worst()
+        cap = ["--max-usd", repr(w * 2 + 1e-6)]  # exactly two worst cases fit
+        quiet(run.main, self.args + cap, client=self.failing(ClientError("down")))
+        reply = json.dumps({"mappings": [{"id": "1", "category": "basic"}, {"id": "2", "category": "basic"}]})
+        self.assertEqual(quiet(run.main, self.args + cap, client=ScriptedClient(reply)), 0)
+        info = json.loads(read(self.p("r/run.json")))
+        self.assertAlmostEqual(info["earlier_attempts_worst_case_usd"], w, places=5)
+        self.assertAlmostEqual(info["cumulative_worst_case_usd"], 2 * w, places=5)
+
+    def test_third_attempt_refused_when_two_already_spent(self):
+        w = self.worst()
+        cap = ["--max-usd", repr(w * 2.5)]
+        for expect in (4, 4, 2):
+            self.assertEqual(quiet(run.main, self.args + cap, client=self.failing(ClientError("down"))), expect)
+
+    def test_corrupt_or_malformed_attempts_fail_closed(self):
+        os.makedirs(self.p("r"))
+        for bad in ("{not json\n", "[1, 2]\n", json.dumps({"worst_case_usd": "0"}) + "\n",
+                    json.dumps({"worst_case_usd": -1}) + "\n", json.dumps({"worst_case_usd": True}) + "\n",
+                    json.dumps({"worst_case_usd": 1e999}) + "\n"):
+            with open(self.p("r/attempts.jsonl"), "w") as h:
+                h.write(bad)
+            c = ScriptedClient("{}")
+            self.assertIn(quiet(run.main, self.args, client=c), (2, 3), bad)
+            self.assertEqual(c.calls, 0, bad)
+
+    def test_legacy_entry_without_worst_case_counts_at_this_runs_size(self):
+        w = self.worst()
+        os.makedirs(self.p("r"))
+        with open(self.p("r/attempts.jsonl"), "w") as h:
+            h.write(json.dumps({"timestamp_utc": "x"}) + "\n")
+        c = ScriptedClient("{}")
+        self.assertEqual(quiet(run.main, self.args + ["--max-usd", repr(w * 1.5)], client=c), 2)
+        self.assertEqual(c.calls, 0)
+
     def test_changed_setting_refused(self):
         quiet(run.main, self.args, client=self.failing(ClientError("down")))
         c = ScriptedClient("{}")
