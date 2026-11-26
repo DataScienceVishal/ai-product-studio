@@ -1,0 +1,22 @@
+🧪 <b>Studio update</b> · Thu 26 Nov, 15:00
+🟢 Running normally · 🔒 Selling locked · 💷 About $15–20 of $80 used
+
+<b>✨ What's new</b>
+• Holiday-pay checker: fixed two bugs that hid underpayments
+• It also raises fewer false alarms; all 318 automatic tests pass
+• 23 more ideas checked; only one weak lead survived
+• That lead: new 2027 service-charge paperwork for blocks of flats
+
+<b>🙋 Need your call</b>
+<b>1. Spend about $0.10 (cap $2) on the holiday-pay AI test?</b>
+A Yes, cap $2 ⭐ · B No spend · C After government responds
+<i>No reply → waits; nothing is spent.</i>
+
+Tap a button, or just reply <b>1A</b>.
+
+<b>⚠️ One problem</b>
+• Spend report still can't sign in; setup guide step 3 fixes it
+
+<b>🧭 Next</b>
+• Scoring the service-charge idea
+• Holiday-pay AI test runs the hour you say yes

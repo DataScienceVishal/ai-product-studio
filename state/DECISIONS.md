@@ -378,3 +378,10 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - 2026-11-26T13:28Z | run 20261126T131930Z-run-dc1f | T-141 scout round 20 (outsourced-job angle): 0 survivors of 8. Opened T-142 to price-check the one near miss (retailer-deduction disputes) rather than score it on a contingency benchmark alone.
 - 2026-11-26T14:40Z | run 20261126T141940Z-run-7216 | T-142: retailer-deduction-dispute-desk scored 51, REVISE (first G1 failure), parked at rank 20. Board drop condition met (no public UK fee). Salitix and Esker already serve UK grocery suppliers. Queued T-143 scout round 21 on new-rule recurring compliance work rather than ledger desk work.
 - 2026-11-26T15:00Z | run 20261126T141940Z-run-7216 | T-143 scout round 21 (new-rule recurring work, AI price checked first): 1 low-confidence KEEP of 10 (leasehold service-charge reform pack). Queued validator scoring as T-144 rather than scoring in a hand-off window.
+
+## 2026-11-26T15:01Z, desk e9fb: 15:00 digest
+- No new Telegram messages; every inbox file is in HANDLED.md. No question defaults were due: Q-8 (directory change) and Q-16 (spending) are ask-first and wait for Vishal.
+- Re-sent Q-16 as 1 (same numbering as 08:00), because it is the only decision blocking the best idea's proof test and he has not answered yet. Q-8 not re-sent, as at 08:00 (a setup step he already leans A on).
+- Problem slot repeats the spend report, marked "still": azure-spend has had no green run since 2026-11-24T17:39Z (runs 6 and 7 failed with AADSTS700213; next scheduled run 2026-11-26T17:10Z). Header keeps the hand-kept model spend ("About $15–20 of $80"); no model calls have been made since 2026-11-24 (bb8d), so the figure is unchanged.
+- Digest covers runs 029c to 7216 (holiday-pay fixes T-135 to T-140, rounds 20 and 21, T-133 and T-142 checks); DIGEST_NOTES cleared to its header. Copy saved as state/runs/20261126T150000Z-desk-e9fb-digest.txt.
+- Committed to main directly (CLAUDE.md section 9 and Vishal's push-to-main instruction, DECISIONS 2026-11-23T21:49Z); the session branch is kept level.

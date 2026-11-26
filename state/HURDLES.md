@@ -62,3 +62,4 @@ Two builders working in the same clone switch branches under each other, so comm
 - Fix: Vishal adds "Commit and push everything to main before ending (never to a session branch)." to both Desk prompts (state/SCHEDULED_TASKS.md). Until then, each Desk and hourly run should check `origin/vishal/*` for unmerged desk commits.
 - Needs Vishal: yes (only he can edit the routines). Status: open.
 - 2026-11-26T08:04Z desk-80d5: the 08:00 Desk prompt still lacks the line. This run committed straight to main (session branch kept level), so nothing was stranded.
+- 2026-11-26T15:01Z desk-e9fb: the 15:00 Desk prompt still lacks the line too. Committed straight to main again (session branch kept level); no session branch from today holds unmerged commits.

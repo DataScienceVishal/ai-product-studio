@@ -131,7 +131,7 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - If no answer: B after 12 hours (reversible, no spend). A stays open, since only you can have the chat.
 - Answer: B (Telegram "1B", 2026-11-25T23:09:32Z). No buyer chat; the studio keeps desk rounds aimed at Vishal's edges only. T-106 (round 19) opened with a changed brief, since round 18 showed UK-deadline hunting finds incumbents first.
 
-## Q-16 (status: sent 2026-11-26T08:03Z as 1)
+## Q-16 (status: sent 2026-11-26T15:01Z as 1; first sent 2026-11-26T08:03Z as 1)
 - Decision: May the studio spend up to $2 of Azure OpenAI (gpt-5-mini) on the holiday-pay AI mapping test (T-111 part B)?
 - Context: Holiday-pay look-back (64) is the best idea left. Its proof test was written down before any run (products/holiday-pay-payroll-lookback-audit/benchmark/KILL-TEST.md): part A, the pay calculator checked against gov.uk and Acas worked examples, costs nothing and is being built now; part B checks whether AI sorts 200 made-up pay-item names into the right holiday-pay groups (95% needed). Expected cost about $0.10; the cap is a safety margin.
 - Options: A) Yes, up to $2 on gpt-5-mini, test data only, logged in BUDGET.md (recommended) B) No spend; part A only, and the idea stays parked at 64 C) Yes, but only after the government responds to the consultation
