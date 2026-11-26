@@ -328,3 +328,8 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 
 - 2026-11-26T04:35Z run 0339 | holiday-pay-payroll-lookback-audit | T-116 merged after reviewer PASS. Audit output files are now written mode 0600 (mkstemp default). Kept deliberately: outputs hold payroll data, so owner-only is the safer default; to be documented in T-117. Leave-file "no payroll history" messages are suppressed whenever the history file has any issue (the run still exits 2 and writes nothing).
 - 2026-11-26T04:28Z run 0339 | holiday-pay-payroll-lookback-audit | T-117 merged after reviewer re-review PASS. If restoring a backup fails during rollback, the backup is kept and the CLI names its path (exit 2) rather than deleting it; losing a user's previous report silently is worse than leaving a stray .bak.
+
+## 2026-11-26T05:23Z run b543: Always-On bug hunt + security pass on holiday-pay (T-119..T-122)
+- Board had only Vishal-blocked or trigger-only tasks, so took Always-On #2 and #4 on the newest code (holiday-pay audit CLI and mapper).
+- QA M1-M3 handling: flag and warn rather than guess (a leave week with missing data or without a holiday_pay row must show in the exceptions, not vanish). Reversible; documented in FORMAT.md.
+- Security M-2 (mapper spend cap) treated as a prerequisite for the Q-16 live run, even though expected cost is ~$0.10.
