@@ -356,3 +356,14 @@ Answers are scored from the written record only. "Interesting", "send me more" a
 If Vishal does not allow contact, the test does not start, the idea stays parked, and the clock does not run.
 
 **On a pass:** record the quoted prices and hours, give the Pain, Pay and Reach contact-only points (up to +2 each) to the validator, who re-scores. The 70 bar still applies before G4.
+
+### Amendment 2026-11-26, before any contact, per T-153 validator review
+Where this conflicts with the text above, the amendment wins.
+1. **Friend counts once.** The friend's own business counts as at most 1 of the 3 firms meeting any pass line. At least 2 must be other firms, none of them the friend's own payroll clients or suppliers.
+2. **Recording.** The interviewer reads Q1 to Q7 word for word, in order, adding no product description beyond the demo. Notes are written during the call or within 24 hours and sent to the studio unedited. Every interview held counts; none may be dropped or repeated. The firms counted are the first 5 interviewed. Firms are recorded by type and size, not by person.
+3. **"Unprompted" defined.** The first number given in answer to Q4, before Q5, when no price, range, plan name, discount or anchor (including DCK £73.50, Irwin Mitchell £1,500 or the SPEC's tiers) has been said, shown or put in any document the firm has seen. A range scores its lower end. A yearly or one-off figure is divided by 12 to give a monthly one. "It depends", "no idea" or no number scores £0. The demo build shows no price, plan or checkout page.
+4. **Q4 reworded:** "Would you pay for a tool that does this look-back with the working shown? If yes, roughly how much, and per month, per year or per audit? If no, why not?" A "no" scores £0.
+5. **Past-behaviour pass line (added):** at least 2 of the 3 qualifying firms give a concrete past fact in Q2 or Q3: a date or period when they last re-checked holiday pay with an hours figure, or an amount they charge or pay for holiday pay work.
+6. **Q6** asks them to name the sign-off role (for example payroll manager or external adviser), not a person.
+7. **Fail line fixed:** replace "Fewer than 3 firms meet any of the three pass lines above" with "Any one pass line is not met by enough firms." The pass lines are now four: manual or spreadsheet calculation (Q1), unprompted price of at least £49 a month (Q4), past behaviour (Q2 or Q3), and Q6 yes with a sign-off role.
+8. **Contact-only points, all or nothing per row.** Pain +2 if at least 2 qualifying firms report a concrete hours figure (median recorded). Pay +2 if the qualifying firms' median unprompted price is at least £49 a month. Reach +2 if the friend's business introduced at least 2 of the qualifying firms, or one bureau named a channel that reaches several employers.
