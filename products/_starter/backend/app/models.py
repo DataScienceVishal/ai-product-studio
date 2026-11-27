@@ -104,6 +104,7 @@ class PendingCancel(Base):
     ref: Mapped[str] = mapped_column(String(255), nullable=False)
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)  # T-176
     created_at: Mapped[datetime] = _created()
 
 

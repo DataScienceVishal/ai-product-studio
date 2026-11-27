@@ -33,7 +33,7 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 
 | What | Command | Where it runs |
 |---|---|---|
-| Backend unit and API tests (804 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
+| Backend unit and API tests (819 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
 | Migrations match the models | `alembic upgrade head && alembic check` | every push |
 | Frontend unit tests (vitest, 203 passed in 7 files) | `cd frontend && npx vitest run` | every push (CI `frontend`) |
 | Frontend type check and build | `cd frontend && npm run build` | every push (CI `frontend`) |
@@ -58,7 +58,7 @@ and in-order webhooks, account deletion at the provider, log redaction and the r
 
 Run the retention purge daily: `python -m app.maintenance purge`.
 
-Run `python -m app.maintenance cancels` every few minutes or hourly (T-175): it retries subscription cancels that failed after a new checkout replaced a lapsed subscription (table `pending_cancels`, written in the takeover transaction; also retried on the tenant's next billing event). It prints counts, and each failure is logged at ERROR. Add it as a second Container Apps job next to the purge job. What is stored and for how long is in `DATA.md`.
+Run `python -m app.maintenance cancels` every few minutes or hourly (T-175): it retries subscription cancels that failed after a new checkout replaced a lapsed subscription (table `pending_cancels`, written in the takeover transaction; also retried on the tenant's next billing event). It prints counts. A failing row is retried with backoff (2^attempts minutes, at most 24 h; the webhook retries only rows with fewer than 3 failures), logged at ERROR, and at its 10th failure once at CRITICAL (`pending cancel needs operator`: cancel it by hand at the provider), then at WARNING. Add it as a second Container Apps job next to the purge job. What is stored and for how long is in `DATA.md`.
 Security findings and their status are in `SECURITY.md`; the code review is in `reviews/`.
 
 ## One image, one origin

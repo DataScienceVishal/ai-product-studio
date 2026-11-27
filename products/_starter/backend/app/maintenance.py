@@ -3,7 +3,8 @@
     python -m app.maintenance purge
 
 and, every few minutes or hourly (T-175, retries subscription cancels that failed after a checkout replaced a
-lapsed subscription; prints the counts, exits 0 even when some still fail, they are logged at ERROR):
+lapsed subscription; prints the counts, exits 0 even when some still fail, they are logged at ERROR; a row is skipped until min(2**attempts minutes, 24 h)
+have passed since its last attempt, and its 10th failure logs one CRITICAL "pending cancel needs operator" line):
 
     python -m app.maintenance cancels
 
@@ -68,19 +69,23 @@ def purge(db: Session, now: datetime | None = None, unverified_after_days: int |
     return counts
 
 
-def sweep_pending_cancels(db: Session, clients: dict) -> dict[str, int]:
+def sweep_pending_cancels(db: Session, clients: dict, now: datetime | None = None) -> dict[str, int]:
     """T-175: retry every pending subscription cancel (see routes/billing.py). `clients` maps provider name to its
-    client; a row for a provider with no client is left alone. Safe to run often: a cancel is idempotent."""
-    from .routes.billing import attempt_pending_cancel
+    client; a row for a provider with no client is left alone. Safe to run often: a cancel is idempotent.
+    T-176: a row is left alone until min(2**attempts minutes, 24 h) have passed since its last attempt."""
+    from .routes import billing as routes
+    now = now or datetime.now(timezone.utc)
     done = failed = 0
-    todo = db.execute(select(PendingCancel.id, PendingCancel.provider, PendingCancel.ref)
-                      .order_by(PendingCancel.created_at)).all()
-    for row_id, row_provider, ref in todo:
+    todo = db.execute(select(PendingCancel.id, PendingCancel.provider, PendingCancel.ref, PendingCancel.attempts,
+                             PendingCancel.last_attempt_at).order_by(PendingCancel.created_at)).all()
+    for row_id, row_provider, ref, attempts, last_attempt_at in todo:
         client = clients.get(row_provider)
         if client is None:
             continue
+        if last_attempt_at is not None and now - last_attempt_at < routes.cancel_backoff(attempts or 0):
+            continue
         try:
-            result = attempt_pending_cancel(db, row_id, client)
+            result = routes.attempt_pending_cancel(db, row_id, client)
         except Exception:  # one bad row (a stale or deleted one, a database error) must not stop the run
             db.rollback()
             log.error("pending cancel could not be processed", extra={"old_subscription": ref}, exc_info=True)

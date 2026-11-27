@@ -92,3 +92,19 @@ def test_pending_cancels_migration_upgrades_and_downgrades(scratch_url):
         assert "pending_cancels" not in inspect(engine).get_table_names()
     finally:
         engine.dispose()
+
+
+def test_pending_cancels_last_attempt_migration_upgrades_and_downgrades(scratch_url):
+    config = _config(scratch_url)
+    command.upgrade(config, "0010")
+    engine = create_engine(scratch_url)
+    try:
+        assert "last_attempt_at" not in {c["name"] for c in inspect(engine).get_columns("pending_cancels")}
+        command.upgrade(config, "head")
+        column = {c["name"]: c for c in inspect(engine).get_columns("pending_cancels")}["last_attempt_at"]
+        assert column["nullable"] is True and column["type"].timezone is True
+        command.check(config)
+        command.downgrade(config, "0010")
+        assert "last_attempt_at" not in {c["name"] for c in inspect(engine).get_columns("pending_cancels")}
+    finally:
+        engine.dispose()

@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import uuid
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
@@ -20,6 +21,19 @@ from ..models import BillingEvent, PendingCancel, Subscription
 
 log = logging.getLogger("app.billing")
 router = APIRouter(prefix="/api/billing", tags=["billing"])
+
+# T-176: pending provider cancels. The webhook retries only rows that failed fewer times than this (each attempt can
+# take about 17 s, and a provider outage must not push the webhook past the provider's timeout); the sweep does the rest.
+INLINE_RETRY_MAX_ATTEMPTS = 3
+# The sweep skips a row whose last attempt is more recent than min(2**attempts minutes, this).
+SWEEP_BACKOFF_CAP = timedelta(hours=24)
+# When a row's attempts reach this, log one CRITICAL line (the transition only); later failures log at WARNING.
+ESCALATE_AT = 10
+
+
+def cancel_backoff(attempts: int) -> timedelta:
+    """How long the sweep leaves a row alone after its last attempt: 2**attempts minutes, at most a day."""
+    return min(timedelta(minutes=2 ** min(max(attempts, 0), 12)), SWEEP_BACKOFF_CAP)
 
 
 class CheckoutIn(BaseModel):
@@ -271,9 +285,16 @@ def attempt_pending_cancel(db: Session, row_id: uuid.UUID, billing) -> bool | No
     except Exception as error:
         row.attempts = (row.attempts or 0) + 1
         row.last_error = f"{type(error).__name__}: {error}"[:500]
+        row.last_attempt_at = datetime.now(timezone.utc)
         db.commit()
-        log.error("could not cancel the replaced subscription: it is kept as a to-do and retried; cancel it by hand "
-                  "at the provider if this repeats", extra={**todo, "attempts": row.attempts}, exc_info=True)
+        extra = {**todo, "attempts": row.attempts}
+        if row.attempts == ESCALATE_AT:  # once, on the transition: the one line an operator should act on (ids only)
+            log.critical("pending cancel needs operator", extra=extra)
+        elif row.attempts > ESCALATE_AT:  # already escalated: keep the log quiet, the row stays visible in the table
+            log.warning("could not cancel the replaced subscription (already escalated)", extra=extra, exc_info=True)
+        else:
+            log.error("could not cancel the replaced subscription: it is kept as a to-do and retried; cancel it by "
+                      "hand at the provider if this repeats", extra=extra, exc_info=True)
         return False
     db.delete(row)
     db.commit()
@@ -282,9 +303,11 @@ def attempt_pending_cancel(db: Session, row_id: uuid.UUID, billing) -> bool | No
 
 
 def retry_pending_cancels(db: Session, tenant_id: uuid.UUID, provider: str, billing) -> None:
-    """T-175: try this tenant's pending cancels for `provider`. Runs after every billing event for the tenant."""
+    """T-175: try this tenant's pending cancels for `provider`. Runs after every billing event for the tenant.
+    T-176: only rows with fewer than INLINE_RETRY_MAX_ATTEMPTS failures; the rest wait for the sweep."""
     ids = db.scalars(select(PendingCancel.id).where(PendingCancel.tenant_id == tenant_id,
-                                                    PendingCancel.provider == provider)
+                                                    PendingCancel.provider == provider,
+                                                    PendingCancel.attempts < INLINE_RETRY_MAX_ATTEMPTS)
                      .order_by(PendingCancel.created_at)).all()
     for row_id in ids:
         attempt_pending_cancel(db, row_id, billing)

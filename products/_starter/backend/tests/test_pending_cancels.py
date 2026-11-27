@@ -1,18 +1,23 @@
 """T-175: a failed takeover cancel is a durable to-do (pending_cancels), retried; dead-marker collisions keep dedup."""
+import json
 import time
 import uuid
+from datetime import datetime, timedelta, timezone
 
 import httpx
 import pytest
 from sqlalchemy import select
 
-from app.billing import MockBilling, StripeBilling
+from app.billing import MockBilling, StripeBilling, sign
 from app.errors import AppError
 from app.models import BillingEvent, PendingCancel
 from app.maintenance import sweep_pending_cancels
 from app.routes.billing import _dead_marker, retry_pending_cancels
 
 from .test_billing import SECRET, _stripe_apply, _stripe_sub, _tenant_id
+
+
+_LATER = datetime.now(timezone.utc) + timedelta(days=2)  # past any backoff after an attempt made during the test
 
 
 def _down(ref):
@@ -88,7 +93,7 @@ def test_a_retry_that_fails_again_counts_attempts_and_keeps_the_todo(owner, data
     broken.cancel_subscription = _down
     _takeover(client, database, broken)
     with caplog.at_level("ERROR", logger="app.billing"), database.sessions() as db:
-        assert sweep_pending_cancels(db, {"stripe": broken}) == {"cancelled": 0, "failed": 1}
+        assert sweep_pending_cancels(db, {"stripe": broken}, now=_LATER) == {"cancelled": 0, "failed": 1}
     assert _rows(database)[0][:3] == ("stripe", "sub_1", 2)
     assert any(r.levelname == "ERROR" for r in caplog.records)
 
@@ -108,7 +113,7 @@ def test_sweep_treats_an_already_cancelled_subscription_as_done(owner, database,
 
     stripe = StripeBilling("sk_test_x", SECRET, client=httpx.Client(transport=httpx.MockTransport(handler)))
     with database.sessions() as db:
-        assert sweep_pending_cancels(db, {"stripe": stripe}) == {"cancelled": 1, "failed": 0}
+        assert sweep_pending_cancels(db, {"stripe": stripe}, now=_LATER) == {"cancelled": 1, "failed": 0}
     assert _rows(database) == []
 
 
@@ -226,3 +231,161 @@ def test_s4_a_concurrent_dead_marker_insert_keeps_the_events_dedup_row(owner, da
     with database.sessions() as db:
         assert db.get(BillingEvent, "c1") is not None
     assert _stripe_apply(database, t, "c1", "customer.subscription.deleted", now - 40, "sub_9", "canceled") is False
+
+
+# --- T-176 ------------------------------------------------------------------------------------
+
+def _seed(database, tenant, ref, attempts=0, last_attempt_at=None):
+    with database.sessions() as db:
+        db.add(PendingCancel(tenant_id=uuid.UUID(tenant), provider="stripe", ref=ref, attempts=attempts,
+                             last_attempt_at=last_attempt_at))
+        db.commit()
+
+
+def _row(database, ref):
+    with database.sessions() as db:
+        return db.scalar(select(PendingCancel).where(PendingCancel.ref == ref))
+
+
+def test_s3_a_failing_retry_does_not_change_the_webhooks_answer(app, owner, database, monkeypatch):
+    """The retry runs after the event is committed: whatever it raises, the webhook still answers 200 applied."""
+    import app.routes.billing as routes
+    from sqlalchemy.orm.exc import StaleDataError
+    from app.models import Subscription
+    client, _ = owner
+    tenant = _tenant_id(client)
+    billing = app.state.billing
+    with database.sessions() as db:  # a to-do for the mock provider, so the retry has something to do
+        db.add(PendingCancel(tenant_id=uuid.UUID(tenant), provider=billing.name, ref="old_x"))
+        db.commit()
+
+    def boom(*args, **kwargs):
+        raise StaleDataError("row vanished")
+
+    monkeypatch.setattr(routes, "retry_pending_cancels", boom)
+    session_id = client.post("/api/billing/checkout", json={"plan": "starter"}).json()["checkout_id"]
+    payload = billing.completion_event(session_id)
+    event_id = json.loads(payload)["id"]
+    response = client.post("/api/billing/webhook", content=payload,
+                           headers={"x-billing-signature": sign(payload, billing.secret)})
+    assert response.status_code == 200 and response.json() == {"received": True, "applied": True}
+    with database.sessions() as db:
+        assert db.get(BillingEvent, event_id) is not None
+        assert db.scalar(select(Subscription.status).where(Subscription.tenant_id == uuid.UUID(tenant))) == "active"
+
+
+def test_note1_the_takeover_deletes_the_new_refs_todo_on_its_own(owner, database):
+    """No retry runs (billing=None), so only the takeover's own delete can remove the row for the new ref."""
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    _stripe_apply(database, t, "n1", "checkout.session.completed", now - 300, "sub_1")
+    _stripe_apply(database, t, "n2", "customer.subscription.updated", now - 250, "sub_1", "past_due")
+    _seed(database, t, "sub_2")  # a stale to-do for the ref that is about to become current
+    _stripe_apply(database, t, "n3", "checkout.session.completed", now - 200, "sub_2", plan="pro", billing=None)
+    assert _stripe_sub(database, t) == ("active", "pro", "sub_2")
+    assert [r[1] for r in _rows(database)] == ["sub_1"]  # sub_2's row is gone; the replaced sub_1 is the to-do
+
+
+def test_note2_a_row_locked_by_another_session_is_skipped_without_calling_the_provider(owner, database):
+    from app.routes.billing import attempt_pending_cancel
+    client, _ = owner
+    t = _tenant_id(client)
+    _seed(database, t, "old_1")
+    row_id = _row(database, "old_1").id
+    provider = MockBilling("x", "https://app.test")
+    with database.sessions() as holder, database.sessions() as db:
+        holder.scalar(select(PendingCancel).where(PendingCancel.id == row_id).with_for_update())  # committed row, held
+        assert attempt_pending_cancel(db, row_id, provider) is None
+        assert provider.cancelled == []
+        holder.rollback()
+    assert _row(database, "old_1") is not None  # untouched, still a to-do
+
+
+def test_s7_every_failed_attempt_stamps_last_attempt_at(owner, database):
+    from datetime import datetime, timedelta, timezone
+    client, _ = owner
+    broken = MockBilling("x", "https://app.test")
+    broken.cancel_subscription = _down
+    before = datetime.now(timezone.utc)
+    _takeover(client, database, broken)
+    first = _row(database, "sub_1").last_attempt_at
+    assert first is not None and before - timedelta(seconds=5) <= first <= datetime.now(timezone.utc)
+    with database.sessions() as db:
+        sweep_pending_cancels(db, {"stripe": broken}, now=datetime.now(timezone.utc) + timedelta(days=2))
+    second = _row(database, "sub_1")
+    assert second.attempts == 2 and second.last_attempt_at > first
+
+
+def test_s5_the_webhook_retries_only_rows_below_the_attempt_limit(owner, database):
+    from app.routes import billing as routes
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    _seed(database, t, "fresh", attempts=routes.INLINE_RETRY_MAX_ATTEMPTS - 1)
+    _seed(database, t, "worn", attempts=routes.INLINE_RETRY_MAX_ATTEMPTS)
+    good = MockBilling("x", "https://app.test")
+    _stripe_apply(database, t, "s5", "checkout.session.completed", now - 100, "sub_1", billing=good)
+    assert good.cancelled == ["fresh"]
+    assert [r[1] for r in _rows(database)] == ["worn"]  # left to the sweep
+    with database.sessions() as db:
+        assert sweep_pending_cancels(db, {"stripe": good}) == {"cancelled": 1, "failed": 0}
+    assert good.cancelled == ["fresh", "worn"]
+
+
+@pytest.mark.parametrize("attempts,age,tried", [
+    (0, None, True),                                  # never tried
+    (2, timedelta(minutes=3), False),                 # backoff 2**2 = 4 min
+    (2, timedelta(minutes=5), True),
+    (3, timedelta(minutes=5), False),                 # 8 min
+    (3, timedelta(minutes=9), True),
+    (20, timedelta(hours=23), False),                 # capped at 24 h
+    (20, timedelta(hours=25), True),
+])
+def test_s6_the_sweep_backs_off_by_attempts_up_to_a_day(owner, database, attempts, age, tried):
+    client, _ = owner
+    now = datetime.now(timezone.utc)
+    _seed(database, _tenant_id(client), "old_1", attempts=attempts, last_attempt_at=now - age if age else None)
+    provider = MockBilling("x", "https://app.test")
+    with database.sessions() as db:
+        result = sweep_pending_cancels(db, {"stripe": provider}, now=now)
+    assert (provider.cancelled == ["old_1"]) is tried
+    assert result == ({"cancelled": 1, "failed": 0} if tried else {"cancelled": 0, "failed": 0})
+
+
+def test_s6_a_row_with_attempts_but_no_timestamp_is_tried(owner, database):
+    """Rows written before last_attempt_at existed have attempts > 0 and no timestamp: do not back off forever."""
+    client, _ = owner
+    _seed(database, _tenant_id(client), "old_1", attempts=4, last_attempt_at=None)
+    provider = MockBilling("x", "https://app.test")
+    with database.sessions() as db:
+        assert sweep_pending_cancels(db, {"stripe": provider}) == {"cancelled": 1, "failed": 0}
+
+
+def test_s6_the_tenth_failure_logs_one_critical_line_with_ids_only_then_warnings(owner, database, caplog):
+    from app.routes import billing as routes
+    client, _ = owner
+    t = _tenant_id(client)
+    _seed(database, t, "old_1", attempts=routes.ESCALATE_AT - 2)
+    broken = MockBilling("x", "https://app.test")
+    broken.cancel_subscription = _down
+    far = datetime.now(timezone.utc)
+
+    def run():
+        caplog.clear()
+        far_now = far + timedelta(days=run.n)
+        run.n += 2
+        with caplog.at_level("DEBUG", logger="app.billing"), database.sessions() as db:
+            sweep_pending_cancels(db, {"stripe": broken}, now=far_now)
+        return [(r.levelname, r.getMessage()) for r in caplog.records if "cancel" in r.getMessage()], caplog.records
+    run.n = 1
+    lines, _ = run()          # attempts 8 -> 9: ERROR
+    assert [lvl for lvl, _m in lines] == ["ERROR"]
+    lines, records = run()    # 9 -> 10: the transition
+    assert [lvl for lvl, _m in lines] == ["CRITICAL"] and lines[0][1] == "pending cancel needs operator"
+    critical = [r for r in records if r.levelname == "CRITICAL"][0]
+    assert critical.old_subscription == "old_1" and critical.tenant_id == t and critical.attempts == 10
+    assert not critical.exc_info
+    lines, _ = run()          # 10 -> 11: WARNING, never ERROR or CRITICAL again
+    assert [lvl for lvl, _m in lines] == ["WARNING"]
+    lines, _ = run()
+    assert [lvl for lvl, _m in lines] == ["WARNING"]
+    assert _row(database, "old_1").attempts == 12
