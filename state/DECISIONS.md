@@ -498,3 +498,4 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 ## 2026-11-27 run 5bb5: T-193 merge
 - Merged T-193 after re-review PASS; skipped optional should-fix 11 (A1 ref-only matching is pre-registered in DESIGN). Reviewer's 4 non-blocking notes and claimcheck wiring queued as T-202, to be done before the EVAL.md freeze. Reversible.
 - A6a overlap rule (pre-registered in EVAL.md): checker span covers >=50% of seeded tokens AND seeded is >=30% of checker span, or both in the same app sentence.
+- run 5bb5, T-202: A4 gap-sentence exemption pre-registered as strict (stub only: <=2 content words, no digit, number word, negation, acronym or app fact trigger). Stricter means A4 can only under-credit the product, the safe direction for a pre-registered bar. Remaining edge phrasings queued as T-203.
