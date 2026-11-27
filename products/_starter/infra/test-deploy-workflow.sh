@@ -309,19 +309,63 @@ stub=$(mktemp -d)
 cat > "$stub/az" <<'STUB'
 #!/usr/bin/env bash
 echo "$*" >> "$STUB_LOG"
+digest="acr1.azurecr.io/app@sha256:$(printf 'a%.0s' {1..64})"
 case "$*" in
-  "containerapp revision show"*) echo '{"properties":{"template":{"containers":[{"name":"web","image":"acr1.azurecr.io/app@sha256:'"$(printf 'a%.0s' {1..64})"'","env":[]}]}}}' ;;
-  "containerapp job show"*) n=$(sed -E 's/.*caj-starter-([a-z]+).*/\1/' <<<"$*"); echo '{"properties":{"template":{"containers":[{"name":"'"$n"'","image":"acr1.azurecr.io/app@sha256:'"$(printf 'a%.0s' {1..64})"'"}]}}}' ;;
+  "containerapp revision show"*) echo '{"properties":{"template":{"containers":[{"name":"web","image":"'"$digest"'","env":'"${STUB_REV_ENV:-[]}"'}]}}}' ;;
+  "containerapp job update"*) # remember the BILLING_PROVIDER that was set, as Azure would
+    n=$(sed -E 's/.*caj-starter-([a-z]+).*/\1/' <<<"$*")
+    sed -nE 's/.*BILLING_PROVIDER=([^ ]*).*/\1/p' <<<"$*" > "$STUB_DIR/billing-$n" ;;
+  "containerapp job show"*)
+    n=$(sed -E 's/.*caj-starter-([a-z]+).*/\1/' <<<"$*")
+    b=$(cat "$STUB_DIR/billing-$n" 2>/dev/null || true)
+    echo '{"properties":{"template":{"containers":[{"name":"'"$n"'","image":"'"$digest"'","env":[{"name":"BILLING_PROVIDER","value":"'"${STUB_FORCE_BILLING:-$b}"'"}]}]}}}' ;;
 esac
 STUB
 chmod +x "$stub/az"
-if STUB_LOG="$stub/log" AZ="$stub/az" RESOURCE_GROUP=rg PRODUCT=starter bash "$here/purge-job.sh" follow ca-starter--abc12 > "$stub/out" 2>&1 \
+follow() { # revision env json, then extra env assignments for the script
+  rm -f "$stub/log" "$stub"/billing-*
+  STUB_DIR="$stub" STUB_LOG="$stub/log" STUB_REV_ENV="$1" AZ="$stub/az" RESOURCE_GROUP=rg PRODUCT=starter \
+    bash "$here/purge-job.sh" "${2:-follow}" ca-starter--abc12 > "$stub/out" 2>&1
+}
+if follow '[]' \
    && [ "$(grep -c '^containerapp job update' "$stub/log")" = 2 ] \
    && grep -q 'job update .*--name caj-starter-purge --container-name purge ' "$stub/log" \
    && grep -q 'job update .*--name caj-starter-cancels --container-name cancels ' "$stub/log" \
    && grep -q 'caj-starter-cancels now runs' "$stub/out"; then ok "purge-job.sh follow updates and verifies both caj-starter-purge and caj-starter-cancels"
 else bad "purge-job.sh follow updates and verifies both caj-starter-purge and caj-starter-cancels"; cat "$stub/out" 2>/dev/null; fi
+# T-177: the cancels job follows the revision's billing provider, the purge job stays on mock
+if follow '[{"name":"BILLING_PROVIDER","value":"stripe"}]' \
+   && grep -q 'job update .*--name caj-starter-cancels .*BILLING_PROVIDER=stripe' "$stub/log" \
+   && grep -q 'job update .*--name caj-starter-purge .*BILLING_PROVIDER=mock' "$stub/log" \
+   && ! grep -q 'job update .*--name caj-starter-purge .*BILLING_PROVIDER=stripe' "$stub/log" \
+   && grep -q 'caj-starter-cancels now runs .*BILLING_PROVIDER=stripe' "$stub/out"; then ok "purge-job.sh follow: a stripe revision sets BILLING_PROVIDER=stripe on cancels and mock on purge"
+else bad "purge-job.sh follow: a stripe revision sets BILLING_PROVIDER=stripe on cancels and mock on purge"; cat "$stub/out"; fi
+if follow '[{"name":"EMAIL_PROVIDER","value":"outbox"}]' && grep -q 'job update .*--name caj-starter-cancels .*BILLING_PROVIDER=mock' "$stub/log"; then ok "purge-job.sh follow: a revision with no BILLING_PROVIDER gives mock"
+else bad "purge-job.sh follow: a revision with no BILLING_PROVIDER gives mock"; cat "$stub/out"; fi
+if follow '[{"name":"BILLING_PROVIDER","value":"stripe;rm"}]'; then bad "purge-job.sh follow: BILLING_PROVIDER 'stripe;rm' is refused"
+elif ! grep -q '^containerapp job update' "$stub/log" && grep -q "BILLING_PROVIDER='stripe;rm'" "$stub/out"; then ok "purge-job.sh follow: BILLING_PROVIDER 'stripe;rm' is refused before any job is touched"
+else bad "purge-job.sh follow: BILLING_PROVIDER 'stripe;rm' is refused before any job is touched"; cat "$stub/out"; fi
+if follow '[{"name":"BILLING_PROVIDER","value":"stripe;rm"}]' settings; then bad "purge-job.sh settings: BILLING_PROVIDER 'stripe;rm' is refused"
+else ok "purge-job.sh settings: BILLING_PROVIDER 'stripe;rm' is refused"; fi
+if follow '[{"name":"BILLING_PROVIDER","value":"stripe"}]' settings && grep -qx 'PURGE_BILLING_PROVIDER=stripe' "$stub/out"; then ok "purge-job.sh settings prints PURGE_BILLING_PROVIDER"
+else bad "purge-job.sh settings prints PURGE_BILLING_PROVIDER"; cat "$stub/out"; fi
+# a job that reads back the wrong provider fails the run
+if STUB_FORCE_BILLING=mock follow '[{"name":"BILLING_PROVIDER","value":"stripe"}]'; then bad "purge-job.sh follow: a wrong BILLING_PROVIDER on the read-back fails"
+elif grep -q "caj-starter-cancels has BILLING_PROVIDER='mock', not 'stripe'" "$stub/out"; then ok "purge-job.sh follow: a wrong BILLING_PROVIDER on the read-back fails"
+else bad "purge-job.sh follow: a wrong BILLING_PROVIDER on the read-back fails"; cat "$stub/out"; fi
+# idempotent: running it twice gives the same result
+follow '[{"name":"BILLING_PROVIDER","value":"stripe"}]'; first=$(cat "$stub/out")
+follow '[{"name":"BILLING_PROVIDER","value":"stripe"}]'; [ "$first" = "$(cat "$stub/out")" ] && ok "purge-job.sh follow is idempotent" || bad "purge-job.sh follow is idempotent"
 rm -rf "$stub"
+# T-177 infra S2, source level (the compiled-JSON check is in test-bicep-identities.sh, run by CI): the cancels job
+# always defines both Stripe secrets and refs, and every secretRef it uses names one of its secrets.
+bicep="$here/main.bicep"
+blk() { awk -v s="^var $1 =" '$0 ~ s {p=1} p {print} p && /^\]\)?$/ {exit}' "$bicep"; }
+cs=$(blk cancelsSecrets); ce=$(blk cancelsStripeEnv)
+if grep -q "name: 'billing-webhook-secret'" <<<"$cs" && grep -q "name: 'stripe-secret-key'" <<<"$cs" && ! grep -q 'useStripe' <<<"$cs$ce" \
+   && grep -q "secretRef: 'billing-webhook-secret'" <<<"$ce" && grep -q "secretRef: 'stripe-secret-key'" <<<"$ce" \
+   && grep -q 'purgeEmailEnv, cancelsStripeEnv, appDbAuthEnv' "$bicep"; then ok "main.bicep: the cancels job always has both Stripe secrets and refs (not under useStripe)"
+else bad "main.bicep: the cancels job always has both Stripe secrets and refs (not under useStripe)"; fi
 bash -n "$here/purge-job.sh" && ok "bash -n purge-job.sh" || bad "bash -n purge-job.sh"
 
 # ---- syntax tools, when present -----------------------------------------------------------------------------------

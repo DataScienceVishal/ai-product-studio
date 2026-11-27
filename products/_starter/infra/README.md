@@ -170,11 +170,20 @@ Postgres firewall rule. `bash infra/test-deploy-role.sh` checks all this without
 retries subscription cancels that failed after a new checkout replaced a lapsed subscription, so they finish even
 when the tenant has no more billing events, or was deleted. It is the purge job's twin: same image (the `purge*`
 parameters), same app identity and database URL (rows only), same follow-the-live-revision rule (`purge-job.sh`).
-It differs in three ways: it gets this release's `BILLING_PROVIDER` and, for Stripe, the two Stripe secrets (it calls
-the payment provider; the purge job does not); the replica timeout is 15 minutes (each cancel can take about 17 s),
+It differs in three ways: it gets this release's `BILLING_PROVIDER` and the two Stripe secrets, which are always defined
+(a placeholder when unset; it calls the payment provider, the purge job does not); the replica timeout is 15 minutes (each cancel can take about 17 s),
 shorter than the schedule so runs never overlap; and it never calls the AI. Cost: job execution seconds only
 (`state/BUDGET.md`). The deploy role's `jobs/write` already covers it. To see failures, search the logs for
-`pending cancel could not be processed` (ERROR).
+`pending cancel could not be processed` (ERROR). A rollback restores the cancels job's billing provider too: `purge-job.sh follow`
+copies `BILLING_PROVIDER` from the revision that serves traffic (the purge job stays on `mock`).
+
+The 10th failed attempt on a row logs one `pending cancel needs operator` line (CRITICAL). The log line is at most once, so the
+table is the source of truth. Rows that need an operator:
+
+```sql
+SELECT id, ref, attempts FROM pending_cancels WHERE attempts >= 10;
+```
+Cancel the subscription by hand at the provider, then delete the row.
 
 ## Rolling back
 
