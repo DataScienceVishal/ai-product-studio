@@ -96,6 +96,9 @@ Nothing here costs money until step 4. Do the steps only after approving the cos
     SETUP.md step 3. It spends tokens, capped at 98,000 a day for all tenants together.
   - `billing_provider`: `mock` (default) or `stripe`, which is test mode only and needs the
     `STARTER_BILLING_WEBHOOK_SECRET` and `STARTER_STRIPE_SECRET_KEY` secrets.
+    The Stripe webhook endpoint must be subscribed to `checkout.session.completed`,
+    `checkout.session.async_payment_succeeded`, `customer.subscription.created`, `.updated` and `.deleted`;
+    without the two checkout events paying customers stay on the trial (see the product README, Billing).
   - `require_email_verification`: off by default **while email is outbox-only**, because nobody can receive
     the link. On, a demo can only sign up and write notes. Off, it can also use the AI, check out and invite
     (invitation links can't be delivered either). Turn it on, and keep it on, as soon as a real email provider

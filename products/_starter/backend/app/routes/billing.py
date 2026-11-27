@@ -5,7 +5,7 @@ import logging
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
@@ -83,6 +83,9 @@ def portal(request: Request, me: Current = Depends(verified_owner), db: Session 
 
 def _check_fields(update: BillingUpdate) -> None:
     """Refuse fields the columns cannot hold (wrong type, too long) with a 400, before the event id is recorded."""
+    if not isinstance(update.event_id, str) or not 0 < len(update.event_id) <= 255:  # BillingEvent.id is String(255)
+        log.warning("billing event has an unreadable id")
+        raise AppError(400, "bad_event", "The event could not be read.")
     for name, limit in (("plan", 40), ("offer", 40), ("provider_ref", 255), ("customer_ref", 255)):
         value = getattr(update, name)
         if value is not None and (not isinstance(value, str) or len(value) > limit):
@@ -118,6 +121,12 @@ def apply_update(db: Session, update: BillingUpdate, provider: str, billing=None
     # customer's next, strictly newer, event). Cancel arriving after an activation at the same second still applies.
     # A different subscription id means a different subscription: never the "reactivation" of the cancelled one.
     other_sub = bool(update.provider_ref and sub.provider_ref and update.provider_ref != sub.provider_ref)
+    if update.needs_paid_confirmation and update.provider_ref != sub.provider_ref:
+        # T-173 S5: `active` without proof of payment (a delayed payment method may still be processing) cannot start
+        # or replace a subscription; the paid checkout event does that. An update for the one we track is fine.
+        db.commit()
+        log.info("unconfirmed active subscription event ignored until the payment is confirmed")
+        return True
     if other_sub and not update.starts_subscription:
         # Only an event that starts a subscription may replace the current one. Anything else about another id
         # (cancel, past_due, or an old subscription becoming active again) must not touch the current subscription.
@@ -136,10 +145,16 @@ def apply_update(db: Session, update: BillingUpdate, provider: str, billing=None
         if billing is not None:
             try:
                 billing.cancel_subscription(update.provider_ref)
-            except Exception:  # never fail the webhook (the event is recorded); the log line is the to-do
-                log.error("could not cancel the duplicate subscription: cancel or refund it by hand",
+            except Exception as error:
+                # T-173 S1: nothing else changed for the tenant, so forget the event id and answer 5xx. Stripe
+                # redelivers for days and the cancel is tried again. Until it works the customer is still charged
+                # for the extra subscription, so the error stays in the log too.
+                log.error("could not cancel the duplicate subscription (will be retried on redelivery)",
                           extra={"tenant_id": str(update.tenant_id), "extra_subscription": update.provider_ref},
                           exc_info=True)
+                db.execute(delete(BillingEvent).where(BillingEvent.id == update.event_id))
+                db.commit()
+                raise AppError(503, "cancel_failed", "Could not cancel the extra subscription yet. Try again.") from error
         return True
     tie_after_cancel = (update.occurred_at is not None and update.occurred_at == sub.last_event_at
                         and sub.status == "canceled" and update.status != "canceled" and not other_sub)

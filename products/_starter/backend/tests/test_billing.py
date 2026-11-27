@@ -558,10 +558,10 @@ def test_cancel_with_unknown_plan_still_cancels(owner, app):
 
 # --- T-72 review fixes: only an event that starts a subscription may replace the current one ---
 
-def _stripe_apply(database, tenant_id, eid, kind, created, sub_id, status="active", plan="starter"):
+def _stripe_apply(database, tenant_id, eid, kind, created, sub_id, status="active", plan="starter", billing=None):
     """A real-shaped Stripe event, parsed by StripeBilling and applied the way the webhook route does."""
     from app.routes.billing import apply_update
-    if kind == "checkout.session.completed":
+    if kind.startswith("checkout.session."):
         obj = {"client_reference_id": tenant_id, "subscription": sub_id, "customer": "cus_1", "payment_status": "paid",
                "metadata": {"tenant_id": tenant_id, "plan": plan}}
     else:
@@ -570,7 +570,7 @@ def _stripe_apply(database, tenant_id, eid, kind, created, sub_id, status="activ
                           "data": {"object": obj}}).encode()
     update = stripe_provider().parse_webhook(payload, sign(payload, SECRET))
     with database.sessions() as db:
-        return apply_update(db, update, "stripe")
+        return apply_update(db, update, "stripe", billing)
 
 
 def _stripe_sub(database, tenant_id):
@@ -610,12 +610,12 @@ def test_stripe_old_subscription_deleted_after_new_checkout_keeps_customer(owner
     assert _stripe_sub(database, t)[0] == "canceled"
 
 
-def test_subscription_created_for_a_new_id_does_take_over(owner, database):
+def test_paid_checkout_for_a_new_id_does_take_over_a_past_due_one(owner, database):
     client, _ = owner
     t, now = _tenant_id(client), int(time.time())
     _stripe_apply(database, t, "e1", "checkout.session.completed", now - 300, "sub_1")
     _stripe_apply(database, t, "e1b", "customer.subscription.updated", now - 250, "sub_1", "past_due")
-    _stripe_apply(database, t, "e2", "customer.subscription.created", now - 200, "sub_2", plan="pro")
+    _stripe_apply(database, t, "e2", "checkout.session.completed", now - 200, "sub_2", plan="pro")
     assert _stripe_sub(database, t) == ("active", "pro", "sub_2")
 
 
@@ -858,19 +858,31 @@ def test_b1_stripe_cancels_the_extra_subscription_at_stripe():
     assert calls == [("DELETE", "/v1/subscriptions/sub_2")]
 
 
-def test_b1_failure_to_cancel_the_extra_subscription_is_logged_not_raised(owner, app, caplog):
+def test_b1_failure_to_cancel_the_extra_subscription_is_retried_by_the_provider(owner, app, caplog):
+    """T-173 S1: a failed cancel answers 503 and forgets the event id, so Stripe's redelivery tries the cancel again."""
     client, _ = owner
     now = int(time.time())
     _sub_event(client, app, "x1", "checkout.completed", now - 100, "s1")
+    real_cancel = app.state.billing.cancel_subscription
 
     def boom(ref):
         raise AppError(503, "billing_unavailable", "down")
 
     app.state.billing.cancel_subscription = boom
     with caplog.at_level("ERROR", logger="app.billing"):
-        assert _sub_event(client, app, "x2", "checkout.completed", now, "s2", plan="pro").status_code == 200
+        r = _sub_event(client, app, "x2", "checkout.completed", now, "s2", plan="pro")
+    assert r.status_code == 503 and r.json()["error"] == "cancel_failed"
+    assert _plan(client) == "starter"  # the first subscription is untouched
+    assert any("could not cancel" in rec.getMessage() for rec in caplog.records)
+    # redelivery of the same event id: the cancel is attempted again and now succeeds
+    app.state.billing.cancel_subscription = real_cancel
+    r = _sub_event(client, app, "x2", "checkout.completed", now, "s2", plan="pro")
+    assert r.status_code == 200 and r.json()["applied"] is True
+    assert app.state.billing.cancelled == ["s2"]
     assert _plan(client) == "starter"
-    assert any("could not cancel" in r.getMessage() for r in caplog.records)
+    # and once it worked, a further redelivery is an ordinary duplicate
+    assert _sub_event(client, app, "x2", "checkout.completed", now, "s2", plan="pro").json()["applied"] is False
+    assert app.state.billing.cancelled == ["s2"]
 
 
 def test_b2_stripe_unpaid_session_does_not_activate_and_async_success_does():
@@ -971,3 +983,106 @@ def test_b1_other_provider_start_event_is_not_a_duplicate_and_not_cancelled(owne
         apply_update(db, update, "stripe", app.state.billing)
     assert app.state.billing.cancelled == []
     assert _stripe_sub(database, t) == ("active", "pro", "sub_1")  # existing replace behaviour
+
+
+# --- T-173: billing follow-ups (S1, S3, S5, S7, S8) ---
+
+def _stripe_with(handler):
+    return StripeBilling("sk_test_x", SECRET, client=httpx.Client(transport=httpx.MockTransport(handler)))
+
+
+@pytest.mark.parametrize("reply", [
+    httpx.Response(404, json={"error": {"code": "resource_missing", "message": "No such subscription"}}),
+    httpx.Response(400, json={"error": {"type": "invalid_request_error",
+                                        "message": "A canceled subscription can only update its metadata."}}),
+])
+def test_s3_cancelling_an_already_canceled_subscription_counts_as_done(reply, monkeypatch):
+    """Stripe's docs do not state the reply to DELETE on a canceled subscription, so we confirm with a GET."""
+    calls = []
+
+    def handler(request: httpx.Request):
+        calls.append(request.method)
+        if request.method == "DELETE":
+            return reply
+        return httpx.Response(200, json={"id": "sub_2", "status": "canceled"})
+
+    _stripe_with(handler).cancel_subscription("sub_2")  # must not raise
+    assert calls[0] == "DELETE"
+
+
+def test_s3_a_rejected_cancel_of_a_live_subscription_still_raises():
+    def handler(request: httpx.Request):
+        if request.method == "DELETE":
+            return httpx.Response(400, json={"error": {"message": "nope"}})
+        return httpx.Response(200, json={"id": "sub_2", "status": "active"})
+
+    with pytest.raises(AppError) as err:
+        _stripe_with(handler).cancel_subscription("sub_2")
+    assert err.value.code == "billing_rejected"
+
+
+def test_s3_second_cancel_of_the_same_extra_subscription_is_not_a_false_todo(owner, app, caplog):
+    client, _ = owner
+    now = int(time.time())
+    _sub_event(client, app, "d1", "checkout.completed", now - 100, "s1")
+    _sub_event(client, app, "d2", "checkout.completed", now - 50, "s2", plan="pro")
+    with caplog.at_level("ERROR", logger="app.billing"):
+        assert _sub_event(client, app, "d3", "checkout.completed", now - 40, "s2", plan="pro").status_code == 200
+    assert app.state.billing.cancelled == ["s2"]  # asked once; the second event skips the call
+    assert not [r for r in caplog.records if "could not cancel" in r.getMessage()]
+
+
+def test_s5_subscription_created_active_does_not_grant_access_by_itself(owner, database):
+    """Stripe: with delayed payment methods a subscription can be `active` while the payment is still `processing`."""
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    _stripe_apply(database, t, "p1", "customer.subscription.created", now - 50, "sub_1", "active", plan="pro")
+    assert _stripe_sub(database, t)[0] == "trialing"
+    _stripe_apply(database, t, "p2", "customer.subscription.updated", now - 40, "sub_1", "active", plan="pro")
+    assert _stripe_sub(database, t)[0] == "trialing"
+    # the paid checkout (or async_payment_succeeded) is what grants it
+    _stripe_apply(database, t, "p3", "checkout.session.async_payment_succeeded", now - 30, "sub_1", plan="pro")
+    assert _stripe_sub(database, t) == ("active", "pro", "sub_1")
+
+
+def test_s5_subscription_active_with_a_paid_latest_invoice_is_accepted():
+    t = str(uuid.uuid4())
+    obj = {"id": "sub_1", "status": "active", "customer": "cus_1", "metadata": {"tenant_id": t, "plan": "pro"}}
+    unpaid = _stripe_event("customer.subscription.created", {**obj, "latest_invoice": {"status": "open"}})
+    paid = _stripe_event("customer.subscription.created", {**obj, "latest_invoice": {"status": "paid"}})
+    assert unpaid.needs_paid_confirmation is True and paid.needs_paid_confirmation is False
+
+
+def test_s5_updates_to_the_already_paid_subscription_still_apply(owner, database):
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    _stripe_apply(database, t, "q1", "checkout.session.completed", now - 300, "sub_1", plan="starter")
+    _stripe_apply(database, t, "q2", "customer.subscription.updated", now - 200, "sub_1", "past_due")
+    assert _stripe_sub(database, t)[0] == "past_due"
+    _stripe_apply(database, t, "q3", "customer.subscription.updated", now - 100, "sub_1", "active")  # card fixed
+    assert _stripe_sub(database, t)[0] == "active"
+
+
+def test_s7_overlong_or_non_string_event_id_is_400_and_not_500(owner, app):
+    client, _ = owner
+    tid = _tenant_id(client)
+    for bad in ("e" * 300, 12345, ["x"]):
+        r = _hook(client, app, {"id": bad, "type": "checkout.completed", "created": int(time.time()),
+                                "data": {"tenant_id": tid, "plan": "pro", "subscription": "s1"}})
+        assert r.status_code == 400 and r.json()["error"] == "bad_event", bad
+    assert _status(client) == "trialing"
+
+
+def test_s8_stripe_subscription_created_for_s2_while_s1_is_live_changes_nothing(owner, database):
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    provider = MockBilling("x", "https://app.test")
+    _stripe_apply(database, t, "r1", "checkout.session.completed", now - 300, "sub_1", plan="starter")
+    assert _stripe_apply(database, t, "r2", "customer.subscription.created", now - 200, "sub_2", plan="pro",
+                         billing=provider) is True
+    assert _stripe_sub(database, t) == ("active", "starter", "sub_1")
+    assert provider.cancelled == []  # created alone is not a duplicate yet: nothing is cancelled
+    # s2's paid checkout is what marks it a duplicate and cancels it, once
+    _stripe_apply(database, t, "r3", "checkout.session.completed", now - 100, "sub_2", plan="pro", billing=provider)
+    assert _stripe_sub(database, t) == ("active", "starter", "sub_1")
+    assert provider.cancelled == ["sub_2"]

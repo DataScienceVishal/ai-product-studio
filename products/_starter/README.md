@@ -33,7 +33,7 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 
 | What | Command | Where it runs |
 |---|---|---|
-| Backend unit and API tests (758 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
+| Backend unit and API tests (771 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
 | Migrations match the models | `alembic upgrade head && alembic check` | every push |
 | Frontend unit tests (vitest, 203 passed in 7 files) | `cd frontend && npx vitest run` | every push (CI `frontend`) |
 | Frontend type check and build | `cd frontend && npm run build` | every push (CI `frontend`) |
@@ -113,6 +113,12 @@ AZURE_OPENAI_ENDPOINT with AI_PROVIDER=azure. API docs are hidden in production.
 ## Billing and the early-customer offer
 
 `BILLING_PROVIDER=mock` is the default (no network). `stripe` uses Stripe test mode only; live keys are refused.
+
+**Stripe webhook setup.** Subscribe the webhook endpoint (`POST /api/billing/webhook`) to exactly these five events:
+`checkout.session.completed`, `checkout.session.async_payment_succeeded`, `customer.subscription.created`,
+`customer.subscription.updated`, `customer.subscription.deleted`. Without the two `checkout.session.*` events a paying
+customer stays on the trial: an `active` subscription event alone never starts or replaces a subscription (T-173 S5,
+because delayed payment methods can report `active` before the money arrives).
 
 - The offer code a customer enters in the app is checked against `OFFERS` in `app/billing.py` (EARLY50: 50% off for 3 months).
 - With Stripe, the app applies it **server-side**: it creates the coupon (`POST /v1/coupons`) and sends

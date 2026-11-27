@@ -87,6 +87,11 @@ class BillingUpdate:
     # True only for events that begin a subscription (checkout completed, subscription created). Only those may
     # replace the tenant's current provider_ref; an update for another id (an old subscription recovering) may not.
     starts_subscription: bool = False
+    # True for a Stripe subscription event that says `active` without proof the first payment succeeded. With delayed
+    # payment methods (Bacs, SEPA) Stripe reports `active` while the PaymentIntent is still `processing`. Such an event
+    # may update the subscription we already track as paid, but never starts or replaces one: that waits for
+    # checkout.session.completed (payment_status paid) or checkout.session.async_payment_succeeded.
+    needs_paid_confirmation: bool = False
 
 
 class InvalidSignature(AppError):
@@ -201,7 +206,7 @@ class MockBilling:
         if occurred_at is None:  # without a timestamp the ordering check cannot protect a newer state
             raise ValueError("billing event has no usable created timestamp")
         end = data.get("current_period_end")
-        return BillingUpdate(event_id=str(event["id"]), tenant_id=tenant, status=status, plan=data.get("plan"),
+        return BillingUpdate(event_id=event["id"], tenant_id=tenant, status=status, plan=data.get("plan"),
                              offer=data.get("offer"), provider_ref=data.get("subscription"),
                              customer_ref=data.get("customer"),
                              current_period_end=datetime.fromtimestamp(end, timezone.utc) if end else None,
@@ -212,7 +217,8 @@ class MockBilling:
         self.closed.append((customer_ref, subscription_ref))
 
     def cancel_subscription(self, subscription_ref) -> None:
-        self.cancelled.append(subscription_ref)
+        if subscription_ref not in self.cancelled:  # cancelling twice is a no-op, like a canceled Stripe subscription
+            self.cancelled.append(subscription_ref)
 
 
 class StripeBilling:
@@ -340,7 +346,17 @@ class StripeBilling:
             self._call("DELETE", f"/subscriptions/{subscription_ref}")
 
     def cancel_subscription(self, subscription_ref) -> None:
-        self._call("DELETE", f"/subscriptions/{subscription_ref}")  # 404 (already gone) counts as done
+        """404 (already gone) counts as done. Stripe's docs do not say what DELETE answers for a subscription that is
+        already canceled (a second extra-subscription event, a redelivery), so a rejected cancel is checked with a GET:
+        a `canceled` status means the goal is met. Outages and a live subscription still raise."""
+        path = f"/subscriptions/{quote(str(subscription_ref), safe='')}"
+        try:
+            self._call("DELETE", path)
+        except AppError as error:
+            if error.code != "billing_rejected":
+                raise
+            if self._call("GET", path).get("status") != "canceled":
+                raise
 
     @staticmethod
     def _period_end(obj: dict) -> datetime | None:
@@ -367,7 +383,7 @@ class StripeBilling:
             tenant = _tenant(meta.get("tenant_id") or obj.get("client_reference_id"))
             if tenant is None:
                 return None
-            return BillingUpdate(str(event["id"]), tenant, "active", plan=meta.get("plan") or None,
+            return BillingUpdate(event["id"], tenant, "active", plan=meta.get("plan") or None,
                                  offer=meta.get("offer") or None, provider_ref=obj.get("subscription"),
                                  customer_ref=obj.get("customer"), occurred_at=_when(event.get("created")),
                                  starts_subscription=True)
@@ -378,11 +394,14 @@ class StripeBilling:
                 "canceled": "canceled", "incomplete_expired": "canceled"}.get(obj.get("status"))
             if tenant is None or status is None:
                 return None
-            return BillingUpdate(str(event["id"]), tenant, status, plan=meta.get("plan") or None,
+            invoice = obj.get("latest_invoice")  # an id string unless the endpoint expands it
+            paid_proof = isinstance(invoice, dict) and invoice.get("status") == "paid"
+            return BillingUpdate(event["id"], tenant, status, plan=meta.get("plan") or None,
                                  offer=meta.get("offer") or None, provider_ref=obj.get("id"),
                                  customer_ref=obj.get("customer"), current_period_end=self._period_end(obj),
                                  occurred_at=_when(event.get("created")),
-                                 starts_subscription=kind.endswith("created"))
+                                 starts_subscription=kind.endswith("created"),
+                                 needs_paid_confirmation=status == "active" and not paid_proof)
         return None
 
 
