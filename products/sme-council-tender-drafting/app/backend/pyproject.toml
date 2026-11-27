@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "fakeredis[lua]>=2.26", "reportlab>=4"]
+dev = ["pytest>=8", "fakeredis[lua]>=2.26", "reportlab>=4", "hypothesis>=6"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -26,6 +26,48 @@ provider the harness builds is `ScriptedFakeAI`, and `--live` is refused (exit 3
 ## Verify
 `cd app/backend && TEST_DATABASE_URL=... python -m pytest -q -o addopts="" tests/test_tender_eval.py`; `python -m eval.run config` from the product dir.
 
+# STATUS (T-190, slice S6: claim check and export gate) - code done, awaiting reviewer PASS
+
+Branch `p/sme-council-tender-drafting/T-190`. Not merged. Migration 0018 (drafts.check_sha256 and checked_at, source_documents.deleted_at,
+and the (tenant, sha256) uniqueness becomes a partial unique index on live documents). alembic upgrade, check, downgrade -1, upgrade,
+check clean. No live model calls (ScriptedFakeAI / Judge fakes only).
+
+## Done
+- `app/tender/claimcheck.py`: `ClaimcheckOutput`, `CLAIMCHECK_SPEC` (medium effort, 6000 cap; the draft and the cited passages only, each in a
+  DATA block, the same `check_payload` for the app and the harness), `apply_rules` (pure): span not in the draft is discarded; `supported`
+  needs a quote that is a normalised substring of a cited passage; every number, GBP/% figure and accreditation code of the span must be in
+  the quote; a citation outside the retrieved set, a removed passage, or no citation at all gives `unsupported`; the unchecked-sentence detector
+  (a digit, GBP, %, year, accreditation code or a run of 2+ capitalised words not under any claim span, per trigger, so a tiny span cannot cover a
+  long sentence) adds `unchecked` claims. `claimcheck_handler` (runner kind `claimcheck`), `store_check` (claims replaced, draft.check_sha256 =
+  text_sha256, draft status `checked_ok` or `blocked`), failure hook, a gap-only draft is checked with no model call.
+- `app/tender/gate.py`: pure `export_allowed(pack, requirements, drafts, claims, signoff, live_evidence_ids, statement_version) -> (bool, reasons)`
+  over plain dataclasses, plus `drafts_digest` (confirmed requirements with kind and word limit, and each latest draft's text hash and version).
+  Reasons are `code: message` (`not_confirmed`, `no_questions`, `missing_draft`, `not_checked`, `claims_blocked`, `evidence_removed`, `over_limit`,
+  `no_signoff`, `statement_changed`, `digest_mismatch`). The text hash is recomputed, the limit is the current requirement's, markers in the text
+  count as citations as well as claim ids. `claimcheck.load_gate_inputs/export_check` build the inputs from rows.
+- Routes: `POST /packs/{id}/check` (202, idempotent, 409 `nothing_to_check`; pack `checking`), `GET /packs/{id}/export-check`,
+  `GET /requirements/{id}/claims`. The pack ends the check as `ready` (every question checked clean) or back to `drafting`.
+- Evidence delete is a soft delete (T-186 F10): `source_documents.deleted_at` and `evidence_items.deleted_at`, passage text kept; hidden from the
+  list, search and the check; the gate treats it as deleted; packs whose drafts cite it go `ready` -> `drafting`; the same file can be uploaded again.
+- T-199: edits reset a ready pack (`reopen_pack`: draft edit, AI redraft saved, requirement add or patch, evidence delete). Sizing test
+  (`test_upload_extract_draft_and_check_fit_the_30k_trial_day`): reservations extract 18,046 / draft 11,344 / check 13,758 (Azure headroom 1,500);
+  settled 4,137 / 2,061 / 2,265. One question end to end settles at about 8.5k; the largest pack that fits one trial day (every step
+  settled + next reservation <= 30k, all drafts then all checks) is **3 questions**. A longer tender needs a paid plan or a second day.
+- T-200: extract pack lock is now the first statement of the write transaction (concurrency test); the F5 limit window starts at the question's heading
+  (the line above the quote, or the one-line block above it, or the numbered line), never at the previous question.
+- Tests: `test_tender_gate.py` (7, incl. a 600-example Hypothesis property against an oracle), `test_tender_claimcheck.py` (27), extract +4,
+  one ingest test updated for soft delete.
+
+## Design deviations / notes
+- `hypothesis` is a new test dependency (not yet in pyproject dev extras or requirements-dev.txt; the Lead should add and re-pin it).
+- Passage text for the check is cut at `APP_PASSAGE_CHARS` (1000), like the draft's input, so a quote beyond that is unsupported (safe direction).
+- Number words ("forty") are not figures; a draft that says 40 against "forty" is downgraded (false block, safe direction).
+- No sign-off route yet (S7); `Signoff` rows are read by the gate when they exist. The statement text is S7's; only `STATEMENT_VERSION = "v1"` is here.
+- A removed requirement stays in the digest history only through its absence (the digest covers confirmed rows).
+
+## Left
+- S7 sign-off and S8 export route must call `claimcheck.export_check` / `gate.export_allowed` again server-side. No frontend.
+
 # STATUS (T-198, S4 review leftovers)
 
 **Done**
@@ -262,3 +304,16 @@ Branch `p/sme-council-tender-drafting/T-185`. Not merged; reviewer PASS needed.
 
 ## Run
 See `app/README.md`; backend needs `DATABASE_URL`, then `alembic upgrade head`.
+
+# STATUS (T-190 review fixes)
+
+Done: must-fix 1 (claim check: names must be in the quote, minimum quote size `quote_big_enough`), 2 (DATA.md says evidence deletes are soft),
+should-fix 3 (own-sentence marker needed; repeated unmarked sentence flagged), 4 (gate pack state is an allow-list), 6 (0018 downgrade warning).
+
+Board-worthy: **add a purge horizon for soft-deleted evidence documents and their passage text** (today they are kept until account deletion; DATA.md says so).
+
+Left for S7/S8 (reviewer items): 5 (`pack_checked` ignores evidence liveness; a delete during `checking` is not reopened), 7 (extract heading heuristic
+can give an imperative-question line the previous question's word window; known limitation), 8 (S7 sign-off and the check route should lock the pack row
+`FOR UPDATE`). Also: `hypothesis` is now in the dev extras and requirements-dev.txt (the T-190 line above is out of date).
+
+Threat note (S6): claims with no figure, code or name rest on the model's judgement plus the human sign-off; A6a measures how often the model gets them wrong.
