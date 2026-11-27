@@ -1,3 +1,31 @@
+# STATUS (T-192, slice S8 part 1: Word export, reopen) - code done, awaiting reviewer
+
+Branch `p/sme-council-tender-drafting/T-192` (off main). Not merged. No live model calls.
+
+## Done
+- `app/tender/export.py`: rows loaded once (`load_rows`), plain gate values built from those same objects, `gate.export_allowed` run, then the
+  docx rendered from the same objects (header "Draft produced with AI assistance; reviewed and signed off by <name> on <date>", footer =
+  responsibility statement, one section per confirmed question with limit/word count and inline [E-n], appendix of each cited E-n with document,
+  page and passage). XML-bad chars stripped, no fields/links, deterministic bytes (fixed core props and zip timestamps), safe filename.
+- `GET /api/packs/{id}/export` (DESIGN's `export.docx` path was not used): tenant scoped (404), pack row FOR SHARE, 409 `export_blocked` with
+  reasons unless pack is signed/exported, a non-voided sign-off exists, the gate passes on current rows and the digest matches. Stores an
+  `exports` row (sign-off id, docx sha256, user). Pack status is left as `signed` (not moved to `exported`).
+- `POST /api/packs/{id}/reopen`: pack row FOR UPDATE, 409 `not_signed` unless signed/exported, voids the sign-off, pack back to `ready`.
+  DECISION: migration 0019 adds `signoffs.voided_at`; the row is kept for audit and the exports FK. Gate, coverage and export read the latest NON-voided sign-off.
+- T-199: sign-off already takes the pack row FOR UPDATE; new test holds the lock and shows the sign-off waits.
+- Frontend coverage page: when signed, "Export Word document" (blob download via `apiDownload` in api.ts) and "Reopen for edits" (window.confirm). 3 vitest tests.
+- Tests: `tests/test_tender_export.py` (11): docx text vs DB, markers, appendix, header/footer, exports row, determinism, refused without sign-off,
+  after evidence soft delete, after tampered answers, after reopen; reopen then edit then sign again then export; cross-tenant 404; 401; lock.
+
+## Left
+- Playwright e2e of the 7 SPEC steps on ScriptedFakeAI (not started).
+- `claimcheck.export_check` is covered because the route runs the same `gate.export_allowed` on its own single read (does not call `export_check`, to keep one read).
+- Reopen does not clear claim checks; the pack returns to `ready` and the sign-off re-runs the gate.
+
+## Verify
+Backend (python3.13, deps from requirements-dev.txt): `TEST_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/starter_test python3.13 -m pytest -q -o addopts=""`
+-> 1191 passed, 1 skipped. Frontend: `npx vitest run` 232 passed, `npx tsc -b`, `npm run build` clean.
+
 # STATUS (T-191, slice S7: review screens, coverage and sign-off) - MERGED to main after reviewer CHANGES then PASS (reviews/T-191-review.md)
 
 Branch `p/sme-council-tender-drafting/T-191` (off main at 39daebf). Not merged. No migrations. No live model calls (ScriptedFakeAI / Judge fakes).

@@ -336,6 +336,55 @@ describe("coverage and sign-off", () => {
     expect(await screen.findByText(/Signed off by Ann Lee/)).toBeTruthy();
   });
 
+  const signedCov = () => cov({ pack: pack({ status: "signed" }), signoff: { reviewer_name: "Ann Lee", signed_at: "2026-11-27T10:00:00Z" }, export: { allowed: true, reasons: [] } });
+
+  it("exports the Word document through a blob download when signed", async () => {
+    at(`/coverage?id=${PID}`);
+    const create = vi.fn(() => "blob:x"), revoke = vi.fn();
+    Object.assign(URL, { createObjectURL: create, revokeObjectURL: revoke });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    const m = serve(tbl(signedCov(), { [`GET /api/packs/${PID}/export`]: () => new Response("x", { status: 200, headers: { "Content-Disposition": 'attachment; filename="Cleaning-draft.docx"' } }) }));
+    render(<CoveragePage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Export Word document" }));
+    await screen.findByText(/Word document was downloaded/);
+    expect(calls(m, `GET /api/packs/${PID}/export`)).toBe(1);
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(revoke).toHaveBeenCalledWith("blob:x");
+    expect(document.body.textContent).not.toMatch(/£|price/i);
+    click.mockRestore();
+  });
+
+  it("shows the server's refusal when the export is blocked", async () => {
+    at(`/coverage?id=${PID}`);
+    serve(tbl(signedCov(), { [`GET /api/packs/${PID}/export`]: () => reply(409, { error: "export_blocked", message: "Export is blocked: evidence_removed" }) }));
+    render(<CoveragePage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Export Word document" }));
+    expect(await screen.findByText(/Export is blocked: evidence_removed/)).toBeTruthy();
+  });
+
+  it("reopens only after a confirm", async () => {
+    at(`/coverage?id=${PID}`);
+    let reopened = false;
+    const m = serve(tbl(signedCov()));
+    m.mockImplementation(async (path: string, init: RequestInit = {}) => {
+      const key = `${init.method ?? "GET"} ${path}`;
+      if (key === `GET /api/packs/${PID}/coverage`) return reply(200, reopened ? cov() : signedCov());
+      if (key === `GET /api/packs/${PID}/status`) return reply(200, { pack: pack({ status: "ready" }), tasks: [] });
+      if (key === `POST /api/packs/${PID}/reopen`) { reopened = true; return reply(200, {}); }
+      throw new Error(key);
+    });
+    const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true);
+    render(<CoveragePage />);
+    const btn = await screen.findByRole("button", { name: "Reopen for edits" });
+    fireEvent.click(btn);
+    expect(calls(m, `POST /api/packs/${PID}/reopen`)).toBe(0);
+    fireEvent.click(btn);
+    expect(await screen.findByRole("button", { name: "Sign off this pack" })).toBeTruthy();
+    expect(calls(m, `POST /api/packs/${PID}/reopen`)).toBe(1);
+    confirm.mockRestore();
+  });
+
   it("lists what blocks sign-off and keeps the button off", async () => {
     at(`/coverage?id=${PID}`);
     serve(tbl(cov({ export: { allowed: false, reasons: ["claims_blocked: 1 claim(s) in question x are not supported by evidence", "no_signoff: none"] } })));

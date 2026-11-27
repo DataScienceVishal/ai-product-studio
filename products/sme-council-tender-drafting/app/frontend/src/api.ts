@@ -91,5 +91,26 @@ export async function api<T>(path: string, options: { method?: string; body?: un
   return data as T;
 }
 
+/** A file download (the Word export): same-origin cookies, a timeout, and the server's JSON error on a refusal. */
+export async function apiDownload(path: string): Promise<{ blob: Blob; filename: string }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), requestTimeoutMs);
+  try {
+    const response = await fetch(path, { credentials: "same-origin", headers: { "X-Requested-With": "fetch" }, signal: controller.signal });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new ApiError(response.status, data.error ?? "error", data.message ?? "Something went wrong.");
+    }
+    const match = /filename="([^"]+)"/.exec(response.headers.get("Content-Disposition") ?? "");
+    return { blob: await response.blob(), filename: match ? match[1] : "tender-draft.docx" };
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    if (err instanceof DOMException && err.name === "AbortError") throw new ApiError(0, "timeout", "The server took too long to answer. Please try again.");
+    throw new ApiError(0, "network", "Can't reach the server. Check your connection and try again.");
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export const formatPrice = (pence: number, currency: string) =>
   new Intl.NumberFormat("en-GB", { style: "currency", currency: currency.toUpperCase() }).format(pence / 100);
