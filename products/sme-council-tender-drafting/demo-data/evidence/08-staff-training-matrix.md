@@ -8,7 +8,7 @@
 | Manual handling | Cleaning, grounds | 37 / 37 | 100% | 3 years |
 | COSHH awareness | Cleaning, grounds | 36 / 37 | 97% | 2 years |
 | Industry cleaning qualification, Level 2 (demo) | Cleaning supervisors | 5 / 5 | 100% | none |
-| Fire marshal | 1 per site | 12 / 12 | 100% | 3 years |
+| Fire marshal | 1 per site where the client requires one | 12 / 12 | 100% | 3 years |
 | Emergency first aid at work | at least 1 per site | 16 staff trained | n/a | 3 years |
 | Safeguarding awareness, level 2 | School and library staff, supervisors | 22 / 24 | 92% | 2 years |
 | Security licence (SIA-style front line) | Security officers | 14 / 14 | 100% | 3 years (licence renewal) |

@@ -7,7 +7,7 @@ All certificate identifiers below are made-up demo identifiers.
 ## Held
 | Accreditation | Identifier | Issued by | Valid from | Valid to |
 |---|---|---|---|---|
-| ISO 9001-style quality management system | CERT-DEMO-0001 | Demo Certification Body (fictional) | 12 June 2023 | 11 June 2026 renewed to 11 June 2029 (surveillance audit passed 4 June 2026) |
+| ISO 9001-style quality management system | CERT-DEMO-0001 | Demo Certification Body (fictional) | 12 June 2023 | 11 June 2026 renewed to 11 June 2029 (recertification audit passed 4 June 2026) |
 | Cyber Essentials (basic) | CERT-DEMO-0002 | Demo Assessor Ltd (fictional) | 4 September 2026 | 3 September 2027 |
 | Approved contractor scheme for security providers (SIA ACS-style) | CERT-DEMO-0003 | Demo Security Regulator (fictional) | 1 December 2024 | 30 November 2027 |
 | Contractor health and safety pre-qualification (SafeContractor-style) | CERT-DEMO-0004 | Demo Safety Assessors (fictional) | 20 January 2026 | 19 January 2027 |

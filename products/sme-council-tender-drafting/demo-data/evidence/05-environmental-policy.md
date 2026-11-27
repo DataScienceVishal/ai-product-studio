@@ -5,7 +5,7 @@
 This policy is written in the style of ISO 14001. **Harrowmere Facilities Ltd (fictional) is not certified to ISO 14001** and has not been externally audited against it. We hold no environmental management certificate.
 
 ## Commitments and current performance
-- **Cleaning chemicals:** 92% of cleaning chemicals by volume in 2025/26 carried an independent eco-label; concentrated products with dosing systems are used on all three cleaning contracts.
+- **Cleaning chemicals:** 92% of cleaning chemicals by volume in 2025/26 carried an independent eco-label; concentrated products with dosing systems are used on both council cleaning contracts (HF-CS-20, HF-CS-23).
 - **Electricity:** our office and depot have been on a 100% renewable tariff since 1 October 2024.
 - **Waste:** at Eastvale Borough Council (fictional) offices we recycled 61% of office waste by weight in 2025/26 (baseline 44% in 2022).
 - **Grounds:** 100% peat-free compost since 1 January 2024; herbicide use on Tarn Valley Council (fictional) parks fell 64% between 2022 and 2025 by volume applied; wildflower verges extended by 3,100 square metres.

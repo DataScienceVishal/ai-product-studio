@@ -11,8 +11,8 @@
 | Marlowe Fen depot (security) | 90.5% | 0 | 64 call-outs, 22 min average | £58,000 |
 
 - All complaints in 2025/26: 37 across all contracts (including 12 on smaller contracts not listed); 35 (94%) resolved within 5 working days.
-- Average audit score on the five council contracts above: 91.4%.
-- Staff turnover 2025/26: 24% across the company (14 leavers; average headcount 57). Sickness absence 3.9% of working days.
+- Average audit score on the five council contracts above: 90.9%.
+- Staff turnover 2025/26: 25% across the company (14 leavers; average headcount 57). Sickness absence 3.9% of working days.
 - Contracts lost or terminated early in the last 5 years: **1** (a small housing association cleaning contract in 2023, ended by the client after a re-tender for price reasons; not a performance termination).
 - Contract extensions: 4 of 5 council contracts have been extended or are inside an extension period.
 

@@ -58,6 +58,6 @@ Firm in one line: 58 staff, turnover £3.82m (2025/26), cleaning, security guard
 | G13 | Verbatim client testimonials (none held in the library) | 20, 23 | feedback "held on file" |
 | G14 | ISO 22301, Investors in People, parent company guarantee, supplier audits | 03, 13, 02, 09 | continuity plan, modern slavery statement |
 
-Cross-checks to seed (conflicting or near-miss facts): ISO 9001 certificate expiry (renewed to 11 June 2029 after an earlier 2026 date); public liability £5m against employers' £10m; 24% company staff turnover against 16% on Eastvale; 22 of 24 safeguarding trained (92%), not 100%; 2 of 6 grounds staff hold the pesticide certificate.
+Cross-checks to seed (conflicting or near-miss facts): ISO 9001 certificate expiry (renewed to 11 June 2029 after an earlier 2026 date); public liability £5m against employers' £10m; 25% company staff turnover against 16% on Eastvale; 22 of 24 safeguarding trained (92%), not 100%; 2 of 6 grounds staff hold the pesticide certificate.
 
 Fictional document for a software demo. Not a real company.

@@ -4,7 +4,7 @@
 
 - **Client:** Tarn Valley Council (fictional), for 8 maintained primary schools (about 1,900 pupils).
 - **Contract:** £97,000 a year; started 1 September 2024 for 3 years; ends 31 August 2027.
-- **Team:** 11 operatives and 1 supervisor, all enhanced-DBS checked (HF-SG-11).
+- **Team:** 10 operatives and 2 supervisors, all enhanced-DBS checked (HF-SG-11).
 
 ## What we did
 Cleaning before 8:00 and after 16:30; summer holiday deep clean of all 8 schools in the first 3 weeks of August each year; touch-point cleaning twice a day; safeguarding awareness for all staff.

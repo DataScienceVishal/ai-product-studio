@@ -8,7 +8,7 @@ Harrowmere Facilities Ltd (fictional) is an owner-managed facilities services co
 ## Size
 - 58 employees at 31 October 2026: 31 cleaning operatives and supervisors, 14 security officers, 6 grounds operatives, 7 management and office staff.
 - 71% of turnover in the 2025/26 financial year came from public-sector clients (see HF-FIN-02).
-- Three live council contracts (see case studies HF-CS-20 to HF-CS-25).
+- Five live council contracts with three councils (see case studies HF-CS-20 to HF-CS-24; HF-CS-25 is a one-off order under HF-CS-20).
 
 ## Management roles
 Managing Director; Operations Director; Contracts Manager (cleaning); Contracts Manager (security and grounds); Quality, Health and Safety Manager; Finance and HR Manager; Mobilisation Lead (a role held by the Operations Director during mobilisation).
