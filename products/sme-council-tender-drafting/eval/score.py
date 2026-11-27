@@ -133,12 +133,12 @@ _ACRONYM = re.compile(r"\b[A-Z][A-Z0-9]{1,}\b")
 # residual already holds for these; the explicit pattern keeps it so if that check is ever narrowed.
 _CODE = re.compile(r"\b[A-Za-z]+\d+[A-Za-z0-9]*\b|\b\d+[A-Za-z]+[A-Za-z0-9]*\b")
 # Contracted and fused negations. _norm splits "n't" into two tokens, so they are matched on the raw sentence.
-_NEG_RAW = re.compile(r"\bcannot\b|n['\u2019]t\b", re.IGNORECASE)
+_NEG_RAW = re.compile(r"\bcannot\b|\bcant\b|n['\u2019]t\b", re.IGNORECASE)
 # Assertion words that make a claim on their own: a sole one of these ("We are compliant [gap]") is a claim, not a stub.
 # A hyphenated compound ("incident-free", "award-winning") is also a claim (_HYPHEN), whatever its parts.
 CLAIM_WORDS = frozenset("free compliant compliance accredited accreditation certified certification approved vetted qualified "
                         "registered licensed licenced insured guaranteed guarantee award awarded winning proven safe secure "
-                        "safeguarded trained checked audited".split())
+                        "safeguarded trained checked audited won best leading trusted experienced".split())
 _HYPHEN = re.compile(r"\w[-\u2010\u2011]\w")
 
 
@@ -168,8 +168,8 @@ def carries_other_content(sentence: str) -> bool:
 def split_claims(text: str) -> tuple[list[str], list[str]]:
     """(claims, exempt gap sentences). A4 claims are the app's sentences (a citation after the full stop stays with its
     sentence, a gap marker stays whole). A sentence with a [NEEDS FIRM INPUT: ...] marker and no [E-n] is exempt (the draft
-    is saying it does not know, which A8 rewards) only if, with the marker stripped, no digit is left and at most RESIDUAL_MAX_WORDS (2)
-    non-connective words are, with no number word, acronym or app fact trigger (carries_other_content is false). A gap sentence with more content, such as "We hold 40 contracts and [NEEDS FIRM
+    is saying it does not know, which A8 rewards) only if carries_other_content is false for it (see that function and the EVAL.md
+    A4 row for the full trigger list). A gap sentence with more content, such as "We hold 40 contracts and [NEEDS FIRM
     INPUT: insurer] cover.", stays a claim and fails A4 without a citation. A gap sentence that cites is always scored."""
     claims, exempt = [], []
     for s in split_sentences(text):

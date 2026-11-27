@@ -22,11 +22,11 @@ def gap_exempt_rows(drafts: list[dict]) -> list[dict]:
     return rows
 
 
-def sample_claims(claims: list[dict], n: int = SAMPLE_SIZE, seed: int = A5_SEED, gap_exempt: list[dict] | None = None) -> list[dict]:
-    """claims: [{"id", "draft", "claim", "cited", "passage_text"}]. gap_exempt (from gap_exempt_rows) joins the population, so
-    the A4 exemption is human-checked too. Sorted by id first, so the draw depends only on the seed
-    and the set of claims, never on the order they were exported in. Fewer than n: all of them."""
-    ordered = sorted([*claims, *(gap_exempt or [])], key=lambda c: str(c["id"]))
+def sample_claims(claims: list[dict], n: int = SAMPLE_SIZE, seed: int = A5_SEED) -> list[dict]:
+    """The A5 sample: claims: [{"id", "draft", "claim", "cited", "passage_text"}], all cited. Sorted by id first, so the draw
+    depends only on the seed and the set of claims, never on the order they were exported in. Fewer than n: all of them.
+    Gap rows never enter this draw (SPEC A5 is 100 cited claims); they go in a separate block, see write_sheet."""
+    ordered = sorted(claims, key=lambda c: str(c["id"]))
     if len(ordered) <= n:
         return ordered
     chosen = random.Random(seed).sample(range(len(ordered)), n)
@@ -35,11 +35,15 @@ def sample_claims(claims: list[dict], n: int = SAMPLE_SIZE, seed: int = A5_SEED,
 
 def write_sheet(claims: list[dict], path: Path | str, n: int = SAMPLE_SIZE, seed: int = A5_SEED,
                 gap_exempt: list[dict] | None = None) -> int:
-    rows = sample_claims(claims, n, seed, gap_exempt)
+    """Writes the A5 sample (n cited claims) and then, as a separate block, every gap_exempt row (ids "gap-..."). The gap block
+    counts toward A6c only (a gap row a person judges to assert something is an unsupported claim; the count is reported as
+    "exempt-but-asserting"), never toward A5. Returns the number of A5 rows."""
+    rows = sample_claims(claims, n, seed)
+    gap_rows = sorted(gap_exempt or [], key=lambda c: str(c["id"]))
     with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(COLUMNS)
-        for c in rows:
+        for c in [*rows, *gap_rows]:
             w.writerow([c["id"], c.get("draft", ""), c["claim"], " ".join(f"E-{i}" for i in c.get("cited", [])),
                         c.get("passage_text", ""), "", "", ""])
     return len(rows)

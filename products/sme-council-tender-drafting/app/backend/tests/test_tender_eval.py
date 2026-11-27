@@ -512,17 +512,27 @@ def test_sample_takes_all_when_fewer_and_writes_a_sheet(tmp_path):
     assert lines[0].startswith("claim_id,") and len(lines) == 101 and S.A5_SEED == 20261127
 
 
-def test_a5_population_includes_gap_exempt_sentences(tmp_path):
+def test_a5_sample_is_unchanged_by_gap_rows_which_form_a_separate_block(tmp_path):
     drafts = [{"id": "d1", "text": "We hold [NEEDS FIRM INPUT: x]. We hold ISO 9001 [E-1]."},
               {"id": "d2", "text": "Our insurance cover is [NEEDS FIRM INPUT: y]."}]
     gap = S.gap_exempt_rows(drafts)
     assert [g["id"] for g in gap] == ["gap-d1-000", "gap-d2-000"] and all(g["cited"] == [] for g in gap)
     assert S.gap_exempt_rows([{"id": "d", "text": "We are incident-free [NEEDS FIRM INPUT: x]."}]) == []      # now a claim
-    assert len(S.sample_claims(_claims(37), gap_exempt=gap)) == 39
-    big = S.sample_claims(_claims(500), gap_exempt=gap)
-    assert len(big) == 100 and big == S.sample_claims(_claims(500), gap_exempt=list(reversed(gap)))
-    path = tmp_path / "s.csv"
-    assert S.write_sheet(_claims(3), path, gap_exempt=gap) == 5 and "gap-d1-000" in path.read_text()
+    assert S.sample_claims(_claims(500)) == S.sample_claims(_claims(500))
+    assert len(S.sample_claims(_claims(37))) == 37
+    p1, p2 = tmp_path / "a.csv", tmp_path / "b.csv"
+    assert S.write_sheet(_claims(500), p1) == 100 and S.write_sheet(_claims(500), p2, gap_exempt=gap) == 100
+    plain, with_gap = p1.read_text().splitlines(), p2.read_text().splitlines()
+    assert with_gap[:101] == plain and len(with_gap) == 103                  # the 100 cited rows are identical
+    assert [r.split(",")[0] for r in with_gap[101:]] == ["gap-d1-000", "gap-d2-000"]
+    assert sum(r.startswith("gap-") for r in with_gap[:101]) == 0
+
+
+@pytest.mark.parametrize("text", ["We won [NEEDS FIRM INPUT: x].", "We are the best [NEEDS FIRM INPUT: x].",
+                                  "We are leading [NEEDS FIRM INPUT: x].", "We are trusted [NEEDS FIRM INPUT: x].",
+                                  "We are experienced [NEEDS FIRM INPUT: x].", "We cant [NEEDS FIRM INPUT: x]."])
+def test_a4_more_sole_word_claims_count(text):
+    assert SC.claims_of(text) == [text]
 
 
 # ---------- seed ----------
@@ -666,6 +676,8 @@ def test_replaced_context_rebuilds_the_default_claimcheck_for_the_new_provider(c
     other = ScriptedFakeAI()
     c2 = dataclasses.replace(ctx, provider=other)
     assert c2.claimcheck is not ctx.claimcheck and c2.claimcheck.is_default_claimcheck
+    cells = [c.cell_contents for c in c2.claimcheck.__closure__]
+    assert any(c is c2 for c in cells) and not any(c is ctx for c in cells)       # closes over the new context
     custom = lambda budget, text, hits: []
     assert dataclasses.replace(ctx, claimcheck=custom).claimcheck is custom      # a passed callable is kept
 
