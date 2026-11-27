@@ -1,0 +1,21 @@
+🧪 <b>Studio update</b> · Fri 27 Nov, 15:00
+🟢 Running normally · 🔒 Selling locked · 💷 About $15–20 of $80 used
+
+<b>✨ What's new</b>
+• Paid plans now start only once the payment has cleared
+• Duplicate subscriptions that fail to cancel are now retried automatically
+• A revoked team invite link can no longer create an account
+• Security check found 3 billing gaps; one fixed, nothing is live
+
+<b>🙋 Need your call</b>
+<b>1. Desk research keeps coming up empty. What next?</b>
+A Chat with friend's firm ⭐ · B Desk scouting only · C Build best idea anyway
+<i>Asked at 08:00. No reply → B at 20:10. A waits for your yes.</i>
+
+Tap a button, or just reply <b>1A</b>.
+
+<b>⚠️ One problem</b>
+• Spend report still can't sign in; setup guide step 3 fixes it
+
+<b>🧭 Next</b>
+• Closing the last 2 billing gaps from the security check
