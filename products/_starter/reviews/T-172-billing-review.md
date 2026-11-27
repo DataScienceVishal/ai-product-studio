@@ -107,3 +107,22 @@ I reproduced both with throwaway probes (deleted afterwards, no product code cha
 - B4: the mock raises ValueError, which the webhook maps to 400. The `mock_complete` path always sets `created`.
 - B5: `has_access` is used the same way in checkout and in `duplicate`. The mock customer id `mock_cus_<hex>` is
   URL-encoded by the portal.
+
+## Re-review at e8faea3 (2026-11-27): PASS
+
+Both must-fixes are fixed and each one is tested.
+
+- **C1 fixed.** In `apply_update`, the duplicate check now runs before the stale/tie check. New test:
+  `test_b1_stale_second_subscription_is_still_cancelled_and_logged`. I swapped the two blocks back to the old order and
+  that test failed.
+- **C2 fixed.** `duplicate` now requires `sub.provider == provider`, so a start event from another provider falls back to
+  the replace behaviour. New test: `test_b1_other_provider_start_event_is_not_a_duplicate_and_not_cancelled`. I removed the
+  clause and that test failed.
+- Side effects of the new order: the stale check never blocks a duplicate, because the duplicate path changes no DB state.
+  It only records the event id and cancels. A late start event for an older, already-replaced subscription is now
+  cancelled, which is right: that subscription is orphaned. Expect an extra DELETE in that case (see S3).
+- Full backend suite on e8faea3: **754 passed, 1 skipped**. This matches NEXT.md and the README.
+- Suggestions S1-S8 above still stand. None of them block the merge; the money-related ones to do next are S1 (retry a
+  failed cancel), S3 (verify Stripe's reply when a subscription is cancelled twice) and S5 (delayed-payment `active` status).
+
+Verdict: **PASS**.
