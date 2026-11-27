@@ -83,7 +83,8 @@ class Context:
     dry: bool = True
 
     def __post_init__(self):
-        if self.claimcheck is None:
+        if self.claimcheck is None or getattr(self.claimcheck, "is_default_claimcheck", False):
+            # also rebuilt for a copy (dataclasses.replace): a default closure must never keep the old context's provider/tenant
             self.claimcheck = default_claimcheck(self)
         headroom = getattr(self.provider, "output_headroom", None)
         if headroom != self.ledger.cfg.headroom:
@@ -212,12 +213,15 @@ def default_claimcheck(ctx: Context) -> Callable[..., list]:
         retrieved = retrieved_ids if retrieved_ids is not None else [h.display_no for h in hits]
         claims, _, _ = cc.check_draft(text, retrieved, ctx.tenant_id, budget, passages, provider=ctx.provider, sessions=ctx.sessions)
         return [asdict(c) for c in claims]
+    run.is_default_claimcheck = True
     return run
 
 
 def _check(ctx: Context, phase: str, draft_id: str, text: str, hits: list, retrieved_ids: list[int] | None = None) -> list[dict]:
     from app.tender.draft import CHECK_CAP       # the claimcheck output cap (DESIGN 4.4), not a copy of it
     budget = LedgerBudget(ctx.ledger, phase, "claimcheck", CHECK_CAP, label=draft_id)
+    if ctx.claimcheck is None:
+        raise PhaseNotReady("ctx.claimcheck is None: the claim check phase has nothing to call")
     kw = {} if retrieved_ids is None else {"retrieved_ids": retrieved_ids}
     return ctx.claimcheck(budget, text, hits, **kw)
 

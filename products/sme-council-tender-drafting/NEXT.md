@@ -1,3 +1,20 @@
+# STATUS (T-203, A4 hardening + T-202 should-fix S1-S4) - code done, awaiting reviewer
+
+Branch `p/sme-council-tender-drafting/T-203`. Only `eval/`, `EVAL.md`, `tests/test_tender_eval.py`. No `app/tender/` edits, no live calls.
+
+## Done
+- A4 gap exemption stricter (can only lower A4): `CLAIM_WORDS` (free, compliant, accredited, certified, ...) and hyphenated compounds
+  ("incident-free") make a sole word a claim; letter+digit codes (S1); `cannot` and `n't` negations. Pre-registered in the EVAL.md A4 row and Amendments.
+- S1: `sample.gap_exempt_rows` + `sample_claims/write_sheet(gap_exempt=...)` put exempt gap sentences in the A5 population. Not yet wired
+  into a driver (there is none for A5 sheets yet); call it with the E2 exports.
+- S2: test renamed `test_e4_uses_a_passed_claimcheck`; `_check` raises `PhaseNotReady` if `ctx.claimcheck` is None.
+- S3: `Context.__post_init__` rebuilds a default claimcheck (flag `is_default_claimcheck`) so `dataclasses.replace` follows the new provider.
+- S4: full stop was already fixed in 3a0e7ec.
+- Mutation-style tests: removing CLAIM_WORDS, `_NEG_RAW` or `_HYPHEN` fails a test. Letter+digit codes are triple-covered, pinned by parametrized cases only.
+
+## Verify
+`cd app/backend && TEST_DATABASE_URL=... python3.13 -m pytest -q -o addopts="" tests/test_tender_eval.py`
+
 # STATUS (T-202, T-193 follow-ups) - code done, awaiting reviewer
 
 Branch `p/sme-council-tender-drafting/T-202`. Only `eval/`, `EVAL.md`, tests. No `app/tender/` edits, no live calls.
