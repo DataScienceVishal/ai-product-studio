@@ -1,7 +1,7 @@
 # T-173 billing follow-ups status
 
 Branch `p/_starter/T-173-billing` (on `main`, after T-172). Fixes S1, S3, S5, S7, S8 of `reviews/T-172-billing-review.md`, test-first
-Full backend suite on this branch: 767 passed, 1 skipped.
+Full backend suite on this branch, merged with main (T-173 team change): 771 passed, 1 skipped (767 before the merge).
 (tests at the end of `backend/tests/test_billing.py`, section "T-173"). Not done: S2 (timeouts), S4, S6.
 
 - S1 (failed duplicate cancel is retried): in `apply_update`, when `cancel_subscription` raises, the `BillingEvent` row is deleted,
