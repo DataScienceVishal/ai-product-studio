@@ -216,6 +216,9 @@ class MockBilling:
     def close(self, customer_ref, subscription_ref) -> None:
         self.closed.append((customer_ref, subscription_ref))
 
+    def subscription_period_end(self, subscription_ref) -> datetime | None:
+        return None  # mock completion events already carry the period end
+
     def cancel_subscription(self, subscription_ref) -> None:
         if subscription_ref not in self.cancelled:  # cancelling twice is a no-op, like a canceled Stripe subscription
             self.cancelled.append(subscription_ref)
@@ -225,6 +228,7 @@ class StripeBilling:
     """Stripe test mode via its REST API. Not exercised against Stripe until test keys exist."""
     name = "stripe"
     API = "https://api.stripe.com/v1"
+    CANCEL_TIMEOUT = 8.0  # seconds, for calls made while a webhook waits (cancel, period end lookup)
 
     def __init__(self, secret_key: str, webhook_secret: str, client: httpx.Client | None = None, api_version: str = ""):
         if not secret_key.startswith(("sk_test_", "rk_test_")):
@@ -235,22 +239,28 @@ class StripeBilling:
         self._coupons: set[str] = set()  # coupon ids already ensured (and checked) in this process
 
     def _call(self, method: str, path: str, form: dict | None = None, idempotency_key: str | None = None,
-              accept_error_codes: frozenset[str] = frozenset()) -> dict:
+              accept_error_codes: frozenset[str] = frozenset(), timeout: float | None = None,
+              attempts: int = 3) -> dict:
         """accept_error_codes: Stripe error codes on a 400 that the caller treats as an answer, not a failure.
-        The reply body is then returned (read `error.code`). Any other 4xx still raises billing_rejected."""
+        The reply body is then returned (read `error.code`). Any other 4xx still raises billing_rejected.
+        timeout/attempts: per-request timeout (default: the client's) and the number of tries for a transport error,
+        429 or 5xx. A 4xx is never retried."""
+        last = attempts - 1
+        extra = {} if timeout is None else {"timeout": timeout}
         headers = dict(self.headers)
         if idempotency_key:
             headers["Idempotency-Key"] = idempotency_key  # one key per logical request, reused across retries
-        for attempt in range(3):
+        for attempt in range(attempts):
             try:
-                response = self.client.request(method, f"{self.API}{path}", data=form, auth=(self.key, ""), headers=headers)
+                response = self.client.request(method, f"{self.API}{path}", data=form, auth=(self.key, ""), headers=headers,
+                                               **extra)
             except httpx.TransportError as error:
-                if attempt == 2:
+                if attempt == last:
                     raise AppError(503, "billing_unavailable", "Payments are unavailable. Try again shortly.") from error
                 time.sleep(2 ** attempt)
                 continue
             if response.status_code == 429 or response.status_code >= 500:
-                if attempt == 2:
+                if attempt == last:
                     raise AppError(503, "billing_unavailable", "Payments are unavailable. Try again shortly.")
                 time.sleep(2 ** attempt)
                 continue
@@ -349,14 +359,22 @@ class StripeBilling:
         """404 (already gone) counts as done. Stripe's docs do not say what DELETE answers for a subscription that is
         already canceled (a second extra-subscription event, a redelivery), so a rejected cancel is checked with a GET:
         a `canceled` status means the goal is met. Outages and a live subscription still raise."""
+        # T-174 S2: this runs inside a webhook, which Stripe abandons after a few seconds of waiting, so use a short
+        # timeout and one retry (about 17 s at worst) instead of the default 3 x 20 s. A failure answers 503 and
+        # Stripe redelivers (T-173 S1), so the retry here only smooths over a blip.
         path = f"/subscriptions/{quote(str(subscription_ref), safe='')}"
         try:
-            self._call("DELETE", path)
+            self._call("DELETE", path, timeout=self.CANCEL_TIMEOUT, attempts=2)
         except AppError as error:
             if error.code != "billing_rejected":
                 raise
-            if self._call("GET", path).get("status") != "canceled":
+            if self._call("GET", path, timeout=self.CANCEL_TIMEOUT, attempts=2).get("status") != "canceled":
                 raise
+
+    def subscription_period_end(self, subscription_ref) -> datetime | None:
+        """When the current paid period ends (a checkout event does not carry it). Raises on failure."""
+        path = f"/subscriptions/{quote(str(subscription_ref), safe='')}"
+        return self._period_end(self._call("GET", path, timeout=self.CANCEL_TIMEOUT, attempts=2))
 
     @staticmethod
     def _period_end(obj: dict) -> datetime | None:
