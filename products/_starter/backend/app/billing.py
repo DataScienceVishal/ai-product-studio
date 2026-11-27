@@ -224,11 +224,32 @@ class MockBilling:
             self.cancelled.append(subscription_ref)
 
 
+# T-180 (T-179 M2): the cancel budget. DELETE gets 2 tries (4 s each, 1 s backoff between), the "is it already canceled?"
+# GET after a rejected DELETE gets 1. The worst case is a slow DELETE (4 + 1 + 4 = 9 s), or a slow first try, a fast
+# rejection, then a slow GET (4 + 1 + 0 + 4 = 9 s). Keep it well under the idle-in-transaction timeout (15 s by
+# default, app/config.py and app/db.py), because the pending-cancel path makes this call inside an open transaction.
+CANCEL_REQUEST_TIMEOUT = 4.0
+CANCEL_DELETE_ATTEMPTS = 2
+CANCEL_CHECK_ATTEMPTS = 1
+_CANCEL_BACKOFF = 1.0  # _call sleeps 2**attempt: 1 s after a first failed try
+
+
+def _cancel_worst_case() -> float:
+    delete = CANCEL_DELETE_ATTEMPTS * CANCEL_REQUEST_TIMEOUT + (CANCEL_DELETE_ATTEMPTS - 1) * _CANCEL_BACKOFF
+    check = CANCEL_CHECK_ATTEMPTS * CANCEL_REQUEST_TIMEOUT + (CANCEL_CHECK_ATTEMPTS - 1) * _CANCEL_BACKOFF
+    rejected_then_check = (CANCEL_DELETE_ATTEMPTS - 1) * (CANCEL_REQUEST_TIMEOUT + _CANCEL_BACKOFF) + check
+    return max(delete, rejected_then_check)
+
+
+CANCEL_WORST_CASE_SECONDS = _cancel_worst_case()
+assert CANCEL_WORST_CASE_SECONDS <= 10, "the cancel call runs inside a row lock: keep it under the idle-in-transaction timeout"
+
+
 class StripeBilling:
     """Stripe test mode via its REST API. Not exercised against Stripe until test keys exist."""
     name = "stripe"
     API = "https://api.stripe.com/v1"
-    CANCEL_TIMEOUT = 8.0  # seconds, for calls made while a webhook waits (cancel, period end lookup)
+    CANCEL_TIMEOUT = CANCEL_REQUEST_TIMEOUT  # seconds, for calls made while a webhook waits (cancel, period end lookup)
 
     def __init__(self, secret_key: str, webhook_secret: str, client: httpx.Client | None = None, api_version: str = ""):
         if not secret_key.startswith(("sk_test_", "rk_test_")):
@@ -360,15 +381,18 @@ class StripeBilling:
         already canceled (a second extra-subscription event, a redelivery), so a rejected cancel is checked with a GET:
         a `canceled` status means the goal is met. Outages and a live subscription still raise."""
         # T-174 S2: this runs inside a webhook, which Stripe abandons after a few seconds of waiting, so use a short
-        # timeout and one retry (about 17 s at worst) instead of the default 3 x 20 s. A failure answers 503 and
-        # Stripe redelivers (T-173 S1), so the retry here only smooths over a blip.
+        # timeout and one retry instead of the default 3 x 20 s. A failure answers 503 and Stripe redelivers (T-173 S1),
+        # so the retry here only smooths over a blip.
+        # T-180 (T-179 M2): the pending-cancel path calls this while holding a row lock in an open transaction, which
+        # Postgres ends after idle_in_transaction_session_timeout (15 s). The budget is therefore CANCEL_WORST_CASE_SECONDS
+        # (9 s), asserted below to stay under that timeout.
         path = f"/subscriptions/{quote(str(subscription_ref), safe='')}"
         try:
-            self._call("DELETE", path, timeout=self.CANCEL_TIMEOUT, attempts=2)
+            self._call("DELETE", path, timeout=self.CANCEL_TIMEOUT, attempts=CANCEL_DELETE_ATTEMPTS)
         except AppError as error:
             if error.code != "billing_rejected":
                 raise
-            if self._call("GET", path, timeout=self.CANCEL_TIMEOUT, attempts=2).get("status") != "canceled":
+            if self._call("GET", path, timeout=self.CANCEL_TIMEOUT, attempts=CANCEL_CHECK_ATTEMPTS).get("status") != "canceled":
                 raise
 
     def subscription_period_end(self, subscription_ref) -> datetime | None:
