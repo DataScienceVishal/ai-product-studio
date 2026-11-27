@@ -1,0 +1,24 @@
+[project]
+name = "starter-backend"
+version = "0.1.0"
+description = "Studio product starter: FastAPI backend with sign-in, tenancy, billing adapter, AI adapter and usage caps"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.30",
+  "sqlalchemy>=2.0,<3",
+  "alembic>=1.13",
+  "psycopg[binary]>=3.2",
+  "pydantic>=2.9,<3",
+  "pydantic-settings>=2.5",
+  "argon2-cffi>=23.1",
+  "httpx>=0.27",
+  "redis>=5.0,<9",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "fakeredis[lua]>=2.26"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

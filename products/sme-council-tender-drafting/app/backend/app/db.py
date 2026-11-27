@@ -1,0 +1,56 @@
+"""Database engine and session handling (SQLAlchemy 2, sync, psycopg 3).
+
+Rule for every endpoint: never hold a transaction (and so a pooled connection) across a slow external
+call such as the AI or the payment provider. `deps.current` commits after loading the user, and
+endpoints that call out commit before the call and reopen afterwards (see the AI route pattern in tests/vehicle.py).
+"""
+from __future__ import annotations
+
+from collections.abc import Iterator
+
+from fastapi import Request
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+
+from .dbauth import ENTRA_POOL_RECYCLE_SECONDS, attach_entra_token, build_token_provider, validate_entra_url
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class Database:
+    def __init__(self, url: str, statement_timeout_ms: int = 10_000, idle_in_transaction_timeout_ms: int = 15_000,
+                 pool_size: int = 5, max_overflow: int = 5, db_auth: str = "password", token_provider=None,
+                 client_id: str = ""):
+        extra = {}
+        if db_auth == "entra":
+            validate_entra_url(url)
+            extra["pool_recycle"] = ENTRA_POOL_RECYCLE_SECONDS
+        elif db_auth != "password":
+            raise ValueError("DB_AUTH must be password or entra")
+        connect_args = {}
+        if url.startswith("postgresql"):
+            # Every query has a timeout, idle transactions are cut off, and connecting gives up after 5 seconds.
+            connect_args = {"connect_timeout": 5,
+                            "options": f"-c statement_timeout={statement_timeout_ms} "
+                                       f"-c idle_in_transaction_session_timeout={idle_in_transaction_timeout_ms}"}
+        # hide_parameters: SQLAlchemy otherwise puts bound values (emails, password hashes, document text)
+        # into exception messages, and those reach the logs.
+        self.engine: Engine = create_engine(url, pool_pre_ping=True, pool_size=pool_size, max_overflow=max_overflow,
+                                            pool_timeout=10, hide_parameters=True, connect_args=connect_args, **extra)
+        if db_auth == "entra":
+            attach_entra_token(self.engine, token_provider or build_token_provider(client_id))
+        self.sessions = sessionmaker(bind=self.engine, expire_on_commit=False)
+
+    def dispose(self) -> None:
+        self.engine.dispose()
+
+
+def get_db(request: Request) -> Iterator[Session]:
+    db: Session = request.app.state.db.sessions()
+    try:
+        yield db
+    finally:
+        db.close()
