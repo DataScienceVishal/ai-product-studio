@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from . import __version__, errors, spa
-from .ai import AIProvider, AISlots, build_provider
+from .ai import AIProvider, AISlots, TripStore, build_provider
 from .billing import BillingProvider, build_billing
 from .config import Settings
 from .db import Database
@@ -181,6 +181,8 @@ def create_app(settings: Settings | None = None, *, ai: AIProvider | None = None
                                     redis_threads=settings.rate_limit_redis_threads,
                                     redis_queue_timeout=settings.rate_limit_redis_queue_timeout)
     app.state.ai = ai or build_provider(settings)
+    if hasattr(app.state.ai, "attach_trip_store"):  # the model-guard trip outlives restarts (T-163)
+        app.state.ai.attach_trip_store(TripStore(app.state.db.sessions))
     app.state.ai_slots = AISlots(settings.ai_concurrent_calls)
     app.state.billing = billing_provider or build_billing(settings)
     app.state.email = email or OutboxEmail()

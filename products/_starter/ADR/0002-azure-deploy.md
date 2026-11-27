@@ -421,13 +421,16 @@ deployment the release will use, before any Azure sign-in. Only the global cap i
 
 The name-based check can be wrong, because deployment names are free text (T-100 M1). So the app also checks the model each reply
 reports (`AzureOpenAI._check_reported_model`, table lookup by exact name with one date suffix dropped (T-162), `aicost.reported_model_price`).
-A dearer model, or an unknown or missing one when no explicit price was set, logs one error (model name only) and sets the provider's
-`disabled` flag for the process. The call that exposed it is recorded as normal; later summarise calls get 503 `ai_budget_reached`
-(the exhausted-budget code the frontend already handles) until the config is fixed and the app restarts. An unknown model with an explicit
-price is accepted, since that price is what the operator declared and the startup check used. The check runs on every reply that parses to a JSON object, including billed replies with no usable answer (a dearer reasoning model
+A dearer model, or an unknown or missing one, logs one error (model name only) and sets the provider's
+`disabled` flag. The trip is also saved in the `ai_guard_trips` table (T-163, T-161 M1), keyed by a SHA-256 of endpoint, deployment and
+checked price (no secrets), so scale-to-zero cold starts and other replicas stay off: `ensure_ai_enabled` asks the table (the in-memory flag
+is the fast path). A changed endpoint, deployment or price clears it; otherwise delete the row. If the table cannot be read the call is
+refused (fail closed; `reserve()` needs the database anyway). The call that exposed it is recorded as normal; later summarise calls get 503
+`ai_budget_reached` (the exhausted-budget code the frontend already handles). An unknown reported model is accepted only when an explicit
+price is set AND the deployment name is not in the table (T-161 L1): there the price is what the operator declared. For a table deployment the
+explicit price can only raise the checked price. The check runs on every reply that parses to a JSON object, including billed replies with no usable answer (a dearer reasoning model
 that burns its budget is the likeliest case). The refusal keeps the code but says the AI is switched off until the config is fixed.
-Known limitation: a model name that starts with a table name plus `-` (say `gpt-5-ultra`) is priced as that table entry, so a future dearer
-sibling of `gpt-5` could slip through; add it to the table when a new model family is deployed. The deploy-time check stays name-based.
+A reported model must match a table name exactly (T-162), so a new variant trips the guard until it is added to the table. The deploy-time check stays name-based.
 
 ## Monthly cost
 

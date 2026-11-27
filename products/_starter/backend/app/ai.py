@@ -17,6 +17,7 @@ is fetched from the Container Apps identity endpoint (see ManagedIdentityToken) 
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 import threading
@@ -29,12 +30,13 @@ from typing import Protocol
 
 import httpx
 from sqlalchemy import func, literal_column, select, text, update
-from sqlalchemy.orm import Session
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.orm import Session, sessionmaker
 
-from .aicost import reported_model_price, resolve_price
+from .aicost import deployment_in_table, reported_model_price, resolve_price
 from .config import REASONING_EFFORTS
 from .errors import AppError
-from .models import AIUsage
+from .models import AIGuardTrip, AIUsage
 
 log = logging.getLogger("app.ai")
 
@@ -81,11 +83,39 @@ class AIUnavailable(AppError):
         self.input_tokens, self.output_tokens = input_tokens, output_tokens
 
 
-def ensure_ai_enabled(provider) -> None:
-    """Refuse like an exhausted budget when the provider switched itself off (reported model too dear, T-100 M1)."""
+def ensure_ai_enabled(provider, db=None) -> None:
+    """Refuse like an exhausted budget when the provider switched itself off (reported model too dear, T-100 M1).
+    `disabled` is the in-memory fast path; a provider with a trip store also asks the database, so a restart or
+    another replica honours a trip (T-163). A provider that has no `check_persisted_trip` is in-memory only.
+    Pass the caller's `db` session when it already holds a connection: the read then reuses it instead of checking out
+    a second pooled connection (a nested checkout can starve the pool under load)."""
+    check = getattr(provider, "check_persisted_trip", None)
+    if check is not None and not getattr(provider, "disabled", False):
+        check(db) if db is not None else check()
     if getattr(provider, "disabled", False):
         raise AppError(503, "ai_budget_reached", getattr(provider, "disabled_message", None)
                        or "The AI is resting until tomorrow. Everything else still works.")
+
+
+class TripStore:
+    """Persists the guard trip in `ai_guard_trips` (T-163), one short transaction per call. Raises on database errors:
+    the caller decides (see AzureOpenAI.check_persisted_trip)."""
+
+    def __init__(self, sessions: sessionmaker):
+        self.sessions = sessions
+
+    def tripped(self, fingerprint: str, db=None) -> bool:
+        """With `db` the primary-key read runs on that session (no new connection, no commit)."""
+        if db is not None:
+            return db.get(AIGuardTrip, fingerprint) is not None
+        with self.sessions() as own:
+            return own.get(AIGuardTrip, fingerprint) is not None
+
+    def record(self, fingerprint: str, model: str) -> None:
+        with self.sessions() as db:
+            db.execute(pg_insert(AIGuardTrip).values(fingerprint=fingerprint, model=model)
+                       .on_conflict_do_nothing(index_elements=["fingerprint"]))
+            db.commit()
 
 
 class AIProvider(Protocol):
@@ -298,17 +328,52 @@ class AzureOpenAI:
         self.timeout, self.deadline, self.retries = timeout, deadline, retries
         self.sleep, self.clock = sleep, clock
         # Cost guard (T-100 M1): the price the startup check used (None: no guard) and whether the operator set it
-        # explicitly. `disabled` flips once, for the life of the process, when a reply reports a dearer model.
-        self.checked_price, self.price_explicit = checked_price, price_explicit
+        # explicitly. `disabled` flips once, for the life of the process, when a reply reports a dearer model; with a
+        # trip store (attach_trip_store) the trip is also saved in the database.
+        # An explicit price is the operator's declaration for a deployment the table does NOT know. For a deployment in
+        # the table it can only raise the price (aicost.resolve_price), so it must not wave unknown models through
+        # (T-161 L1): there the table stays the authority.
+        self.checked_price = checked_price
+        self.price_explicit = price_explicit and not deployment_in_table(deployment)
         self.disabled = False
+        self.trip_store = None
+        self.trip_fingerprint = ""
         self.disabled_message = ("The AI is switched off until the team fixes its configuration. "
                                  "Everything else still works.")
+
+    def attach_trip_store(self, store) -> None:
+        """Persist the guard trip (T-163). The fingerprint names this AI config: endpoint, deployment, the price the
+        startup check used and the API shape. Secrets are not part of it. Change any of them and an old trip no longer
+        applies. Without a store (unit tests, FakeAI) the guard stays in memory only."""
+        self.trip_store = store
+        basis = "\n".join([self.url, (self.deployment or "").strip().lower(), repr(self.checked_price)])
+        self.trip_fingerprint = hashlib.sha256(basis.encode()).hexdigest()
+
+    def check_persisted_trip(self, db=None) -> None:
+        """Latch `disabled` when the database says this config tripped (another replica, or before a restart).
+        FAIL CLOSED: if the table cannot be read the call is refused (503 ai_budget_reached), because an unreadable
+        guard cannot say the AI is safe. `db` is the caller's open session, when it has one, so the read needs no
+        second pooled connection. A read error does NOT latch `disabled`: the next call asks again.
+        The log line carries the exception type only, never its text."""
+        if self.trip_store is None or self.disabled:
+            return
+        try:
+            tripped = (self.trip_store.tripped(self.trip_fingerprint, db) if db is not None
+                       else self.trip_store.tripped(self.trip_fingerprint))
+        except Exception as exc:
+            log.error("AI refused: the guard-trip record could not be read (%s)", type(exc).__name__)
+            raise AppError(503, "ai_budget_reached",
+                           "The AI is unavailable right now. Everything else still works.") from None
+        if tripped:
+            self.disabled = True
+            log.error("AI stays off: the model guard tripped earlier for this configuration. Fix AZURE_OPENAI_DEPLOYMENT "
+                      "or the price settings (a changed config clears it), or delete the row in ai_guard_trips.")
 
     def _check_reported_model(self, reported: object) -> None:
         """Compare the model Azure says it ran with the price the startup check assumed. Dearer, or unknown with no
         explicit price (a missing field counts as unknown): switch AI off. Logs the model name only: no tenant data,
-        prompt text or secrets. An unknown model WITH an explicit price is accepted: that price is what the operator
-        declared the deployment costs, and it is what the check used."""
+        prompt text or secrets. An unknown model WITH an explicit price is accepted only when the deployment itself is
+        not in the price table: then that price is what the operator declared the deployment costs (T-161 L1)."""
         if self.checked_price is None or self.disabled:
             return
         price = reported_model_price(reported)
@@ -324,6 +389,12 @@ class AzureOpenAI:
         shown = _clean_model(reported) if isinstance(reported, str) else "(missing)"
         log.error("AI switched off: the model Azure reported (%s) %s. Fix AZURE_OPENAI_DEPLOYMENT or the price "
                   "settings and restart.", shown, reason)
+        if self.trip_store is not None:  # survive restarts and scale-to-zero (T-161 M1); this process is off regardless
+            try:
+                self.trip_store.record(self.trip_fingerprint, "unknown" if shown == "(missing)" else shown)
+            except Exception as exc:
+                log.error("AI guard trip could not be saved, so other replicas and restarts will not see it (%s)",
+                          type(exc).__name__)
 
     def complete(self, system: str, user: str, max_output_tokens: int = 1200) -> AIResult:
         ensure_ai_enabled(self)

@@ -1327,3 +1327,189 @@ def test_chat_refusal_gets_the_refusal_message():
         provider.complete("s", "u")
     assert "declined" in failed.value.message and "can't help" not in failed.value.message  # never echoes the refusal
     assert (failed.value.input_tokens, failed.value.output_tokens) == (5, 9)
+
+
+# --- T-163: the guard trip is persisted (T-161 M1) and an explicit price no longer covers a table deployment (L1) ----
+
+def _store_app(settings, outbox, reported, *, deployment="gpt-5-mini", explicit=None, calls=None,
+               endpoint="https://res.openai.azure.com/"):
+    """A new process: a new provider and app over the SAME database."""
+    from app.billing import MockBilling
+
+    def handler(request):
+        if calls is not None:
+            calls.append(request)
+        return _reply(reported)
+    table = {"gpt-5-mini": 2.0}.get(deployment)
+    provider = AzureOpenAI(endpoint, deployment, "k", retries=0, client=httpx.Client(transport=httpx.MockTransport(handler)),
+                           checked_price=max(table or 0, explicit or 0) or None, price_explicit=explicit is not None)
+    return create_app(settings, ai=provider, email=outbox,
+                      billing_provider=MockBilling(settings.billing_webhook_secret, settings.app_base_url))
+
+
+def _summaries(app, outbox, count):
+    from fastapi.testclient import TestClient
+    from tests.conftest import sign_up, verify_email
+    with TestClient(app, base_url="https://testserver", headers={"X-Requested-With": "test"}) as client:
+        sign_up(client)
+        verify_email(client, outbox)
+        note = _note(client)
+        return [client.post(f"/api/notes/{note['id']}/summarize") for _ in range(count)]
+
+
+def test_trip_survives_a_restart_and_a_second_replica(settings, outbox, database):
+    calls1, calls2 = [], []
+    first_process = _store_app(settings, outbox, "gpt-5.4-pro-2026-03-05", calls=calls1)
+    try:
+        a, b = _summaries(first_process, outbox, 2)
+    finally:
+        first_process.state.db.dispose()
+    assert (a.status_code, b.status_code) == (200, 503)
+    # cold start: new provider, new app, same database. Without persistence this would call the dear model again.
+    second_process = _store_app(settings, outbox, "gpt-5.4-pro-2026-03-05", calls=calls2)
+    try:
+        assert second_process.state.ai.disabled is False  # fresh memory
+        c = _summaries_again(second_process)
+    finally:
+        second_process.state.db.dispose()
+    assert c.status_code == 503 and c.json()["error"] == "ai_budget_reached"
+    assert len(calls1) == 1 and calls2 == []
+    assert second_process.state.ai.disabled is True  # now the fast path
+
+
+def _summaries_again(app):
+    """Sign in as the existing owner of the first process and summarize their note."""
+    from fastapi.testclient import TestClient
+    from tests.conftest import PASSWORD
+    with TestClient(app, base_url="https://testserver", headers={"X-Requested-With": "test"}) as client:
+        assert client.post("/api/auth/login", json={"email": "owner@acme.test", "password": PASSWORD}).status_code == 200
+        listing = client.get("/api/notes").json()
+        note_id = listing["items"][0]["id"]
+        return client.post(f"/api/notes/{note_id}/summarize")
+
+
+def test_changing_the_ai_config_clears_the_trip(settings, outbox, database):
+    app = _store_app(settings, outbox, "gpt-5.4-pro-2026-03-05")
+    try:
+        a, b = _summaries(app, outbox, 2)
+    finally:
+        app.state.db.dispose()
+    assert (a.status_code, b.status_code) == (200, 503)
+    # deployment alone: two unknown names with the same explicit price, so the guard stays on (price known) and
+    # only the deployment differs between the tripped config and the changed one
+    tripped_cfg = _store_app(settings, outbox, "gpt-5.4-pro-2026-03-05", deployment="chat", explicit=2.0)
+    assert tripped_cfg.state.ai.checked_price is not None
+    try:
+        a, b = _summaries_again_two(tripped_cfg)
+        assert (a.status_code, b.status_code) == (200, 503)
+    finally:
+        tripped_cfg.state.db.dispose()
+    for change in ({"deployment": "chat2", "explicit": 2.0}, {"endpoint": "https://other.openai.azure.com/"}, {"explicit": 3.0}):
+        calls = []
+        fixed = _store_app(settings, outbox, "gpt-5-nano", calls=calls, **change)
+        assert fixed.state.ai.checked_price is not None, change
+        try:
+            assert _summaries_again(fixed).status_code == 200, change
+        finally:
+            fixed.state.db.dispose()
+        assert len(calls) == 1 and fixed.state.ai.disabled is False
+
+
+def test_trip_record_holds_no_secret_or_text(settings, outbox, database):
+    from sqlalchemy import text as sql_text
+    app = _store_app(settings, outbox, "gpt-5.4-pro-2026-03-05")
+    try:
+        _summaries(app, outbox, 1)
+    finally:
+        app.state.db.dispose()
+    with database.sessions() as db:
+        rows = db.execute(sql_text("SELECT fingerprint, model FROM ai_guard_trips")).all()
+    assert len(rows) == 1 and rows[0].model == "gpt-5.4-pro-2026-03-05" and len(rows[0].fingerprint) == 64
+    assert "res.openai" not in rows[0].fingerprint and "gpt-5-mini" not in rows[0].fingerprint
+
+
+def test_trip_check_failing_refuses_the_call_and_does_not_latch(settings, outbox, database, caplog):
+    """Fail closed: when the trip table cannot be read nothing is sent to Azure (reserve needs the DB anyway)."""
+    calls = []
+    provider = AzureOpenAI("https://res.openai.azure.com/", "gpt-5-mini", "k", retries=0, checked_price=2.0,
+                           client=httpx.Client(transport=httpx.MockTransport(lambda r: calls.append(r) or _reply())))
+
+    class Broken:
+        def tripped(self, fingerprint):
+            raise RuntimeError("db down: SECRET-PROMPT")
+
+        def record(self, fingerprint, model):
+            raise RuntimeError("db down")
+
+    provider.attach_trip_store(Broken())
+    with pytest.raises(AppError) as refused:
+        provider.complete("s", "u")
+    assert refused.value.status == 503 and refused.value.code == "ai_budget_reached" and calls == []
+    assert provider.disabled is False  # a database blip is not a trip
+    assert "SECRET-PROMPT" not in caplog.text
+
+
+def test_failing_to_record_a_trip_still_trips_this_process():
+    class Broken:
+        def tripped(self, fingerprint):
+            return False
+
+        def record(self, fingerprint, model):
+            raise RuntimeError("db down")
+    provider = AzureOpenAI("https://res.openai.azure.com/", "gpt-5-mini", "k", retries=0, checked_price=2.0,
+                           client=httpx.Client(transport=httpx.MockTransport(lambda r: _reply("gpt-5-pro"))))
+    provider.attach_trip_store(Broken())
+    provider.complete("s", "u")
+    assert provider.disabled is True
+
+
+def test_explicit_price_does_not_cover_unknown_models_for_a_table_deployment(settings, outbox, new_client, database):
+    """T-161 L1: gpt-5-mini is in the table, so a reported model the table does not know trips even at price 2.0."""
+    app = _guarded_app(settings, outbox, "o1-pro-2025-03-19", deployment="gpt-5-mini", explicit=2.0)
+    try:
+        first, second = _two_summaries(app, new_client, outbox)
+    finally:
+        app.state.db.dispose()
+    assert (first.status_code, second.status_code) == (200, 503)
+    assert app.state.ai.disabled is True and app.state.ai.price_explicit is False
+
+
+def test_build_provider_explicit_price_only_counts_for_unknown_deployments():
+    from types import SimpleNamespace
+    base = dict(ai_provider="azure", azure_openai_endpoint="https://res.openai.azure.com/", azure_openai_api_key="k",
+                azure_openai_auth="key", azure_openai_api="chat", ai_timeout_seconds=5, ai_deadline_seconds=9,
+                ai_retries=0, ai_reasoning_headroom=0, azure_openai_reasoning_effort="", azure_client_id="")
+    known = build_provider(SimpleNamespace(**base, azure_openai_deployment="gpt-5-mini", ai_price_per_million_tokens=2.0))
+    unknown = build_provider(SimpleNamespace(**base, azure_openai_deployment="chat", ai_price_per_million_tokens=2.0))
+    assert known.price_explicit is False and known.checked_price == 2.0
+    assert unknown.price_explicit is True and unknown.checked_price == 2.0
+
+
+def test_route_trip_check_uses_the_request_session_not_a_second_connection(settings, outbox, database):
+    """T-163 review blocking 1: with a one-connection pool the route-level trip check must reuse the request's
+    session. A second checkout waited 10 s, then failed closed with a false 503."""
+    import time
+    tiny = settings.model_copy(update={"db_pool_size": 1, "db_max_overflow": 0})
+    healthy = _store_app(tiny, outbox, "gpt-5-mini")
+    started = time.monotonic()
+    try:
+        (ok,) = _summaries(healthy, outbox, 1)
+    finally:
+        healthy.state.db.dispose()
+    assert ok.status_code == 200 and time.monotonic() - started < 8
+    # a tripped config is still refused, on the same tiny pool
+    dear = _store_app(tiny, outbox, "gpt-5.4-pro-2026-03-05")
+    try:
+        first, second = _summaries_again_two(dear)
+    finally:
+        dear.state.db.dispose()
+    assert second.status_code == 503 and second.json()["error"] == "ai_budget_reached"
+
+
+def _summaries_again_two(app):
+    from fastapi.testclient import TestClient
+    from tests.conftest import PASSWORD
+    with TestClient(app, base_url="https://testserver", headers={"X-Requested-With": "test"}) as client:
+        assert client.post("/api/auth/login", json={"email": "owner@acme.test", "password": PASSWORD}).status_code == 200
+        note_id = client.get("/api/notes").json()["items"][0]["id"]
+        return [client.post(f"/api/notes/{note_id}/summarize") for _ in range(2)]

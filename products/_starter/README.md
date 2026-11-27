@@ -202,9 +202,12 @@ deployment name not in the table needs `AI_PRICE_PER_MILLION_TOKENS` (app) or th
 an explicit price can only raise a table price, never lower it (a lower price needs a reviewed change to the table). Error messages
 never print the deployment name or any setting value. Those checks price the deployment *name*, which is free text, so at
 runtime the app also compares the model each reply reports (`model`, matched to the table by exact name, one date suffix
-ignored) with the price the startup check used (T-100 M1). A dearer model, or an unknown or missing one with no explicit
-price, logs one error and switches AI off for the process: the call that revealed it is kept and recorded, later calls get
-503 `ai_budget_reached` until the config is fixed and the app restarted. A cheaper model is fine.
+ignored) with the price the startup check used (T-100 M1). A dearer model, or an unknown or missing one, logs one error and switches AI off: the call that revealed
+it is kept and recorded, later calls get 503 `ai_budget_reached`. An explicit `AI_PRICE_PER_MILLION_TOKENS` only vouches for
+unknown models when the deployment name is NOT in the table (T-163); for a table deployment the table decides. The trip is
+saved in the database (`ai_guard_trips`, keyed by a hash of endpoint, deployment and checked price, no secrets), so a cold
+start or another replica stays off too. Changing the endpoint, deployment or price clears it by itself; otherwise
+`DELETE FROM ai_guard_trips` and restart. If the table cannot be read the call is refused (fail closed). A cheaper model is fine.
 
 **Calls per day.** A call reserves its upper bound before it runs, and `settle()` replaces the reservation with the
 tokens actually used. The reservation is `system prompt (287 bytes) + note bytes + 17 + 1,200 answer budget`, plus

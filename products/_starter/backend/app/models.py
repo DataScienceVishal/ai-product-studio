@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, Uuid, false, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, Uuid, false, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base
@@ -109,6 +109,17 @@ class AIUsage(Base):
     input_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
     output_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
     trial: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
+
+
+class AIGuardTrip(Base):
+    """The reported-model guard (T-100 M1, T-163) tripped for this AI config. `fingerprint` is a SHA-256 of the
+    endpoint, deployment and checked price (no secrets), so changing any of them clears the trip by itself. Holds
+    no tenant, prompt or answer data: only the cleaned model name Azure reported. Delete the row to clear by hand."""
+    __tablename__ = "ai_guard_trips"
+    fingerprint: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tripped_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow,
+                                                 server_default=func.now(), nullable=False)
+    model: Mapped[str] = mapped_column(String(80), nullable=False)
 
 
 class Note(Base):

@@ -80,6 +80,11 @@ def reported_model_price(model: object) -> float | None:
     return MODEL_PRICES_PER_MILLION.get(_DATE_SUFFIX.sub("", model.strip().lower(), count=1))
 
 
+def deployment_in_table(deployment: object) -> bool:
+    """True when the deployment NAME is one the price table knows (exact, lower case)."""
+    return isinstance(deployment, str) and deployment.strip().lower() in MODEL_PRICES_PER_MILLION
+
+
 def monthly_cost(daily_tokens: int, price: float) -> float:
     return daily_tokens * DAYS_PER_MONTH * price / 1_000_000
 
