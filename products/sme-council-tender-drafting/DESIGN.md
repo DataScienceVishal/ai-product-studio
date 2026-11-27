@@ -61,7 +61,7 @@ The rules are the same as the starter's:
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `source_documents` | tenant_id, id, kind (`tender`\|`evidence`), pack_id (null for evidence), filename (sanitised), category (evidence only: policy, case_study, accreditation, social_value, company_facts, past_bid), sha256, mime, page_count, size_bytes, status (`parsed`\|`rejected`), reject_reason (fixed code), created_by, created_at | Original bytes are **not stored** (section 7). A duplicate sha256 in the same tenant is refused |
+| `source_documents` | tenant_id, id, kind (`tender`\|`evidence`), pack_id (null for evidence), filename (sanitised), category (evidence only: policy, case_study, accreditation, social_value, company_facts, past_bid), sha256, mime, page_count, page_mode (`pdf_page`\|`docx_break`\|`docx_block`), size_bytes, status (`parsed`\|`rejected`), reject_reason (fixed code), created_by, created_at | Original bytes are **not stored** (section 7). A duplicate sha256 in the same tenant is refused |
 | `document_pages` | tenant_id, document_id, page_no, text, char_count, image_only (bool) | DOCX has no real pages: sections split at page breaks, otherwise "page" means the paragraph block, recorded in `source_documents.page_mode` |
 | `tender_packs` | tenant_id, id, title, buyer (free text), deadline (nullable), status (`uploaded`, `extracting`, `review`, `drafting`, `checking`, `ready`, `signed`, `exported`), confirmed_by, confirmed_at, created_at | One pack = several `source_documents` |
 | `requirements` | tenant_id, id, pack_id, seq, ref (for example "Q3.2"), kind (`question`\|`mandatory`\|`deadline`\|`other`), text, word_limit, page_limit, marks, weight_pct, pass_fail (bool), source_document_id, source_page, source_quote, quote_verified (bool), origin (`model`\|`user`), status (`proposed`\|`confirmed`\|`removed`) | User edits keep `origin=model` plus `edited_by`. The eval compares the model's output **before** any edit |
@@ -82,7 +82,7 @@ Retention (to add to the product's `DATA.md`): all of these tables are customer 
 - **Body limit:** the starter's `BodyLimit` caps every request at 1 MB (`config.py` `max_body_bytes`). Add a per-path limit of 15 MB for these two upload routes only, using the same middleware with a path table and the same 413 shape.
 - **Caps:** at most 60 pages per file and 40 MB per pack in total. A pack over about 40 pages of text works, but its extraction cost grows linearly. The demo packs are chosen under 40 pages (SPEC section 3).
 - **Sniffing:** by magic bytes, not by extension. `%PDF-` means PDF. A ZIP containing `word/document.xml` and no `vbaProject.bin` means DOCX. Anything else is refused, and so are `.docm` files, encrypted PDFs and password-protected DOCX files.
-- **Sandbox:** the parser runs in a child process (`python -I -m app.tender.parse`) with `RLIMIT_AS` 512 MiB, `RLIMIT_CPU` 30 s and a 45 s wall timeout. The input is a temporary file, and the output is JSON with one entry per page. A crash, timeout or limit hit is reported as `parse_failed`, never as a 500.
+- **Sandbox:** the parser runs in a child process started as a standalone script by absolute path (`python -I /app/app/tender/parse_worker.py`; it imports only the standard library, pypdf and python-docx, never `app`, because `-I` drops the working directory from `sys.path` and `-I -m app...` fails with ModuleNotFoundError), with an empty environment (no `DATABASE_URL`, no AI settings), `RLIMIT_AS` 512 MiB, `RLIMIT_CPU` 30 s and a 45 s wall timeout. The child sets its own limits with `resource.setrlimit` before importing the parsers (no `preexec_fn`, which is unsafe in a threaded server). (Reviewer fix, T-184.) The input is a temporary file, and the output is JSON with one entry per page. A crash, timeout or limit hit is reported as `parse_failed`, never as a 500.
 - **DOCX zip-bomb check, before parsing:** at most 2,000 entries, at most 50 MB uncompressed in total, and a compression ratio of at most 100 per entry.
 - **Libraries:** pypdf (BSD) for PDF text and python-docx (MIT) for DOCX. python-docx's XML parser is built with `resolve_entities=False`; slice S2 adds a test that an external entity is not expanded. PyMuPDF is avoided because of its AGPL licence.
 - **Image-only pages:** a page with fewer than 30 characters of text is flagged `image_only`. A tender file with any such page is refused with "scanned pages are not supported in this demo", because OCR is a Won't in the SPEC.
@@ -285,7 +285,7 @@ Personal data: the demo data plan (SPEC section 5) removes names, emails and pho
 - **The cuts SPEC section 3 allows don't make it fit:**
   - 2 held-out drafting packs instead of 3 saves 204k tokens (about 2 days of the cap) and $0.18;
   - 2 tuning passes instead of 3 saves about 490k tokens (5 days).
-  - Even with both cuts, the work is about 36 days of the cap.
+  - Even with both cuts, the work is about 37 days of the cap (4,326k − 204k − 490k = 3,632k at 98k a day).
 - **The constraint is the token cap, not money.** So, as SPEC section 3 instructs, this goes to Vishal as a one-off budget question. The studio does not assume approval and does not raise any cap.
 
 > **Question for Vishal (ask-first: model spend).** May the tender demo's eval run once on gpt-5-mini through its own ledger, outside the app's daily token cap?

@@ -157,7 +157,7 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 
 ## Q-19 (status: open; queued by run cb8f 2026-11-27T15:40Z; ask-first (model spend), no default)
 - Decision: May the tender demo's one-off evaluation run on gpt-5-mini with its own $6 hard cap, outside the app's daily token cap?
-- Context: The demo's bars (catches false claims, blocks unsupported exports) need about 4.3M tokens once. The app's 98k-tokens-a-day cap makes that about 44 days; dollars are small (expected $3.66, worst case inside $6). Recorded model spend so far is about $15-20 of the $80 credit. Details: products/sme-council-tender-drafting/DESIGN.md section 8.4.
+- Context: The demo's bars (catches false claims, blocks unsupported exports) need about 4.3M tokens once. The app's 98k-tokens-a-day cap makes that about 44 days; dollars are small (expected $3.66; worst case $6.83, but the $6 ledger cap stops calls before that, so at most $6 is spent). Recorded model spend so far is about $15-20 of the $80 credit. Details: products/sme-council-tender-drafting/DESIGN.md section 8.4.
 - Options: A) One-off $6.00 hard cap, gpt-5-mini only, own spend ledger (tuning $2.00, scored run $2.60, recording $1.40); app caps unchanged (recommended) B) No new budget: run through the app's cap, about 44 days, blocks other AI use; measured around mid-January C) No live eval: fake-AI demo only, so the demo can't be shown
 - Recommended: A, because it fits the two-week demo window for under $6 and leaves the app's safety caps untouched.
 - If no answer: nothing is spent. The six build slices and three data tasks need no model calls and go ahead on the fake provider; the live eval waits for an explicit yes.
