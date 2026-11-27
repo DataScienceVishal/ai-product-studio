@@ -1,13 +1,39 @@
+# T-173 billing follow-ups status
+
+Branch `p/_starter/T-173-billing` (on `main`, after T-172). Fixes S1, S3, S5, S7, S8 of `reviews/T-172-billing-review.md`, test-first
+Full backend suite on this branch: 767 passed, 1 skipped.
+(tests at the end of `backend/tests/test_billing.py`, section "T-173"). Not done: S2 (timeouts), S4, S6.
+
+- S1 (failed duplicate cancel is retried): in `apply_update`, when `cancel_subscription` raises, the `BillingEvent` row is deleted,
+  committed, and the webhook answers 503 `cancel_failed`; Stripe redelivers (for days) and the cancel runs again. Safe because the duplicate
+  path changes nothing else for the tenant, so redoing it is idempotent. The structured ERROR log line stays. Side effect: until the cancel
+  works Stripe sees failures on that endpoint (normal retry behaviour). The mock-complete dev route also gets the 503.
+- S3 (double cancel): Stripe's docs (https://docs.stripe.com/api/subscriptions/cancel and
+  https://docs.stripe.com/billing/subscriptions/overview) say a canceled subscription is immutable and its status is terminal, but they do
+  NOT say what DELETE answers when repeated (no documented error code found). So `StripeBilling.cancel_subscription` treats 404 as done
+  (as before) and, on any other 4xx (`billing_rejected`), does a GET of the subscription and treats `status == canceled` as done; a live
+  subscription or an outage still raises. `MockBilling.cancel_subscription` is idempotent. Please confirm the real reply once with test
+  keys. The S5 change also removes the usual second call: a `subscription.created` event no longer reaches the cancel path.
+- S5 (delayed payment methods): Stripe's docs (https://docs.stripe.com/billing/subscriptions/overview, "Payment methods with delayed
+  payment confirmation") say a subscription CAN go straight to `active` while the PaymentIntent is `processing`. So a Stripe
+  `customer.subscription.created/updated` with `active` now sets `BillingUpdate.needs_paid_confirmation`, unless an expanded
+  `latest_invoice` in the payload has `status: paid` (webhooks normally carry only the invoice id). Such an event is ignored (event id
+  recorded) unless its subscription id is the one the tenant already has, so a card fix (past_due -> active) still works. The paid
+  `checkout.session.completed` / `async_payment_succeeded` is what starts or replaces a subscription. Behaviour change: a bare
+  `subscription.created` no longer takes over a past_due subscription; the checkout event does.
+- S7: `_check_fields` rejects an event id that is not a string, empty, or over 255 chars with 400 `bad_event` (the parsers no longer `str()` the id).
+- S8: test for Stripe `customer.subscription.created` for s2 while s1 is live (nothing changes, nothing cancelled; the paid checkout then cancels s2 once).
+
 # T-172 billing fixes status
 
 Branch `p/_starter/T-172`. B1-B5 of `reviews/T-172-bughunt.md` fixed test-first (new tests at the end of `backend/tests/test_billing.py`). B6/B7 (team.py) are another builder's.
-Full backend suite: 754 passed, 1 skipped.
+Full backend suite (at T-172): 754 passed, 1 skipped.
 
 - B1 design: in `apply_update`, a subscription-starting active event for a different `provider_ref` while the tenant has an
   active subscription *with access* is a duplicate. The first subscription is kept untouched, the extra one is cancelled via the
   new provider method `cancel_subscription(ref)` (Stripe: `DELETE /subscriptions/{id}`; mock records it in `.cancelled`) after the event
   is committed, and a structured warning is logged (tenant id and extra subscription id only). If the cancel fails, an error
-  line "could not cancel the duplicate subscription" is logged (the webhook still answers 200; the event id is kept, so a redelivery
+  line "could not cancel the duplicate subscription" is logged (superseded by T-173 S1: now 503 and retried; was: 200, the event id is kept, so a redelivery
   will not retry; the log line is the to-do). Replacing a past_due/canceled/lapsed subscription still works as before. `checkout` still
   returns 409 `already_subscribed`. Several older tests that replaced a live s1 with s2 now put s1 in `past_due` first.
   Review fixes: the duplicate check runs before the stale/out-of-order check (a stale extra subscription is still cancelled and logged),
