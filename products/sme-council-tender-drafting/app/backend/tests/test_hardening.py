@@ -26,7 +26,7 @@ def selling_unlocked(monkeypatch):
     """Simulates the configuration after `unlock selling`: live Stripe plans are paid, so not trial-limited."""
     import app.billing as billing
     import app.routes.billing as billing_routes
-    import app.routes.notes as notes
+    from . import vehicle as notes
     unlocked = {"mock"}  # every module that reads the set sees the same unlocked value (T-99)
     for module in (billing, billing_routes, notes):
         monkeypatch.setattr(module, "LIMITED_PROVIDERS", unlocked)
@@ -52,14 +52,14 @@ def test_summarize_releases_the_db_connection_during_the_ai_call(app, owner):
     assert watcher.checked_out == [0]
 
 
-def test_summary_of_a_note_deleted_meanwhile_is_a_404_not_a_crash(app, owner):
+def test_summary_of_an_item_deleted_meanwhile_is_a_404_not_a_crash(app, owner):
     client, _ = owner
     note = client.post("/api/vehicle", json={"title": "Gone soon"}).json()
 
     class DeletingAI(FakeAI):
         def complete(self, system, user, max_output_tokens=1200):
             with app.state.db.sessions() as db:
-                db.execute(text("DELETE FROM notes"))
+                db.execute(text("DELETE FROM vehicle_items"))
                 db.commit()
             return super().complete(system, user, max_output_tokens)
 
@@ -780,14 +780,14 @@ def test_webhooks_lock_the_subscription_row(app, owner):
 
 
 def test_a_summary_of_old_text_is_not_saved_onto_an_edited_item(app, owner, database):
-    from app.models import Note
+    from .vehicle import Item
     client, _ = owner
     note = client.post("/api/vehicle", json={"title": "Draft", "body": "first version"}).json()
 
     class EditingAI(FakeAI):
         def complete(self, system, user, max_output_tokens=1200):
             with app.state.db.sessions() as db:
-                db.execute(update(Note).values(body="second version"))
+                db.execute(update(Item).values(body="second version"))
                 db.commit()
             return super().complete(system, user, max_output_tokens)
 

@@ -14,14 +14,34 @@ Branch `p/sme-council-tender-drafting/T-185`. Not merged; reviewer PASS needed.
 - `app_name` default is `tender`.
 - Tests `tests/test_tender_model.py` (25): cross-tenant 404 for all 10 row objects, composite FK refuses a cross-tenant or missing parent (10 cases), same-tenant child accepted, duplicate sha256 per tenant, tsv generated, tenant delete cascades, export covers new tables with only own rows.
 
-## Left of S1
-1. Remove `Note`: model, `routes/notes.py`, page, `NoteBody`, `/me/export` notes_written, and drop table `notes` in a migration. NOT done: ~150 starter tests (test_ai, test_hardening, test_tenancy, test_text_input...) use `/api/notes` (and its `summarize`) as the vehicle for the AI cap, cost guard and tenancy tests. They need porting to a tender object (for example a pack with a fake-AI call) rather than deleting.
-2. Prices off and no price in the UI: not done (billing plans, checkout routes, frontend billing/price text; starter tests assert plans `starter`/`pro`).
-3. Per-object HTTP routes do not exist yet (S2+); the 404 tests run on `get_scoped`, which the routes will call.
+## S1 finished (T-185)
+- Note removed: model, `routes/notes.py`, SPA dashboard (now a "Tender packs" placeholder), `NoteBody` (renamed `FreeText`,
+  still used by the test vehicle and later tender text fields), `notes_written` in `/me/export`, migration `0013`
+  (drops `notes`; downgrade recreates it with its index). `alembic upgrade head && alembic check` clean; 0013 down/up and
+  full downgrade to base tested.
+- Test vehicle: `backend/tests/vehicle.py` is a tenant-owned item with CRUD and one AI action (`/api/vehicle`, summarize) that
+  runs the same reserve/settle, plan cap, tenant scoping and `textsafe` path the Note route did. It is mounted only
+  through `create_app(extra_routers=(vehicle.router,))` (the `app` fixture and the three AI-test app factories), its table
+  `vehicle_items` is created and truncated by `tests/conftest.py`, and it is in no model or migration.
+- Ported to the vehicle (guarantees kept, only names changed): test_ai, test_hardening (AI cap, in-flight, global/trial budget,
+  prompt-injection wrapping, deleted-while-summarising, edited-while-summarising), test_tenancy, test_text_input,
+  test_t87_leftovers, test_platform (CORS, tenant delete), test_team, test_verification, test_spa, test_billing,
+  test_cookies_and_limits, test_async_hash_capacity.
+- Deleted: frontend `dashboard.test.tsx` (9 tests; Note list paging/retry/summary UI only). In test_hardening the
+  member export test now asserts `notes_written` is gone. No backend test was deleted.
+- Prices off: setting `billing_enabled` (default False). Off: `/api/billing/*` is not mounted (404), `/api/config`
+  reports `billing_enabled`, the SPA hides the Billing link, billing pages (Page not found), plan/price text and the
+  "Choose a plan" link; the legal/help copy no longer mentions paid plans. The trial clock and AI caps still apply.
+  Starter billing tests keep running with the flag on (`conftest.settings` sets `billing_enabled=True`; frontend billing
+  tests call `setBillingEnabledForTest(true)`). Flag-off tests: `backend/tests/test_billing_flag.py` (8), App.test.tsx (5),
+  api.test.ts (1).
+- E2E `tests/e2e/core_flow.cjs` rewritten for the new flow (sign up, no prices/billing, sign out/in, delete). Playwright was NOT run.
 
-## Test results
-Command: `cd products/sme-council-tender-drafting/app/backend && python -m pytest -q -x` (Python 3.12 venv, local Postgres 16, per-run DB).
-Result: 100% progress, no failures, 843 passed + 1 skipped (844 collected, counted from the progress dots; pytest's own summary line is suppressed by the starter's addopts). `alembic upgrade head && alembic check`: no new upgrade operations. Frontend and infra suites not run in this slice.
+## Left
+1. Per-object HTTP routes (S2+); the 404 tests run on `get_scoped`.
+2. Docs under app/ (README sizing text, SECURITY.md, infra/README.md) still use "note" as the example payload in prose.
+3. `infra/test-deploy-workflow.sh` needs the starter's `_starter-deploy.yml`, which is not in the product copy (exit 2 here); the
+   `_starter-ci.yml` bicep/docker/playwright jobs were not run (no az, docker or browsers here).
 
 ## Run
 See `app/README.md`; backend needs `DATABASE_URL`, then `alembic upgrade head`.
