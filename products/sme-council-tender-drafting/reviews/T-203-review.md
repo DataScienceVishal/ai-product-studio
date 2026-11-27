@@ -47,3 +47,14 @@ SPEC A5 (`SPEC.md:91`) says: "at least 90% of **cited** claims judged supported 
 - **S2.** The docstring for `split_claims` (`eval/score.py:170-174`) still lists only the old triggers ("no number word, acronym or app fact trigger"). Point it at `carries_other_content`.
 - **S3.** `test_replaced_context_rebuilds_the_default_claimcheck_for_the_new_provider` only checks that the closure is a new object. It doesn't check that the new closure uses the new provider. Also check `c2.claimcheck.__closure__` (or call it on a fake that records which provider was hit) to confirm it holds `c2`, not `ctx`.
 - **S4.** `_HYPHEN` also turns neutral hyphenated words ("e-mail", "follow-up") into claims. That is safe, because it only lowers A4, but it can push neutral stubs into the scored set. The `gap_exempt`/`gap_exempt_share` report will show it if it happens. No change needed now.
+
+## Re-review (e2d9033)
+
+**Verdict: PASS**
+
+- `tests/test_tender_eval.py`: **119 passed** in 12.70s (python3.13 venv, db `t203r`). I did not run the full suite. No `app/` code changed.
+- **M1 fixed.** `sample_claims` no longer takes gap rows, so the A5 draw is 100 cited claims, the same draw as before. `write_sheet` adds every gap row as a separate block after the A5 rows and returns only the A5 count. The EVAL.md A5/A6c row now pre-registers three things: gap rows count toward A6c only, they are reported as "exempt-but-asserting", and they never enter the A5 numerator or denominator. The Amendments line is corrected. `test_a5_sample_is_unchanged_by_gap_rows_which_form_a_separate_block` checks that the first 101 lines of the sheet are byte-identical with and without `gap_exempt`, and that no `gap-` row falls inside them.
+- **S1 done.** `won best leading trusted experienced` are in `CLAIM_WORDS` and `cant` is in `_NEG_RAW`, each covered by a parametrized test. I re-ran the 20,000-sentence fuzz against `origin/main`'s `score.py`. Sentences exempt now but scored before: **0**. Strictness still holds.
+- **S2 done.** The `split_claims` docstring now points to `carries_other_content` and the EVAL.md A4 row.
+- **S3 done.** The test checks that the rebuilt closure holds `c2` and not `ctx`.
+- Nit (no action needed): the gap block on the sheet has no header row. Its rows are marked only by the `gap-` id and the `passage_text` prompt. That is enough for the reviewer.
