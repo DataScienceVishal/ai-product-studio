@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import select, update
 
 from app import ai as ai_module
-from app.ai import AIUnavailable, AzureOpenAI
+from app.ai import AIUnavailable, AzureOpenAI, ensure_ai_enabled
 from app.errors import AppError
 from app.models import AIUsage, Subscription, Tenant
 
@@ -1465,6 +1465,153 @@ def test_failing_to_record_a_trip_still_trips_this_process():
     provider.attach_trip_store(Broken())
     provider.complete("s", "u")
     assert provider.disabled is True
+
+
+class _FlakyStore:
+    """Trip store whose record() fails `fail_first` times, then works. Counts attempts."""
+
+    def __init__(self, fail_first: int = 1):
+        self.fail_first, self.attempts, self.saved = fail_first, 0, []
+
+    def tripped(self, fingerprint, db=None):
+        return bool(self.saved)
+
+    def record(self, fingerprint, model, db=None):
+        self.attempts += 1
+        if self.attempts <= self.fail_first:
+            raise RuntimeError("db down: SECRET-PROMPT")
+        self.saved.append((fingerprint, model))
+
+
+class _Tick:
+    def __init__(self):
+        self.now = 1000.0
+
+    def __call__(self):
+        return self.now
+
+
+def _tripping_provider(store, tick, calls=None):
+    provider = AzureOpenAI("https://res.openai.azure.com/", "gpt-5-mini", "k", retries=0, checked_price=2.0,
+                           trip_retry_interval=30.0, trip_retry_clock=tick,
+                           client=httpx.Client(transport=httpx.MockTransport(
+                               lambda r: (calls.append(r) if calls is not None else None) or _reply("gpt-5-pro"))))
+    provider.attach_trip_store(store)
+    provider.complete("s", "u")  # the dearer model trips the guard; the first save fails
+    return provider
+
+
+def test_failed_trip_save_is_retried_by_a_later_call_and_ai_stays_off(caplog):
+    store, tick, calls = _FlakyStore(1), _Tick(), []
+    provider = _tripping_provider(store, tick, calls)
+    assert provider.disabled is True and provider.trip_unsaved is True and store.attempts == 1
+    tick.now += 31
+    with pytest.raises(AppError) as refused:
+        provider.complete("s", "u")
+    assert refused.value.code == "ai_budget_reached" and len(calls) == 1  # refused, no second model call
+    assert store.attempts == 2 and len(store.saved) == 1 and store.saved[0][1] == "gpt-5-pro"
+    assert provider.disabled is True and provider.trip_unsaved is False
+    assert "SECRET-PROMPT" not in caplog.text and "RuntimeError" in caplog.text
+
+
+def test_trip_save_retry_is_rate_limited():
+    store, tick = _FlakyStore(3), _Tick()
+    provider = _tripping_provider(store, tick)
+    for _ in range(5):  # inside the 30 s wait: no retry
+        tick.now += 5
+        with pytest.raises(AppError):
+            ensure_ai_enabled(provider)
+    assert store.attempts == 1
+    tick.now += 10  # 35 s since the failure
+    with pytest.raises(AppError):
+        ensure_ai_enabled(provider)
+    assert store.attempts == 2 and provider.trip_unsaved is True
+    with pytest.raises(AppError):  # the failed retry restarts the wait
+        ensure_ai_enabled(provider)
+    assert store.attempts == 2
+    tick.now += 31
+    with pytest.raises(AppError):
+        ensure_ai_enabled(provider)
+    tick.now += 31
+    with pytest.raises(AppError):
+        ensure_ai_enabled(provider)
+    assert store.attempts == 4 and provider.trip_unsaved is False and provider.disabled is True
+
+
+def test_trip_save_retry_stops_after_success():
+    store, tick = _FlakyStore(1), _Tick()
+    provider = _tripping_provider(store, tick)
+    tick.now += 31
+    for _ in range(4):
+        with pytest.raises(AppError):
+            ensure_ai_enabled(provider)
+        tick.now += 100
+    assert store.attempts == 2 and len(store.saved) == 1
+
+
+def test_trip_save_retry_uses_the_callers_session_and_skips_one_with_pending_writes():
+    seen = []
+
+    class Store(_FlakyStore):
+        def record(self, fingerprint, model, db=None):
+            seen.append(db)
+            super().record(fingerprint, model, db)
+
+    class Session:
+        new, dirty, deleted = [], [], []
+
+    store, tick = Store(1), _Tick()
+    provider = _tripping_provider(store, tick)
+    tick.now += 31
+    busy = Session()
+    busy.new = [object()]
+    with pytest.raises(AppError):
+        ensure_ai_enabled(provider, busy)
+    assert store.attempts == 1  # left alone: its commit would include the pending rows, and the wait is not used up
+    clean = Session()
+    with pytest.raises(AppError):
+        ensure_ai_enabled(provider, clean)
+    assert seen[-1] is clean and provider.trip_unsaved is False
+
+
+def test_trip_save_that_works_first_time_never_retries():
+    store, tick = _FlakyStore(0), _Tick()
+    provider = _tripping_provider(store, tick)
+    assert provider.trip_unsaved is False
+    tick.now += 100
+    with pytest.raises(AppError):
+        ensure_ai_enabled(provider)
+    assert store.attempts == 1
+
+
+def test_failed_trip_save_is_retried_into_the_real_table(settings, outbox, database):
+    """End to end on Postgres: the first INSERT fails, a later request persists the row, and a fresh process sees it."""
+    from sqlalchemy import text as sql_text
+    app = _store_app(settings, outbox, "gpt-5.4-pro-2026-03-05")
+    provider, real, tick = app.state.ai, app.state.ai.trip_store, _Tick()
+    provider.trip_retry_clock = tick
+    original = real.record
+    state = {"fail": True}
+
+    def flaky(fingerprint, model, db=None):
+        if state["fail"]:
+            state["fail"] = False
+            raise RuntimeError("db down")
+        return original(fingerprint, model, db)
+    real.record = flaky
+    try:
+        first, second = _summaries(app, outbox, 2)
+        assert (first.status_code, second.status_code) == (200, 503)
+        assert provider.trip_unsaved is True
+        with database.sessions() as db:
+            assert db.execute(sql_text("SELECT count(*) FROM ai_guard_trips")).scalar() == 0
+        tick.now += 31
+        third = _summaries_again(app)
+        assert third.status_code == 503 and provider.disabled is True and provider.trip_unsaved is False
+        with database.sessions() as db:
+            assert db.execute(sql_text("SELECT count(*) FROM ai_guard_trips")).scalar() == 1
+    finally:
+        app.state.db.dispose()
 
 
 def test_explicit_price_does_not_cover_unknown_models_for_a_table_deployment(settings, outbox, new_client, database):
