@@ -438,3 +438,10 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Billing S-3: a non-active event for an untracked ref during a trial is ignored (trial runs on), but an ignored `canceled` writes a per-subscription marker (BillingEvent id dead:{provider}:{sha256(ref)}) so a late checkout for that dead ref grants no access. Rejected the tenant-wide last_event_at approach: reviewer showed it locks out a genuinely paid second subscription delivered out of order.
 - Billing S6: takeover cancel of the old ref is best-effort after commit (log to-do on failure), not a 503 redelivery, because the replacement is already committed. Durable retried to-do queued as T-175.
 - Team: 40P01 deadlock on cross-tenant double accept answers 409 email_taken (same as the existing answer); other OperationalErrors re-raise.
+
+## 2026-11-27T10:50Z, run 8ce6: T-175
+- Failed takeover cancels are now a durable to-do (table pending_cancels, unique provider+ref, tenant_id ON DELETE SET NULL so the to-do survives account deletion), retried after each billing event for that tenant and by `python -m app.maintenance cancels`. Chose a table over a column on subscriptions so several outstanding old refs can coexist.
+- Safety rule from reviewer B1: a pending cancel is skipped and dropped if its ref is the tenant's current subscription, and a takeover deletes any pending cancel for the new ref; rows are locked FOR UPDATE SKIP LOCKED until commit. Accepted residual: a cancel already sent to the provider when the old ref revives cannot be stopped from our side.
+- Dead-marker collision uses db.get + begin_nested() instead of rollback, so the event's dedup row survives.
+- Team: 40P01 in accept is logged at WARNING with ids only.
+- Process: parallel builders must use separate git worktrees (two builders briefly shared one checkout this run; no harm, caught early).
