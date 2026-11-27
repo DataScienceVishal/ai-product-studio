@@ -1,7 +1,7 @@
 # T-172 billing fixes status
 
 Branch `p/_starter/T-172`. B1-B5 of `reviews/T-172-bughunt.md` fixed test-first (new tests at the end of `backend/tests/test_billing.py`). B6/B7 (team.py) are another builder's.
-Full backend suite: 752 passed, 1 skipped.
+Full backend suite: 754 passed, 1 skipped.
 
 - B1 design: in `apply_update`, a subscription-starting active event for a different `provider_ref` while the tenant has an
   active subscription *with access* is a duplicate. The first subscription is kept untouched, the extra one is cancelled via the
@@ -10,6 +10,8 @@ Full backend suite: 752 passed, 1 skipped.
   line "could not cancel the duplicate subscription" is logged (the webhook still answers 200; the event id is kept, so a redelivery
   will not retry; the log line is the to-do). Replacing a past_due/canceled/lapsed subscription still works as before. `checkout` still
   returns 409 `already_subscribed`. Several older tests that replaced a live s1 with s2 now put s1 in `past_due` first.
+  Review fixes: the duplicate check runs before the stale/out-of-order check (a stale extra subscription is still cancelled and logged),
+  and requires `sub.provider == provider` (a start event from another provider falls back to the replace behaviour, nothing cancelled).
   Not done: refund of the extra charge (Stripe cancel does not refund; do it by hand from the log line).
 - B2: Stripe `checkout.session.completed` and `checkout.session.async_payment_succeeded` activate only when `payment_status` is
   `paid` or `no_payment_required` (a missing value no longer activates). `async_payment_failed` is a no-op (subscription events report it).

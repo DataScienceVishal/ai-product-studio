@@ -945,3 +945,29 @@ def test_b5_mock_completion_stores_a_customer_so_the_portal_works(owner):
     client.post(f"/api/billing/mock/complete/{sid}")
     r = client.post("/api/billing/portal")
     assert r.status_code == 200 and "mock-portal" in r.json()["url"]
+
+
+def test_b1_stale_second_subscription_is_still_cancelled_and_logged(owner, app, caplog):
+    client, _ = owner
+    now = int(time.time())
+    _sub_event(client, app, "st1", "checkout.completed", now, "s1")
+    with caplog.at_level("WARNING", logger="app.billing"):
+        # s2's start event is older than s1's last event (out of order), but s2 is still a live extra subscription
+        assert _sub_event(client, app, "st2", "checkout.completed", now - 100, "s2", plan="pro").status_code == 200
+    assert app.state.billing.cancelled == ["s2"]
+    assert any("duplicate subscription" in r.getMessage() for r in caplog.records)
+    assert _plan(client) == "starter"
+
+
+def test_b1_other_provider_start_event_is_not_a_duplicate_and_not_cancelled(owner, app, database):
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    _sub_event(client, app, "pr1", "checkout.completed", now - 100, "s1")  # mock-active
+    from app.routes.billing import apply_update
+    payload = json.dumps({"id": "pr2", "type": "checkout.session.completed", "created": now, "livemode": False,
+                          "data": {"object": _session_obj(t)}}).encode()
+    update = stripe_provider().parse_webhook(payload, sign(payload, SECRET))
+    with database.sessions() as db:
+        apply_update(db, update, "stripe", app.state.billing)
+    assert app.state.billing.cancelled == []
+    assert _stripe_sub(database, t) == ("active", "pro", "sub_1")  # existing replace behaviour

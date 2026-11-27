@@ -124,13 +124,8 @@ def apply_update(db: Session, update: BillingUpdate, provider: str, billing=None
         db.commit()
         log.info("event for a different subscription ignored")
         return True
-    tie_after_cancel = (update.occurred_at is not None and update.occurred_at == sub.last_event_at
-                        and sub.status == "canceled" and update.status != "canceled" and not other_sub)
-    if update.occurred_at and sub.last_event_at and (update.occurred_at < sub.last_event_at or tie_after_cancel):
-        db.commit()  # stale (arrived out of order): keep the event id, ignore its content
-        log.info("stale billing event ignored")
-        return True
     duplicate = (other_sub and update.starts_subscription and update.status == "active" and sub.status == "active"
+                 and sub.provider == provider
                  and has_access(sub.status, sub.trial_ends_at, current_period_end=sub.current_period_end))
     if duplicate:
         # T-172 B1: the tenant already pays for a working subscription. A second one must not silently replace it
@@ -145,6 +140,12 @@ def apply_update(db: Session, update: BillingUpdate, provider: str, billing=None
                 log.error("could not cancel the duplicate subscription: cancel or refund it by hand",
                           extra={"tenant_id": str(update.tenant_id), "extra_subscription": update.provider_ref},
                           exc_info=True)
+        return True
+    tie_after_cancel = (update.occurred_at is not None and update.occurred_at == sub.last_event_at
+                        and sub.status == "canceled" and update.status != "canceled" and not other_sub)
+    if update.occurred_at and sub.last_event_at and (update.occurred_at < sub.last_event_at or tie_after_cancel):
+        db.commit()  # stale (arrived out of order): keep the event id, ignore its content
+        log.info("stale billing event ignored")
         return True
     sub.status = update.status
     if update.plan in PLANS:
