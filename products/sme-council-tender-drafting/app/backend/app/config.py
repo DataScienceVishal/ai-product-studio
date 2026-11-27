@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
 
     env: Literal["dev", "test", "prod"] = "dev"
-    app_name: str = "starter"
+    app_name: str = "tender"
     database_url: str = "postgresql+psycopg://studio:studio@localhost:5432/starter_dev"
     # password: the URL carries the password. entra: no password in the URL, a managed-identity token is the password
     # (app/dbauth.py, README "Entra ID database sign-in"). AZURE_CLIENT_ID below picks a user-assigned identity.
