@@ -16,7 +16,7 @@ from sqlalchemy import DateTime, String, Text, Uuid, func, select, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 from app.ai import AIUnavailable, ensure_ai_enabled, reservation_estimate, reserve, settle
-from app.billing import LIMITED_PROVIDERS, PLANS, has_access
+from app.billing import LIMITED_PROVIDERS, PLANS, ai_access
 from app.db import get_db
 from app.deps import Current, current, subscription_of
 from app.errors import AppError
@@ -130,8 +130,7 @@ def summarize(item_id: uuid.UUID, request: Request, me: Current = Depends(curren
     request.app.state.limiter.check(f"ai:{tenant_id}", settings.ai_rate_limit_per_minute)
     item = _get(db, me, item_id)
     sub = subscription_of(db, me.tenant.id)
-    if not has_access(sub.status, sub.trial_ends_at, current_period_end=sub.current_period_end,
-                      billing_enabled=settings.billing_enabled):
+    if not ai_access(sub, settings):
         raise AppError(402, "plan_required", "Your trial or plan has ended. Choose a plan to keep using AI features.")
     if sub.status == "trialing" and settings.require_email_verification and me.user.email_verified_at is None:
         raise AppError(403, "email_not_verified", "Confirm your email address to use the AI during your free trial.")

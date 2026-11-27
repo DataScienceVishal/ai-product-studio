@@ -20,6 +20,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import os
+import re
 import threading
 import time
 import uuid
@@ -85,9 +86,15 @@ class AIUnavailable(AppError):
     (an empty answer still costs, and a timed-out request may have run), so callers record them."""
 
     def __init__(self, message: str = "The AI service is busy right now. Please try again in a minute.",
-                 input_tokens: int = 0, output_tokens: int = 0):
+                 input_tokens: int = 0, output_tokens: int = 0, reason: str | None = None):
         super().__init__(503, "ai_unavailable", message)
         self.input_tokens, self.output_tokens = input_tokens, output_tokens
+        self.reason = reason  # the provider's "why no answer" (max_output_tokens, refusal ...); None for transport errors
+
+    @property
+    def truncated(self) -> bool:
+        """The answer ran out of output room (S3 truncation rule): the only failure a larger cap can fix."""
+        return self.reason in ("max_output_tokens", "length")
 
 
 def ensure_ai_enabled(provider, db=None) -> None:
@@ -142,7 +149,8 @@ class AIProvider(Protocol):
     name: str
     output_headroom: int  # extra output tokens the provider may add to a call's budget (reasoning); reserve them too
 
-    def complete(self, system: str, user: str, max_output_tokens: int = 1200) -> AIResult: ...
+    def complete(self, system: str, user: str, max_output_tokens: int = 1200, *, json_schema: dict | None = None,
+                 effort: str | None = None) -> AIResult: ...
 
 
 class FakeAI:
@@ -152,7 +160,8 @@ class FakeAI:
     disabled = False
     disabled_message = None
 
-    def complete(self, system: str, user: str, max_output_tokens: int = 1200) -> AIResult:
+    def complete(self, system: str, user: str, max_output_tokens: int = 1200, *, json_schema: dict | None = None,
+                 effort: str | None = None) -> AIResult:
         words = [w for w in user.split() if not (w.startswith("<") and w.endswith(">"))]  # drop delimiters
         return AIResult(text="Summary: " + " ".join(words[:25]), input_tokens=len(system.split()) + len(words),
                         output_tokens=min(len(words), 25) + 1, model="fake")
@@ -460,26 +469,41 @@ class AzureOpenAI:
         finally:
             self._trip_retry_lock.release()
 
-    def complete(self, system: str, user: str, max_output_tokens: int = 1200) -> AIResult:
+    def complete(self, system: str, user: str, max_output_tokens: int = 1200, *, json_schema: dict | None = None,
+                 effort: str | None = None) -> AIResult:
+        """`json_schema` asks for a strict structured answer (Responses: text.format; chat: response_format).
+        `effort` overrides the instance's reasoning effort for this call (Responses path only); None keeps it."""
+        if effort is not None and effort not in REASONING_EFFORTS:
+            raise ValueError(f"effort must be one of {', '.join(REASONING_EFFORTS)}")
         ensure_ai_enabled(self)
+        use_effort = effort or self.reasoning_effort
+        fmt = None
+        if json_schema is not None:
+            name = re.sub(r"[^A-Za-z0-9_-]", "_", str(json_schema.get("title") or "output"))[:64] or "output"
+            fmt = {"type": "json_schema", "name": name, "schema": json_schema, "strict": True}
         if self.api == "responses":  # reasoning tokens count inside max_output_tokens
             max_output_tokens += self.output_headroom  # the wanted answer length is then still available
             payload = {"model": self.deployment, "instructions": system, "max_output_tokens": max_output_tokens,
                        "store": False,  # Azure keeps no copy of the prompt or answer (DATA.md)
                        "input": [{"role": "user", "content": user}]}
-            if self.reasoning_effort:
-                payload["reasoning"] = {"effort": self.reasoning_effort}
+            if use_effort:
+                payload["reasoning"] = {"effort": use_effort}
+            if fmt is not None:
+                payload["text"] = {"format": fmt}
         else:
             payload = {"model": self.deployment, "max_completion_tokens": max_output_tokens,
                        "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
+            if fmt is not None:
+                payload["response_format"] = {"type": "json_schema",
+                                              "json_schema": {k: fmt[k] for k in ("name", "schema", "strict")}}
         started = self.clock()
         billed_in = billed_out = 0  # from attempts that failed but may have cost money
 
         def remaining() -> float:
             return self.deadline - (self.clock() - started)
 
-        def fail(message: str | None = None) -> AIUnavailable:
-            return AIUnavailable(message or AIUnavailable().message, billed_in, billed_out)
+        def fail(message: str | None = None, why: str | None = None) -> AIUnavailable:
+            return AIUnavailable(message or AIUnavailable().message, billed_in, billed_out, reason=why)
 
         for attempt in range(self.retries + 1):
             if remaining() < 1.0:
@@ -533,7 +557,7 @@ class AzureOpenAI:
             billed_in, billed_out = billed_in + used_in, billed_out + used_out
             if why is not None or not text:
                 log.warning("ai returned no usable answer", extra={"finish_reason": _clean_reason(why)})
-                raise fail(_NO_ANSWER.get(why, _NO_ANSWER[None]))
+                raise fail(_NO_ANSWER.get(why, _NO_ANSWER[None]), why)
             return AIResult(text=text, input_tokens=billed_in, output_tokens=billed_out,
                             model=_clean_model(reported))
         raise fail()
@@ -586,7 +610,8 @@ class AzureOpenAI:
             self.sleep(wait)
 
 
-def build_provider(settings) -> AIProvider:
+def build_provider(settings, timeout: float | None = None, deadline: float | None = None) -> AIProvider:
+    """`timeout`/`deadline` override the request path's 20 s / 25 s for one instance (workers: build_worker_provider)."""
     if settings.ai_provider == "azure":
         explicit = getattr(settings, "ai_price_per_million_tokens", None)
         try:
@@ -595,8 +620,8 @@ def build_provider(settings) -> AIProvider:
             checked = None
         token = ManagedIdentityToken(settings.azure_client_id) if settings.azure_openai_auth == "managed_identity" else None
         return AzureOpenAI(settings.azure_openai_endpoint, settings.azure_openai_deployment,
-                           settings.azure_openai_api_key, timeout=settings.ai_timeout_seconds,
-                           deadline=settings.ai_deadline_seconds, retries=settings.ai_retries,
+                           settings.azure_openai_api_key, timeout=settings.ai_timeout_seconds if timeout is None else timeout,
+                           deadline=settings.ai_deadline_seconds if deadline is None else deadline, retries=settings.ai_retries,
                            token_provider=token, api=settings.azure_openai_api,
                            reasoning_headroom=settings.ai_reasoning_headroom,
                            reasoning_effort=settings.azure_openai_reasoning_effort, checked_price=checked,
@@ -720,3 +745,10 @@ def settle(db: Session, reservation_id: uuid.UUID, feature: str, input_tokens: i
     db.commit()
     log.info("ai usage", extra={"feature": feature, "input_tokens": input_tokens, "output_tokens": output_tokens,
                                 "model": model})
+
+
+def build_worker_provider(settings) -> AIProvider:
+    """The job runner's provider (DESIGN 4.3 change 3): long per-attempt and whole-call limits, not the browser-bound
+    20 s / 25 s of request handlers. gpt-5-mini calls of 60 to 80 s would otherwise be a ReadTimeout, billed in full."""
+    return build_provider(settings, timeout=settings.worker_ai_timeout_seconds,
+                          deadline=settings.worker_ai_deadline_seconds)

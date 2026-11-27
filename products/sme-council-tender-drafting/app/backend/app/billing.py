@@ -466,3 +466,10 @@ def has_access(status: str, trial_ends_at: datetime | None, now: datetime | None
     if status == "active":  # a paid period that ended (plus grace) without renewal no longer counts
         return current_period_end is None or current_period_end + GRACE > now
     return status == "trialing" and trial_ends_at is not None and trial_ends_at > now
+
+
+def ai_access(sub, settings, now: datetime | None = None) -> bool:
+    """The one AI-route plan check (T-197 review): every AI route and the job runner call this, never has_access
+    directly, so a caller cannot forget `billing_enabled` and lock demo users out when billing is off."""
+    return has_access(sub.status, sub.trial_ends_at, now, sub.current_period_end,
+                      billing_enabled=bool(settings.billing_enabled))

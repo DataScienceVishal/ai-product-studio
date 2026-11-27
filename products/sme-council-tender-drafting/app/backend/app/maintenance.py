@@ -15,6 +15,7 @@ Rules (also in DATA.md):
   - billing events (idempotency records): after 400 days
   - AI usage rows: after 400 days (13 months covers a full year of billing questions). They outlive deleted
     tenants (unlinked), because the studio-wide daily AI budget must count them.
+  - AI cache rows (ai_cache, customer content derived from uploads): 90 days after creation
   - AI reservations still "pending" after 15 minutes (the process died mid-call): zeroed, so they stop counting
   - accounts whose owner never verified their email, never signed in for 30 days, and has no payment-provider
     customer: after 30 days, only when verification is required AND real email is sent (with the outbox nobody
@@ -34,17 +35,21 @@ from .ai import release_stale_reservations
 from .billing import build_billing
 from .config import Settings
 from .db import Database
+from .tender_models import AICache
 from .models import (AIUsage, AuthSession, BillingEvent, EmailVerification, Invitation, PasswordReset, PendingCancel, Subscription,
                      Tenant, User)
 
 
 log = logging.getLogger("app.billing")
+AI_CACHE_DAYS = 90
 
 
 def purge(db: Session, now: datetime | None = None, unverified_after_days: int | None = None) -> dict[str, int]:
     now = now or datetime.now(timezone.utc)
     week, month, year = now - timedelta(days=7), now - timedelta(days=30), now - timedelta(days=400)
     statements = {
+        # Age only: the row's own created_at decides, no tenant content is read, and no other table is touched.
+        "ai_cache": delete(AICache).where(AICache.created_at < now - timedelta(days=AI_CACHE_DAYS)),
         "sessions": delete(AuthSession).where(AuthSession.expires_at <= now),
         "password_resets": delete(PasswordReset).where(PasswordReset.created_at < week,
                                                        or_(PasswordReset.used_at.is_not(None), PasswordReset.expires_at <= now)),

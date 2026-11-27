@@ -84,6 +84,12 @@ class Settings(BaseSettings):
     ai_timeout_seconds: float = Field(default=20.0, gt=0, le=MAX_TIMEOUT_SECONDS, allow_inf_nan=False)  # per attempt
     # Whole call, retries included; must stay below the frontend's abort (below).
     ai_deadline_seconds: float = Field(default=25.0, gt=0, le=MAX_TIMEOUT_SECONDS, allow_inf_nan=False)
+    # Job-runner (worker) limits: not tied to the browser (DESIGN 4.3, R2). Same bounds as the request-path timeouts.
+    worker_ai_timeout_seconds: float = Field(default=180.0, gt=0, le=MAX_TIMEOUT_SECONDS, allow_inf_nan=False)
+    worker_ai_deadline_seconds: float = Field(default=180.0, gt=0, le=MAX_TIMEOUT_SECONDS, allow_inf_nan=False)
+    # In-process job runner threads (DESIGN 4.6). 0 = off (tests, harness); the deployment sets 2 once a task kind has a handler.
+    ai_worker_threads: int = Field(default=0, ge=0, le=4)
+    ai_task_lease_seconds: int = Field(default=600, ge=30, le=3600)
     # How long the browser waits before aborting a request. The backend serves this number at GET /api/config and the
     # SPA reads it once at startup, so this is the single source. The app refuses to start if ai_deadline_seconds +
     # FRONTEND_TIMEOUT_MARGIN_SECONDS exceeds it, because a call the browser has already abandoned is still billed.

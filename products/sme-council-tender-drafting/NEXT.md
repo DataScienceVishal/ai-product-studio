@@ -1,3 +1,42 @@
+# STATUS (T-187, slice S3: AI layer and job runner) - code done, awaiting reviewer PASS
+
+Branch `p/sme-council-tender-drafting/T-187`. Not merged. No migration. No live model calls.
+
+## Done
+- `ai.py`: `complete(..., *, json_schema=None, effort=None)` on the protocol, FakeAI and AzureOpenAI (Responses: `text.format`
+  strict json_schema; chat: `response_format`; per-call `effort` validated against REASONING_EFFORTS, None keeps the instance value);
+  `AIUnavailable.reason` / `.truncated`; `build_provider(settings, timeout=, deadline=)` and `build_worker_provider(settings)`
+  (settings `worker_ai_timeout_seconds` / `worker_ai_deadline_seconds`, default 180, max 600; request path keeps 20 / 25).
+- `app/tender/llm.py`: `run_task(spec, payload, tenant_id, budget, *, provider, sessions, allow_double_cap, before_call)`; key =
+  sha256 of the canonical request computed before the nonce (R1); per-tenant `ai_cache`; `AppBudget` (reserve/settle; the harness's
+  `LedgerBudget` is S9); one repair retry on invalid JSON; truncation = `TaskFailed("ai_truncated")` in the app, one retry at 2x cap
+  only with `allow_double_cap=True` (harness); `strict_schema()` makes a Pydantic schema Azure-strict.
+- `app/tender/scripted_ai.py`: `ScriptedFakeAI` recorded (`fixtures/recorded/<task>/<key>.json`, `{"output": {...}}`) and heuristic
+  (by schema title ExtractOutput / DraftOutput / ClaimcheckOutput; other schemas get a schema-valid skeleton). Refuses an
+  `eval` directory. Its answers are not written to `ai_cache` (`cacheable = False`).
+- `app/tender/runner.py`: `claim_next` (FOR UPDATE SKIP LOCKED, queued or expired lease), `extend_lease` (handlers call
+  `heartbeat()`), `run_one`, `Runner` threads; max 2 attempts then `attempts_exhausted`. `HANDLERS` registry is empty: S4 to S6 register.
+- `ai_access(sub, settings)` in billing.py; the test vehicle uses it. 90-day `ai_cache` purge in maintenance.py; DATA.md row updated.
+- Tests: `tests/test_tender_ai.py` (23). Full backend: 928 passed, 1 skipped (after review fixes; 898 + 30).
+
+## Design decisions
+- ScriptedFakeAI recordings are looked up by `run_task` through `provider.recorded_answer(task, key)` because `complete()` only sees
+  nonce-wrapped text. Recorded answers cost 0 and hold no budget.
+- Runner threads default OFF (`AI_WORKER_THREADS=0`); set 2 in the deployment once S4 registers the extract handler. Lease
+  `AI_TASK_LEASE_SECONDS` 600.
+- Handlers must build their provider with `build_worker_provider(settings)`.
+
+## Review fixes (reviewer CHANGES at 2c107cc)
+C1 runner fenced on (attempts, status=running); `extend_lease` raises `LeaseLost`, `_finish` drops a stale result; C2 `before_call` runs
+before `budget.hold`; injection rule is in the cache key; repair text echoes only `[A-Za-z0-9_]` locations; `Runner` builds the worker
+provider and passes it as the 4th handler argument (handler signature is now `(sessions, task, heartbeat, provider)`); corrupt fixture
+-> `TaskFailed("ai_invalid_output")`.
+Reviewer suggestions left: 1 real SKIP LOCKED test with a held row lock; 2 failed tasks record 0 tokens on `ai_tasks`;
+5 `reserve()` in-flight window is 2 min but worker calls may take 180 s (note for S4).
+
+## Left
+- No HTTP route enqueues tasks yet (S4). Billing routes still call `has_access` directly (they only act on paid subscriptions).
+
 # T-186 review fixes (reviewer CHANGES at 1cceaba)
 
 Tests after fixes: backend 898 passed, 1 skipped.

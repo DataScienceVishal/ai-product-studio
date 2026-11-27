@@ -27,7 +27,7 @@ review before launch.
 | `signoffs` | `reviewer_name`, typed at sign-off, and `reviewer_user_id`: the only new personal data | recorded human review before export | with its pack; account deletion (the user link is cleared if the member leaves, the typed name stays with the pack) | cascade from the pack; account deletion |
 | `export_records` | export file hash, `created_by` user id | proving what was exported and signed off | with its pack | cascade |
 | `ai_tasks` | pack link, kind, status, error text (fixed messages, no document text) | tracking background AI work | with its pack; account deletion | cascade |
-| `ai_cache` | model output for a prompt hash, per tenant (customer content derived from uploads) | avoiding repeat AI cost | 90 days from creation; account deletion | purge job (rows older than 90 days; the purge step is added with the slice that first writes the cache, DESIGN section 3); cascade |
+| `ai_cache` | model output for a prompt hash, per tenant (customer content derived from uploads) | avoiding repeat AI cost | 90 days from creation; account deletion | purge job (`python -m app.maintenance purge` deletes rows older than 90 days, `maintenance.AI_CACHE_DAYS`); cascade |
 
 Everything in the 12 tender tables is customer content. Account export (`GET /api/account/export`) includes all of
 them except `ai_tasks`, `ai_cache` and `evidence_counters`.
