@@ -1,3 +1,10 @@
+# STATUS (T-197, review fixes for T-185): all items done, tests green
+
+F1 DATA.md rows, F3 isolated FK tests, S4 cross-tenant sha256, F2 migration 0014 (FK NO ACTION + index; not RESTRICT,
+which can fail pack/tenant cascades on ordering), S6/S7/S9 billing-off trial and legal copy and cap test, S10 docstring.
+Backend 857 passed 1 skipped; alembic up/check/down -1/up/check clean; frontend tsc clean, vitest 203 passed.
+The ai_cache 90-day purge step is documented but not yet coded (lands with the slice that writes the cache).
+
 # NEXT (T-185, slice S1) - checkpoint
 
 Branch `p/sme-council-tender-drafting/T-185`. Not merged; reviewer PASS needed.

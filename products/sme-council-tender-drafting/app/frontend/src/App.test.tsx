@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { reply, stubFetch, ME } from "./test-utils";
 import App from "./App";
@@ -189,6 +189,19 @@ describe("App with prices off (billing_enabled false, T-185)", () => {
     render(<App />);
     expect(await screen.findByRole("heading", { name: "Page not found" })).toBeTruthy();
     expect(fetchMock.mock.calls.some((c) => String(c[0]).startsWith("/api/billing"))).toBe(false);
+  });
+
+  it("shows no trial countdown and no billing words in the privacy notice", async () => {
+    window.history.replaceState({}, "", "/privacy");
+    signedInNoBilling();
+    render(<App />);
+    await screen.findByRole("heading", { name: "Privacy notice (DRAFT)" });
+    expect(document.body.textContent).not.toMatch(/\bplan\b|bill you|payment provider/i);
+    cleanup();
+    window.history.replaceState({}, "", "/");
+    render(<App />);
+    await screen.findByRole("heading", { name: "Tender packs" });
+    expect(document.body.textContent).not.toMatch(/free trial:|choose a plan/i);
   });
 
   it("shows no Billing link, plan or price text on the dashboard", async () => {

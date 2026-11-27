@@ -458,7 +458,10 @@ GRACE = timedelta(days=3)  # a renewal webhook can arrive late
 
 
 def has_access(status: str, trial_ends_at: datetime | None, now: datetime | None = None,
-               current_period_end: datetime | None = None) -> bool:
+               current_period_end: datetime | None = None, billing_enabled: bool = True) -> bool:
+    """With billing off there is no plan to buy, so a trial never lapses (the AI daily and monthly caps still apply)."""
+    if not billing_enabled and status in ("trialing", "active"):
+        return True
     now = now or datetime.now(timezone.utc)
     if status == "active":  # a paid period that ended (plus grace) without renewal no longer counts
         return current_period_end is None or current_period_end + GRACE > now

@@ -1,3 +1,4 @@
+import { isBillingEnabled } from "../api";
 import { Card } from "../ui";
 
 function Draft() {
@@ -14,10 +15,10 @@ export function Privacy() {
       <Draft />
       <div className="space-y-3 text-slate-700">
         <p><strong>What we keep.</strong> Your company name, the email addresses and roles of your team, a scrambled
-          (hashed) form of each password, the documents and drafts you create, your plan, and how many AI tokens you use.</p>
-        <p><strong>Why.</strong> To run the service you signed up for, to secure your account, and to bill you.</p>
+          (hashed) form of each password, the documents and drafts you create, {isBillingEnabled() && "your plan, "}and how many AI tokens you use.</p>
+        <p><strong>Why.</strong> To run the service you signed up for, to secure your account{isBillingEnabled() ? ", and to bill you" : ""}.</p>
         <p><strong>Who processes it.</strong> Our hosting provider (Microsoft Azure; for now our servers and database are in Microsoft's France Central region, in the EU), Microsoft's Azure OpenAI
-          service for AI summaries, and our payment provider once payments are switched on. Each processes data under its own
+          service for AI summaries{isBillingEnabled() && ", and our payment provider once payments are switched on"}. Each processes data under its own
           data-protection terms. Microsoft may store AI prompts and answers for abuse monitoring, as described on its Azure OpenAI
           data-privacy page, and prompts may be processed outside the UK and EU depending on the deployment type; each product states which one it uses.</p>
         <p><strong>How long.</strong> Until you delete your account. Expired sign-in sessions and used links are removed

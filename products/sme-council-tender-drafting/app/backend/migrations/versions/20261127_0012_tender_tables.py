@@ -1,6 +1,6 @@
 """tender tables
 
-Revision ID: 4eba32d390f9
+Revision ID: 0012
 Revises: 0011
 Create Date: 2026-11-27 15:45:54.417279
 """
