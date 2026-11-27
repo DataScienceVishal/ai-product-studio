@@ -42,6 +42,20 @@ def test_client_routes_fall_back_to_index(web, path):
     assert r.headers["cache-control"] == "no-cache"
 
 
+@pytest.mark.parametrize("path", ["/packs", "/pack?id=11111111-1111-4111-8111-111111111111", "/checklist?id=1", "/evidence",
+                                  "/draft?id=abc", "/coverage?id=abc", "/coverage/?id=abc"])
+def test_review_screen_deep_links_with_ids_refresh_to_200(web, path):
+    """R7: the ids are in the query string, so a refresh on any review screen is the app, not a 404."""
+    for method in (web.get, web.head):
+        r = method(path)
+        assert r.status_code == 200 and r.headers["content-type"].startswith("text/html")
+
+
+@pytest.mark.parametrize("path", ["/pack/abc", "/draft/1", "/checklist/x/y"])
+def test_path_style_ids_are_not_client_routes(web, path):
+    assert web.get(path).status_code == 404
+
+
 def test_head_falls_back_without_a_body(web):
     r = web.head("/verify-email")
     assert r.status_code == 200 and r.content == b"" and r.headers["cache-control"] == "no-cache"
