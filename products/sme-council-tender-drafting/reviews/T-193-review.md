@@ -108,3 +108,71 @@ Python 3.12.3 venv, local Postgres, `TEST_DATABASE_URL=postgresql+psycopg://stud
 ## AI cost
 
 None in this slice. All calls go to `ScriptedFakeAI` and the dry ledger. The ledger design keeps a live run inside Q-19 A once M1, M2 and M6 are fixed.
+
+---
+
+## Re-review (cac2ab5)
+
+Diff reviewed: `git diff a9b7f6d..cac2ab5` (ledger.py, run.py, score.py, seed.py, EVAL.md, tests). Nothing taken from the builder's report on trust.
+
+### Verdict: PASS
+
+### Tests (run by the reviewer on this exact tree, fresh database `t193rr_31246`, local Postgres)
+
+- `tests/test_tender_eval.py`: **72 passed** in 6.5 s.
+- Full backend suite (`python -m pytest -q -o addopts=""` from `app/backend`): **1048 passed, 1 skipped** in 220 s.
+- Note: the container's `python` is 3.11 with no pytest installed. The tests ran under `python3.13`, which has the dev requirements. This is an environment detail, not a code issue.
+
+### Must-fix status
+
+| # | Status | Evidence |
+|---|---|---|
+| M1 preflight blocks E2 to E4 | Fixed | `eval/ledger.py:261` now needs only the worst case of this phase plus the later scored phases, less what this phase has already spent (capped at its own worst case). Before E1 that is still $2.54. Tested: E1 resume passes, E2 passes after $0.25, and E3 is refused when only $0.75 is left against $0.92 (`tests/test_tender_eval.py:169-178`). |
+| M2 results gitignored | Fixed | `results/*.jsonl` removed from `eval/.gitignore`. Dry results go to `results/dry/` (still ignored). `run.py:240` refuses a live phase that has ledger rows but no results file. `run.py:244` touches the file so an empty finished phase is distinguishable. Tested (`:678`). |
+| M3 A4 splitter | Fixed | `score.py:22` imports the app's `split_sentences` and `_GAP`/`_CITE`. Judgement call (b) is discussed below. |
+| M4 A7 word count | Fixed | `count_words` is imported from `app.tender.draft` (`score.py:22`), so the scorer can't drift from the app. |
+| M5 A6a overlap | Fixed | `score.py:179` works on word tokens. Judgement call (a) is discussed below. |
+| M6 durable holds | Fixed | `ledger.py:182` `reserve()`. Judgement call (d) is discussed below. Tested: `:180-200` (a fresh Ledger sees the unsettled hold at its worst case, and a second "process" is refused on the cap). |
+| M7 drafts without a claim check | Fixed | `run.py:234` refuses E2, E3, E4 and T3 before the plan's first item if there is no claimcheck callable. Tested (`:695`). |
+
+### Judgement calls
+
+**(a) M5 same-sentence arm.** I probed it directly.
+- A whole-paragraph checker span (4 sentences) against a 7-token seeded span: **miss**. A span that crosses sentences can never be contained in one app sentence, and the 30% share rule fails.
+- Exact span: hit. A tiny span ("ISO"): miss, because cover is below 50%.
+- A checker span that is a single long sentence of about 35 tokens containing the seed: hit. This is the intended arm and is acceptable, because the checker flagged exactly the sentence that holds the fabrication.
+- Residual: a short 2-sentence paragraph can still hit through the 30% share rule when the seeded span is at least 30% of it. That is a deliberate tolerance, not a loophole.
+- The arm is only active when `draft_texts` is passed. Without it the rule is stricter, so there is no risk of over-matching.
+
+**(b) M3: a gap-marker sentence with no [E-n] is not a claim** (`score.py:116-127`).
+- It is defensible for a sentence that is mostly the marker.
+- But I confirmed that a mixed sentence such as "We have delivered 40 contracts for 12 councils since 2015 and hold [NEEDS FIRM INPUT: insurer] cover." is dropped from A4 entirely, uncited factual claim and all.
+- A trailing marker after the full stop is safe: the app splitter makes it its own sentence, so the preceding claim is still scored.
+- It is pre-registered in EVAL.md, so it is not a correctness bug, and A6/claim check still sees the sentence. See should-fix R1.
+
+**(c) M2: the refusal is correct.**
+- The check runs after the plan is built and the preflight passes, but before the file is touched (`run.py:240-244`).
+- `reserve()` raises before writing a row on refusal, so a refused first call leaves no ledger row and no false refusal.
+- A stale but present results file (an older commit) re-runs only the unrecorded items. That spend is still bounded by the caps.
+
+**(d) M6: flock check-and-append is correct.**
+- `reserve()` opens `a+`, takes `LOCK_EX`, reads all rows, checks both the group cap and the total cap, then appends the hold and fsyncs, all under the one lock (`ledger.py:182-208`).
+- `append()` takes the same flock. Both paths take the thread lock before the flock, so the lock order is consistent.
+- flock is per open file description, so two Ledger instances in one process also serialise.
+- `_spent_in` (`ledger.py:154`) counts a `hold` row whose `hold_id` has no settle row at its `worst_usd`. Settled holds count their real tokens. A failed zero-token call settles at `ceil(worst)` (`:245`).
+- Fake rows are dropped only in a dry ledger (`:163`).
+
+**ledger.py imports nothing from `app`.** Verified. Imports are stdlib only (`fcntl, json, math, os, re, threading, uuid, dataclasses, pathlib`; `ledger.py:17-27`). `score.py` now imports `app.tender.draft`. That is intended (M3 and M4) and does not touch spend.
+
+### Should-fix status
+
+- **Fixed and verified:** 1 (`CHECK_CAP` imported, `run.py:200`), 2 (model and caps pinned, prices and caps validated, `ledger.py:44`, `:99-121`), 3 (`math.ceil`, `:245`), 4 (`:163`), 5 (`run.py:259-264`; truncation surfaces as `TaskFailed("ai_truncated")` per `app/tender/llm.py:216-217`, so it is recorded; a plain `AIUnavailable` stops the phase), 6 (`run.py:82`), 7 (`run.py:97`), 8 (`clear_ai_cache` before each T2, T3 and R2 item, `run.py:253`), 9 (empty manifest, login check, non-JSON body, duplicate packs, path containment, all in `seed.py`), 10 (`score.py:84`), 12 (`false_flags`, `score.py:216`), 13 (test rewritten).
+- **Skipped:** 11 (optional). Accepted.
+- **Security notes from the first review**, both addressed: the path containment check (`seed.py`), and the non-local `DATABASE_URL` refusal behind `--allow-remote-db` (`run.py:284`, exit 5).
+
+### Remaining suggestions (non-blocking, do before the EVAL.md freeze)
+
+- **R1 (A4 gap-sentence exemption).** Report the number of exempted gap sentences, and their share of all sentences, next to A4. Or exempt only sentences whose text, minus the marker, is short (for example 6 tokens or fewer). Otherwise a draft that puts gap markers inside factual sentences hides uncited claims from A4. Cheap to change now; it becomes an amendment after the freeze.
+- **R2 (cache clear wipes the demo's recorded cache).** `clear_ai_cache` deletes every `ai_cache` row for the demo tenant, including the rows `seed.py` loaded from recordings. Add a note in NEXT.md or EVAL.md to re-run `python -m eval.seed` after T2, T3 or R2 before any demo.
+- **R3 (lock-free reads).** `Ledger.rows()` (`ledger.py:148`) reads without the flock, so `spent()` or `_phase_rows` could see a half-written line from a concurrent writer and raise `JSONDecodeError`. Take `LOCK_SH` in `rows()`, or skip a trailing line that doesn't parse. Low risk, since runs are single-process.
+- **R4 (non-AI errors recorded as model failures).** `except AppError` (`run.py:262`) also records non-AI `AppError`s (for example a tenant or DB lookup error) as item failures that count against the bar. Narrow it to `TaskFailed`.
