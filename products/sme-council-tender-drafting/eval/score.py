@@ -6,18 +6,24 @@ Key item   : {"ref", "kind": "question|mandatory|deadline", "text", "word_limit"
 Extracted  : the app's ExtractItem dicts (same fields plus "pass_fail"); a key "mandatory" item is found only if matched
              to an extracted item that is kind "mandatory" or has pass_fail true, else it is `shown_optional`.
 Matching   : by `ref` first (normalised), then by text similarity >= 0.8, one-to-one greedy (best pair first).
+
+Sentence splitting and word counting are the app's own (`app.tender.draft.split_sentences`, `count_words`), imported so the
+scorer cannot drift from what the product enforces. Everything else is stdlib.
 """
 from __future__ import annotations
 
 import difflib
 import re
+import sys
 from collections import defaultdict
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app" / "backend"))
+from app.tender.draft import _CITE, _GAP, count_words, split_sentences  # noqa: E402,F401
 
 SIM_THRESHOLD = 0.8
 BARS = {"A1_recall": 0.90, "A1_precision": 0.90, "A2": 0.90, "A3": 0.85, "A4": 0.95, "A6a": 0.95, "A7": 1.0, "A8": 0.90}
 LIMIT_FIELDS = ("word_limit", "page_limit", "marks", "weight_pct")
-_CITE = re.compile(r"\[E-(\d+)\]")
-_GAP = re.compile(r"\[NEEDS FIRM INPUT:[^\]]*\]")
 
 
 def _norm(s) -> str:
@@ -28,15 +34,16 @@ def similarity(a: str, b: str) -> float:
     return difflib.SequenceMatcher(None, _norm(a), _norm(b)).ratio()
 
 
-def match_items(key: list[dict], got: list[dict], threshold: float = SIM_THRESHOLD) -> list[tuple[int, int]]:
-    """One-to-one pairs (key index, got index): equal refs first, then the highest text similarity >= threshold."""
+def match_items(key: list[dict], got: list[dict], threshold: float = SIM_THRESHOLD, ref_ok=None) -> list[tuple[int, int]]:
+    """One-to-one pairs (key index, got index): equal refs first (only with extracted items `ref_ok` accepts, default all),
+    then the highest text similarity >= threshold."""
     pairs, used_k, used_g = [], set(), set()
     for i, k in enumerate(key):
         ref = _norm(k.get("ref"))
         if not ref:
             continue
         for j, g in enumerate(got):
-            if j not in used_g and _norm(g.get("ref")) == ref:
+            if j not in used_g and _norm(g.get("ref")) == ref and (ref_ok is None or ref_ok(g)):
                 pairs.append((i, j)); used_k.add(i); used_g.add(j)
                 break
     cands = sorted(((similarity(k.get("text", ""), g.get("text", "")), i, j)
@@ -73,7 +80,8 @@ def score_extraction(packs: list[dict]) -> dict:
         missed_q += [{"pack": p["pack"], "ref": k.get("ref"), "text": k.get("text")} for i, k in enumerate(kq) if i not in hit_k]
         # A2 over matched question items, and mandatory items matched among all extracted items
         km = [k for k in key if k.get("kind") == "mandatory"]
-        pairs_m = match_items(km, got)
+        # refs are matched only against non-question items: a question that shares a ref with a mandatory item must not pair up
+        pairs_m = match_items(km, got, ref_ok=lambda g: g.get("kind") != "question")
         m_key += len(km)
         for i, j in pairs_m:
             if _is_mandatory(got[j]):
@@ -105,18 +113,18 @@ def score_extraction(packs: list[dict]) -> dict:
     }
 
 
-def split_sentences(text: str) -> list[str]:
-    return [s.strip() for s in re.split(r"(?<=[.!?])\s+|\n+", text.strip()) if s.strip()]
-
-
-def count_words(text: str) -> int:
-    """The pre-registered word-count rule (DESIGN 4.5): [E-n] markers excluded, gap markers included."""
-    return len(_CITE.sub(" ", text).split())
-
-
 def claims_of(text: str) -> list[str]:
-    """Claims for A4: every sentence except a bare gap marker."""
-    return [s for s in split_sentences(text) if _norm(_GAP.sub("", s)) and not (_GAP.fullmatch(s.strip()))]
+    """A4 claims: the app's sentences (a citation after the full stop stays with its sentence, a gap marker stays whole),
+    except a sentence that holds a [NEEDS FIRM INPUT: ...] marker and no [E-n] citation. Such a sentence is the draft saying
+    it does not know, which A8 rewards; it is not an unsupported claim. A gap sentence that also cites is still scored."""
+    out = []
+    for s in split_sentences(text):
+        if _GAP.search(s) and not _CITE.search(s):
+            continue
+        if not _norm(_CITE.sub(" ", _GAP.sub(" ", s))):
+            continue
+        out.append(s)
+    return out
 
 
 def score_traceability(drafts: list[dict]) -> dict:
@@ -155,28 +163,64 @@ def score_gaps(answers: list[dict]) -> dict:
             "pass": s is not None and s >= BARS["A8"], "note": "human check list still required"}
 
 
-def _overlaps(a: str, b: str) -> bool:
-    na, nb = _norm(a), _norm(b)
-    return bool(na) and bool(nb) and (na in nb or nb in na)
+COVER_MIN = 0.5       # share of the seeded claim's word tokens the checker span must contain
+SHARE_MIN = 0.3       # the seeded claim must be at least this share of the checker span's tokens (unless same sentence)
 
 
-def score_seeded_claims(seeded: list[dict], checked: list[dict]) -> dict:
+def _tokens(s: str) -> list[str]:
+    return _norm(s).split()
+
+
+def _contains(seq: list[str], sub: list[str]) -> bool:
+    n = len(sub)
+    return n > 0 and any(seq[i:i + n] == sub for i in range(len(seq) - n + 1))
+
+
+def _overlaps(checker_span: str, seeded_span: str, sentences: tuple[list[str], ...] = ()) -> bool:
+    """A6a overlap, pre-registered in EVAL.md. On word tokens (never raw characters): the checker span must cover at least
+    50% of the seeded span's distinct tokens AND either the seeded span is at least 30% of the checker span's tokens, or both
+    spans sit inside one app sentence of the draft (`sentences`: each sentence's tokens). A tiny span or a whole-paragraph
+    span therefore misses."""
+    c, s = _tokens(checker_span), _tokens(seeded_span)
+    if not c or not s:
+        return False
+    cover = len(set(c) & set(s)) / len(set(s))
+    if cover < COVER_MIN:
+        return False
+    if len(s) >= SHARE_MIN * len(c):
+        return True
+    return any(_contains(sent, c) and _contains(sent, s) for sent in sentences)
+
+
+def score_seeded_claims(seeded: list[dict], checked: list[dict], draft_texts: dict | None = None) -> dict:
     """A6a. seeded: [{"id", "draft", "type", "span"}]; checked: [{"draft", "span", "verdict"}] from the claim check run on
-    the fixture drafts. A seeded claim is caught when a checker claim on the same draft overlaps its span (normalised
-    substring either way) with verdict unsupported or contradicted. `unchecked` and `supported` are misses."""
+    the fixture drafts; draft_texts: {draft id: text}, which enables the same-sentence arm of the overlap rule. A seeded claim
+    is caught when a checker claim on the same draft passes `_overlaps` with verdict unsupported or contradicted. `unchecked`
+    and `supported` are misses. `false_flags` reports how often the checker flagged a claim that overlaps no seeded claim, so
+    a checker that flags everything is visible next to a high A6a."""
+    draft_texts = draft_texts or {}
+    sents = {d: tuple(_tokens(x) for x in split_sentences(t)) for d, t in draft_texts.items()}
     by_draft = defaultdict(list)
     for c in checked:
         by_draft[c["draft"]].append(c)
+    flagged = ("unsupported", "contradicted")
     caught, misses, per_type = 0, [], defaultdict(lambda: [0, 0])
     for s in seeded:
-        hit = any(c["verdict"] in ("unsupported", "contradicted") and _overlaps(c["span"], s["span"])
+        hit = any(c["verdict"] in flagged and _overlaps(c["span"], s["span"], sents.get(s["draft"], ()))
                   for c in by_draft.get(s["draft"], []))
         per_type[s["type"]][1] += 1
         if hit:
             caught += 1; per_type[s["type"]][0] += 1
         else:
             misses.append({"id": s["id"], "type": s["type"], "draft": s["draft"], "span": s["span"]})
+    non_seeded = false_flags = 0
+    for c in checked:
+        if any(s["draft"] == c["draft"] and _overlaps(c["span"], s["span"], sents.get(c["draft"], ())) for s in seeded):
+            continue
+        non_seeded += 1
+        false_flags += c["verdict"] in flagged
     total = len(seeded)
     return {"caught": caught, "total": total, "score": _ratio(caught, total),
             "pass": total > 0 and caught / total >= BARS["A6a"],
-            "per_type": {t: {"caught": c, "total": n} for t, (c, n) in sorted(per_type.items())}, "misses": misses}
+            "per_type": {t: {"caught": c, "total": n} for t, (c, n) in sorted(per_type.items())}, "misses": misses,
+            "false_flags": {"flagged": false_flags, "non_seeded_claims": non_seeded, "rate": _ratio(false_flags, non_seeded)}}

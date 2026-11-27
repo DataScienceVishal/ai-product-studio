@@ -6,6 +6,9 @@
   price, so the stored `usd` is informational (as in T-80).
 * Before each call the worst case (everything the hold estimates, priced as if as much of it as the output cap allows were
   output) must fit the phase group's sub-cap AND the total cap, or the call is refused with BudgetExceeded.
+* Holds are durable (M6): before a call a `hold` row with its worst-case dollars is appended under an `fcntl.flock` on the
+  ledger file, together with the cap check. `spent()` counts a hold with no `settle` row (carrying its hold id) at its worst
+  case, so a killed process cannot let a later call pass a cap.
 * A call that may have run but left nothing usable (failed with zero tokens reported) is charged its worst case.
 * Reasoning headroom must be 0 so the cap sent is the cap in the table.
 * It implements the `Budget` protocol of `app.tender.llm` (hold/settle) but imports nothing from `app`: it never calls
@@ -13,11 +16,13 @@
 """
 from __future__ import annotations
 
+import fcntl
 import json
 import math
 import os
 import re
 import threading
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -33,6 +38,12 @@ class BudgetExceeded(RuntimeError):
 
 class BudgetConfigError(ValueError):
     pass
+
+
+# Q-19 answer A, pinned in code so an edited budget.json cannot loosen it (reviewer S2).
+APPROVED_MODEL = "gpt-5-mini"
+APPROVED_TOTAL = 6.00
+APPROVED_GROUPS = {"tuning": 2.00, "scored": 2.60, "recording": 1.40}
 
 
 class ModelMismatch(RuntimeError):
@@ -85,17 +96,29 @@ def load_budget_config(path: Path | str = DEFAULT_CONFIG, questions_file: Path |
     if not question_answered(qid, answer, qf.read_text(encoding="utf-8")):
         raise BudgetConfigError(f"{qid} is not recorded as answered {answer} in {qf.name}: no spend is allowed")
     model = raw["model"]
+    if model != APPROVED_MODEL:
+        raise BudgetConfigError(f"model must be {APPROVED_MODEL!r} (Q-19 A), not {model!r}")
     price = raw["prices_usd_per_million"][model]
+    for k in ("input", "output"):
+        p = float(price[k])
+        if not math.isfinite(p) or p <= 0:
+            raise BudgetConfigError(f"the {k} price must be finite and above 0")
     total = float(raw["total_cap_usd"])
     if not math.isfinite(total) or total <= 0:
         raise BudgetConfigError("total_cap_usd must be finite and above 0")
+    if abs(total - APPROVED_TOTAL) > 1e-9:
+        raise BudgetConfigError(f"total_cap_usd must be {APPROVED_TOTAL} (Q-19 A)")
     groups, phase_group = {}, {}
     for name, g in raw["groups"].items():
         groups[name] = float(g["cap_usd"])
+        if not math.isfinite(groups[name]) or groups[name] <= 0:
+            raise BudgetConfigError(f"group {name} cap must be finite and above 0")
         for phase in g["phases"]:
             if phase in phase_group:
                 raise BudgetConfigError(f"phase {phase} is in two groups")
             phase_group[phase] = name
+    if set(groups) != set(APPROVED_GROUPS) or any(abs(groups[n] - c) > 1e-9 for n, c in APPROVED_GROUPS.items()):
+        raise BudgetConfigError(f"group caps must be {APPROVED_GROUPS} (Q-19 A)")
     if sum(groups.values()) > total + 1e-9:
         raise BudgetConfigError("group caps add up to more than the total cap")
     headroom = int(raw.get("reasoning_headroom", 0))
@@ -106,7 +129,10 @@ def load_budget_config(path: Path | str = DEFAULT_CONFIG, questions_file: Path |
 
 
 class Ledger:
-    """Append-only JSONL, fsynced per row. Spend is recomputed from tokens, never read from the stored usd."""
+    """Append-only JSONL, fsynced per row. Spend is recomputed from tokens, never read from the stored usd.
+
+    Row kinds: `hold` (a call is about to be made: worst-case dollars, `hold_id`) and settle rows (no `kind`, or `settle`;
+    a settle row may carry the `hold_id` it closes). An unsettled hold counts at its worst case."""
 
     def __init__(self, path: Path | str, cfg: BudgetConfig, *, dry_run: bool = False):
         self.path, self.cfg, self.dry_run = Path(path), cfg, dry_run
@@ -124,20 +150,62 @@ class Ledger:
             return []
         return [json.loads(line) for line in self.path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
-    def spent(self, group: str | None = None) -> float:
+    @staticmethod
+    def _spent_in(rows: list[dict], cfg: BudgetConfig, dry_run: bool, group: str | None, phase: str | None) -> float:
+        settled = {r["hold_id"] for r in rows if r.get("kind") != "hold" and r.get("hold_id")}
         total = 0.0
-        for e in self.rows():
-            if (group is None or self.cfg.phase_group.get(e["phase"]) == group) and e["model"] != DRY_MODEL:
-                total += e["input_tokens"] * self.cfg.price_in / 1e6 + e["output_tokens"] * self.cfg.price_out / 1e6
+        for e in rows:
+            if (group is not None and cfg.phase_group.get(e["phase"]) != group) or (phase is not None and e["phase"] != phase):
+                continue
+            if e.get("kind") == "hold":
+                if e["hold_id"] not in settled:
+                    total += float(e["worst_usd"])
+            elif not (dry_run and e["model"] == DRY_MODEL):
+                total += e["input_tokens"] * cfg.price_in / 1e6 + e["output_tokens"] * cfg.price_out / 1e6
         return total
+
+    def spent(self, group: str | None = None, phase: str | None = None) -> float:
+        return self._spent_in(self.rows(), self.cfg, self.dry_run, group, phase)
 
     def append(self, entry: dict) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self._lock:
             with open(self.path, "a", encoding="utf-8") as f:
-                f.write(json.dumps(entry, sort_keys=True) + "\n")
-                f.flush()
-                os.fsync(f.fileno())
+                fcntl.flock(f, fcntl.LOCK_EX)
+                try:
+                    f.write(json.dumps(entry, sort_keys=True) + "\n")
+                    f.flush()
+                    os.fsync(f.fileno())
+                finally:
+                    fcntl.flock(f, fcntl.LOCK_UN)
+
+    def reserve(self, phase: str, task: str, label: str, worst: float) -> str:
+        """Check the caps and durably append a hold row, both under one file lock. Returns the hold id."""
+        group = self.cfg.group_of(phase)
+        hold_id = uuid.uuid4().hex
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        with self._lock:
+            with open(self.path, "a+", encoding="utf-8") as f:
+                fcntl.flock(f, fcntl.LOCK_EX)
+                try:
+                    f.seek(0)
+                    rows = [json.loads(line) for line in f.read().splitlines() if line.strip()]
+                    gs = self._spent_in(rows, self.cfg, self.dry_run, group, None)
+                    ts = self._spent_in(rows, self.cfg, self.dry_run, None, None)
+                    if gs + worst > self.cfg.group_caps[group] + 1e-9:
+                        raise BudgetExceeded(f"{phase}/{task}: worst case ${worst:.4f} on ${gs:.4f} spent could pass "
+                                             f"the {group} sub-cap ${self.cfg.group_caps[group]:.2f}; call refused")
+                    if ts + worst > self.cfg.total_cap + 1e-9:
+                        raise BudgetExceeded(f"{phase}/{task}: worst case ${worst:.4f} on ${ts:.4f} spent could pass "
+                                             f"the total cap ${self.cfg.total_cap:.2f}; call refused")
+                    f.seek(0, os.SEEK_END)
+                    f.write(json.dumps({"kind": "hold", "hold_id": hold_id, "phase": phase, "task": task, "label": label,
+                                        "model": self.cfg.model, "worst_usd": worst}, sort_keys=True) + "\n")
+                    f.flush()
+                    os.fsync(f.fileno())
+                finally:
+                    fcntl.flock(f, fcntl.LOCK_UN)
+        return hold_id
 
 
 class LedgerBudget:
@@ -149,7 +217,7 @@ class LedgerBudget:
         self.group = self.cfg.group_of(phase)
         self.output_cap = int(output_cap)
         self._n = 0
-        self._holds: dict[int, float] = {}
+        self._holds: dict[int, tuple[float, str | None]] = {}
         self._lock = threading.Lock()
 
     def worst_usd(self, estimate: int) -> float:
@@ -159,36 +227,27 @@ class LedgerBudget:
         out = min(int(estimate), self.output_cap * 2)
         return (int(estimate) - out) * self.cfg.price_in / 1e6 + out * self.cfg.price_out / 1e6
 
-    def check(self, worst: float) -> None:
-        if self.ledger.dry_run:
-            return
-        group_spent, total_spent = self.ledger.spent(self.group), self.ledger.spent()
-        if group_spent + worst > self.cfg.group_caps[self.group] + 1e-9:
-            raise BudgetExceeded(f"{self.phase}/{self.task}: worst case ${worst:.4f} on ${group_spent:.4f} spent could pass "
-                                 f"the {self.group} sub-cap ${self.cfg.group_caps[self.group]:.2f}; call refused")
-        if total_spent + worst > self.cfg.total_cap + 1e-9:
-            raise BudgetExceeded(f"{self.phase}/{self.task}: worst case ${worst:.4f} on ${total_spent:.4f} spent could pass "
-                                 f"the total cap ${self.cfg.total_cap:.2f}; call refused")
-
     def hold(self, estimate: int) -> int:
         worst = self.worst_usd(estimate)
+        hold_id = None if self.ledger.dry_run else self.ledger.reserve(self.phase, self.task, self.label, worst)
         with self._lock:
-            self.check(worst)
             self._n += 1
-            self._holds[self._n] = worst
+            self._holds[self._n] = (worst, hold_id)
             return self._n
 
     def settle(self, handle: int, input_tokens: int, output_tokens: int, model: str, failed: bool = False) -> None:
         with self._lock:
-            worst = self._holds.pop(handle, 0.0)
+            worst, hold_id = self._holds.pop(handle, (0.0, None))
         charged_worst = failed and input_tokens + output_tokens == 0 and not self.ledger.dry_run
         if charged_worst:
             # The request may have run and billed: charge the worst case, as 'output tokens at the output price'.
             model = self.cfg.model
-            input_tokens, output_tokens = 0, round(worst * 1e6 / self.cfg.price_out)
-        entry = {"phase": self.phase, "task": self.task, "label": self.label, "model": model,
+            input_tokens, output_tokens = 0, math.ceil(worst * 1e6 / self.cfg.price_out - 1e-9)
+        entry = {"kind": "settle", "phase": self.phase, "task": self.task, "label": self.label, "model": model,
                  "input_tokens": int(input_tokens), "output_tokens": int(output_tokens), "failed": bool(failed),
                  "charged_worst": charged_worst}
+        if hold_id:
+            entry["hold_id"] = hold_id
         approved = model == self.cfg.model or model.startswith(self.cfg.model + "-")
         dry = model == DRY_MODEL and self.ledger.dry_run
         # An unapproved or unknown model is still priced (at the approved model's price) so the spend is never hidden.
@@ -199,11 +258,18 @@ class LedgerBudget:
             raise ModelMismatch(f"provider reported model {model!r}; only {self.cfg.model!r} is approved: run stopped")
 
 
-def preflight_scored(ledger: Ledger) -> None:
-    """DESIGN 8.5: before E1 the remaining scored reserve must cover the scored worst case."""
+def preflight_scored(ledger: Ledger, phase: str, scored_phases: list[tuple[str, float]]) -> None:
+    """DESIGN 8.5: the remaining scored reserve must cover the worst case of the work still to do: this phase and the later
+    scored phases (`scored_phases`: [(name, worst_usd)] in run order), less what this phase has already spent. Before E1,
+    with nothing spent, that is the whole scored worst case; it no longer blocks E2 to E4 or a resume of E1."""
     if ledger.dry_run:
         return
+    names = [n for n, _ in scored_phases]
+    if phase not in names:
+        raise BudgetConfigError(f"{phase!r} is not a scored phase")
     cfg = ledger.cfg
+    todo = sum(w for _, w in scored_phases[names.index(phase):])
+    needed = max(todo - min(ledger.spent(phase=phase), dict(scored_phases)[phase]), 0.0)
     remaining = cfg.group_caps["scored"] - ledger.spent("scored")
-    if remaining < cfg.scored_preflight_worst:
-        raise BudgetExceeded(f"scored reserve ${remaining:.2f} is below the scored worst case ${cfg.scored_preflight_worst:.2f}")
+    if remaining + 1e-9 < needed:
+        raise BudgetExceeded(f"scored reserve ${remaining:.2f} is below the worst case still to run from {phase}: ${needed:.2f}")

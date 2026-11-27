@@ -23,10 +23,13 @@ sys.path.insert(0, str(PRODUCT / "app" / "backend"))
 from .ledger import (DEFAULT_CONFIG, HERE, BudgetExceeded, Ledger, LedgerBudget, load_budget_config, preflight_scored)
 
 KEYS_DIR = HERE / "keys"
-RESULTS_DIR = HERE / "results"
+RESULTS_DIR = HERE / "results"          # live results are committed after every phase (DESIGN 8.5); results/dry/ is ignored
+DRY_RESULTS_DIR = RESULTS_DIR / "dry"
 DRY_LEDGER = HERE / "ledger.dry.jsonl"
 LIVE_LEDGER = HERE / "ledger.jsonl"
 DEMO_PACKS = 3
+NEEDS_CLAIMCHECK = {"E2", "E3", "E4", "T3"}      # phases whose scored inputs come from the claim check
+CACHE_CLEAR_PHASES = {"T2", "T3", "R2"}          # repeat passes and the A9 stopwatch must not be answered from ai_cache
 
 
 class PhaseNotReady(RuntimeError):
@@ -76,6 +79,12 @@ class Context:
     packs_dir: Path = PRODUCT / "demo-data" / "packs"
     dry: bool = True
 
+    def __post_init__(self):
+        headroom = getattr(self.provider, "output_headroom", None)
+        if headroom != self.ledger.cfg.headroom:
+            raise PhaseNotReady(f"provider output_headroom is {headroom!r}, the ledger assumes {self.ledger.cfg.headroom}: "
+                                f"worst-case pricing would under-reserve")
+
 
 # ---------- inputs ----------
 
@@ -83,6 +92,18 @@ def _need(path: Path, what: str) -> Path:
     if not path.is_file():
         raise PhaseNotReady(f"{what} not found at {path} (written by qa, task D3; Q-20 for the packs)")
     return path
+
+
+def drafting_heldout(ctx: Context) -> list[str]:
+    """The 3 held-out packs used for drafting, named in manifest.json as "drafting_heldout" (each must be in "heldout")."""
+    manifest = ctx.packs_dir / "manifest.json"
+    if not manifest.is_file():
+        raise PhaseNotReady(f"{manifest} is required: it must name the 3 \"drafting_heldout\" packs")
+    m = json.loads(manifest.read_text(encoding="utf-8"))
+    names = list(m.get("drafting_heldout", []))
+    if len(names) != DEMO_PACKS or len(set(names)) != DEMO_PACKS or not set(names) <= set(m.get("heldout", [])):
+        raise PhaseNotReady(f"manifest.json drafting_heldout must list exactly {DEMO_PACKS} distinct packs from heldout")
+    return names
 
 
 def pack_names(ctx: Context) -> tuple[list[str], list[str]]:
@@ -124,7 +145,7 @@ def build_plan(phase: str, ctx: Context) -> list[Item]:
         return _extract_items(ctx, held)
     if builder == "draft_heldout":
         qs = []
-        for n in held[:DEMO_PACKS]:   # the rule (first of each sector in SOURCES.md order) is applied by the manifest order
+        for n in drafting_heldout(ctx):   # named in the manifest (the first of each sector in SOURCES.md order)
             qs += [{"id": f"{Path(n).stem}:{k['ref']}", "question": k["text"], "word_limit": k.get("word_limit")}
                    for k in [i for i in _key_items(ctx, n) if i.get("kind") == "question"][:15]]
         return _draft_items(qs)
@@ -176,7 +197,8 @@ def _draft(ctx: Context, phase: str, item: Item) -> dict:
 def _check(ctx: Context, phase: str, draft_id: str, text: str, hits: list) -> list[dict]:
     if ctx.claimcheck is None:
         raise PhaseNotReady("the claim check (T-190, app/tender/claimcheck) is not available: pass a claimcheck callable")
-    budget = LedgerBudget(ctx.ledger, phase, "claimcheck", 6000, label=draft_id)
+    from app.tender.draft import CHECK_CAP       # the claimcheck output cap (DESIGN 4.4), not a copy of it
+    budget = LedgerBudget(ctx.ledger, phase, "claimcheck", CHECK_CAP, label=draft_id)
     return ctx.claimcheck(budget, text, hits)
 
 
@@ -188,31 +210,63 @@ def _run_item(ctx: Context, phase: str, item: Item) -> dict:
     return {"id": item.data["id"], "claims": _check(ctx, phase, item.data["id"], item.data["text"], [])}
 
 
+def clear_ai_cache(ctx: Context) -> None:
+    """Delete the demo tenant's ai_cache rows so a repeat pass or the A9 stopwatch really calls the model."""
+    from sqlalchemy import delete
+    from app.tender_models import AICache
+    with ctx.sessions() as db:
+        db.execute(delete(AICache).where(AICache.tenant_id == ctx.tenant_id))
+        db.commit()
+
+
+def _phase_rows(ctx: Context, phase: str) -> bool:
+    return any(r["phase"] == phase for r in ctx.ledger.rows())
+
+
 def run_phase(phase: str, ctx: Context) -> dict:
-    """Run a phase's plan. Finished items (in results/<phase>.jsonl) are skipped. A refused hold stops the phase cleanly."""
+    """Run a phase's plan. Finished items (in results/<phase>.jsonl) are skipped. A refused hold stops the phase cleanly.
+    A failed item (the model's answer was invalid or truncated) is recorded with its error code and counts against the bar."""
+    from app.errors import AppError
+    from app.ai import AIUnavailable
     if phase not in PHASES:
         raise PhaseNotReady(f"unknown phase {phase!r}; known: {', '.join(PHASES)}")
-    if PHASES[phase].group == "scored":
-        preflight_scored(ctx.ledger)
     plan = build_plan(phase, ctx)
-    ctx.results_dir.mkdir(parents=True, exist_ok=True)
+    if phase in NEEDS_CLAIMCHECK and ctx.claimcheck is None:
+        raise PhaseNotReady(f"{phase} needs the claim check (T-190, app/tender/claimcheck): pass a claimcheck callable. "
+                            f"Nothing was run, so no item is recorded without its claims.")
+    if PHASES[phase].group == "scored":
+        preflight_scored(ctx.ledger, phase, [(n, p.worst_usd) for n, p in PHASES.items() if p.group == "scored"])
     path = ctx.results_dir / f"{phase}.jsonl"
-    done = {json.loads(l)["item"] for l in path.read_text(encoding="utf-8").splitlines() if l.strip()} if path.exists() else set()
-    ran = skipped = 0
+    if not ctx.dry and not path.exists() and _phase_rows(ctx, phase):
+        raise PhaseNotReady(f"the ledger has {phase} rows but {path} is missing: results are committed after every phase, so "
+                            f"restore it from git. If the phase truly produced no finished item, create the empty file.")
+    ctx.results_dir.mkdir(parents=True, exist_ok=True)
+    path.touch(exist_ok=True)       # marks the phase as started: a live phase with ledger rows and no file is refused above
+    done = {json.loads(l)["item"] for l in path.read_text(encoding="utf-8").splitlines() if l.strip()}
+    ran = skipped = failed = 0
     stopped = None
     for item in plan:
         if item.id in done:
             skipped += 1
             continue
+        if phase in CACHE_CLEAR_PHASES and getattr(ctx.provider, "cacheable", True):
+            clear_ai_cache(ctx)
         try:
             result = _run_item(ctx, phase, item)
         except BudgetExceeded as e:
             stopped = str(e)
             break
+        except AIUnavailable as e:                  # infrastructure: stop for a resume, do not record the item
+            stopped = f"AI unavailable: {type(e).__name__}; resume later"
+            break
+        except AppError as e:                       # TaskFailed: invalid or truncated output; a result, not a crash
+            result = {"error": getattr(e, "code", type(e).__name__)}
+            failed += 1
         with open(path, "a", encoding="utf-8") as f:
             f.write(json.dumps({"item": item.id, "result": result}, sort_keys=True, default=str) + "\n")
         ran += 1
-    return {"phase": phase, "planned": len(plan), "ran": ran, "skipped": skipped, "stopped": stopped, "dry_run": ctx.dry}
+    return {"phase": phase, "planned": len(plan), "ran": ran, "failed": failed, "skipped": skipped, "stopped": stopped,
+            "dry_run": ctx.dry}
 
 
 # ---------- run configuration (EVAL.md) ----------
@@ -227,10 +281,16 @@ def run_configuration() -> dict:
             "reasoning_headroom": cfg.headroom, "prompts": prompts, "claimcheck_prompt": "not built yet (T-190)"}
 
 
+def local_database(url: str) -> bool:
+    from sqlalchemy.engine import make_url
+    return (make_url(url).host or "localhost") in {"localhost", "127.0.0.1", "::1"}
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="eval.run")
     ap.add_argument("phase", help="E1..E4, T1..T3, R1, R2, or 'config'")
     ap.add_argument("--live", action="store_true", help="refused in S9")
+    ap.add_argument("--allow-remote-db", action="store_true", help="allow a DATABASE_URL whose host is not local")
     args = ap.parse_args(argv)
     if args.live:
         print("eval.run: live runs are not enabled in S9 (no live model calls until L1).", file=sys.stderr)
@@ -246,14 +306,18 @@ def main(argv: list[str] | None = None) -> int:
     from app.db import Database
     from app.models import Tenant
     from .seed import FIRM
-    db = Database(Settings().database_url)       # a local database only: never the deployed app's
+    url = Settings().database_url
+    if not args.allow_remote_db and not local_database(url):
+        print("eval.run: DATABASE_URL is not a local database; refusing (pass --allow-remote-db to override)", file=sys.stderr)
+        return 5
+    db = Database(url)                           # a local database only: never the deployed app's
     sessions = db.sessions
     with sessions() as s:
         tenant_id = s.scalar(select(Tenant.id).where(Tenant.name == FIRM))
     if tenant_id is None:
         print("eval.run: demo tenant not found; run `python -m eval.seed` first", file=sys.stderr)
         return 4
-    ctx = Context(ScriptedFakeAI(), ledger, sessions, tenant_id, dry=True)
+    ctx = Context(ScriptedFakeAI(), ledger, sessions, tenant_id, results_dir=DRY_RESULTS_DIR, dry=True)
     try:
         print(json.dumps(run_phase(args.phase, ctx), indent=2))
     except PhaseNotReady as e:

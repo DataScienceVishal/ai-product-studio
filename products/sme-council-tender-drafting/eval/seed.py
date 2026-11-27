@@ -47,12 +47,25 @@ def find_packs(packs_dir: Path = PACKS_DIR) -> list[Path]:
     manifest = packs_dir / "manifest.json"
     if manifest.is_file():
         names = json.loads(manifest.read_text(encoding="utf-8")).get("demo", [])
+        if not names:
+            raise SeedError("manifest.json has no \"demo\" packs listed: refusing to seed zero packs")
+        root = packs_dir.resolve()
         chosen = [packs_dir / n for n in names]
+        escaped = [n for n, p in zip(names, chosen) if not p.resolve().is_relative_to(root)]
+        if escaped:
+            raise SeedError("manifest.json names paths outside the packs directory: " + ", ".join(escaped))
         missing = [str(p.name) for p in chosen if not p.is_file()]
         if missing:
             raise SeedError("manifest.json lists demo packs that do not exist: " + ", ".join(missing))
         return chosen[:DEMO_PACKS]
     return files[:DEMO_PACKS]
+
+
+def _error_of(r) -> str:
+    try:
+        return str(r.json().get("error"))
+    except Exception:
+        return "non-JSON body"
 
 
 def _upload(client, url: str, path: Path, **form):
@@ -87,17 +100,22 @@ def seed(client, sessions, tenant_id, *, evidence_dir: Path = EVIDENCE_DIR, pack
     for d in docs:
         r = _upload(client, "/api/evidence/documents", d, category=category_for(d.name))
         if r.status_code not in (201, 409):
-            raise SeedError(f"evidence upload {d.name} failed: {r.status_code} {r.json().get('error')}")
+            raise SeedError(f"evidence upload {d.name} failed: {r.status_code} {_error_of(r)}")
         passages += r.json().get("passages", 0) if r.status_code == 201 else 0
+    listing = client.get("/api/packs")
+    existing = {x.get("title"): x["id"] for x in listing.json().get("packs", [])} if listing.status_code == 200 else {}
     pack_ids = []
     for p in packs:
+        if p.stem[:200] in existing:           # re-seeding must not duplicate a pack
+            pack_ids.append(existing[p.stem[:200]])
+            continue
         r = client.post("/api/packs", json={"title": p.stem[:200]})
         if r.status_code != 201:
             raise SeedError(f"pack create failed: {r.status_code}")
         pid = r.json()["id"]
         u = _upload(client, f"/api/packs/{pid}/documents", p)
         if u.status_code not in (201, 409):
-            raise SeedError(f"pack upload {p.name} failed: {u.status_code} {u.json().get('error')}")
+            raise SeedError(f"pack upload {p.name} failed: {u.status_code} {_error_of(u)}")
         pack_ids.append(pid)
     return {"firm": FIRM, "evidence_documents": len(docs), "evidence_passages": passages, "packs": pack_ids,
             "cache_rows": load_cache(sessions, tenant_id, recorded_dir)}
@@ -122,7 +140,11 @@ def main() -> int:
                 print(f"seed: sign-up failed ({r.status_code})", file=sys.stderr)
                 return 1
             if r.status_code == 409:
-                client.post("/api/auth/login", json={"email": "demo@harrowmere.example", "password": password})
+                login = client.post("/api/auth/login", json={"email": "demo@harrowmere.example", "password": password})
+                if login.status_code != 200:
+                    print(f"seed: the demo account exists but sign-in failed ({login.status_code}): wrong DEMO_SEED_PASSWORD?",
+                          file=sys.stderr)
+                    return 1
             sessions = app.state.db.sessions
             with sessions() as db:
                 tenant_id = db.scalar(select(Tenant.id).where(Tenant.name == FIRM))
