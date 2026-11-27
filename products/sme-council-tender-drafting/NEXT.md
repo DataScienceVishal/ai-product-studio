@@ -1,4 +1,4 @@
-# STATUS (T-191, slice S7: review screens, coverage and sign-off) - code done, awaiting reviewer
+# STATUS (T-191, slice S7: review screens, coverage and sign-off) - MERGED to main after reviewer CHANGES then PASS (reviews/T-191-review.md)
 
 Branch `p/sme-council-tender-drafting/T-191` (off main at 39daebf). Not merged. No migrations. No live model calls (ScriptedFakeAI / Judge fakes).
 
