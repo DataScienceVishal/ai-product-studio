@@ -136,3 +136,35 @@ There are no blockers. Two should-fix items are inside S5's own scope and are sm
   - a test that the shorten instruction is not inside a DATA block (finding 1);
   - a test that `/evidence` returns at most `APP_PASSAGES` results (finding 2);
   - a test that a draft task does not write to a signed pack (finding 4, once S8 states exist).
+
+## Re-review (17d8e51)
+
+**Verdict: PASS.** Findings 1 to 4 are fixed and each has a test that checks behaviour. `tests/test_tender_draft.py`: 20 passed (reviewer run). The builder's full suite: 967 passed, 1 skipped.
+
+### Findings 1 to 4
+
+- **F1 fixed.** `SHORTEN_SPEC` (`draft.py:66-71`) puts the instruction in the system prompt. Only `word_limit` and `previous_answer` go in as data. The test spies on the second call and asserts that the user message contains no instruction and that the prior answer sits inside a DATA block. `prompt_version` is `v1-shorten`, so the shorten call does not share a cache key with drafting.
+- **F2 fixed.** `/evidence` (`routes/tender.py:379`) and `draft_handler` (`draft.py:253`) both pass `limit=APP_PASSAGES`. The test seeds 9 matching documents and asserts `shown == retrieved_ids`. The DESIGN line still says 8 passages; the Lead should update it as NEXT.md says.
+- **F3 fixed, and the sizing model is sound.** `reserve()` (`ai.py:697-735`) admits a call when `tokens_today + estimate <= daily_cap`:
+  - `tokens_today` counts settled rows at their actual tokens and pending rows at their estimate.
+  - `run_task` settles each call before the next `hold`. Draft, retry and re-check are sequential: the retry runs in the same handler after the draft settles, and S6 runs later.
+  - So "settled use so far + the next reservation" is the correct admission test, and summing the raw reservations (32,478) overstates the need.
+  - The test's settled-input figure is the reservation minus output and headroom. That is the byte count, which is an upper bound on real input tokens, so it errs safe.
+  - Reviewer numbers (AzureLike, headroom 1,500):
+
+    | Step | Tokens |
+    |---|---|
+    | Draft reservation | 11,344 |
+    | Shorten reservation | 6,232 (was about 14.9k) |
+    | Re-check reservation | 14,902 |
+    | Before the re-check, at 600 output tokens per call | 25,178 settled + next |
+    | Before the re-check, at 800 / 700 output tokens | 25,478 |
+
+  - Only when both calls use their whole output budget plus headroom does the re-check get refused (32,478). That is an edge case, not the demo path. A refused retry still falls through to the trim.
+- **F4 fixed.** The save session reads `TenderPack.status ... FOR SHARE` and stops with `break` (no version is written) unless the status is in `DRAFT_PACK_STATES`. That set is now defined once in `draft.py` and imported by the routes. The test flips the pack to `signed` between queueing and running and asserts that no draft row exists. The serialisation with sign-off only works once S8's sign-off does `UPDATE`/`FOR UPDATE` on the pack row. Keep that in the S8 brief.
+
+### Remaining (non-blocking)
+
+- **R3 headroom is about 4.8k, and only if the trial day starts at zero.** Extraction of the same pack (S4) is charged to the same 30k daily cap. If a trial user uploads, extracts, drafts and checks on one day, the re-check can still be refused. Measure this in the S9 eval, or in an S6 test that sizes extract + draft + retry + check. If it doesn't fit, consider charging extraction outside the trial daily cap, or showing the user "re-check tomorrow".
+- **The 600-token output figure is a little low** for an answer that is over the limit. The test fixture is about 480 words, roughly 650 or more tokens with the JSON. The margin absorbs this; it is noted so that S9 replaces it with a measured figure.
+- Nits 5 to 10 from the first review are still open. All are optional.
