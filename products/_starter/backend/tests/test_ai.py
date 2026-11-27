@@ -1610,6 +1610,14 @@ def test_failed_trip_save_is_retried_into_the_real_table(settings, outbox, datab
         assert third.status_code == 503 and provider.disabled is True and provider.trip_unsaved is False
         with database.sessions() as db:
             assert db.execute(sql_text("SELECT count(*) FROM ai_guard_trips")).scalar() == 1
+        # T-168 N2: a fresh provider (restart or second replica) now refuses with zero model calls.
+        fresh_calls = []
+        fresh = _store_app(settings, outbox, "gpt-5.4-pro-2026-03-05", calls=fresh_calls)
+        try:
+            again = _summaries_again(fresh)
+            assert again.status_code == 503 and fresh.state.ai.disabled is True and fresh_calls == []
+        finally:
+            fresh.state.db.dispose()
     finally:
         app.state.db.dispose()
 
@@ -1718,3 +1726,86 @@ def test_finish_reason_with_newlines_cannot_forge_a_log_line():
     (record,) = [r for r in seen if r.getMessage() == "ai returned no usable answer"]
     logged = record.finish_reason
     assert not any(c in logged for c in "\n\r\x1b") and len(logged) <= 40 and logged.startswith("stopERROR forged")
+
+
+def test_notes_route_calls_ensure_ai_enabled_on_a_session_with_no_writes(settings, outbox, database, monkeypatch):
+    """T-168 L1: the retry may commit the caller's session, so the route must call it before writing anything:
+    nothing pending (new/dirty/deleted) and nothing flushed on that session by then."""
+    import weakref
+    from sqlalchemy import event
+    from sqlalchemy.orm import Session as OrmSession
+    from app.routes import notes as notes_routes
+
+    wrote = weakref.WeakSet()  # sessions that ever had pending ORM changes at flush time (ids get reused)
+
+    def on_flush(session, context, instances):
+        if session.new or session.dirty or session.deleted:
+            wrote.add(session)
+
+    seen = []
+    real = notes_routes.ensure_ai_enabled
+
+    def spy(provider, db=None):
+        seen.append({"has_db": db is not None, "pending": bool(db and (db.new or db.dirty or db.deleted)),
+                     "flushed": db in wrote})
+        return real(provider, db)
+
+    monkeypatch.setattr(notes_routes, "ensure_ai_enabled", spy)
+    event.listen(OrmSession, "before_flush", on_flush)
+    app = _store_app(settings, outbox, "gpt-5-mini")
+    try:
+        response, = _summaries(app, outbox, 1)
+        assert response.status_code == 200
+        assert len(seen) == 1 and seen[0]["has_db"] is True
+        assert seen[0]["pending"] is False and seen[0]["flushed"] is False
+    finally:
+        event.remove(OrmSession, "before_flush", on_flush)
+        app.state.db.dispose()
+
+
+def _trip_store_provider(store):
+    provider = AzureOpenAI("https://res.openai.azure.com/", "gpt-5-mini", "k", retries=0, checked_price=2.0,
+                           client=httpx.Client(transport=httpx.MockTransport(lambda r: _reply("gpt-5-mini"))))
+    provider.attach_trip_store(store)
+    provider.trip_model, provider.trip_fingerprint = "gpt-5-pro", "fp"
+    return provider
+
+
+def test_failed_retry_on_the_callers_session_rolls_it_back_and_session_stays_usable(database):
+    """T-168 L2: a failed write leaves a Postgres transaction aborted; the retry must roll it back."""
+    from sqlalchemy import text as sql_text
+
+    class Store:
+        def record(self, fingerprint, model, db=None):
+            db.execute(sql_text("INSERT INTO no_such_table_t168 VALUES (1)"))
+
+    provider = _trip_store_provider(Store())
+    with database.sessions() as db:
+        provider._save_trip(db)
+        assert provider.trip_unsaved is True
+        assert db.execute(sql_text("SELECT 1")).scalar() == 1  # InternalError without the rollback
+
+
+def test_rollback_failure_in_the_retry_is_swallowed_and_logged_by_type_only(caplog):
+    class Session:
+        def rollback(self):
+            raise ConnectionError("SECRET-DSN host=x password=y")
+
+    class Store:
+        def record(self, fingerprint, model, db=None):
+            raise RuntimeError("db down")
+
+    provider = _trip_store_provider(Store())
+    provider._save_trip(Session())  # must not raise
+    assert provider.trip_unsaved is True
+    assert "ConnectionError" in caplog.text and "SECRET-DSN" not in caplog.text
+
+
+def test_failed_retry_without_a_caller_session_does_not_need_rollback():
+    class Store:
+        def record(self, fingerprint, model, db=None):
+            raise RuntimeError("db down")
+
+    provider = _trip_store_provider(Store())
+    provider._save_trip()
+    assert provider.trip_unsaved is True
