@@ -30,6 +30,8 @@ upgrade, check, downgrade -1, upgrade, check clean. No live model calls (Scripte
 
 ## Verify
 `cd app/backend && TEST_DATABASE_URL=... python -m pytest -q -o addopts="" tests/test_tender_draft.py` then the full suite.
+Full suite NOT completed in the T-189 session (time limit; it ran about 10 tests a minute here): first 30% had no failure; S5 (16) and
+S4 extract (18) files green. Reviewer must run the full suite (expect 947 + 16).
 
 # STATUS (T-188, slice S4: extraction and checklist API) - code done, awaiting reviewer PASS
 
