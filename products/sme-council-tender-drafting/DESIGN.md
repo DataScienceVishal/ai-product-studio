@@ -202,7 +202,7 @@ All tender and evidence text goes inside `<<<DATA-{nonce}>>> ... <<<END-{nonce}>
 | `POST /packs/{id}/extract` | queue extraction (idempotent) |
 | `GET /packs/{id}/status` | job progress (polled) |
 | `GET /packs/{id}/requirements`, `PATCH /requirements/{id}`, `POST /packs/{id}/requirements`, `POST /packs/{id}/confirm` | checklist review |
-| `POST /evidence/documents`, `GET /evidence`, `DELETE /evidence/documents/{id}` | evidence library |
+| `POST /evidence/documents`, `GET /evidence`, `DELETE /documents/{id}` (tender and evidence documents; any tenant member; 409 `document_in_use` while requirements cite it; evidence becomes a soft delete in S6) | evidence library |
 | `GET /requirements/{id}/evidence` | what retrieval found |
 | `POST /packs/{id}/draft`, `POST /requirements/{id}/redraft`, `PUT /requirements/{id}/draft` (user edit) | drafting |
 | `GET /requirements/{id}/claims` | the claims table |
