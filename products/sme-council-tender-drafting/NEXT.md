@@ -1,3 +1,40 @@
+# STATUS (T-188, slice S4: extraction and checklist API) - code done, awaiting reviewer PASS
+
+Branch `p/sme-council-tender-drafting/T-188`. Not merged. Migration 0015 (requirements.model_json JSONB, flags text[]); alembic
+upgrade, check, downgrade -1, upgrade, check clean. No live model calls.
+
+## Done
+- `app/tender/extract.py`: `ExtractItem` / `ExtractOutput`, `EXTRACT_SPEC` (low effort, 6000 cap), `make_chunks` (5 pages, 1 overlap),
+  quote-on-page check (normalised substring, amber = `quote_verified=false`), word-limit regex cross-check (flag `limit_mismatch`),
+  `merge_items` (same ref, or trigram similarity >= 0.9 on the same or adjacent page), `extract_handler(sessions, task, heartbeat,
+  provider)` registered in `runner.HANDLERS["extract"]`. One task per pack runs all chunks through `run_task` with `AppBudget`.
+  Re-running replaces only the model-origin, still-proposed rows.
+- Routes (routes/tender.py): `POST /packs/{id}/extract` (202, idempotent), `GET /packs/{id}/status`, `GET /packs/{id}/requirements`,
+  `POST /packs/{id}/requirements` (origin=user), `PATCH /requirements/{id}` (keeps `model_json`, sets `edited_by`, origin stays model),
+  `POST /packs/{id}/confirm`. Cross-tenant ids are 404. Signed or exported packs are 409.
+- App-path cost (R3): no special code; a real chunk reserves more than the trial daily cap, so `AppBudget.hold` refuses before the
+  provider is called, and the task ends `failed` with `ai_daily_cap_reached`. Tested with an azure-named provider and large pages.
+- Tests: `tests/test_tender_extract.py` (10). Full backend: 947 passed, 1 skipped (18 extract tests).
+
+## Review fixes (reviewer CHANGES, 1-4, 6, 8)
+A failed or refused extraction resets the pack (`review` if it has live items, else `uploaded`); confirm now also accepts `uploaded`
+(hand-written list). A re-run deletes only origin=model, proposed, unedited rows and dedupes new items against every surviving row
+(edited, confirmed, removed, user). `POST /extract` is 409 unless the pack is uploaded, extracting or review. Same-ref merge needs a
+non-blank ref on the same or an adjacent page. ORM `flags` has `server_default '{}'`.
+Reviewer items left: 5 limit cross-check can flag fine items; 7 `seq` max+1 without a lock or unique constraint; 9 one task per pack;
+10 `source_page` out of range is stored as is. A worker killed without a clean failure (attempts_exhausted) still leaves `extracting`.
+
+## Left
+- Deployment must set `AI_WORKER_THREADS=2` for the runner to start (default 0); without it extraction tasks stay queued.
+- Extraction is one task per pack, not one per chunk (DESIGN 4.6 fan-out): a crash retries the whole pack once. Per-chunk tasks
+  would also make progress visible in `/status`.
+- Requirements are not yet checked against deleted documents beyond the existing FK; `ensure_requirement_document` is not used by
+  the model rows (they come from the pack's own documents).
+- No frontend. No e2e. Merge across multiple tender documents only dedupes inside one document.
+
+## Verify
+`cd app/backend && TEST_DATABASE_URL=... python -m pytest -q -o addopts="" tests/test_tender_extract.py` then the full suite.
+
 # STATUS (T-187, slice S3: AI layer and job runner) - code done, awaiting reviewer PASS
 
 Branch `p/sme-council-tender-drafting/T-187`. Not merged. No migration. No live model calls.

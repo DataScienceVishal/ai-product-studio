@@ -21,8 +21,9 @@ from ..tender import ingest
 from ..tender.chunking import chunk_pages
 from ..tender.evidence import next_numbers, search_evidence
 from ..tender.service import delete_row
-from ..tender_models import DocumentPage, EvidenceItem, SourceDocument, TenderPack
-from ..textsafe import StrippedLine
+from ..tender import extract as _extract  # noqa: F401  (registers the extract handler)
+from ..tender_models import AITask, DocumentPage, EvidenceItem, Requirement, SourceDocument, TenderPack
+from ..textsafe import FreeText, StrippedLine
 
 log = logging.getLogger("app.tender")
 router = APIRouter(prefix="/api", tags=["tender"])
@@ -181,3 +182,124 @@ def _check_pack_size(db: Session, s, tenant_id: uuid.UUID, pack_id: uuid.UUID | 
 def _refusal(code: str) -> tuple[int, str, str]:
     status, message = ingest.REFUSALS[code]
     return status, code, message
+
+
+
+# ---------- extraction and the checklist (S4) ----------
+class RequirementIn(BaseModel):
+    ref: StrippedLine = Field(default="", max_length=40)
+    kind: str = Field(default="question", pattern="^(question|mandatory|deadline|other)$")
+    text: FreeText = Field(min_length=1, max_length=4000)
+    word_limit: int | None = Field(default=None, ge=1, le=100000)
+    page_limit: int | None = Field(default=None, ge=1, le=1000)
+    marks: int | None = Field(default=None, ge=0, le=100000)
+    weight_pct: int | None = Field(default=None, ge=0, le=100)
+    pass_fail: bool = False
+
+
+class RequirementPatch(BaseModel):
+    ref: StrippedLine | None = Field(default=None, max_length=40)
+    kind: str | None = Field(default=None, pattern="^(question|mandatory|deadline|other)$")
+    text: FreeText | None = Field(default=None, min_length=1, max_length=4000)
+    word_limit: int | None = Field(default=None, ge=1, le=100000)
+    page_limit: int | None = Field(default=None, ge=1, le=1000)
+    marks: int | None = Field(default=None, ge=0, le=100000)
+    weight_pct: int | None = Field(default=None, ge=0, le=100)
+    pass_fail: bool | None = None
+    status: str | None = Field(default=None, pattern="^(proposed|confirmed|removed)$")
+
+
+def req_out(r: Requirement) -> dict:
+    return {"id": str(r.id), "pack_id": str(r.pack_id), "seq": r.seq, "ref": r.ref, "kind": r.kind, "text": r.text,
+            "word_limit": r.word_limit, "page_limit": r.page_limit, "marks": r.marks, "weight_pct": r.weight_pct,
+            "pass_fail": r.pass_fail, "source_document_id": str(r.source_document_id) if r.source_document_id else None,
+            "source_page": r.source_page, "source_quote": r.source_quote, "quote_verified": r.quote_verified,
+            "origin": r.origin, "status": r.status, "flags": list(r.flags or []), "edited": r.edited_by is not None}
+
+
+def task_out(t: AITask) -> dict:
+    return {"id": str(t.id), "kind": t.kind, "status": t.status, "error_code": t.error_code, "attempts": t.attempts}
+
+
+@router.post("/packs/{pack_id}/extract", status_code=202)
+def queue_extract(pack_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
+    """Idempotent: a queued or running extraction for the pack is returned instead of a second one."""
+    pack = get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
+    if pack.status not in ("uploaded", "extracting", "review"):  # drafting and later: the checklist is confirmed
+        raise AppError(409, "pack_locked", "The checklist for this pack is already confirmed.")
+    db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"), {"k": f"extract:{pack_id}"})
+    live = db.scalar(scoped(AITask, me.tenant.id).where(AITask.pack_id == pack_id, AITask.kind == "extract",
+                                                        AITask.status.in_(("queued", "running"))))
+    if live is not None:
+        return task_out(live)
+    if not db.scalar(select(func.count()).select_from(SourceDocument).where(
+            SourceDocument.tenant_id == me.tenant.id, SourceDocument.pack_id == pack_id)):
+        raise AppError(409, "no_documents", "Upload the tender document first.")
+    task = AITask(tenant_id=me.tenant.id, pack_id=pack_id, kind="extract")
+    db.add(task)
+    pack.status = "extracting"
+    db.commit()
+    return task_out(task)
+
+
+@router.get("/packs/{pack_id}/status")
+def pack_status(pack_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
+    pack = get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
+    tasks = db.scalars(scoped(AITask, me.tenant.id).where(AITask.pack_id == pack_id).order_by(AITask.created_at.desc()).limit(10))
+    return {"pack": pack_out(pack), "tasks": [task_out(t) for t in tasks]}
+
+
+@router.get("/packs/{pack_id}/requirements")
+def list_requirements(pack_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
+    get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
+    rows = db.scalars(scoped(Requirement, me.tenant.id).where(Requirement.pack_id == pack_id,
+                                                              Requirement.status != "removed").order_by(Requirement.seq))
+    return {"requirements": [req_out(r) for r in rows]}
+
+
+@router.post("/packs/{pack_id}/requirements", status_code=201)
+def add_requirement(pack_id: uuid.UUID, body: RequirementIn, me: Current = Depends(current), db: Session = Depends(get_db)):
+    pack = get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
+    if pack.status in ("signed", "exported"):
+        raise AppError(409, "pack_locked", "This pack is already signed off.")
+    seq = (db.scalar(select(func.coalesce(func.max(Requirement.seq), 0)).where(
+        Requirement.tenant_id == me.tenant.id, Requirement.pack_id == pack_id)) or 0) + 1
+    r = Requirement(tenant_id=me.tenant.id, pack_id=pack_id, seq=seq, origin="user", status="proposed", edited_by=me.user.id,
+                    **body.model_dump())
+    db.add(r)
+    db.commit()
+    return req_out(r)
+
+
+@router.patch("/requirements/{req_id}")
+def edit_requirement(req_id: uuid.UUID, body: RequirementPatch, me: Current = Depends(current), db: Session = Depends(get_db)):
+    """The model's original item stays in model_json; the row keeps origin=model and records who edited it."""
+    r = get_scoped(db, Requirement, me.tenant.id, req_id, "requirement")
+    pack = get_scoped(db, TenderPack, me.tenant.id, r.pack_id, "tender pack")
+    if pack.status in ("signed", "exported"):
+        raise AppError(409, "pack_locked", "This pack is already signed off.")
+    changes = body.model_dump(exclude_unset=True)
+    for k, v in changes.items():
+        if v is None and k in ("text", "kind", "status", "pass_fail", "ref"):
+            raise AppError(422, "invalid_input", f"{k} cannot be empty.")
+        setattr(r, k, v)
+    if set(changes) - {"status"}:
+        r.edited_by = me.user.id
+    db.commit()
+    return req_out(r)
+
+
+@router.post("/packs/{pack_id}/confirm")
+def confirm_checklist(pack_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
+    pack = get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
+    if pack.status not in ("uploaded", "review", "drafting"):  # uploaded: a list written by hand
+        raise AppError(409, "not_ready", "Run the extraction and review the list first.")
+    rows = list(db.scalars(scoped(Requirement, me.tenant.id).where(Requirement.pack_id == pack_id, Requirement.status == "proposed")))
+    if not db.scalar(select(func.count()).select_from(Requirement).where(
+            Requirement.tenant_id == me.tenant.id, Requirement.pack_id == pack_id, Requirement.status != "removed")):
+        raise AppError(409, "empty_checklist", "There is nothing to confirm yet.")
+    for r in rows:
+        r.status = "confirmed"
+    pack.status, pack.confirmed_by, pack.confirmed_at = "drafting", me.user.id, datetime.now(timezone.utc)
+    db.commit()
+    return {"confirmed": len(rows), "pack": pack_out(pack)}
