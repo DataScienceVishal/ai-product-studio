@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, Uuid, false, func, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, Uuid, false, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base
@@ -89,6 +89,22 @@ class BillingEvent(Base):
     __tablename__ = "billing_events"
     id: Mapped[str] = mapped_column(String(255), primary_key=True)
     received_at: Mapped[datetime] = _created()
+
+
+class PendingCancel(Base):
+    """T-175: a subscription that must be cancelled at the provider (a lapsed one a new checkout replaced). Written
+    in the same transaction as the takeover, deleted once the cancel worked, retried by the tenant's next billing
+    event and by `python -m app.maintenance cancels`. Outlives the tenant (the old subscription may still bill)."""
+    __tablename__ = "pending_cancels"
+    __table_args__ = (UniqueConstraint("provider", "ref", name="uq_pending_cancels_provider_ref"),)
+    id: Mapped[uuid.UUID] = _id()
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True,
+                                                        index=True)
+    provider: Mapped[str] = mapped_column(String(40), nullable=False)
+    ref: Mapped[str] = mapped_column(String(255), nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = _created()
 
 
 class AIUsage(Base):

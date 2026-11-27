@@ -56,7 +56,9 @@ The tests prove tenant isolation (and that every private route needs sign-in and
 header), session revocation, rate limits, the AI cap under concurrency, the billing provider contract, idempotent
 and in-order webhooks, account deletion at the provider, log redaction and the retention purge.
 
-Run the retention purge daily: `python -m app.maintenance purge`. What is stored and for how long is in `DATA.md`.
+Run the retention purge daily: `python -m app.maintenance purge`.
+
+Run `python -m app.maintenance cancels` every few minutes or hourly (T-175): it retries subscription cancels that failed after a new checkout replaced a lapsed subscription (table `pending_cancels`, written in the takeover transaction; also retried on the tenant's next billing event). It prints counts, and each failure is logged at ERROR. Add it as a second Container Apps job next to the purge job. What is stored and for how long is in `DATA.md`.
 Security findings and their status are in `SECURITY.md`; the code review is in `reviews/`.
 
 ## One image, one origin
