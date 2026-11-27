@@ -8,6 +8,7 @@ from datetime import datetime
 
 from sqlalchemy import (ARRAY, BigInteger, Boolean, Computed, DateTime, ForeignKey, ForeignKeyConstraint, Index,
                         Integer, String, Text, UniqueConstraint, Uuid, text)
+from sqlalchemy import text as sa_text
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -98,7 +99,8 @@ class Requirement(Base):
     edited_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     status: Mapped[str] = mapped_column(String(10), nullable=False, default="proposed")  # proposed|confirmed|removed
     model_json: Mapped[dict | None] = mapped_column(JSONB)  # the model's item exactly as returned; user edits never change it
-    flags: Mapped[list[str]] = mapped_column(ARRAY(String(30)), nullable=False, default=list)  # limit_mismatch ...
+    flags: Mapped[list[str]] = mapped_column(ARRAY(String(30)), nullable=False, default=list,
+                                        server_default=sa_text("'{}'"))  # limit_mismatch ...
 
 
 class EvidenceCounter(Base):

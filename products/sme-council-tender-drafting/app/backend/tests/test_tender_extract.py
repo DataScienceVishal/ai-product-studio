@@ -174,4 +174,52 @@ def test_with_azure_settings_the_reservation_is_refused_not_sent(client, app, db
     t = db.scalar(select(AITask))
     db.refresh(t)
     assert t.status == "failed" and t.error_code in ("ai_daily_cap_reached", "ai_cap_reached")
+    # the pack is not stuck in "extracting": the user can add items by hand and confirm
+    assert client.get(f"/api/packs/{pid}/status").json()["pack"]["status"] == "uploaded"
+    assert client.post(f"/api/packs/{pid}/requirements", json={"text": "Hand-added question"}).status_code == 201
+    assert client.post(f"/api/packs/{pid}/confirm").status_code == 200
     assert sent == [] and not list(db.scalars(select(AIUsage).where(AIUsage.feature.like("extract%"))))
+
+
+def test_a_failed_run_on_a_pack_with_items_goes_back_to_review(client, app, db):
+    pid, _ = reqs_after(client, app, None)
+    assert client.post(f"/api/packs/{pid}/extract").status_code == 202
+
+    class Boom(ScriptedFakeAI):
+        def complete(self, *a, **k):
+            raise RuntimeError("down")
+    run(app, Boom())
+    assert client.get(f"/api/packs/{pid}/status").json()["pack"]["status"] == "review"
+
+
+@pytest.mark.parametrize("status", ["drafting", "checking", "ready", "signed", "exported"])
+def test_extract_is_409_once_the_checklist_is_confirmed_or_later(client, db, status):
+    from app.tender_models import TenderPack
+    pid = setup_pack(client)
+    db.query(TenderPack).update({"status": status})
+    db.commit()
+    assert client.post(f"/api/packs/{pid}/extract").status_code == 409
+
+
+def test_a_rerun_replaces_only_unedited_proposed_model_rows(client, app, db):
+    pid, reqs = reqs_after(client, app, None)
+    edited, removed, confirmed_like = reqs[0]["id"], reqs[1]["id"], reqs[2]["id"]
+    client.patch(f"/api/requirements/{edited}", json={"text": "Describe your quality system (maximum 300 words). Edited"})
+    client.patch(f"/api/requirements/{removed}", json={"status": "removed"})
+    client.patch(f"/api/requirements/{confirmed_like}", json={"status": "confirmed"})
+    mine = client.post(f"/api/packs/{pid}/requirements", json={"text": "My own item"}).json()["id"]
+    assert client.post(f"/api/packs/{pid}/extract").status_code == 202
+    run(app)
+    rows = {r.id: r for r in db.scalars(select(Requirement).where(Requirement.pack_id == pid))}
+    ids = {str(i) for i in rows}
+    assert {edited, removed, confirmed_like, mine} <= ids  # nothing the user touched was deleted
+    assert len(rows) == 4  # and the model's items were not added a second time
+    assert [r.text for r in rows.values() if str(r.id) == edited][0].endswith("Edited")
+
+
+def test_a_blank_ref_or_a_far_page_does_not_merge():
+    a = {"ref": "", "text": "First thing to do here", "source_page": 1}
+    b = {"ref": "", "text": "Second quite different matter", "source_page": 1}
+    c = {"ref": "1", "text": "Same ref far away on another page entirely", "source_page": 9}
+    d = {"ref": "1", "text": "A different question about pricing", "source_page": 1}
+    assert ex.merge_items([a, b, c, d]) == [a, b, c, d]  # blank refs never match; ref 1 on page 9 is not ref 1 on page 1

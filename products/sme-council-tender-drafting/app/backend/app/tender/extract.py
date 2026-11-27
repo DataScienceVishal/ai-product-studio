@@ -117,19 +117,20 @@ def similarity(a: str, b: str) -> float:
     return len(ta & tb) / len(ta | tb) if ta and tb else 0.0
 
 
-def merge_items(items: list[dict]) -> list[dict]:
-    """Drop duplicates seen in overlap pages: the same non-empty ref, or text with trigram similarity >= 0.9 on the
-    same or adjacent pages. The first one seen wins."""
+def same_item(it: dict, k: dict) -> bool:
+    """The same requirement: a non-blank equal ref on the same or an adjacent page, or near-identical text there."""
+    if abs(it["source_page"] - k["source_page"]) > 1:
+        return False
+    ref, other = (it["ref"] or "").strip().casefold(), (k["ref"] or "").strip().casefold()
+    return (bool(ref) and ref == other) or similarity(it["text"], k["text"]) >= 0.9
+
+
+def merge_items(items: list[dict], existing: list[dict] | None = None) -> list[dict]:
+    """Drop duplicates seen in overlap pages, and items that match a row that already exists (`existing`: rows that
+    survive a re-run). The first one seen wins."""
     kept: list[dict] = []
     for it in items:
-        dup = False
-        for k in kept:
-            same_ref = bool(it["ref"]) and it["ref"].strip().casefold() == k["ref"].strip().casefold()
-            near = abs(it["source_page"] - k["source_page"]) <= 1 and similarity(it["text"], k["text"]) >= 0.9
-            if same_ref or near:
-                dup = True
-                break
-        if not dup:
+        if not any(same_item(it, k) for k in [*(existing or []), *kept]):
             kept.append(it)
     return kept
 
@@ -147,6 +148,26 @@ def check_item(item: dict, pages: dict[int, str]) -> tuple[bool, list[str]]:
 
 
 def extract_handler(sessions: sessionmaker, task: AITask, heartbeat, provider) -> tuple[int, int]:
+    try:
+        return _extract(sessions, task, heartbeat, provider)
+    except runner.LeaseLost:
+        raise  # another worker owns the task now; leave the pack to it
+    except BaseException:
+        _reset_pack_status(sessions, task)  # a failed run (budget refusal, bad output) must not leave `extracting`
+        raise
+
+
+def _reset_pack_status(sessions: sessionmaker, task: AITask) -> None:
+    with sessions() as db:
+        has_items = db.scalar(select(func.count()).select_from(Requirement).where(
+            Requirement.tenant_id == task.tenant_id, Requirement.pack_id == task.pack_id, Requirement.status != "removed"))
+        db.execute(update(TenderPack).where(TenderPack.tenant_id == task.tenant_id, TenderPack.id == task.pack_id,
+                                            TenderPack.status == "extracting")
+                   .values(status="review" if has_items else "uploaded"))
+        db.commit()
+
+
+def _extract(sessions: sessionmaker, task: AITask, heartbeat, provider) -> tuple[int, int]:
     """Runs every chunk of the pack's tender documents through the extract task, then rewrites the proposed list."""
     settings = _settings
     with sessions() as db:
@@ -175,11 +196,21 @@ def extract_handler(sessions: sessionmaker, task: AITask, heartbeat, provider) -
         for it in merge_items(found):
             collected.append((doc_id, it, pages))
     with sessions() as db:
+        # Only untouched model proposals are replaced; edited, confirmed, removed and user rows survive a re-run.
         db.execute(delete(Requirement).where(Requirement.tenant_id == task.tenant_id, Requirement.pack_id == task.pack_id,
-                                             Requirement.origin == "model", Requirement.status == "proposed"))
+                                             Requirement.origin == "model", Requirement.status == "proposed",
+                                             Requirement.edited_by.is_(None)))
+        existing = [{"ref": r.ref, "text": r.text, "source_page": r.source_page or 0, "doc": r.source_document_id}
+                    for r in db.scalars(select(Requirement).where(Requirement.tenant_id == task.tenant_id,
+                                                                  Requirement.pack_id == task.pack_id))]
         base = db.scalar(select(func.coalesce(func.max(Requirement.seq), 0)).where(
             Requirement.tenant_id == task.tenant_id, Requirement.pack_id == task.pack_id)) or 0
-        for n, (doc_id, it, pages) in enumerate(collected, 1):
+        fresh = []
+        for doc_id, it, pages in collected:
+            mine = [e for e in existing if e["doc"] in (doc_id, None)]
+            if merge_items([it], mine):
+                fresh.append((doc_id, it, pages))
+        for n, (doc_id, it, pages) in enumerate(fresh, 1):
             verified, flags = check_item(it, pages)
             kind = it["kind"] if it["kind"] in ("question", "mandatory", "deadline", "other") else "other"
             db.add(Requirement(tenant_id=task.tenant_id, pack_id=task.pack_id, seq=base + n, ref=it["ref"][:40], kind=kind,

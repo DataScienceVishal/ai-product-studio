@@ -14,7 +14,15 @@ upgrade, check, downgrade -1, upgrade, check clean. No live model calls.
   `POST /packs/{id}/confirm`. Cross-tenant ids are 404. Signed or exported packs are 409.
 - App-path cost (R3): no special code; a real chunk reserves more than the trial daily cap, so `AppBudget.hold` refuses before the
   provider is called, and the task ends `failed` with `ai_daily_cap_reached`. Tested with an azure-named provider and large pages.
-- Tests: `tests/test_tender_extract.py` (10). Full backend: 939 passed, 1 skipped.
+- Tests: `tests/test_tender_extract.py` (10). Full backend: 947 passed, 1 skipped (18 extract tests).
+
+## Review fixes (reviewer CHANGES, 1-4, 6, 8)
+A failed or refused extraction resets the pack (`review` if it has live items, else `uploaded`); confirm now also accepts `uploaded`
+(hand-written list). A re-run deletes only origin=model, proposed, unedited rows and dedupes new items against every surviving row
+(edited, confirmed, removed, user). `POST /extract` is 409 unless the pack is uploaded, extracting or review. Same-ref merge needs a
+non-blank ref on the same or an adjacent page. ORM `flags` has `server_default '{}'`.
+Reviewer items left: 5 limit cross-check can flag fine items; 7 `seq` max+1 without a lock or unique constraint; 9 one task per pack;
+10 `source_page` out of range is stored as is. A worker killed without a clean failure (attempts_exhausted) still leaves `extracting`.
 
 ## Left
 - Deployment must set `AI_WORKER_THREADS=2` for the runner to start (default 0); without it extraction tasks stay queued.

@@ -225,8 +225,8 @@ def task_out(t: AITask) -> dict:
 def queue_extract(pack_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
     """Idempotent: a queued or running extraction for the pack is returned instead of a second one."""
     pack = get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
-    if pack.status in ("signed", "exported"):
-        raise AppError(409, "pack_locked", "This pack is already signed off.")
+    if pack.status not in ("uploaded", "extracting", "review"):  # drafting and later: the checklist is confirmed
+        raise AppError(409, "pack_locked", "The checklist for this pack is already confirmed.")
     db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"), {"k": f"extract:{pack_id}"})
     live = db.scalar(scoped(AITask, me.tenant.id).where(AITask.pack_id == pack_id, AITask.kind == "extract",
                                                         AITask.status.in_(("queued", "running"))))
@@ -292,7 +292,7 @@ def edit_requirement(req_id: uuid.UUID, body: RequirementPatch, me: Current = De
 @router.post("/packs/{pack_id}/confirm")
 def confirm_checklist(pack_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
     pack = get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
-    if pack.status not in ("review", "drafting"):
+    if pack.status not in ("uploaded", "review", "drafting"):  # uploaded: a list written by hand
         raise AppError(409, "not_ready", "Run the extraction and review the list first.")
     rows = list(db.scalars(scoped(Requirement, me.tenant.id).where(Requirement.pack_id == pack_id, Requirement.status == "proposed")))
     if not db.scalar(select(func.count()).select_from(Requirement).where(
