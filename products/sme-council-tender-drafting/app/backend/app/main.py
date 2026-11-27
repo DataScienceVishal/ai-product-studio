@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from . import __version__, errors, spa
+from .tender.runner import Runner
 from .ai import AIProvider, AISlots, TripStore, build_provider
 from .billing import BillingProvider, build_billing
 from .config import Settings
@@ -177,7 +178,13 @@ def create_app(settings: Settings | None = None, *, ai: AIProvider | None = None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        runner = None
+        if settings.ai_worker_threads > 0:  # off by default and in tests (DESIGN 4.6)
+            runner = Runner(app.state.db.sessions, settings.ai_worker_threads, settings.ai_task_lease_seconds)
+            runner.start()
         yield
+        if runner is not None:
+            runner.stop()
         app.state.limiter.shutdown()
         app.state.db.dispose()
 
