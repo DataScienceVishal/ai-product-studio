@@ -85,7 +85,7 @@ def sweep_pending_cancels(db: Session, clients: dict, now: datetime | None = Non
         if last_attempt_at is not None and now - last_attempt_at < routes.cancel_backoff(attempts or 0):
             continue
         try:
-            result = routes.attempt_pending_cancel(db, row_id, client)
+            result = routes.attempt_pending_cancel(db, row_id, client, backoff_now=now)
         except Exception:  # one bad row (a stale or deleted one, a database error) must not stop the run
             db.rollback()
             log.error("pending cancel could not be processed", extra={"old_subscription": ref}, exc_info=True)

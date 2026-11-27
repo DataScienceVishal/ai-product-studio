@@ -196,12 +196,12 @@ def test_b1_one_bad_row_does_not_stop_the_sweep(owner, database, monkeypatch):
         db.commit()
     real, seen = routes.attempt_pending_cancel, []
 
-    def flaky(db, row_id, billing):
+    def flaky(db, row_id, billing, **kwargs):
         ref = db.scalar(select(PendingCancel.ref).where(PendingCancel.id == row_id))
         seen.append(ref)
         if ref == "old_1":
             raise RuntimeError("stale data")
-        return real(db, row_id, billing)
+        return real(db, row_id, billing, **kwargs)
 
     monkeypatch.setattr(routes, "attempt_pending_cancel", flaky)
     provider = MockBilling("x", "https://app.test")
@@ -390,3 +390,37 @@ def test_s6_the_tenth_failure_logs_one_critical_line_with_ids_only_then_warnings
     lines, _ = run()
     assert [lvl for lvl, _m in lines] == ["WARNING"]
     assert _row(database, "old_1").attempts == 12
+
+
+def test_s2_the_sweep_rechecks_the_backoff_under_the_lock(owner, database, monkeypatch):
+    """Another worker attempted the row between the sweep's list and its lock: the sweep must skip it."""
+    import app.routes.billing as routes
+    client, _ = owner
+    now = datetime.now(timezone.utc)
+    _seed(database, _tenant_id(client), "old_1", attempts=2, last_attempt_at=now - timedelta(minutes=10))  # due
+    real = routes.attempt_pending_cancel
+
+    def other_worker_first(db, row_id, billing, **kwargs):
+        with database.sessions() as other:  # the other worker's failed attempt, committed
+            row = other.get(PendingCancel, row_id)
+            row.attempts, row.last_attempt_at = 3, now
+            other.commit()
+        return real(db, row_id, billing, **kwargs)
+
+    monkeypatch.setattr(routes, "attempt_pending_cancel", other_worker_first)
+    provider = MockBilling("x", "https://app.test")
+    with database.sessions() as db:
+        assert sweep_pending_cancels(db, {"stripe": provider}, now=now) == {"cancelled": 0, "failed": 0}
+    assert provider.cancelled == [] and _row(database, "old_1").attempts == 3
+
+
+def test_s2_the_webhook_retry_ignores_the_backoff(owner, database):
+    """Only the sweep backs off: a retry after a billing event (no due_at) still tries a row that was just attempted."""
+    from app.routes.billing import attempt_pending_cancel
+    client, _ = owner
+    _seed(database, _tenant_id(client), "old_1", attempts=2, last_attempt_at=datetime.now(timezone.utc))
+    row_id = _row(database, "old_1").id
+    provider = MockBilling("x", "https://app.test")
+    with database.sessions() as db:
+        assert attempt_pending_cancel(db, row_id, provider) is True
+    assert provider.cancelled == ["old_1"]
