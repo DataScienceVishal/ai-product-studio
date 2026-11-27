@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 import secrets
 import uuid
 from dataclasses import dataclass
@@ -114,11 +115,15 @@ def strict_schema(model: type[BaseModel]) -> dict:
     return schema
 
 
+def full_system(spec: TaskSpec) -> str:
+    return spec.system.rstrip() + "\n\n" + INJECTION_RULE
+
+
 def canonical_key(spec: TaskSpec, payload: dict, schema: dict | None = None) -> str:
     """sha256 of the canonical request: task, prompt version, model, effort, system template, sorted-key JSON of the
     inputs and the schema. Computed BEFORE the nonce is made, so the same inputs always give the same key (R1)."""
     body = {"task": spec.name, "prompt_version": spec.prompt_version, "model": spec.model, "effort": spec.effort,
-            "system": spec.system, "input": payload, "schema": schema if schema is not None else strict_schema(spec.output_model)}
+            "system": full_system(spec), "input": payload, "schema": schema if schema is not None else strict_schema(spec.output_model)}
     raw = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
@@ -139,6 +144,15 @@ def _fresh_nonce(payload: dict) -> str:
         nonce = secrets.token_hex(8)  # 16 hex characters
         if nonce not in blob:
             return nonce
+
+
+_SAFE = re.compile(r"^[A-Za-z0-9_]{1,40}$")
+
+
+def _safe_loc(loc) -> str:
+    """Error locations go outside the DATA block, so only plain identifiers and indexes are echoed (model-chosen
+    dict keys could carry injected text). The repair is a stateless re-ask: the previous answer is not repeated."""
+    return ".".join(str(p) if isinstance(p, int) or _SAFE.match(str(p)) else "?" for p in loc)
 
 
 def _cache_get(sessions: sessionmaker, tenant_id: uuid.UUID, key: str, spec: TaskSpec) -> TaskResult | None:
@@ -173,21 +187,24 @@ def run_task(spec: TaskSpec, payload: dict, tenant_id: uuid.UUID, budget: Budget
         return hit
     recorded = getattr(provider, "recorded_answer", None)              # ScriptedFakeAI: a recording found by key
     if recorded is not None:
-        data = recorded(spec.name, key)
+        try:
+            data = recorded(spec.name, key)
+        except (ValueError, OSError):  # a corrupt fixture (JSONDecodeError is a ValueError)
+            raise TaskFailed("ai_invalid_output", "The saved answer for this task is not valid.") from None
         if data is not None:
             try:
                 return TaskResult(spec.output_model.model_validate(data), False, 0, 0, spec.model)
             except ValidationError:
                 raise TaskFailed("ai_invalid_output", "The saved answer for this task is not valid.") from None
     ensure_ai_enabled(provider)
-    system = spec.system.rstrip() + "\n\n" + INJECTION_RULE
+    system = full_system(spec)
     user = build_user(payload, _fresh_nonce(payload))                  # 3.
     cap, repaired, doubled = spec.max_output_tokens, False, False
     total_in = total_out = 0
     while True:
-        handle = budget.hold(reservation_estimate(provider, system, user, cap))   # 4.
-        if before_call is not None:
+        if before_call is not None:  # before the hold: a lost lease must not leave a reservation behind
             before_call()
+        handle = budget.hold(reservation_estimate(provider, system, user, cap))   # 4.
         try:
             result = provider.complete(system, user, cap, json_schema=schema, effort=spec.effort)   # 5.
         except AIUnavailable as error:
@@ -210,7 +227,7 @@ def run_task(spec: TaskSpec, payload: dict, tenant_id: uuid.UUID, budget: Budget
             if repaired:
                 raise TaskFailed("ai_invalid_output", "The AI answer was not in the expected form. Retry or edit by hand.") from None
             repaired = True
-            problems = "; ".join(f"{'.'.join(map(str, e['loc']))}: {e['type']}" for e in error.errors()[:5])
+            problems = "; ".join(f"{_safe_loc(e['loc'])}: {e['type']}" for e in error.errors()[:5])
             user = (user + "\n\nYour previous answer was not valid for the schema (" + problems +
                     "). Reply again with only the corrected JSON.")
             continue

@@ -22,7 +22,12 @@ from ..tender_models import AITask
 log = logging.getLogger("app.tender.runner")
 MAX_ATTEMPTS = 2
 # kind -> handler(sessions, task, heartbeat) -> (input_tokens, output_tokens). Slices S4 to S6 register theirs.
-Handler = Callable[[sessionmaker, AITask, Callable[[], None]], tuple[int, int]]
+# `provider` is the worker provider the Runner built (180 s limits); a handler never builds its own.
+Handler = Callable[[sessionmaker, AITask, Callable[[], None], object], tuple[int, int]]
+
+
+class LeaseLost(Exception):
+    """This worker no longer owns the task (its lease expired and another worker took it over). Stop quietly."""
 HANDLERS: dict[str, Handler] = {}
 
 
@@ -52,23 +57,34 @@ def claim_next(sessions: sessionmaker, lease: timedelta, now: datetime | None = 
             return task
 
 
+def _owned(task: AITask):
+    """Fence: only the attempt that claimed the row may touch it. A takeover bumps `attempts`."""
+    return (AITask.tenant_id == task.tenant_id, AITask.id == task.id, AITask.attempts == task.attempts,
+            AITask.status == "running")
+
+
 def extend_lease(sessions: sessionmaker, task: AITask, lease: timedelta) -> None:
     with sessions() as db:
-        db.execute(update(AITask).where(AITask.tenant_id == task.tenant_id, AITask.id == task.id,
-                                        AITask.status == "running").values(lease_until=_now() + lease))
+        result = db.execute(update(AITask).where(*_owned(task)).values(lease_until=_now() + lease))
         db.commit()
+    if result.rowcount == 0:
+        raise LeaseLost(str(task.id))
 
 
-def _finish(sessions: sessionmaker, task: AITask, status: str, code: str | None, tin: int, tout: int) -> None:
+def _finish(sessions: sessionmaker, task: AITask, status: str, code: str | None, tin: int, tout: int) -> bool:
     with sessions() as db:
-        db.execute(update(AITask).where(AITask.tenant_id == task.tenant_id, AITask.id == task.id)
-                   .values(status=status, error_code=code, lease_until=None, input_tokens=AITask.input_tokens + tin,
-                           output_tokens=AITask.output_tokens + tout))
+        result = db.execute(update(AITask).where(*_owned(task))
+                            .values(status=status, error_code=code, lease_until=None,
+                                    input_tokens=AITask.input_tokens + tin, output_tokens=AITask.output_tokens + tout))
         db.commit()
+    if result.rowcount == 0:
+        log.warning("ai task result dropped: lease lost", extra={"task": str(task.id)})
+        return False
+    return True
 
 
 def run_one(sessions: sessionmaker, lease: timedelta, handlers: dict[str, Handler] | None = None,
-            now: datetime | None = None) -> bool:
+            now: datetime | None = None, provider=None) -> bool:
     """Claim and run one task. Returns False when there was nothing to do."""
     task = claim_next(sessions, lease, now)
     if task is None:
@@ -78,7 +94,9 @@ def run_one(sessions: sessionmaker, lease: timedelta, handlers: dict[str, Handle
         _finish(sessions, task, "failed", "no_handler", 0, 0)
         return True
     try:
-        tin, tout = handler(sessions, task, lambda: extend_lease(sessions, task, lease))
+        tin, tout = handler(sessions, task, lambda: extend_lease(sessions, task, lease), provider)
+    except LeaseLost:
+        log.warning("ai task lease lost; another worker owns it", extra={"task": str(task.id)})
     except AppError as error:  # budget refusals, truncation, invalid output: fixed codes, no document text
         _finish(sessions, task, "failed", error.code[:40], 0, 0)
     except Exception:
@@ -93,7 +111,8 @@ class Runner:
     """`threads` workers polling the queue. threads=0 starts nothing (tests drive run_one directly)."""
 
     def __init__(self, sessions: sessionmaker, threads: int, lease_seconds: int, poll_seconds: float = 2.0,
-                 handlers: dict[str, Handler] | None = None):
+                 handlers: dict[str, Handler] | None = None, provider=None):
+        self.provider = provider
         self.sessions, self.lease, self.poll = sessions, timedelta(seconds=lease_seconds), poll_seconds
         self.handlers, self.stop_event = handlers, threading.Event()
         self.threads = [threading.Thread(target=self._loop, name=f"ai-worker-{i}", daemon=True) for i in range(threads)]
@@ -110,7 +129,7 @@ class Runner:
     def _loop(self) -> None:
         while not self.stop_event.is_set():
             try:
-                busy = run_one(self.sessions, self.lease, self.handlers)
+                busy = run_one(self.sessions, self.lease, self.handlers, provider=self.provider)
             except Exception:
                 log.error("ai worker loop error", exc_info=True)
                 busy = False

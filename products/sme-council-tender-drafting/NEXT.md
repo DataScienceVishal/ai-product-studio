@@ -17,7 +17,7 @@ Branch `p/sme-council-tender-drafting/T-187`. Not merged. No migration. No live 
 - `app/tender/runner.py`: `claim_next` (FOR UPDATE SKIP LOCKED, queued or expired lease), `extend_lease` (handlers call
   `heartbeat()`), `run_one`, `Runner` threads; max 2 attempts then `attempts_exhausted`. `HANDLERS` registry is empty: S4 to S6 register.
 - `ai_access(sub, settings)` in billing.py; the test vehicle uses it. 90-day `ai_cache` purge in maintenance.py; DATA.md row updated.
-- Tests: `tests/test_tender_ai.py` (23). Full backend: 921 passed, 1 skipped (898 + 23).
+- Tests: `tests/test_tender_ai.py` (23). Full backend: 928 passed, 1 skipped (after review fixes; 898 + 30).
 
 ## Design decisions
 - ScriptedFakeAI recordings are looked up by `run_task` through `provider.recorded_answer(task, key)` because `complete()` only sees
@@ -25,6 +25,14 @@ Branch `p/sme-council-tender-drafting/T-187`. Not merged. No migration. No live 
 - Runner threads default OFF (`AI_WORKER_THREADS=0`); set 2 in the deployment once S4 registers the extract handler. Lease
   `AI_TASK_LEASE_SECONDS` 600.
 - Handlers must build their provider with `build_worker_provider(settings)`.
+
+## Review fixes (reviewer CHANGES at 2c107cc)
+C1 runner fenced on (attempts, status=running); `extend_lease` raises `LeaseLost`, `_finish` drops a stale result; C2 `before_call` runs
+before `budget.hold`; injection rule is in the cache key; repair text echoes only `[A-Za-z0-9_]` locations; `Runner` builds the worker
+provider and passes it as the 4th handler argument (handler signature is now `(sessions, task, heartbeat, provider)`); corrupt fixture
+-> `TaskFailed("ai_invalid_output")`.
+Reviewer suggestions left: 1 real SKIP LOCKED test with a held row lock; 2 failed tasks record 0 tokens on `ai_tasks`;
+5 `reserve()` in-flight window is 2 min but worker calls may take 180 s (note for S4).
 
 ## Left
 - No HTTP route enqueues tasks yet (S4). Billing routes still call `has_access` directly (they only act on paid subscriptions).
