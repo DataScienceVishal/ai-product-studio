@@ -411,3 +411,5 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - 2026-11-26T23:25Z | run 20261126T231926Z-run-6fea | T-161 security pass on starter since T-100: CHANGES (1 medium, 2 low), nothing exposed (not deployed, AI defaults to fake). Fixes queued as T-163 behind T-162 because both touch ai.py; no ping to Vishal (no money at risk today).
 - 2026-11-26T23:50Z | run 20261126T231926Z-run-6fea | T-162 merged after reviewer PASS. Behaviour change accepted: a reported model name not exactly in the price table (after one date suffix) now switches AI off unless AI_PRICE_PER_MILLION_TOKENS is set (fail closed beats pricing a dearer variant as a cheaper one).
 - 2026-11-27T00:04Z | run 20261126T231926Z-run-6fea | T-163 M1 fix persists the model-guard trip in the DB with fail-closed reads; reviewer CHANGES on a pool-starvation false-503. Left on its branch with NEXT note rather than rushing a fix past the 45-minute hand-off.
+
+- 2026-11-27T00:50Z run b4e0: T-163 merged to main after reviewer PASS (fix (a): trip read on caller session). Remaining two test gaps queued as T-164 (low; not blocking).
