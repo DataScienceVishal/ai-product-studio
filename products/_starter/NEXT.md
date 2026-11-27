@@ -345,3 +345,7 @@ Done: S1 retry-loop mask now goes to fd 3 (`exec 3>&1`), with a test that runs t
 S6 separate errors for a missing admin and a disallowed admin name; S2 first-deploy checklist item 6 (readiness probe vs `/healthz`, fallback);
 S3 cleanup step is `if: always() && steps.dbsetup.outcome != 'skipped'`; S4 SECURITY.md row 5 says passwordless per ADR 0003.
 Skipped: S5 (looser text checks, actionlint/shellcheck in CI), ADR 0002 (slice 5), state/ files.
+
+## T-173 team (branch p/_starter/T-173-team)
+
+Fixes from `reviews/T-172-team-review.md`: `invite` takes a per-tenant `FOR NO KEY UPDATE` lock on the tenant row (concurrent resends can no longer leave two live links or cap+1 pending; NO KEY so it cannot deadlock with `accept`, which takes a KEY SHARE on the tenant). `accept` reads the invitation `FOR UPDATE`, so a just-revoked or replaced link cannot create an account. B7 revoke uses plain `email =` (emails are only written by `invite`, lower-cased by the `Email` type) and migration 0009 adds `ix_invitations_email`. Race tests in `backend/tests/test_team.py` hold a row lock in a second connection (deterministic, real Postgres).
