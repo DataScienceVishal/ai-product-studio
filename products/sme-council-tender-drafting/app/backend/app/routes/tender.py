@@ -21,8 +21,9 @@ from ..tender import ingest
 from ..tender.chunking import chunk_pages
 from ..tender.evidence import next_numbers, search_evidence
 from ..tender.service import delete_row
-from ..tender import extract as _extract  # noqa: F401  (registers the extract handler)
-from ..tender_models import AITask, DocumentPage, EvidenceItem, Requirement, SourceDocument, TenderPack
+from ..tender import draft as _draft
+from ..tender import extract as _extract  # noqa: F401  (registers the extract and draft handlers)
+from ..tender_models import AITask, Draft, DocumentPage, EvidenceItem, Requirement, SourceDocument, TenderPack
 from ..textsafe import FreeText, StrippedLine
 
 log = logging.getLogger("app.tender")
@@ -303,3 +304,113 @@ def confirm_checklist(pack_id: uuid.UUID, me: Current = Depends(current), db: Se
     pack.status, pack.confirmed_by, pack.confirmed_at = "drafting", me.user.id, datetime.now(timezone.utc)
     db.commit()
     return {"confirmed": len(rows), "pack": pack_out(pack)}
+
+
+# ---------- drafting (S5) ----------
+DRAFT_PACK_STATES = _draft.DRAFT_PACK_STATES
+
+
+class DraftIn(BaseModel):
+    text: FreeText = Field(min_length=1, max_length=30000)
+    base_version: int | None = Field(default=None, ge=0)  # the version the editor started from; stale is 409
+
+
+def draft_out(d: Draft) -> dict:
+    return {"id": str(d.id), "requirement_id": str(d.requirement_id), "version": d.version, "text": d.text,
+            "word_count": d.word_count, "word_limit": d.word_limit_snapshot, "retrieved_ids": list(d.retrieved_ids),
+            "cited_ids": list(d.cited_ids), "outside_ids": list(d.outside_ids), "gap_count": d.gap_count,
+            "flags": list(d.flags or []), "author": d.author, "status": d.status, "model": d.model,
+            "created_at": d.created_at.isoformat()}
+
+
+def _question(db: Session, me: Current, req_id: uuid.UUID) -> tuple[Requirement, TenderPack]:
+    r = get_scoped(db, Requirement, me.tenant.id, req_id, "requirement")
+    return r, get_scoped(db, TenderPack, me.tenant.id, r.pack_id, "tender pack")
+
+
+def _queue_draft(db: Session, me: Current, pack: TenderPack, target: uuid.UUID | None) -> dict:
+    db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"), {"k": f"draft:{pack.id}:{target}"})
+    live = db.scalar(scoped(AITask, me.tenant.id).where(
+        AITask.pack_id == pack.id, AITask.kind == "draft", AITask.status.in_(("queued", "running")),
+        AITask.target_id.is_(None) if target is None else AITask.target_id == target))
+    if live is not None:
+        return task_out(live)
+    task = AITask(tenant_id=me.tenant.id, pack_id=pack.id, kind="draft", target_id=target)
+    db.add(task)
+    db.commit()
+    return task_out(task)
+
+
+@router.post("/packs/{pack_id}/draft", status_code=202)
+def queue_draft(pack_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
+    """Draft every confirmed question that has no draft yet. Idempotent while a pack-wide task is queued or running."""
+    pack = get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
+    if pack.status not in DRAFT_PACK_STATES:
+        raise AppError(409, "not_ready", "Confirm the checklist first." if pack.status in ("uploaded", "extracting", "review")
+                       else "This pack is already signed off.")
+    if not _draft.draftable(db, me.tenant.id, pack_id, None):
+        raise AppError(409, "nothing_to_draft", "Every question already has a draft. Redraft one if you want a new version.")
+    return _queue_draft(db, me, pack, None)
+
+
+@router.post("/requirements/{req_id}/redraft", status_code=202)
+def redraft(req_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
+    r, pack = _question(db, me, req_id)
+    if pack.status not in DRAFT_PACK_STATES:
+        raise AppError(409, "not_ready", "Confirm the checklist first." if pack.status in ("uploaded", "extracting", "review")
+                       else "This pack is already signed off.")
+    if r.status != "confirmed" or r.kind != "question":
+        raise AppError(409, "not_draftable", "Only a confirmed question can be drafted.")
+    since = datetime.now(timezone.utc) - timedelta(days=1)
+    made = db.scalar(select(func.count()).select_from(Draft).where(
+        Draft.tenant_id == me.tenant.id, Draft.requirement_id == req_id, Draft.author == "ai", Draft.created_at > since))
+    queued = db.scalar(select(func.count()).select_from(AITask).where(
+        AITask.tenant_id == me.tenant.id, AITask.kind == "draft", AITask.target_id == req_id,
+        AITask.status.in_(("queued", "running"))))
+    if not queued and made >= _draft.REDRAFTS_PER_REQUIREMENT_PER_DAY:
+        raise AppError(429, "redraft_limit", "You've redrafted this question 5 times today. Edit it by hand or try tomorrow.")
+    return _queue_draft(db, me, pack, req_id)
+
+
+@router.get("/requirements/{req_id}/evidence")
+def requirement_evidence(req_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
+    """What retrieval finds for the question, as drafting would see it."""
+    r, _ = _question(db, me, req_id)
+    hits = search_evidence(db, me.tenant.id, r.text, limit=_draft.APP_PASSAGES, min_score=_draft.RETRIEVAL_FLOOR)
+    return {"results": [{"id": str(h.id), "label": f"E-{h.display_no}", "display_no": h.display_no, "document": h.document_name,
+                         "page_from": h.page_from, "page_to": h.page_to, "heading": h.heading, "text": h.text,
+                         "rank": round(h.rank, 4), "score": round(h.score, 4)} for h in hits],
+            "message": None if hits else "No evidence found"}
+
+
+@router.get("/requirements/{req_id}/draft")
+def get_draft(req_id: uuid.UUID, version: int | None = Query(default=None, ge=1), me: Current = Depends(current),
+              db: Session = Depends(get_db)):
+    _question(db, me, req_id)
+    rows = list(db.scalars(scoped(Draft, me.tenant.id).where(Draft.requirement_id == req_id).order_by(Draft.version.desc())))
+    chosen = next((d for d in rows if version is None or d.version == version), None)
+    if version is not None and chosen is None:
+        raise AppError(404, "not_found", "That version doesn't exist.")
+    return {"draft": draft_out(chosen) if chosen else None,
+            "versions": [{"version": d.version, "author": d.author, "word_count": d.word_count,
+                          "created_at": d.created_at.isoformat()} for d in rows]}
+
+
+@router.put("/requirements/{req_id}/draft", status_code=201)
+def edit_draft(req_id: uuid.UUID, body: DraftIn, me: Current = Depends(current), db: Session = Depends(get_db)):
+    """A user edit is a new version (author=user); earlier versions are kept. The text is unchecked until re-checked."""
+    r, pack = _question(db, me, req_id)
+    if pack.status in ("signed", "exported"):
+        raise AppError(409, "pack_locked", "This pack is already signed off.")
+    if r.status != "confirmed" or r.kind != "question":
+        raise AppError(409, "not_draftable", "Only a confirmed question can be drafted.")
+    db.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:k, 0))"), {"k": f"draft:{req_id}"})
+    latest = db.scalar(scoped(Draft, me.tenant.id).where(Draft.requirement_id == req_id).order_by(Draft.version.desc()).limit(1))
+    if body.base_version is not None and body.base_version != (latest.version if latest else 0):
+        raise AppError(409, "stale_version", "This answer changed since you opened it. Reload and edit the latest version.")
+    retrieved = list(latest.retrieved_ids) if latest else []
+    cited, outside, gaps = _draft.analyse(body.text, set(retrieved))
+    d = _draft.Drafted(body.text, cited, outside, gaps, ["citation_outside_set"] if outside else [], retrieved)
+    row = _draft.save_version(db, me.tenant.id, req_id, d, author="user", word_limit=r.word_limit)
+    db.commit()
+    return draft_out(row)

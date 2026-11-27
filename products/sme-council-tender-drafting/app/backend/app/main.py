@@ -20,7 +20,7 @@ from .db import Database
 from .email import EmailSender, OutboxEmail
 from .logs import end_request_fields, request_id_var, setup_logging, start_request_fields
 from .ratelimit import RateLimiter, build_redis_client
-from .tender import extract, ingest
+from .tender import draft, extract, ingest
 from .routes import account, auth, billing, health, team, tender
 
 log = logging.getLogger("app.http")
@@ -217,6 +217,7 @@ def create_app(settings: Settings | None = None, *, ai: AIProvider | None = None
 
     ingest.configure(settings.parse_workers)
     extract.configure(settings)
+    draft.configure(settings)
     errors.install(app)
     upload_limit = settings.upload_max_bytes + UPLOAD_OVERHEAD_BYTES  # file plus multipart framing
     app.add_middleware(BodyLimit, limit=settings.max_body_bytes, path_limits=((UPLOAD_PATHS, upload_limit),))

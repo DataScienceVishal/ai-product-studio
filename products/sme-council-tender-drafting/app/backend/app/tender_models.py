@@ -149,6 +149,10 @@ class Draft(Base):
     prompt_version: Mapped[str | None] = mapped_column(String(40))
     model: Mapped[str | None] = mapped_column(String(80))
     status: Mapped[str] = mapped_column(String(12), nullable=False, default="drafted")  # drafted|checked_ok|blocked
+    outside_ids: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False, default=list,
+                                                   server_default=sa_text("'{}'"))  # [E-n] cited but not retrieved
+    flags: Mapped[list[str]] = mapped_column(ARRAY(String(30)), nullable=False, default=list,
+                                             server_default=sa_text("'{}'"))  # citation_outside_set | shortened | trimmed ...
     created_at: Mapped[datetime] = _created()
 
 
