@@ -429,3 +429,6 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Digest covers runs 0abb to fbaa: holiday-pay kill, T-159/T-160/T-166/T-171 scouting (40 tested, 0 kept), T-162/T-163 AI cost guard, T-172 billing and team fixes. Left out as stale or minor: T-154/T-157 (holiday-pay fixes, idea since killed), T-161/T-164/T-165/T-167 to T-170 (small starter hardening merges). DIGEST_NOTES cleared to its header.
 - Problem slot repeats the spend report: no azure-spend run since the 2026-11-26T16:50Z failure (next scheduled 16:50Z today). Header keeps the hand-kept model spend ("About $15–20 of $80"); the only model call since the last digest was T-113's $0.006.
 - Copy saved as state/runs/20261127T080000Z-desk-1808-digest.txt. Committed to main directly (CLAUDE.md section 9 and Vishal's push-to-main instruction); the session branch is kept level.
+
+## 2026-11-27T08:50Z, run f9ce: T-173 team lock choice
+- Invite takes the tenant row FOR NO KEY UPDATE, not FOR UPDATE: plain FOR UPDATE deadlocks against an in-flight accept (reviewer reproduced 40P01). Merged after reviewer PASS. Non-blocking reviewer items (vacuous resend smoke test, cross-tenant double-accept deadlock 500, sleep-based race tests) queued as a board task.
