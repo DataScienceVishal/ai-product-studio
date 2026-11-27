@@ -714,7 +714,7 @@ function CoveragePageView({ id }: { id: string }) {
       const a = document.createElement("a");
       a.href = url; a.download = filename;
       document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 1000); // not at once: some browsers cancel the download
       setNote("The Word document was downloaded.");
       cov.reload();
     } catch (err) { setProblem(errorText(err)); cov.reload(); }

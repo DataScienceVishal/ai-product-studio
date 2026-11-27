@@ -8,7 +8,7 @@ from docx import Document
 from sqlalchemy import select
 
 from app.tender import gate
-from app.tender_models import Draft, ExportRecord, Signoff, TenderPack
+from app.tender_models import Claim, Draft, ExportRecord, Signoff, TenderPack
 
 from .conftest import sign_up
 from .test_tender_claimcheck import Judge, check_now, client, db, evidence_doc, honest, pack_status  # noqa: F401
@@ -40,8 +40,20 @@ def test_export_docx_matches_the_database(client, app, db):
         if para.strip():
             assert para in body
     assert d.cited_ids and all(f"[E-{n}]" in body for n in d.cited_ids)
-    assert "Appendix: evidence cited" in body and "quality.txt, page 1" in body
-    assert "reviewed and signed off by Ann Lee on" in header and "Draft produced with AI assistance" in header
+    assert "Appendix: claims and their sources" in body
+    so0 = db.scalar(select(Signoff))
+    assert header == f"Draft prepared with AI assistance; reviewed by Ann Lee on {so0.signed_at:%d %B %Y}"
+    doc = Document(io.BytesIO(r.content))
+    table = doc.tables[0]
+    assert [c.text for c in table.rows[0].cells] == ["Claim", "Evidence", "Document", "Page", "Supporting quote"]
+    claims = db.scalars(select(Claim).order_by(Claim.seq)).all()
+    assert claims and len(table.rows) == 1 + len(claims)
+    for row, c in zip(table.rows[1:], claims):
+        cells = [x.text for x in row.cells]
+        assert c.span in cells[0] and cells[4] == (c.evidence_quote or "")
+        assert cells[1] == (", ".join(f"[E-{n}]" for n in sorted(set(c.cited_ids))) or "no citation")
+        if c.cited_ids:
+            assert cells[2] == "quality.txt" and cells[3] == "1"
     assert footer == gate.STATEMENT_TEXT
     rec = db.scalar(select(ExportRecord))
     so = db.scalar(select(Signoff))

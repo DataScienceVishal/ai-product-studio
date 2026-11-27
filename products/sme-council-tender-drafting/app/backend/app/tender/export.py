@@ -99,7 +99,7 @@ def render(rows: Rows) -> bytes:
     cp.revision = 1
     sec = doc.sections[0]
     sec.header.paragraphs[0].text = clean(
-        f"Draft produced with AI assistance; reviewed and signed off by {so.reviewer_name} on {so.signed_at:%d %B %Y}")
+        f"Draft prepared with AI assistance; reviewed by {so.reviewer_name} on {so.signed_at:%d %B %Y}")
     sec.footer.paragraphs[0].text = clean(gate.STATEMENT_TEXT)
     doc.add_heading(clean(rows.pack.title), 0)
     meta = [clean(rows.tenant_name)]
@@ -110,7 +110,6 @@ def render(rows: Rows) -> bytes:
 
     latest = gate.latest_drafts(gate.GateDraft(str(d.id), str(d.requirement_id), d.version, d.text, d.text_sha256, d.check_sha256)
                                 for d in rows.drafts)
-    cited: set[int] = set()
     for r in sorted((r for r in rows.requirements if r.status == "confirmed" and r.kind == "question"), key=lambda r: r.seq):
         d = latest[str(r.id)]
         head = f"{r.ref}  " if r.ref else ""
@@ -120,17 +119,28 @@ def render(rows: Rows) -> bytes:
         for para in clean(d.text).split("\n"):
             if para.strip():
                 doc.add_paragraph(para)
-        cited |= {int(n) for n in _CITE.findall(d.text)}
-    doc.add_heading("Appendix: evidence cited", 1)
-    if not cited:
-        doc.add_paragraph("No evidence is cited.")
-    for n in sorted(cited):
-        item, name = rows.evidence[n]  # a missing one would have blocked the gate; KeyError here is a refusal, not a silent gap
-        pages = str(item.page_from) if item.page_from == item.page_to else f"{item.page_from}-{item.page_to}"
-        p = doc.add_paragraph()
-        p.add_run(f"[E-{n}] ").bold = True
-        p.add_run(clean(f"{name}, page {pages}"))
-        doc.add_paragraph(clean(" ".join(item.text.split())))
+    doc.add_heading("Appendix: claims and their sources", 1)
+    by_draft: dict[str, list[Claim]] = {}
+    for c in rows.claims:
+        by_draft.setdefault(str(c.draft_id), []).append(c)
+    table = doc.add_table(rows=1, cols=5)
+    table.style = "Table Grid"
+    for cell, h in zip(table.rows[0].cells, ["Claim", "Evidence", "Document", "Page", "Supporting quote"]):
+        cell.text = h
+    for r in sorted((r for r in rows.requirements if r.status == "confirmed" and r.kind == "question"), key=lambda r: r.seq):
+        d = latest[str(r.id)]
+        for c in sorted(by_draft.get(d.id, []), key=lambda c: c.seq):
+            ids = sorted(set(c.cited_ids))
+            items = []
+            for n in ids:
+                # the gate has already refused any cited passage that is not live, so a miss here is a bug, not data
+                items.append((n, *rows.evidence[n]))
+            cells = table.add_row().cells
+            cells[0].text = clean(f"{r.ref + ': ' if r.ref else ''}{c.span}")
+            cells[1].text = ", ".join(f"[E-{n}]" for n in ids) or "no citation"
+            cells[2].text = clean("; ".join(name for _, _, name in items))
+            cells[3].text = "; ".join(str(i.page_from) if i.page_from == i.page_to else f"{i.page_from}-{i.page_to}" for _, i, _ in items)
+            cells[4].text = clean(c.evidence_quote or "")
     buf = io.BytesIO()
     doc.save(buf)
     return _fix_zip(buf.getvalue())

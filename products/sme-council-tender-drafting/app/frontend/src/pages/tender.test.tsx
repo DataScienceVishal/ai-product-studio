@@ -350,7 +350,7 @@ describe("coverage and sign-off", () => {
     expect(calls(m, `GET /api/packs/${PID}/export`)).toBe(1);
     expect(create).toHaveBeenCalledTimes(1);
     expect(click).toHaveBeenCalledTimes(1);
-    expect(revoke).toHaveBeenCalledWith("blob:x");
+    await waitFor(() => expect(revoke).toHaveBeenCalledWith("blob:x"), { timeout: 3000 });
     expect(document.body.textContent).not.toMatch(/£|price/i);
     click.mockRestore();
   });
