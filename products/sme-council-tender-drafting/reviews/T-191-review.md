@@ -25,3 +25,23 @@ Branch `p/sme-council-tender-drafting/T-191` at c033f9a, diff against origin/mai
 - `coverage()` runs two queries per requirement (latest draft, claim counts). Bounded by checklist size, fine now; one windowed query later.
 - `usePoll` keeps polling on 401/404 (backs off to 15 s, stops at 200 ticks, about 50 min). Consider stopping on 4xx.
 - `usePoll` does not restart when `packId` changes while active; harmless today since each page mounts per id.
+
+---
+
+# Re-review at dbc52b1: PASS
+
+## Evidence
+- `tests/test_tender_review.py`, `test_spa.py`, `test_tender_draft.py`, `test_tender_extract.py`: **223 passed, 1 skipped**. Frontend vitest **229 passed** (one new); `tsc -b` clean.
+- **The race test is real.** With the new `_lock_pack` line removed from `edit_draft`, `test_an_edit_racing_a_sign_off_waits_for_it_and_is_refused` **fails**; with the line back, it passes. It holds the pack row in a second session, checks that the edit thread is blocked, commits `signed`, then checks for a 409 `pack_locked` and that no new draft version was written.
+
+## Must-fix 1: fixed
+- `edit_draft` now re-reads the pack with `_lock_pack` (FOR UPDATE plus populate_existing) before the status check.
+- **FOR UPDATE rather than FOR SHARE: the reasoning is correct.** The edit routes then UPDATE the same row (`reopen_pack`, or the add/patch writes). If two transactions each hold FOR SHARE and both try to upgrade to a row write, they deadlock, and Postgres aborts one with 40P01. FOR UPDATE queues them one after another instead. The draft worker's FOR SHARE is safe against these routes: a FOR UPDATE edit waits for it, and a single sharer can upgrade.
+- Residual, not blocking: two draft workers on the same pack could both take FOR SHARE and then both hit `reopen_pack`. That depends on whether pack-wide and per-requirement draft tasks can run at the same time. Worth a look in S8, or switch the worker to FOR UPDATE.
+
+## Suggestions: done
+- `add_requirement` and `edit_requirement` now lock before the status check (the earlier lock-after-check order is gone). A test confirms both return 409 after sign-off.
+- `usePoll` stops on any `ApiError` 4xx; other errors still back off. Tested with a 404 (one call in 60 s). The test name also says "keeps backing off on a network error", but only the 4xx path is checked there. The earlier backoff test covers the other path.
+- The coverage copy now says the answers and checklist are locked.
+
+## Verdict: PASS
