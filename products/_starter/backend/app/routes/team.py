@@ -66,6 +66,12 @@ def team(me: Current = Depends(current), db: Session = Depends(get_db)):
 def invite(data: InviteIn, request: Request, me: Current = Depends(verified_owner), db: Session = Depends(get_db)):
     settings = request.app.state.settings
     request.app.state.limiter.check(f"invite:{me.tenant.id}", 20)
+    # One invite at a time per tenant: the quota, pending-cap and resend checks below read, then revoke and insert.
+    # Without this lock two concurrent resends of one address both pass and leave two live links (or cap+1 pending).
+    # Held until the commit below (or the rollback on any error). key_share=True gives FOR NO KEY UPDATE: invites
+    # queue behind each other, but it does not block the FK KEY SHARE lock that `accept` takes on the tenant when it
+    # inserts the user (a plain FOR UPDATE could deadlock with accept, which holds the invitation row).
+    db.execute(select(Tenant.id).where(Tenant.id == me.tenant.id).with_for_update(key_share=True))
     now = datetime.now(timezone.utc)
     sent_today = db.scalar(select(func.count()).select_from(Invitation)
                            .where(Invitation.tenant_id == me.tenant.id, Invitation.created_at > now - timedelta(days=1)))
@@ -137,21 +143,25 @@ def _accept_checks(data: AcceptIn, request: Request) -> None:
 def accept(data: AcceptIn, request: Request, response: Response, db: Session = Depends(get_db)):
     password_hash = hash_password(data.password)  # before any transaction opens
     now = datetime.now(timezone.utc)
-    invitation = db.scalar(select(Invitation).where(Invitation.token_hash == token_hash(data.token), *_pending(now)))
+    # FOR UPDATE: a link that a resend or a revoke is replacing right now makes us wait, then re-check the pending
+    # predicate on the committed row, so a just-revoked link cannot create an account.
+    invitation = db.scalar(select(Invitation).where(Invitation.token_hash == token_hash(data.token), *_pending(now))
+                           .with_for_update())
     if invitation is None:
         raise AppError(400, "invalid_invitation", "This invitation has expired or was already used. Ask for a new one.")
     user = User(tenant_id=invitation.tenant_id, email=invitation.email, password_hash=password_hash,
                 role=invitation.role, email_verified_at=now, last_sign_in_at=now)  # the link proved the inbox
     db.add(user)
     invitation.accepted_at = now
-    # The address is now an account: other tenants' pending invites for it can never be accepted, so revoke them
-    # in this same transaction (they would otherwise sit in those owners' lists as dead links).
     try:
         db.flush()  # the user insert; a duplicate email fails here
     except IntegrityError:
         db.rollback()
         raise AppError(409, "email_taken", "That email already has an account. Try signing in.")
-    db.execute(update(Invitation).where(Invitation.id != invitation.id, func.lower(Invitation.email) == invitation.email.lower(),
+    # The address is now an account: other tenants' pending invites for it can never be accepted, so revoke them
+    # in this same transaction (they would otherwise sit in those owners' lists as dead links). Plain equality on the
+    # indexed column: invitation emails are only written by `invite`, from the lower-casing `Email` type.
+    db.execute(update(Invitation).where(Invitation.id != invitation.id, Invitation.email == invitation.email,
                                         *_pending(now)).values(revoked_at=now))
     _start_session(request, response, db, user)
     db.commit()

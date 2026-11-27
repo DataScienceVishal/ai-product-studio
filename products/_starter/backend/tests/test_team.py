@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import update
+from sqlalchemy import select, update
 
 from app.models import Invitation
+from app.security import token_hash
 
 from .conftest import PASSWORD, link_token, sign_up
 
@@ -185,7 +186,7 @@ def test_resend_exemption_is_tenant_scoped(app, owner, new_client, outbox):
 
 # --- T-172 B7: accepting revokes other tenants' pending invites for the address ---
 
-def test_accepting_revokes_other_tenants_pending_invites_for_that_email(owner, new_client, outbox):
+def test_accepting_revokes_other_tenants_pending_invites_for_that_email(owner, new_client, outbox, database):
     from .conftest import verify_email
     owner_client, _ = owner
     other = new_client()
@@ -194,6 +195,85 @@ def test_accepting_revokes_other_tenants_pending_invites_for_that_email(owner, n
     _, token_a = _invite(owner_client, outbox, "m@x.test")
     assert other.post("/api/team/invitations", json={"email": "M@x.test"}).status_code == 201
     token_b = link_token(outbox, "accept-invite")
+    old = datetime(2026, 1, 2, tzinfo=timezone.utc)
+    with database.sessions() as db:  # a revoked and an expired invite for the same address in tenant B: audit rows
+        tenant_b = db.scalar(select(Invitation.tenant_id).where(Invitation.token_hash == token_hash(token_b)))
+        for name, kw in (("rev", {"revoked_at": old, "expires_at": old + timedelta(days=99999)}),
+                         ("exp", {"expires_at": old})):
+            db.add(Invitation(tenant_id=tenant_b, email="m@x.test", token_hash=token_hash(name * 20), **kw))
+        db.commit()
     assert _accept(new_client(), token_a).status_code == 201
     assert other.get("/api/team").json()["invitations"] == []
     assert _accept(new_client(), token_b).status_code == 400
+    with database.sessions() as db:  # the B7 UPDATE touches pending rows only: audit timestamps are untouched
+        rows = {i.token_hash: i for i in db.scalars(select(Invitation).where(Invitation.tenant_id == tenant_b))}
+        assert rows[token_hash("rev" * 20)].revoked_at == old
+        assert rows[token_hash("exp" * 20)].revoked_at is None
+
+
+# --- T-173: races (real Postgres; deterministic, driven by a row lock held in a second connection) ---
+
+import threading  # noqa: E402
+import time  # noqa: E402
+
+from sqlalchemy import text  # noqa: E402
+
+
+def _in_thread(fn):
+    box = {}
+    thread = threading.Thread(target=lambda: box.setdefault("r", fn()))
+    thread.start()
+    return thread, box
+
+
+def test_invites_for_one_tenant_are_serialised(app, owner, outbox):
+    """A second invite must wait while another invite holds the tenant row lock (NO KEY UPDATE: the FK insert only takes KEY SHARE, which would not block) (so concurrent resends of one
+    address cannot both pass the checks and leave two live links or pending at cap+1)."""
+    owner_client, me = owner
+    with app.state.db.engine.connect() as side:
+        side.execute(text("SELECT id FROM tenants WHERE id = :t FOR NO KEY UPDATE"), {"t": me["tenant"]["id"]})
+        thread, box = _in_thread(lambda: owner_client.post("/api/team/invitations", json={"email": "r@acme.test"}))
+        time.sleep(0.7)
+        blocked = thread.is_alive()
+        side.rollback()
+    thread.join(10)
+    assert blocked, "invite did not wait for the tenant lock"
+    assert box["r"].status_code == 201
+
+
+def test_concurrent_resends_leave_one_live_link(app, owner, outbox, new_client):
+    owner_client, me = owner
+    other = new_client()
+    other.cookies.update(owner_client.cookies)
+    threads = [_in_thread(lambda c=c: c.post("/api/team/invitations", json={"email": "dup@acme.test"}))
+               for c in (owner_client, other)]
+    for thread, _ in threads:
+        thread.join(15)
+    assert [box["r"].status_code for _, box in threads] == [201, 201]
+    with app.state.db.engine.connect() as conn:
+        live = conn.execute(text("SELECT count(*) FROM invitations WHERE email = 'dup@acme.test' "
+                                 "AND revoked_at IS NULL AND accepted_at IS NULL")).scalar()
+    assert live == 1
+
+
+def test_accept_waits_for_a_concurrent_revoke_and_then_fails(app, owner, new_client, outbox):
+    """A link revoked (or replaced) while an accept is in flight must not create an account."""
+    owner_client, _ = owner
+    invite, token = _invite(owner_client, outbox, "late@acme.test")
+    joiner = new_client()
+    with app.state.db.engine.connect() as side:
+        side.execute(text("SELECT id FROM invitations WHERE id = :i FOR UPDATE"), {"i": invite["id"]})
+        thread, box = _in_thread(lambda: _accept(joiner, token))
+        time.sleep(0.7)
+        side.execute(text("UPDATE invitations SET revoked_at = now() WHERE id = :i"), {"i": invite["id"]})
+        side.commit()
+    thread.join(15)
+    assert box["r"].status_code == 400
+    with app.state.db.engine.connect() as conn:
+        assert conn.execute(text("SELECT count(*) FROM users WHERE email = 'late@acme.test'")).scalar() == 0
+
+
+def test_invitation_email_is_indexed(database):
+    with database.engine.connect() as conn:
+        defs = [r[0] for r in conn.execute(text("SELECT indexdef FROM pg_indexes WHERE tablename = 'invitations'"))]
+    assert any("(email)" in d for d in defs), defs

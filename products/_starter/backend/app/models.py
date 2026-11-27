@@ -142,7 +142,7 @@ class Invitation(Base):
     __tablename__ = "invitations"
     id: Mapped[uuid.UUID] = _id()
     tenant_id: Mapped[uuid.UUID] = _tenant()
-    email: Mapped[str] = mapped_column(String(254), nullable=False)  # lower-case
+    email: Mapped[str] = mapped_column(String(254), nullable=False, index=True)  # lower-case
     role: Mapped[str] = mapped_column(String(20), default="member", nullable=False)
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     invited_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
