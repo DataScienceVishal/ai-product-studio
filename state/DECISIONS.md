@@ -422,3 +422,10 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 
 - 2026-11-27T07:24Z run fbaa: took over T-172 claim (2h old, under the 3h stale rule) because run 6805 pushed its bug-hunt report at 05:22Z and nothing since, and no 06:19 run started (usage window), so 6805 was cut off. Fix phase for B1-B7 split: billing (B1-B5) and team (B6-B7) on separate branches.
 - 2026-11-27T07:58Z run fbaa: T-172 B1: a duplicate active subscription from the same provider is cancelled through the provider (kept: the first one); a start event from a different provider still replaces the subscription. Refunds stay manual (the log line names the subscription). Skipped the optional lower(email) invitation index (needs a migration); queued in T-173.
+
+## 2026-11-27T08:02Z, desk 1808: 08:00 digest
+- No new Telegram messages; every inbox file is in HANDLED.md. No question defaults were due: Q-18 had never been sent, Q-8 (directory change) is ask-first, and Q-16/Q-17 were answered at 20:44Z.
+- Sent Q-18 as 1, the only open question. Default B (desk scouting on Vishal's edges, no build, no contact) at 2026-11-27T20:10Z, the time printed in the digest (12h after the 08:01:54Z send, rounded up); the 19:30 Desk or a later run applies it if there is no reply. A (one 30-minute chat with the friend's business) is ask-first and waits for an explicit yes.
+- Digest covers runs 0abb to fbaa: holiday-pay kill, T-159/T-160/T-166/T-171 scouting (40 tested, 0 kept), T-162/T-163 AI cost guard, T-172 billing and team fixes. Left out as stale or minor: T-154/T-157 (holiday-pay fixes, idea since killed), T-161/T-164/T-165/T-167 to T-170 (small starter hardening merges). DIGEST_NOTES cleared to its header.
+- Problem slot repeats the spend report: no azure-spend run since the 2026-11-26T16:50Z failure (next scheduled 16:50Z today). Header keeps the hand-kept model spend ("About $15–20 of $80"); the only model call since the last digest was T-113's $0.006.
+- Copy saved as state/runs/20261127T080000Z-desk-1808-digest.txt. Committed to main directly (CLAUDE.md section 9 and Vishal's push-to-main instruction); the session branch is kept level.

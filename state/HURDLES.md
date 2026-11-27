@@ -64,3 +64,4 @@ Two builders working in the same clone switch branches under each other, so comm
 - 2026-11-26T08:04Z desk-80d5: the 08:00 Desk prompt still lacks the line. This run committed straight to main (session branch kept level), so nothing was stranded.
 - 2026-11-26T15:01Z desk-e9fb: the 15:00 Desk prompt still lacks the line too. Committed straight to main again (session branch kept level); no session branch from today holds unmerged commits.
 - 2026-11-26T19:33Z desk-8d7e: the 19:30 Desk prompt still lacks the line. Committed straight to main again (session branch kept level).
+- 2026-11-27T08:02Z desk-1808: the 08:00 Desk prompt still lacks the line. Committed straight to main again (session branch kept level). The clone is shallow (history from 2026-11-26T20:19Z), so `merge-base` checks on older `vishal/*` branches report false gaps; compare file content instead (yesterday's 19:30 desk files are identical on main).

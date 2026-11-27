@@ -1,0 +1,21 @@
+🧪 <b>Studio update</b> · Fri 27 Nov, 08:00
+🟢 Running normally · 🔒 Selling locked · 💷 About $15–20 of $80 used
+
+<b>✨ What's new</b>
+• Holiday-pay dropped: AI test scored 92.5%, needed 95%; no demo build
+• Three more scouting rounds, 40 ideas tested: none worth building
+• Starter app: 7 billing and team bugs fixed, worst was double charging
+• AI spending guard: 4 bugs fixed, safety switch now survives restarts
+
+<b>🙋 Need your call</b>
+<b>1. Desk research keeps coming up empty. What next?</b>
+A Chat with friend's firm ⭐ · B Desk scouting only · C Build best idea anyway
+<i>No reply → B at 20:10. A waits for your yes.</i>
+
+Tap a button, or just reply <b>1A</b>.
+
+<b>⚠️ One problem</b>
+• Azure spend report still failing; setup guide step 3 fixes it
+
+<b>🧭 Next</b>
+• Tightening the starter app's billing: retries and payment timing
