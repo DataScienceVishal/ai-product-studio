@@ -1180,7 +1180,7 @@ def test_reported_model_price_lookup():
     assert reported_model_price("gpt-5.4-pro-2026-03-05") == 180.0
     assert reported_model_price("gpt-5-mini-20250807") == 2.0
     assert reported_model_price("GPT-5") == 10.0
-    assert reported_model_price("gpt-5-pro-2025-10-06") == 120.0  # longest prefix wins over gpt-5
+    assert reported_model_price("gpt-5-pro-2025-10-06") == 120.0  # the exact name (one date suffix dropped) wins; gpt-5 is not a prefix match
     assert reported_model_price("gpt-5.4") is None and reported_model_price("gpt-50") is None
     assert reported_model_price(None) is None and reported_model_price("") is None
 
@@ -1377,15 +1377,17 @@ def test_trip_survives_a_restart_and_a_second_replica(settings, outbox, database
     assert second_process.state.ai.disabled is True  # now the fast path
 
 
-def _summaries_again(app):
-    """Sign in as the existing owner of the first process and summarize their note."""
+def _summaries_again(app, count=1):
+    """Sign in as the existing owner of the first process and summarize their note `count` times.
+    One response when count is 1, otherwise a list."""
     from fastapi.testclient import TestClient
     from tests.conftest import PASSWORD
     with TestClient(app, base_url="https://testserver", headers={"X-Requested-With": "test"}) as client:
         assert client.post("/api/auth/login", json={"email": "owner@acme.test", "password": PASSWORD}).status_code == 200
         listing = client.get("/api/notes").json()
         note_id = listing["items"][0]["id"]
-        return client.post(f"/api/notes/{note_id}/summarize")
+        results = [client.post(f"/api/notes/{note_id}/summarize") for _ in range(count)]
+        return results[0] if count == 1 else results
 
 
 def test_changing_the_ai_config_clears_the_trip(settings, outbox, database):
@@ -1400,7 +1402,7 @@ def test_changing_the_ai_config_clears_the_trip(settings, outbox, database):
     tripped_cfg = _store_app(settings, outbox, "gpt-5.4-pro-2026-03-05", deployment="chat", explicit=2.0)
     assert tripped_cfg.state.ai.checked_price is not None
     try:
-        a, b = _summaries_again_two(tripped_cfg)
+        a, b = _summaries_again(tripped_cfg, 2)
         assert (a.status_code, b.status_code) == (200, 503)
     finally:
         tripped_cfg.state.db.dispose()
@@ -1429,7 +1431,7 @@ def test_trip_record_holds_no_secret_or_text(settings, outbox, database):
 
 
 def test_trip_check_failing_refuses_the_call_and_does_not_latch(settings, outbox, database, caplog):
-    """Fail closed: when the trip table cannot be read nothing is sent to Azure (reserve needs the DB anyway)."""
+    """Fail closed: when the trip table cannot be read nothing is sent to Azure, and the refusal does not latch."""
     calls = []
     provider = AzureOpenAI("https://res.openai.azure.com/", "gpt-5-mini", "k", retries=0, checked_price=2.0,
                            client=httpx.Client(transport=httpx.MockTransport(lambda r: calls.append(r) or _reply())))
@@ -1445,6 +1447,8 @@ def test_trip_check_failing_refuses_the_call_and_does_not_latch(settings, outbox
     with pytest.raises(AppError) as refused:
         provider.complete("s", "u")
     assert refused.value.status == 503 and refused.value.code == "ai_budget_reached" and calls == []
+    assert refused.value.message == "The AI is unavailable right now. Everything else still works."
+    assert "switched off" not in refused.value.message
     assert provider.disabled is False  # a database blip is not a trip
     assert "SECRET-PROMPT" not in caplog.text
 
@@ -1500,16 +1504,70 @@ def test_route_trip_check_uses_the_request_session_not_a_second_connection(setti
     # a tripped config is still refused, on the same tiny pool
     dear = _store_app(tiny, outbox, "gpt-5.4-pro-2026-03-05")
     try:
-        first, second = _summaries_again_two(dear)
+        first, second = _summaries_again(dear, 2)
     finally:
         dear.state.db.dispose()
+    assert first.status_code == 200
     assert second.status_code == 503 and second.json()["error"] == "ai_budget_reached"
 
 
-def _summaries_again_two(app):
-    from fastapi.testclient import TestClient
-    from tests.conftest import PASSWORD
-    with TestClient(app, base_url="https://testserver", headers={"X-Requested-With": "test"}) as client:
-        assert client.post("/api/auth/login", json={"email": "owner@acme.test", "password": PASSWORD}).status_code == 200
-        note_id = client.get("/api/notes").json()["items"][0]["id"]
-        return [client.post(f"/api/notes/{note_id}/summarize") for _ in range(2)]
+def test_fresh_process_on_a_tiny_pool_reads_the_persisted_trip(settings, outbox, database):
+    """T-163 S3: the trip is made by app A. App B is a new process (empty memory) on a one-connection pool. Its very
+    first call is refused from the row, read on the request session, and makes no model call."""
+    tiny = settings.model_copy(update={"db_pool_size": 1, "db_max_overflow": 0})
+    calls_a, calls_b = [], []
+    app_a = _store_app(tiny, outbox, "gpt-5.4-pro-2026-03-05", calls=calls_a)
+    try:
+        a, b = _summaries(app_a, outbox, 2)
+    finally:
+        app_a.state.db.dispose()
+    assert (a.status_code, b.status_code) == (200, 503) and len(calls_a) == 1
+    app_b = _store_app(tiny, outbox, "gpt-5.4-pro-2026-03-05", calls=calls_b)
+    try:
+        assert app_b.state.ai.disabled is False  # nothing in memory: only the row can say no
+        started = time.monotonic()
+        refused = _summaries_again(app_b)
+    finally:
+        app_b.state.db.dispose()
+    assert refused.status_code == 503 and refused.json()["error"] == "ai_budget_reached"
+    assert time.monotonic() - started < 8 and calls_b == []
+    assert app_b.state.ai.disabled is True
+
+
+def test_persisted_trip_read_never_commits_the_callers_session(settings, outbox, database):
+    """T-163 S1: the check reads on the caller's session and must not commit what the caller has pending."""
+    from sqlalchemy import func
+    app = _store_app(settings, outbox, "gpt-5-mini")
+    provider = app.state.ai
+    try:
+        with database.sessions() as db:
+            db.add(Tenant(name="pending-probe"))
+            provider.check_persisted_trip(db)
+            provider.trip_store.tripped(provider.trip_fingerprint, db)
+            db.rollback()
+        with database.sessions() as db:
+            assert db.scalar(select(func.count()).select_from(Tenant).where(Tenant.name == "pending-probe")) == 0
+    finally:
+        app.state.db.dispose()
+
+
+def test_finish_reason_with_newlines_cannot_forge_a_log_line():
+    import logging
+    seen: list[logging.LogRecord] = []
+
+    class Grab(logging.Handler):
+        def emit(self, record):
+            seen.append(record)
+
+    body = {"choices": [{"message": {"content": ""}, "finish_reason": "stop\nERROR forged line\r\x1b[31m" + "x" * 500}],
+            "usage": {"prompt_tokens": 2, "completion_tokens": 3}}
+    handler = Grab(logging.WARNING)
+    ai_module.log.addHandler(handler)
+    try:
+        with pytest.raises(AIUnavailable):
+            _azure(lambda _: httpx.Response(200, content=json.dumps(body)), retries=0).complete("s", "u")
+    finally:
+        ai_module.log.removeHandler(handler)
+    (record,) = [r for r in seen if r.getMessage() == "ai returned no usable answer"]
+    logged = record.finish_reason
+    assert not any(c in logged for c in "\n\r\x1b") and len(logged) <= 40 and logged.startswith("stopERROR forged")
