@@ -127,3 +127,80 @@ constant, publicly known value where a webhook signing secret goes.
   parameters are `@secure()`, and no output exposes a secret.
 - Deploy role: `follow` uses only `containerapp revision show`, `job update --set-env-vars` and `job show`, as before.
   `test-deploy-role.sh` passes.
+
+---
+
+## Re-review: e8bf66c (delta `git diff 7cdbbee..e8bf66c`, 8 files, +161/-39)
+
+Reviewer, 2026-11-27. **Verdict: PASS.** C1 is fixed, suggestions 1-5 are addressed, and nothing critical is left.
+
+### Evidence (detached worktree at e8bf66c)
+
+- Backend: `.venv/bin/python -m pytest`: **825 passed, 1 skipped** in 105 s against local Postgres 16. That is 822
+  before plus the 3 new C1 Settings tests.
+- `infra/test-deploy-workflow.sh`: **passed 136, failed 0**.
+- `infra/test-deploy-role.sh`: **67 passed, 0 failed**.
+- `infra/test-db-setup.sh`: **passed 33, failed 0**.
+- CI run 46000960916 on e8bf66c (`headSha` e8bf66ca…), checked with `gh run view`:
+  - `infra` (bicep build of main, shared and deploy-role, then `test-bicep-identities.sh`, then cost-guard): **success**;
+  - `image`: **success**;
+  - `frontend`: **success**;
+  - `backend`: still in progress when I checked. The same suite passes locally (above).
+- I also ran the revised compiled-JSON checks against my hand-made ARM-shape file, updated to the new variables
+  (`cancelsStripeEnv` as an `if(variables('cancelsUseStripe'), createArray(...), createArray())` string,
+  `cancelsUseStripe` as `equals(variables('cancelsBillingNow'), 'stripe')`, and `cancelsBillingNow` as an
+  `if(empty(parameters('purgeBillingProvider')), ...)` string). The two secretRef-subset checks and the
+  "only under cancelsUseStripe" check pass. CI ran them against the real compiled output and they pass there too.
+
+### What I checked
+
+1. **C1 is fixed.**
+   - Mock with unset secrets: the cancels job gets no `BILLING_WEBHOOK_SECRET` or `STRIPE_SECRET_KEY`, so the app
+     generates its random webhook secret as before T-177.
+   - Stripe: both references are present, and both secrets are always defined, for either provider value. No
+     `secretRef` names a missing secret.
+   - The new backend tests pin the settings behaviour for the mock-without-references, placeholder-rejected and
+     stripe cases.
+2. **The `purgeBillingProvider` wiring.**
+   - `live-release.sh` (deploy job, line 246) appends the `purge-job.sh settings` output, including
+     `PURGE_BILLING_PROVIDER`, to `$GITHUB_ENV`. The Bicep step runs later in the same `deploy` job, and
+     `main.bicepparam` reads it with `readEnvironmentVariable('PURGE_BILLING_PROVIDER', '')`.
+   - First release: `live-release.sh` prints only `FIRST_RELEASE` and `LIVE_REVISION`, so the parameter is `''` and
+     `cancelsBillingNow` becomes this release's `billingProvider`. That is correct, because the only revision is this
+     release.
+   - Validation: the value can reach Bicep only from `purge-job.sh`, which checks it against `^(mock|stripe)$` before it
+     prints anything.
+   - The web app is unaffected. It still uses `useStripe` and `stripeEnv`, which come from this release's
+     `billingProvider`.
+   - This also closes suggestion 1. The Bicep step no longer moves the cancels job to the new release's provider
+     before promote.
+3. **`--remove-env-vars` on an absent name.**
+   - The script reads the job first and removes only the names that are present. A mock job without references makes
+     no remove call at all, and the stand-in az that errors on an absent name tests this.
+   - Even unguarded, the Azure CLI containerapp extension's env-var removal only logs a warning ("does not exist") for
+     an absent name. With `--only-show-errors` it is silent, so it is safe either way.
+   - `$present` is unquoted on purpose. It can only contain the two fixed names that jq's filter selects.
+4. **The read-back is strict.** The cancels job must have exactly both `secretRef`s with stripe and none with mock.
+   Purge must never have any. A stand-in that ignores removal makes the run fail.
+5. **The deploy role.** `--set-env-vars NAME=secretref:x` and `--remove-env-vars` are both `jobs/write`, and neither
+   reads a secret value. `test-deploy-role.sh` is unchanged and green.
+6. **Suggestions 2-5.**
+   - 2: the compiled check now asserts the condition chain from `cancelsStripeEnv` through `cancelsUseStripe` and
+     `cancelsBillingNow` to `purgeBillingProvider`.
+   - 3: the docstring is fixed.
+   - 4: the sweep docstring explains the start-time re-check.
+   - 5: the README is rewritten.
+
+### Remaining suggestions (non-blocking)
+
+- **R1.** Add `@allowed(['', 'mock', 'stripe'])` to `param purgeBillingProvider` (`main.bicep:87`). A bad value
+  would then fail the deploy instead of silently meaning mock. Today `purge-job.sh` already guarantees the shape, so
+  this is defence in depth.
+- **R2.** When `follow` switches the cancels job to mock, it removes the references in one call and sets
+  `BILLING_PROVIDER=mock` in the next. If a scheduled run starts between the two calls, it sees stripe without
+  secrets and fails once. That is harmless and retried at the next run, but you could close it by passing
+  `--remove-env-vars` and `--set-env-vars` in one `job update`. Confirm first that the CLI accepts both flags
+  together.
+- **R3.** Update `infra/README.md:180`. The last sentence ("`purge-job.sh follow` copies `BILLING_PROVIDER`...")
+  could also say "and adds or removes the two Stripe references". The paragraph above already says this, so it is
+  minor.
