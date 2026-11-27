@@ -101,6 +101,9 @@ class Settings(BaseSettings):
     ai_concurrent_calls: int = 8  # in-process cap, so slow AI calls can't take every request thread
     ai_calls_per_tenant_at_once: int = 2
 
+    # Prices off (tender demo, T-185): when false the /api/billing routes are not mounted (404) and the SPA shows no
+    # price, plan or upgrade page. The trial clock and AI caps still apply. Turn on only with the selling unlock.
+    billing_enabled: bool = False
     # billing (test mode only until `unlock selling`)
     billing_provider: Literal["mock", "stripe"] = "mock"
     # Unset means a random secret per process, which is right for the mock. Stripe needs its whsec_ value.

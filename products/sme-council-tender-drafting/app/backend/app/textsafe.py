@@ -50,6 +50,6 @@ def _blank_to_empty(value):
     return "" if isinstance(value, str) and is_blank(value) else value
 
 
-# Note bodies: optional, so a body of only whitespace and invisible characters is normalised to "" (nothing
+# Free-text bodies: optional, so a body of only whitespace and invisible characters is normalised to "" (nothing
 # typed) instead of refused. Real text keeps its characters untouched (ZWJ in emoji, ZWNJ in Persian).
-NoteBody = Annotated[str, BeforeValidator(_blank_to_empty), AfterValidator(_check(_TEXT_BAD, "Remove control characters."))]
+FreeText = Annotated[str, BeforeValidator(_blank_to_empty), AfterValidator(_check(_TEXT_BAD, "Remove control characters."))]

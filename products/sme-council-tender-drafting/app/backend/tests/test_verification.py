@@ -55,7 +55,7 @@ def test_unverified_owner_cannot_invite_or_check_out(new_client, outbox):
         response = client.post(path, json=body)
         assert response.status_code == 403 and response.json()["error"] == "email_not_verified"
     assert not any("/accept-invite?token=" in m.body for m in outbox.sent)
-    assert client.post("/api/notes", json={"title": "still usable"}).status_code == 201  # the product itself works
+    assert client.post("/api/vehicle", json={"title": "still usable"}).status_code == 201  # the product itself works
 
 
 def test_unverified_owner_cannot_open_the_billing_portal(new_client, outbox, app, database):

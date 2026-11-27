@@ -42,8 +42,8 @@ def test_plans_stop_saying_trial_sized_once_the_provider_is_not_limited(new_clie
 def test_the_ai_cap_and_the_plans_label_share_one_limited_set():
     import app.billing
     import app.routes.billing
-    import app.routes.notes
-    assert app.routes.notes.LIMITED_PROVIDERS is app.billing.LIMITED_PROVIDERS
+    from . import vehicle
+    assert vehicle.LIMITED_PROVIDERS is app.billing.LIMITED_PROVIDERS
     assert app.routes.billing.LIMITED_PROVIDERS is app.billing.LIMITED_PROVIDERS
 
 

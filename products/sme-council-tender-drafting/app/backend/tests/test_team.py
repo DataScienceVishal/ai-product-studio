@@ -25,7 +25,7 @@ def _accept(client, token, password=MEMBER_PASSWORD):
 
 def test_invited_member_joins_the_same_tenant(owner, new_client, outbox):
     owner_client, me = owner
-    owner_client.post("/api/notes", json={"title": "Shared note"})
+    owner_client.post("/api/vehicle", json={"title": "Shared note"})
     _, token = _invite(owner_client, outbox, "Member@Acme.test")
     member = new_client()
     joined = _accept(member, token)
@@ -33,7 +33,7 @@ def test_invited_member_joins_the_same_tenant(owner, new_client, outbox):
     body = joined.json()
     assert body["user"]["role"] == "member" and body["user"]["email"] == "member@acme.test"
     assert body["tenant"]["id"] == me["tenant"]["id"]
-    assert [n["title"] for n in member.get("/api/notes").json()["items"]] == ["Shared note"]
+    assert [n["title"] for n in member.get("/api/vehicle").json()["items"]] == ["Shared note"]
     assert member.post("/api/auth/login", json={"email": "member@acme.test", "password": MEMBER_PASSWORD}).status_code == 200
 
 
@@ -133,7 +133,7 @@ def test_signed_in_user_accepting_an_invite_does_not_orphan_their_own_tenant(own
     owner_a, _ = owner
     b = new_client()
     sign_up(b, email="b@beta.test", company="Beta")
-    b.post("/api/notes", json={"title": "Beta note"})
+    b.post("/api/vehicle", json={"title": "Beta note"})
     _, token = _invite(owner_a, outbox, "other@acme.test")
     joined = _accept(b, token)  # B is signed in on this client while accepting someone else's invite
     assert joined.status_code == 201 and joined.json()["user"]["email"] == "other@acme.test"
@@ -142,7 +142,7 @@ def test_signed_in_user_accepting_an_invite_does_not_orphan_their_own_tenant(own
     login = again.post("/api/auth/login", json={"email": "b@beta.test", "password": PASSWORD})
     assert login.status_code == 200, login.text
     assert login.json()["tenant"]["name"] == "Beta" and login.json()["user"]["role"] == "owner"
-    assert [n["title"] for n in again.get("/api/notes").json()["items"]] == ["Beta note"]
+    assert [n["title"] for n in again.get("/api/vehicle").json()["items"]] == ["Beta note"]
 
 
 def test_invite_for_an_email_that_already_has_an_account_is_refused(owner, new_client):

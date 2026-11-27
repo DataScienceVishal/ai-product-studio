@@ -8,39 +8,39 @@ from tests.conftest import PASSWORD, sign_up
 def test_nul_in_note_is_422(owner, field):
     client, _ = owner
     data = {"title": "ok", "body": "ok", field: "a\u0000b"}
-    assert client.post("/api/notes", json=data).status_code == 422
-    made = client.post("/api/notes", json={"title": "fine", "body": ""}).json()
-    assert client.put(f"/api/notes/{made['id']}", json=data).status_code == 422
+    assert client.post("/api/vehicle", json=data).status_code == 422
+    made = client.post("/api/vehicle", json={"title": "fine", "body": ""}).json()
+    assert client.put(f"/api/vehicle/{made['id']}", json=data).status_code == 422
 
 
 def test_other_control_chars_refused_but_newlines_and_tabs_allowed_in_body(owner):
     client, _ = owner
-    assert client.post("/api/notes", json={"title": "t", "body": "a\x07b"}).status_code == 422
-    assert client.post("/api/notes", json={"title": "a\nb", "body": ""}).status_code == 422
-    ok = client.post("/api/notes", json={"title": "t", "body": "line1\nline2\tx\r\n"})
+    assert client.post("/api/vehicle", json={"title": "t", "body": "a\x07b"}).status_code == 422
+    assert client.post("/api/vehicle", json={"title": "a\nb", "body": ""}).status_code == 422
+    ok = client.post("/api/vehicle", json={"title": "t", "body": "line1\nline2\tx\r\n"})
     assert ok.status_code == 201
 
 
 @pytest.mark.parametrize("title", ["", "   ", "\t  "])
 def test_blank_note_title_is_422(owner, title):
     client, _ = owner
-    assert client.post("/api/notes", json={"title": title}).status_code == 422
-    made = client.post("/api/notes", json={"title": "fine"}).json()
-    assert client.put(f"/api/notes/{made['id']}", json={"title": title}).status_code == 422
+    assert client.post("/api/vehicle", json={"title": title}).status_code == 422
+    made = client.post("/api/vehicle", json={"title": "fine"}).json()
+    assert client.put(f"/api/vehicle/{made['id']}", json={"title": title}).status_code == 422
 
 
 def test_empty_note_title_is_422(owner):
     client, _ = owner
-    assert client.post("/api/notes", json={"title": ""}).status_code == 422
+    assert client.post("/api/vehicle", json={"title": ""}).status_code == 422
 
 
 def test_note_title_is_stripped_and_never_stored_blank(owner):
     client, _ = owner
-    made = client.post("/api/notes", json={"title": "\t hi\xa0 "}).json()
+    made = client.post("/api/vehicle", json={"title": "\t hi\xa0 "}).json()
     assert made["title"] == "hi"
-    edited = client.put(f"/api/notes/{made['id']}", json={"title": "  bye  "}).json()
+    edited = client.put(f"/api/vehicle/{made['id']}", json={"title": "  bye  "}).json()
     assert edited["title"] == "bye"
-    assert [n["title"] for n in client.get("/api/notes").json()["items"]] == ["bye"]
+    assert [n["title"] for n in client.get("/api/vehicle").json()["items"]] == ["bye"]
 
 
 @pytest.mark.parametrize("path", ["/api/auth/login", "/api/auth/password-reset/request", "/api/auth/signup"])

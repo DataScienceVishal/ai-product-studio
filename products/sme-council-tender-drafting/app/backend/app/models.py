@@ -140,20 +140,6 @@ class AIGuardTrip(Base):
     model: Mapped[str] = mapped_column(String(80), nullable=False)
 
 
-class Note(Base):
-    """Example tenant-owned record. Products replace this with their own core objects."""
-    __tablename__ = "notes"
-    id: Mapped[uuid.UUID] = _id()
-    tenant_id: Mapped[uuid.UUID] = _tenant()
-    created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
-    title: Mapped[str] = mapped_column(String(200), nullable=False)
-    body: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    summary: Mapped[str | None] = mapped_column(Text)
-    created_at: Mapped[datetime] = _created()
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow,
-                                                 nullable=False)
-
-
 class Invitation(Base):
     """An owner's invite for a new member. Only the token's hash is stored; the link is the secret."""
     __tablename__ = "invitations"

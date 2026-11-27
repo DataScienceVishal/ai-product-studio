@@ -19,7 +19,7 @@ from .db import Database
 from .email import EmailSender, OutboxEmail
 from .logs import end_request_fields, request_id_var, setup_logging, start_request_fields
 from .ratelimit import RateLimiter, build_redis_client
-from .routes import account, auth, billing, health, notes, team
+from .routes import account, auth, billing, health, team
 
 log = logging.getLogger("app.http")
 REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{8,64}$")
@@ -159,7 +159,8 @@ class RequestContext:
 
 
 def create_app(settings: Settings | None = None, *, ai: AIProvider | None = None,
-               billing_provider: BillingProvider | None = None, email: EmailSender | None = None) -> FastAPI:
+               billing_provider: BillingProvider | None = None, email: EmailSender | None = None,
+               extra_routers: tuple = ()) -> FastAPI:
     settings = settings or Settings()
     setup_logging(settings.log_level)
 
@@ -197,7 +198,10 @@ def create_app(settings: Settings | None = None, *, ai: AIProvider | None = None
                        allow_methods=["GET", "POST", "PUT", "DELETE"],
                        allow_headers=["content-type", "x-requested-with", "x-request-id"])
     app.add_middleware(RequestContext, hsts=settings.cookie_secure, strict_csp=settings.env == "prod")  # outermost
-    for router in (health.router, auth.router, notes.router, billing.router, account.router, team.router, team.public):
+    routers = [health.router, auth.router, account.router, team.router, team.public, *extra_routers]
+    if settings.billing_enabled:
+        routers.append(billing.router)
+    for router in routers:  # extra_routers: test-only routes (tests/vehicle.py), mounted before the SPA catch-all
         app.include_router(router)
     spa.install(app, settings.frontend_dist)
     return app

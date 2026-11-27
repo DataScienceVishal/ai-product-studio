@@ -47,7 +47,7 @@ def test_head_falls_back_without_a_body(web):
     assert r.status_code == 200 and r.content == b"" and r.headers["cache-control"] == "no-cache"
 
 
-@pytest.mark.parametrize("path", ["/some/deep/client/route", "/favicon.ico", "/robots.txt", "/API/notes", "/nope"])
+@pytest.mark.parametrize("path", ["/some/deep/client/route", "/favicon.ico", "/robots.txt", "/API/vehicle", "/nope"])
 def test_unknown_paths_are_404_with_the_app_html(web, path):
     r = web.get(path)
     assert r.status_code == 404
@@ -153,7 +153,7 @@ def test_the_real_vite_build_has_no_inline_script():
     assert _built_html_checker().problems(built.read_text(encoding="utf-8")) == []
 
 
-@pytest.mark.parametrize("path", ["/api/nope", "/api/", "/api", "/api/notes/x/y/z"])
+@pytest.mark.parametrize("path", ["/api/nope", "/api/", "/api", "/api/vehicle/x/y/z"])
 def test_unknown_api_paths_stay_json_404(web, path):
     r = web.get(path)
     assert r.status_code == 404
@@ -175,7 +175,7 @@ def test_probes_and_api_unchanged(web):
     health = web.get("/healthz")
     assert health.status_code == 200 and health.json()["db"] == "ok"
     assert "content-security-policy" not in health.headers or health.headers["content-security-policy"] != HTML_CSP
-    assert web.get("/api/notes").status_code == 401
+    assert web.get("/api/vehicle").status_code == 401
 
 
 @pytest.mark.parametrize("path", [

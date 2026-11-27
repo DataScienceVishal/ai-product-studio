@@ -1,159 +1,19 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { api, ApiError, formatPrice, isMockBilling, type AiAllowance, type Me, type Note, type Plan } from "../api";
+import { useEffect, useState, type FormEvent } from "react";
+import { api, ApiError, formatPrice, isBillingEnabled, isMockBilling, type AiAllowance, type Me, type Plan } from "../api";
 import { Alert, Button, Card, Field, Link, navigate } from "../ui";
 import { BAD_REDIRECT, safeRedirect } from "../redirect";
-
-const SAMPLE_NOTES = [
-  { title: "Supplier price rise", body: "Our flour supplier is raising prices by 8% from next month. Bread and pastry margins drop from 68% to 63% unless we change prices or find another supplier." },
-  { title: "Weekend staffing", body: "Saturday lunch needs one more person on the floor. Sunday is quiet before 11am; we could start the second shift an hour later." },
-];
 
 function errorText(err: unknown) {
   return err instanceof ApiError ? err.message : "Something went wrong.";
 }
 
 export function Dashboard({ me }: { me: Me }) {
-  const [notes, setNotes] = useState<Note[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [busy, setBusy] = useState<string | null>(null);
-
-  const [total, setTotal] = useState(0);
-  const [loadFailed, setLoadFailed] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const loadingMoreRef = useRef(false); // own in-flight guard: Summarise/Delete share `busy` and must not re-enable Show more
-  const generation = useRef(0); // bumped by every load(); a load-more that started before it is stale
-
-  const load = useCallback(async () => {
-    generation.current += 1;
-    try {
-      const page = await api<{ items: Note[]; total: number }>("/api/notes");
-      setNotes(page.items);
-      setTotal(page.total);
-      setLoadFailed(false);
-    } catch (err) {
-      setLoadFailed(true);
-      setError(errorText(err));
-    }
-  }, []);
-  const loadMore = async () => { // the API returns 50 at a time; without this, note 51 onwards is unreachable
-    if (loadingMoreRef.current) return;
-    loadingMoreRef.current = true;
-    setLoadingMore(true);
-    const started = generation.current;
-    try {
-      const page = await api<{ items: Note[]; total: number }>(`/api/notes?offset=${notes?.length ?? 0}`);
-      if (started !== generation.current) return; // the list was reloaded meanwhile: this page's offset is out of date
-      setNotes((current) => [...(current ?? []), ...page.items.filter((n) => !current?.some((c) => c.id === n.id))]);
-      setTotal(page.total);
-    } catch (err) {
-      setError(errorText(err));
-    } finally {
-      loadingMoreRef.current = false;
-      setLoadingMore(false);
-    }
-  };
-  useEffect(() => { void load(); }, [load]);
-
-  const create = async (event: FormEvent) => {
-    event.preventDefault();
-    setBusy("create");
-    setError(null);
-    try {
-      await api("/api/notes", { method: "POST", body: { title, body } });
-      setTitle("");
-      setBody("");
-      await load();
-    } catch (err) {
-      setError(errorText(err));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const addSamples = async () => {
-    setBusy("samples");
-    try {
-      for (const sample of SAMPLE_NOTES) await api("/api/notes", { method: "POST", body: sample });
-      await load();
-    } catch (err) {
-      setError(errorText(err));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const summarize = async (id: string) => {
-    setBusy(id);
-    setError(null);
-    try {
-      const updated = await api<Note>(`/api/notes/${id}/summarize`, { method: "POST" });
-      setNotes((current) => current?.map((n) => (n.id === id ? updated : n)) ?? null);
-    } catch (err) {
-      const e = err as ApiError;
-      setError(e.code === "plan_required" || e.code === "ai_cap_reached" ? `${e.message} See Billing.` : errorText(err));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const remove = async (id: string) => {
-    setBusy(id);
-    try {
-      await api(`/api/notes/${id}`, { method: "DELETE" });
-      setNotes((current) => current?.filter((n) => n.id !== id) ?? null);
-      setTotal((t) => Math.max(0, t - 1));
-    } catch (err) {
-      setError(errorText(err));
-    } finally {
-      setBusy(null);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <VerifyBanner me={me} />
       <TrialBanner me={me} />
-      {error && <Alert>{error}</Alert>}
-      <Card title="New note">
-        <form onSubmit={create} className="space-y-4">
-          <Field id="title" label="Title" value={title} onChange={setTitle} required />
-          <Field id="body" label="Details" value={body} onChange={setBody} multiline />
-          <Button type="submit" busy={busy === "create"} disabled={!title.trim()}>Save note</Button>
-        </form>
-      </Card>
-      <Card title="Your notes">
-        {notes === null ? (
-          loadFailed
-            ? <div className="space-y-3"><p className="text-slate-700">We couldn't load your notes.</p>
-                <Button variant="secondary" onClick={() => { setError(null); void load(); }}>Try again</Button></div>
-            : <p className="text-slate-600">Loading…</p>
-        ) : notes.length === 0 ? (
-          <div className="space-y-3 text-slate-700">
-            <p><strong>No notes yet.</strong> Write your first one above, then press <em>Summarise</em> to see the AI at work.</p>
-            <Button variant="secondary" busy={busy === "samples"} onClick={addSamples}>Add two sample notes</Button>
-          </div>
-        ) : (
-          <ul className="divide-y divide-slate-200">
-            {notes.map((note) => (
-              <li key={note.id} className="py-4">
-                <h3 className="break-words font-semibold">{note.title}</h3>
-                {note.body && <p className="mt-1 whitespace-pre-wrap break-words text-slate-700">{note.body}</p>}
-                {note.summary && (
-                  <p className="mt-2 break-words rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-950" data-testid="summary">{note.summary}</p>
-                )}
-                <div className="mt-3 flex gap-2">
-                  <Button variant="secondary" busy={busy === note.id} onClick={() => summarize(note.id)}>Summarise</Button>
-                  <Button variant="secondary" onClick={() => remove(note.id)} aria-label={`Delete ${note.title}`}>Delete</Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-        {notes !== null && notes.length < total && (
-          <div className="mt-4"><Button variant="secondary" busy={loadingMore} onClick={loadMore}>Show more notes ({notes.length} of {total})</Button></div>
-        )}
+      <Card title="Tender packs">
+        <p className="text-slate-700">Your tender packs will appear here. Upload a council tender pack to start a draft.</p>
       </Card>
     </div>
   );
@@ -182,7 +42,7 @@ function TrialBanner({ me }: { me: Me }) {
   const days = Math.max(0, Math.ceil((new Date(ends).getTime() - Date.now()) / 86_400_000));
   return (
     <Alert kind="info">
-      Free trial: {days} day{days === 1 ? "" : "s"} left. <Link to="/billing">Choose a plan</Link> any time.
+      Free trial: {days} day{days === 1 ? "" : "s"} left.{isBillingEnabled() && <> <Link to="/billing">Choose a plan</Link> any time.</>}
     </Alert>
   );
 }
@@ -426,12 +286,12 @@ function MemberSettings({ onDeleted }: { onDeleted: () => void }) {
     <div className="space-y-6">
       {error && <Alert>{error}</Alert>}
       <Card title="Your data">
-        <p className="mb-3 text-slate-700">Download your profile and the notes you wrote. Billing and company settings belong to the account owner.</p>
+        <p className="mb-3 text-slate-700">Download your profile. Billing and company settings belong to the account owner.</p>
         <Button variant="secondary" onClick={download}>Download my data</Button>
       </Card>
       <Card title="Leave this team">
         <form onSubmit={leave} className="space-y-4">
-          <p className="text-slate-700">This deletes your sign-in. Notes you wrote stay with the company.</p>
+          <p className="text-slate-700">This deletes your sign-in. What you created stays with the company.</p>
           <Field id="leave-password" label="Your password" type="password" value={password} onChange={setPassword} autoComplete="current-password" required />
           <Field id="leave-confirm" label="Type DELETE to confirm" value={confirm} onChange={setConfirm} required />
           <Button type="submit" variant="danger" busy={busy} disabled={confirm !== "DELETE" || !password}>Leave and delete my sign-in</Button>
@@ -454,7 +314,7 @@ export function BillingDone({ refresh, me }: { refresh: () => Promise<void>; me:
       {active ? <Alert kind="success">You're on the {me.subscription.plan} plan. Thank you!</Alert>
         : waited >= 15 ? <Alert>We haven't had confirmation from the payment provider yet. Check Billing again in a few minutes.</Alert>
         : <p className="text-slate-700">Confirming your payment…</p>}
-      <p className="mt-4"><Link to="/">Back to your notes</Link></p>
+      <p className="mt-4"><Link to="/">Back to your tender packs</Link></p>
     </Card>
   );
 }
@@ -462,9 +322,8 @@ export function BillingDone({ refresh, me }: { refresh: () => Promise<void>; me:
 export function Help() {
   const faqs = [
     ["Is my data shared with other companies?", "No. Each company's data is kept separate, and other customers can't see it."],
-    ["What does the AI see?", "Only the note you ask it to summarise. It is sent to Microsoft's Azure OpenAI service, which processes it under Microsoft's data-protection terms: Microsoft may store prompts and answers for abuse monitoring, as described on its Azure OpenAI data-privacy page, and some deployment types process data outside the UK and EU. Other customers never see it."],
-    ["How do I cancel?", "You can delete your account and all its data from Settings at any time."],
-    ["Is this a real payment?", "Not yet. The starter runs in test mode, so no money is taken."],
+    ["What does the AI see?", "Only the tender documents and evidence you give it for a draft. It is sent to Microsoft's Azure OpenAI service, which processes it under Microsoft's data-protection terms: Microsoft may store prompts and answers for abuse monitoring, as described on its Azure OpenAI data-privacy page, and some deployment types process data outside the UK and EU. Other customers never see it."],
+    ["How do I delete my data?", "You can delete your account and all its data from Settings at any time."],
   ];
   return (
     <Card title="Help">

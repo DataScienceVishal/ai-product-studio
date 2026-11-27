@@ -114,7 +114,7 @@ def _refuses_live_keys(provider: str) -> bool:
 
 
 def test_every_provider_that_refuses_live_keys_is_trial_limited_and_back():
-    from app.routes.notes import LIMITED_PROVIDERS
+    from .vehicle import LIMITED_PROVIDERS
     providers = set(get_args(Settings.model_fields["billing_provider"].annotation))
     refusing = {p for p in providers if _refuses_live_keys(p)}
     assert refusing == {"stripe"}  # today only Stripe takes keys, and it is test-mode only

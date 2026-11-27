@@ -23,6 +23,8 @@ from app.db import Base, Database
 from app.email import OutboxEmail
 from app.main import create_app
 
+from . import vehicle
+
 _BASE_URL = os.environ.get("TEST_DATABASE_URL", "postgresql+psycopg://studio:studio@localhost:5432/starter_test")
 # Each pytest run gets its own database, `<db>_t<epoch>_<pid>_<rand>`, so runs in parallel (agents, dev + CI on one
 # host) never wipe each other's data. TEST_DATABASE_SHARED=1 uses the URL as-is (needs no CREATE DATABASE right).
@@ -117,6 +119,7 @@ def database():
             conn.execute(text("CREATE SCHEMA public"))
         try:
             Base.metadata.create_all(db.engine)
+            vehicle.create_table(db.engine)
             yield db
         finally:
             db.dispose()
@@ -130,6 +133,7 @@ def database():
             db = Database(TEST_DB)
             try:
                 Base.metadata.create_all(db.engine)
+                vehicle.create_table(db.engine)
                 yield db
             finally:
                 db.dispose()
@@ -142,7 +146,7 @@ def database():
 @pytest.fixture(autouse=True)
 def _clean(database):
     yield
-    tables = ", ".join(t.name for t in Base.metadata.sorted_tables)
+    tables = ", ".join([t.name for t in Base.metadata.sorted_tables] + ["vehicle_items"])
     with database.engine.begin() as conn:
         conn.execute(text(f"TRUNCATE {tables} CASCADE"))
 
@@ -151,7 +155,7 @@ def _clean(database):
 def settings() -> Settings:
     return Settings(env="test", database_url=TEST_DB, app_base_url="https://app.test", cookie_secure=True,
                     auth_rate_limit_per_minute=1000, ai_rate_limit_per_minute=1000, log_level="WARNING",
-                    mock_checkout_enabled=True)
+                    mock_checkout_enabled=True, billing_enabled=True)
 
 
 class RecordingAI(FakeAI):
@@ -176,7 +180,8 @@ def outbox() -> OutboxEmail:
 @pytest.fixture
 def app(settings, ai, outbox):
     application = create_app(settings, ai=ai, email=outbox,
-                             billing_provider=MockBilling(settings.billing_webhook_secret, settings.app_base_url))
+                             billing_provider=MockBilling(settings.billing_webhook_secret, settings.app_base_url),
+                             extra_routers=(vehicle.router,))
     yield application
     application.state.db.dispose()
 

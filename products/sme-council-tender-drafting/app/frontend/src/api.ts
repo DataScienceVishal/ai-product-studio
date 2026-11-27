@@ -6,7 +6,6 @@ export type Me = {
   subscription: { plan: string; status: string; offer: string | null; trial_ends_at: string | null; current_period_end: string | null };
 };
 
-export type Note = { id: string; title: string; body: string; summary: string | null; created_at: string; updated_at: string };
 export type Plan = { id: string; name: string; price_pence: number; currency: string; interval: string; ai_monthly_tokens: number };
 /** T-94: while billing is mock or Stripe test mode, every plan uses the free-trial AI allowance. */
 export type AiAllowance = { trial_sized: boolean; monthly_tokens: number; daily_tokens: number | null };
@@ -29,17 +28,23 @@ export function timeoutMs(raw: unknown): number {
 let requestTimeoutMs = DEFAULT_TIMEOUT_MS;
 // "mock" only when the server says so; anything else (including a failed /api/config) fails closed.
 let billingProvider = "";
+// Prices off (T-185): billing pages, links and price text show only when the server says billing is enabled.
+let billingEnabled = false;
+export const isBillingEnabled = (): boolean => billingEnabled;
+export function setBillingEnabledForTest(value: boolean): void { billingEnabled = value; }
 export const isMockBilling = (): boolean => billingProvider === "mock";
 export function setBillingProviderForTest(value: string): void { billingProvider = value; }
 export async function loadClientConfig(): Promise<void> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5_000);
+  billingEnabled = false;
   billingProvider = ""; // only a successful config with "mock" turns it on
   try {
     const response = await fetch("/api/config", { credentials: "same-origin", signal: controller.signal });
     if (response.ok) {
       const config = await response.json();
       requestTimeoutMs = timeoutMs(config.api_timeout_seconds);
+      billingEnabled = config.billing_enabled === true;
       billingProvider = typeof config.billing_provider === "string" ? config.billing_provider : "";
     }
   } catch {

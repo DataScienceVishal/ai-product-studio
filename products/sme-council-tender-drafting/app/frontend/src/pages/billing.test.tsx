@@ -1,13 +1,14 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { reply, stubFetch, makeMe } from "../test-utils";
-import { setBillingProviderForTest } from "../api";
+import { setBillingEnabledForTest, setBillingProviderForTest } from "../api";
 import { Billing, BillingDone, MockCheckout, MockPortal } from "./app";
 
 const PLANS = { plans: [{ id: "pro", name: "Pro", price_pence: 4900, currency: "gbp", interval: "month", ai_monthly_tokens: 1000000 }] };
 
 let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
+  setBillingEnabledForTest(true);
   fetchMock = stubFetch();
 });
 afterEach(() => {

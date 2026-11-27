@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { api, ApiError, SESSION_ENDED, type Me } from "./api";
+import { api, ApiError, isBillingEnabled, SESSION_ENDED, type Me } from "./api";
 import { Billing, BillingDone, Dashboard, Help, MockCheckout, MockPortal, Settings } from "./pages/app";
 import { Privacy, Terms } from "./pages/legal";
 import { ForgotPassword, ResetPassword, safeNext, SignIn, SignUp, VerifyEmail } from "./pages/auth";
@@ -63,13 +63,14 @@ export default function App() {
     }
   };
 
+  const billing = isBillingEnabled(); // false for the tender app: no plans, prices or upgrade pages
   return (
     <Shell me={me} onSignOut={signOut}>
       {notice && <div className="mb-4"><Alert>{notice}</Alert></div>}
-      {path === "/billing" ? <Billing me={me} refresh={refresh} />
-        : path === "/billing/done" ? <BillingDone me={me} refresh={refresh} />
-        : path === "/billing/mock-checkout" ? <MockCheckout refresh={refresh} />
-        : path === "/billing/mock-portal" ? <MockPortal />
+      {billing && path === "/billing" ? <Billing me={me} refresh={refresh} />
+        : billing && path === "/billing/done" ? <BillingDone me={me} refresh={refresh} />
+        : billing && path === "/billing/mock-checkout" ? <MockCheckout refresh={refresh} />
+        : billing && path === "/billing/mock-portal" ? <MockPortal />
         : path === "/settings" ? <Settings me={me} onDeleted={() => setMe(null)} />
         : path === "/team" ? <Team me={me} />
         : path === "/help" ? <Help />
@@ -84,7 +85,7 @@ function NotFound() {
     <div>
       <h1 className="text-2xl font-bold text-slate-900">Page not found</h1>
       <p className="mt-2 text-slate-600">There is nothing at this address.</p>
-      <p className="mt-4"><Link to="/">Go to your notes</Link></p>
+      <p className="mt-4"><Link to="/">Go to your tender packs</Link></p>
     </div>
   );
 }
@@ -94,11 +95,11 @@ function Shell({ me, onSignOut, children }: { me?: Me; onSignOut?: () => void; c
     <div className="min-h-screen">
       <header className="border-b border-slate-200 bg-white">
         <nav className="mx-auto flex max-w-4xl flex-wrap items-center gap-4 px-4 py-3" aria-label="Main">
-          <Link to="/" className="font-bold text-slate-900">Starter</Link>
+          <Link to="/" className="font-bold text-slate-900">Tender drafting</Link>
           {me && <>
-            <Link to="/">Notes</Link>
+            <Link to="/">Tender packs</Link>
             <Link to="/team">Team</Link>
-            <Link to="/billing">Billing</Link>
+            {isBillingEnabled() && <Link to="/billing">Billing</Link>}
             <Link to="/settings">Settings</Link>
           </>}
           <Link to="/help">Help</Link>

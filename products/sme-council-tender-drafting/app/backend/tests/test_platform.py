@@ -16,7 +16,8 @@ from app.config import Settings
 from app.db import Base
 from app.logs import JsonFormatter
 from app.main import create_app
-from app.models import Note, Tenant, User
+from app.models import Tenant, User
+from .vehicle import Item
 
 from .conftest import PASSWORD, TEST_DB, sign_up
 
@@ -59,10 +60,10 @@ def test_unhandled_errors_return_json_with_request_id(app):
 
 def test_cors_allows_only_configured_origins(new_client):
     client = new_client()
-    allowed = client.options("/api/notes", headers={"Origin": "http://localhost:5173",
+    allowed = client.options("/api/vehicle", headers={"Origin": "http://localhost:5173",
                                                     "Access-Control-Request-Method": "POST",
                                                     "Access-Control-Request-Headers": "x-requested-with"})
-    evil = client.options("/api/notes", headers={"Origin": "https://evil.example",
+    evil = client.options("/api/vehicle", headers={"Origin": "https://evil.example",
                                                  "Access-Control-Request-Method": "POST",
                                                  "Access-Control-Request-Headers": "x-requested-with"})
     assert allowed.headers.get("access-control-allow-origin") == "http://localhost:5173"
@@ -81,8 +82,8 @@ def test_account_deletion_removes_only_that_tenant(new_client, database):
     a, b = new_client(), new_client()
     sign_up(a, email="a@alpha.test", company="Alpha")
     sign_up(b, email="b@beta.test", company="Beta")
-    a.post("/api/notes", json={"title": "A1"})
-    b.post("/api/notes", json={"title": "B1"})
+    a.post("/api/vehicle", json={"title": "A1"})
+    b.post("/api/vehicle", json={"title": "B1"})
     assert a.request("DELETE", "/api/account", json={"password": PASSWORD, "confirm": "nope"}).status_code == 422
     assert a.request("DELETE", "/api/account", json={"password": "wrong password!", "confirm": "DELETE"}).status_code == 401
     assert a.request("DELETE", "/api/account", json={"password": PASSWORD, "confirm": "DELETE"}).status_code == 204
@@ -90,8 +91,8 @@ def test_account_deletion_removes_only_that_tenant(new_client, database):
     with database.sessions() as db:
         assert [t.name for t in db.scalars(select(Tenant))] == ["Beta"]
         assert db.scalar(select(func.count()).select_from(User)) == 1
-        assert [n.title for n in db.scalars(select(Note))] == ["B1"]
-    assert b.get("/api/notes").json()["total"] == 1
+        assert [n.title for n in db.scalars(select(Item))] == ["B1"]
+    assert b.get("/api/vehicle").json()["total"] == 1
 
 
 GOOD_PROD = dict(env="prod", app_base_url="https://app.example.com", cors_origins=["https://app.example.com"],

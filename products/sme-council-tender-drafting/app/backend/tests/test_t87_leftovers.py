@@ -9,21 +9,21 @@ INVISIBLE = ["​", "‌", "‍", "⁠", "﻿", "­", "‎", " ​ ﻿\t"]
 @pytest.mark.parametrize("blank", INVISIBLE)
 def test_invisible_only_title_is_422_like_an_empty_one(owner, blank):
     client, _ = owner
-    assert client.post("/api/notes", json={"title": blank}).status_code == 422
-    made = client.post("/api/notes", json={"title": "fine"}).json()
-    assert client.put(f"/api/notes/{made['id']}", json={"title": blank}).status_code == 422
+    assert client.post("/api/vehicle", json={"title": blank}).status_code == 422
+    made = client.post("/api/vehicle", json={"title": "fine"}).json()
+    assert client.put(f"/api/vehicle/{made['id']}", json={"title": blank}).status_code == 422
 
 
 @pytest.mark.parametrize("blank", INVISIBLE + ["   ", "\n", "\u200b"])
 def test_invisible_only_body_is_normalised_to_empty(owner, blank):
     client, _ = owner
-    made = client.post("/api/notes", json={"title": "t", "body": blank})
+    made = client.post("/api/vehicle", json={"title": "t", "body": blank})
     assert made.status_code == 201
     assert made.json()["body"] == ""
-    again = client.put(f"/api/notes/{made.json()['id']}", json={"title": "t", "body": blank})
+    again = client.put(f"/api/vehicle/{made.json()['id']}", json={"title": "t", "body": blank})
     assert again.status_code == 200
     assert again.json()["body"] == ""
-    assert client.post("/api/notes", json={"title": "t", "body": ""}).json()["body"] == ""
+    assert client.post("/api/vehicle", json={"title": "t", "body": ""}).json()["body"] == ""
 
 
 FILLERS = ["\u115f", "\u1160", "\u3164", "\uffa0", "\u2800", "\u3164\u2800 "]
@@ -32,7 +32,7 @@ FILLERS = ["\u115f", "\u1160", "\u3164", "\uffa0", "\u2800", "\u3164\u2800 "]
 @pytest.mark.parametrize("blank", FILLERS)
 def test_filler_only_title_is_422(owner, blank):
     client, _ = owner
-    assert client.post("/api/notes", json={"title": blank}).status_code == 422
+    assert client.post("/api/vehicle", json={"title": blank}).status_code == 422
 
 
 @pytest.mark.parametrize("blank", ["\u200b", "\u3164"])
@@ -73,7 +73,7 @@ def test_real_text_keeps_its_zwj_and_format_characters(owner):
     client, _ = owner
     family = "\U0001F468‍\U0001F469‍\U0001F467"
     persian = "می‌خواهم"  # ZWNJ inside a word
-    made = client.post("/api/notes", json={"title": family, "body": persian + "​"})
+    made = client.post("/api/vehicle", json={"title": family, "body": persian + "​"})
     assert made.status_code == 201
     assert made.json()["title"] == family
     assert made.json()["body"] == persian + "​"
@@ -101,16 +101,16 @@ def test_login_with_a_non_ascii_email_just_fails(new_client):
 
 def test_trailing_slash_is_a_404_not_a_redirect(owner):
     client, _ = owner
-    for path in ("/api/notes/", "/api/auth/me/", "/api/team/"):
+    for path in ("/api/vehicle/", "/api/auth/me/", "/api/team/"):
         r = client.get(path, follow_redirects=False)
         assert r.status_code == 404, path
         assert "location" not in r.headers
-    assert client.get("/api/notes", follow_redirects=False).status_code == 200
+    assert client.get("/api/vehicle", follow_redirects=False).status_code == 200
 
 
 def test_malformed_json_does_not_name_a_field_after_the_byte_offset(owner):
     client, _ = owner
-    r = client.post("/api/notes", content=b'{"title": ', headers={"content-type": "application/json"})
+    r = client.post("/api/vehicle", content=b'{"title": ', headers={"content-type": "application/json"})
     assert r.status_code == 422
     fields = r.json()["fields"]
     assert fields == [{"field": "", "problem": "The request body is not valid JSON."}]
@@ -118,5 +118,5 @@ def test_malformed_json_does_not_name_a_field_after_the_byte_offset(owner):
 
 def test_a_missing_field_still_names_the_field(owner):
     client, _ = owner
-    r = client.post("/api/notes", json={})
+    r = client.post("/api/vehicle", json={})
     assert r.json()["fields"][0]["field"] == "title"

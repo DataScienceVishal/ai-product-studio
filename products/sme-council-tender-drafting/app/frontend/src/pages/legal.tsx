@@ -14,7 +14,7 @@ export function Privacy() {
       <Draft />
       <div className="space-y-3 text-slate-700">
         <p><strong>What we keep.</strong> Your company name, the email addresses and roles of your team, a scrambled
-          (hashed) form of each password, the notes you write and their AI summaries, your plan, and how many AI tokens you use.</p>
+          (hashed) form of each password, the documents and drafts you create, your plan, and how many AI tokens you use.</p>
         <p><strong>Why.</strong> To run the service you signed up for, to secure your account, and to bill you.</p>
         <p><strong>Who processes it.</strong> Our hosting provider (Microsoft Azure; for now our servers and database are in Microsoft's France Central region, in the EU), Microsoft's Azure OpenAI
           service for AI summaries, and our payment provider once payments are switched on. Each processes data under its own
@@ -38,8 +38,7 @@ export function Terms() {
       <div className="space-y-3 text-slate-700">
         <p>The service is provided as it is during the trial. You are responsible for what you put into it and for
           checking AI output before relying on it.</p>
-        <p>Paid plans renew monthly until cancelled. You can cancel at any time by deleting your account, which also
-          cancels the subscription with our payment provider.</p>
+        <p>There is no charge during the pilot. You can stop at any time by deleting your account from Settings.</p>
       </div>
     </Card>
   );

@@ -12,7 +12,7 @@ from ..ai import tokens_this_month
 from ..db import get_db
 from ..deps import Current, current, owner, session_cookie, subscription_of
 from ..errors import AppError
-from ..models import Invitation, Note, Tenant, User
+from ..models import Invitation, Tenant, User
 from ..tender_export import tender_export
 from ..security import hash_capacity_after, verify_password
 
@@ -55,7 +55,7 @@ def _delete_account_gate(data: DeleteIn, request: Request, me: Current = Depends
 @router.delete("", status_code=204, dependencies=[Depends(hash_capacity_after(_delete_account_gate))])
 def delete_account(data: DeleteIn, request: Request, me: Current = Depends(_delete_account_gate),
                    db: Session = Depends(get_db)) -> Response:
-    """Deletes the tenant and, by cascade, every user, session, note and usage row it owns."""
+    """Deletes the tenant and, by cascade, every user, session and usage row it owns."""
     if not verify_password(me.user.password_hash, data.password):
         raise AppError(401, "invalid_credentials", "That password isn't right.")
     tenant_id = str(me.tenant.id)
@@ -68,7 +68,7 @@ def delete_account(data: DeleteIn, request: Request, me: Current = Depends(_dele
         except AppError:
             raise AppError(503, "billing_unavailable", "We couldn't cancel your subscription with the payment "
                            "provider, so nothing was deleted. Please try again in a few minutes.") from None
-    db.delete(db.get(Tenant, me.tenant.id))  # rows cascade: users, sessions, notes, usage, invitations
+    db.delete(db.get(Tenant, me.tenant.id))  # rows cascade: users, sessions, usage, invitations
     db.commit()
     log.info("tenant deleted", extra={"deleted_tenant_id": tenant_id})
     response = Response(status_code=204)
@@ -78,15 +78,12 @@ def delete_account(data: DeleteIn, request: Request, me: Current = Depends(_dele
 
 
 @router.get("/me/export")
-def export_me(me: Current = Depends(current), db: Session = Depends(get_db)):
-    """Any user's own data (UK GDPR access request): their profile and the notes they wrote."""
-    notes = db.scalars(select(Note).where(Note.tenant_id == me.tenant.id, Note.created_by == me.user.id)
-                       .order_by(Note.created_at)).all()
+def export_me(me: Current = Depends(current)):
+    """Any user's own data (UK GDPR access request): their profile and company. Company records are exported
+    by the owner through /account/export."""
     return {"user": {"id": str(me.user.id), "email": me.user.email, "role": me.user.role,
                      "created_at": me.user.created_at.isoformat()},
-            "tenant": {"id": str(me.tenant.id), "name": me.tenant.name},
-            "notes_written": [{"id": str(n.id), "title": n.title, "body": n.body, "created_at": n.created_at.isoformat()}
-                              for n in notes]}
+            "tenant": {"id": str(me.tenant.id), "name": me.tenant.name}}
 
 
 def _delete_me_gate(data: DeleteIn, request: Request, me: Current = Depends(current)) -> Current:
@@ -102,7 +99,7 @@ def _delete_me_gate(data: DeleteIn, request: Request, me: Current = Depends(curr
 @router.delete("/me", status_code=204, dependencies=[Depends(hash_capacity_after(_delete_me_gate))])
 def delete_me(data: DeleteIn, request: Request, me: Current = Depends(_delete_me_gate),
               db: Session = Depends(get_db)) -> Response:
-    """A member removes themselves and their sign-in. Notes they wrote stay with the company (author cleared)."""
+    """A member removes themselves and their sign-in. Records they created stay with the company (author cleared)."""
     if not verify_password(me.user.password_hash, data.password):
         raise AppError(401, "invalid_credentials", "That password isn't right.")
     db.execute(delete(Invitation).where(Invitation.tenant_id == me.tenant.id, Invitation.email == me.user.email))

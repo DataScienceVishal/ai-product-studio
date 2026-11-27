@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { reply, stubFetch } from "./test-utils";
-import { api, ApiError, formatPrice, isMockBilling, loadClientConfig, SESSION_ENDED, setBillingProviderForTest, timeoutMs } from "./api";
+import { api, ApiError, formatPrice, isBillingEnabled, isMockBilling, loadClientConfig, SESSION_ENDED, setBillingProviderForTest, timeoutMs } from "./api";
 
 let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
@@ -25,7 +25,7 @@ describe("api: request shape", () => {
 
   it("JSON-encodes the body and keeps the CSRF header on writes", async () => {
     fetchMock.mockResolvedValue(reply(200, {}));
-    await api("/api/notes", { method: "POST", body: { title: "a" } });
+    await api("/api/items", { method: "POST", body: { title: "a" } });
     const init = fetchMock.mock.calls[0][1];
     expect(init.method).toBe("POST");
     expect(init.body).toBe('{"title":"a"}');
@@ -34,7 +34,7 @@ describe("api: request shape", () => {
 
   it("returns undefined for 204 without parsing a body", async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
-    await expect(api("/api/notes/1", { method: "DELETE" })).resolves.toBeUndefined();
+    await expect(api("/api/items/1", { method: "DELETE" })).resolves.toBeUndefined();
   });
 });
 
@@ -133,7 +133,7 @@ describe("api: session end", () => {
 
   it("signals when a normal request gets not_signed_in", async () => {
     fetchMock.mockResolvedValue(reply(401, { error: "not_signed_in", message: "Sign in." }));
-    await expect(api("/api/notes")).rejects.toBeInstanceOf(ApiError);
+    await expect(api("/api/items")).rejects.toBeInstanceOf(ApiError);
     expect(ended).toHaveBeenCalledTimes(1);
   });
 
@@ -173,6 +173,18 @@ describe("loadClientConfig: billing_provider", () => {
     fetchMock.mockResolvedValueOnce(reply(status, { billing_provider: "mock" }));
     await loadClientConfig();
     expect(isMockBilling()).toBe(false);
+  });
+
+  it("billing_enabled is true only when the server says so (prices off by default)", async () => {
+    fetchMock.mockResolvedValueOnce(reply(200, { billing_provider: "mock" }));
+    await loadClientConfig();
+    expect(isBillingEnabled()).toBe(false);
+    fetchMock.mockResolvedValueOnce(reply(200, { billing_provider: "mock", billing_enabled: true }));
+    await loadClientConfig();
+    expect(isBillingEnabled()).toBe(true);
+    fetchMock.mockResolvedValueOnce(reply(500, {}));
+    await loadClientConfig();
+    expect(isBillingEnabled()).toBe(false);
   });
 
   it("turns mock billing on only when the server says \"mock\"", async () => {

@@ -103,7 +103,8 @@ def test_excess_logins_get_503_quickly_when_every_slot_is_busy(app, monkeypatch)
 def test_every_route_that_hashes_or_verifies_takes_capacity_first():
     """Guards new callers: a route calling hash_password/verify_password needs the hash_capacity dependency."""
     hashing = []
-    from app.routes import account, auth, billing, notes, team
+    from app.routes import account, auth, billing, team
+    from . import vehicle as notes
     routers = [getattr(module, name) for module in (account, auth, billing, notes, team)
                for name in ("router", "public") if hasattr(module, name)]
     for route in (r for router in routers for r in router.routes):
