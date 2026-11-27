@@ -260,17 +260,24 @@ def _record_pending_cancel(db: Session, tenant_id: uuid.UUID, provider: str, ref
         db.add(PendingCancel(tenant_id=tenant_id, provider=provider, ref=ref))
 
 
-def attempt_pending_cancel(db: Session, row_id: uuid.UUID, billing) -> bool | None:
+def attempt_pending_cancel(db: Session, row_id: uuid.UUID, billing, *, backoff_now: datetime | None = None) -> bool | None:
     """Cancel one pending subscription at the provider. True: cancelled (row deleted). False: failed (attempt counted,
     error kept, ERROR logged: an unpaid-for duplicate may still be billing the customer). None: skipped, because the row
     is gone or locked by another worker, or its ref is the tenant's current subscription (the row is then dropped).
     The row is re-read FOR UPDATE SKIP LOCKED and stays locked until the commit after the cancel, so a takeover that
     makes this ref current waits for an in-flight cancel instead of racing it.
+    backoff_now (the sweep passes it): after the locked read, also skip (None) a row whose backoff has not passed at that
+    time, because another worker may have attempted it since the sweep listed it. The webhook retry leaves it unset and
+    ignores the backoff on purpose (it only retries the first INLINE_RETRY_MAX_ATTEMPTS failures).
     A subscription the provider reports as already cancelled or gone counts as success (the adapter handles that)."""
     row = db.scalar(select(PendingCancel).where(PendingCancel.id == row_id).with_for_update(skip_locked=True)
                     .execution_options(populate_existing=True))
     if row is None:
         db.rollback()
+        return None
+    if (backoff_now is not None and row.last_attempt_at is not None
+            and backoff_now - row.last_attempt_at < cancel_backoff(row.attempts or 0)):
+        db.rollback()  # not due any more: release the lock
         return None
     todo = {"tenant_id": str(row.tenant_id), "old_subscription": row.ref, "old_provider": row.provider}
     sub = db.scalar(select(Subscription).where(Subscription.tenant_id == row.tenant_id)

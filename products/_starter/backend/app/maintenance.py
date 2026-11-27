@@ -72,7 +72,9 @@ def purge(db: Session, now: datetime | None = None, unverified_after_days: int |
 def sweep_pending_cancels(db: Session, clients: dict, now: datetime | None = None) -> dict[str, int]:
     """T-175: retry every pending subscription cancel (see routes/billing.py). `clients` maps provider name to its
     client; a row for a provider with no client is left alone. Safe to run often: a cancel is idempotent.
-    T-176: a row is left alone until min(2**attempts minutes, 24 h) have passed since its last attempt."""
+    T-176: a row is left alone until min(2**attempts minutes, 24 h) have passed since its last attempt. The check is
+    repeated under the row lock with this run's start time (`now`): a row that another worker attempted meanwhile is
+    skipped, and so is one whose backoff ends during a long run (it waits for the next run)."""
     from .routes import billing as routes
     now = now or datetime.now(timezone.utc)
     done = failed = 0
@@ -85,7 +87,7 @@ def sweep_pending_cancels(db: Session, clients: dict, now: datetime | None = Non
         if last_attempt_at is not None and now - last_attempt_at < routes.cancel_backoff(attempts or 0):
             continue
         try:
-            result = routes.attempt_pending_cancel(db, row_id, client)
+            result = routes.attempt_pending_cancel(db, row_id, client, backoff_now=now)
         except Exception:  # one bad row (a stale or deleted one, a database error) must not stop the run
             db.rollback()
             log.error("pending cancel could not be processed", extra={"old_subscription": ref}, exc_info=True)

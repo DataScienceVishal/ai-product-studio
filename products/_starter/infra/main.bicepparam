@@ -30,6 +30,7 @@ param dbAuth = readEnvironmentVariable('DB_AUTH', 'entra')
 param purgeImage = readEnvironmentVariable('PURGE_IMAGE', '')
 param purgeRequireEmailVerification = readEnvironmentVariable('PURGE_REQUIRE_EMAIL_VERIFICATION', '')
 param purgeEmailProvider = readEnvironmentVariable('PURGE_EMAIL_PROVIDER', '')
+param purgeBillingProvider = readEnvironmentVariable('PURGE_BILLING_PROVIDER', '')
 
 // Secrets: read from the workflow's environment at deploy time, sent to Azure as secure parameters, and
 // never written to a file in the repository.
