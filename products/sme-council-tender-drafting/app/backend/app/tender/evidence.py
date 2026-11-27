@@ -69,7 +69,7 @@ SELECT e.id, e.display_no, e.document_id, d.filename, e.page_from, e.page_to, e.
 FROM evidence_items e
 JOIN source_documents d ON d.tenant_id = e.tenant_id AND d.id = e.document_id
 CROSS JOIN q
-WHERE e.tenant_id = :tenant AND e.deleted_at IS NULL AND d.tenant_id = :tenant AND d.kind = 'evidence'
+WHERE e.tenant_id = :tenant AND e.deleted_at IS NULL AND d.tenant_id = :tenant AND d.kind = 'evidence' AND d.deleted_at IS NULL
   AND q.tq IS NOT NULL AND e.tsv @@ q.tq
 ORDER BY rank DESC, e.display_no
 LIMIT :cands

@@ -39,7 +39,8 @@ class TenderPack(Base):
 class SourceDocument(Base):
     __tablename__ = "source_documents"
     __table_args__ = (UniqueConstraint("tenant_id", "id", name="uq_source_documents_tenant_id"),
-                      UniqueConstraint("tenant_id", "sha256", name="uq_source_documents_tenant_sha256"),
+                      Index("uq_source_documents_tenant_sha256", "tenant_id", "sha256", unique=True,
+                            postgresql_where=sa_text("deleted_at IS NULL")),
                       _child("fk_source_documents_pack", "pack_id", "tender_packs"))
     id: Mapped[uuid.UUID] = _id()
     tenant_id: Mapped[uuid.UUID] = _tenant()
@@ -56,6 +57,7 @@ class SourceDocument(Base):
     reject_reason: Mapped[str | None] = mapped_column(String(40))
     created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = _created()
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # evidence: soft delete (T-190)
 
 
 class DocumentPage(Base):
@@ -154,6 +156,8 @@ class Draft(Base):
                                                    server_default=sa_text("'{}'"))  # [E-n] cited but not retrieved
     flags: Mapped[list[str]] = mapped_column(ARRAY(String(30)), nullable=False, default=list,
                                              server_default=sa_text("'{}'"))  # citation_outside_set | shortened | trimmed ...
+    check_sha256: Mapped[str | None] = mapped_column(String(64))  # text_sha256 the claim check ran on (null: never checked)
+    checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = _created()
 
 

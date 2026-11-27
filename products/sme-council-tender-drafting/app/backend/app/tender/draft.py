@@ -268,8 +268,16 @@ def draft_handler(sessions: sessionmaker, task: AITask, heartbeat, provider) -> 
                                                       Requirement.status == "confirmed")) is None:
                 continue  # removed while drafting
             save_version(db, task.tenant_id, rid, d, author="ai", word_limit=limit)
+            reopen_pack(db, task.tenant_id, task.pack_id)
             db.commit()
     return tin, tout
+
+
+def reopen_pack(db: Session, tenant_id, pack_id) -> None:
+    """A change after a pack was `ready` (an edit, a new or changed requirement, removed evidence) makes it `drafting`
+    again: readiness is a claim about the current text, and the text moved."""
+    db.execute(update(TenderPack).where(TenderPack.tenant_id == tenant_id, TenderPack.id == pack_id,
+                                        TenderPack.status == "ready").values(status="drafting"))
 
 
 def reset_pack_after_exhausted(sessions: sessionmaker, task: AITask) -> None:

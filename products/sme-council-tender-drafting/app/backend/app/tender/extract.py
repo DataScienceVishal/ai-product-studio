@@ -96,18 +96,50 @@ _PAGE_LIMIT = re.compile(r"(?:maximum(?: of)?|max\.?|no more than|not exceed(?:i
 _NEXT_QUESTION = re.compile(r"\n\s*(?:q(?:uestion)?\s*)?\d+(?:\.\d+)*\s*[.):]", re.I)  # the next numbered question starts a new window
 
 
+_HEADING_LOOKBACK = 300
+
+
+def _heading_start(page_text: str, qstart: int) -> int:
+    """Where the question's own block starts, so a limit stated in its heading before the quote is found (T-200). The block
+    starts after the last blank line or numbered-question line before the quote; when the quote opens its block and the
+    block before it is one short line that does not end a sentence, that line is the heading and belongs to the question."""
+    base = max(0, qstart - _HEADING_LOOKBACK)
+    before = page_text[base:qstart]
+    blanks = list(re.finditer(r"\n[ \t]*\n", before))
+    start = blanks[-1].end() if blanks else 0
+    if blanks and not before[start:].strip():  # the quote opens its block: look at the block before
+        prev = before[:blanks[-1].start()]
+        prev_blocks = list(re.finditer(r"\n[ \t]*\n", prev))
+        pbs = prev_blocks[-1].end() if prev_blocks else 0
+        line = prev[pbs:].strip()
+        if line and "\n" not in line and len(line) <= 150 and not re.search(r"[.!?]$", line):
+            start = pbs
+    elif before[start:].count("\n"):  # the quote is inside a block: its own line, plus the line above if that is a heading
+        block = before[start:]
+        ls = block.rfind("\n")
+        pls = block.rfind("\n", 0, ls)
+        cand = block[pls + 1:ls].strip()
+        start += pls + 1 if (cand and len(cand) <= 150 and not re.search(r"[.!?]$", cand)) else ls + 1
+    numbered = list(_NEXT_QUESTION.finditer(before, start))
+    if numbered:
+        start = numbered[-1].start() + 1  # the numbered line itself, after its newline
+    return base + start
+
+
 def _quote_window(page_text: str, near: str) -> str | None:
-    """The raw text from the start of the item's quote up to the next numbered question (at most 400 characters past
-    the quote). The quote is found on the raw text with whitespace-tolerant matching, so offsets never drift."""
+    """The raw text of the item's own question: from its heading (see `_heading_start`) through the quote to the next
+    numbered question (at most 400 characters past the quote). The quote is found on the raw text with whitespace-tolerant
+    matching, so offsets never drift."""
     words = near.split()[:12]
     if not words:
         return None
     m = re.search(r"\s+".join(re.escape(w) for w in words), page_text, re.I)
     if m is None:
         return None
+    start = _heading_start(page_text, m.start())
     end = min(len(page_text), m.start() + max(len(near), m.end() - m.start()) + 400)
-    window = page_text[m.start():end]
-    nxt = _NEXT_QUESTION.search(window, m.end() - m.start())
+    window = page_text[start:end]
+    nxt = _NEXT_QUESTION.search(window, m.end() - start)
     return window[:nxt.start()] if nxt else window
 
 
@@ -228,6 +260,10 @@ def _extract(sessions: sessionmaker, task: AITask, heartbeat, provider) -> tuple
         for it in merge_items(found):
             collected.append((doc_id, it, pages))
     with sessions() as db:
+        # The pack lock is the first statement (T-200): a user row added meanwhile is either committed before it (and read
+        # below) or waits for this transaction. Every writer takes pack, then requirement rows.
+        db.execute(select(TenderPack.id).where(TenderPack.tenant_id == task.tenant_id, TenderPack.id == task.pack_id)
+                   .with_for_update())
         # Only untouched model proposals are replaced; edited, confirmed, removed and user rows survive a re-run.
         db.execute(delete(Requirement).where(Requirement.tenant_id == task.tenant_id, Requirement.pack_id == task.pack_id,
                                              Requirement.origin == "model", Requirement.status == "proposed",
@@ -235,8 +271,6 @@ def _extract(sessions: sessionmaker, task: AITask, heartbeat, provider) -> tuple
         existing = [{"ref": r.ref, "text": r.text, "source_page": r.source_page or 0, "doc": r.source_document_id}
                     for r in db.scalars(select(Requirement).where(Requirement.tenant_id == task.tenant_id,
                                                                   Requirement.pack_id == task.pack_id))]
-        db.execute(select(TenderPack.id).where(TenderPack.tenant_id == task.tenant_id, TenderPack.id == task.pack_id)
-                   .with_for_update())  # serialises with add_requirement, so seq max+1 cannot race
         base = db.scalar(select(func.coalesce(func.max(Requirement.seq), 0)).where(
             Requirement.tenant_id == task.tenant_id, Requirement.pack_id == task.pack_id)) or 0
         fresh = []

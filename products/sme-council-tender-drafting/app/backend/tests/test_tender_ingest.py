@@ -249,8 +249,9 @@ def test_evidence_numbers_per_tenant_never_reused(client, new_client, db):
     r3 = up(client, "/api/evidence/documents", d(3), "c.txt")
     assert r3.status_code == 201
     db.expire_all()
-    after = [n for (n,) in db.execute(select(EvidenceItem.display_no).order_by(EvidenceItem.display_no))]
-    assert min(after) > 1 and max(after) > max(nums)  # numbers of the deleted document are not handed out again
+    after = [n for (n,) in db.execute(select(EvidenceItem.display_no).where(EvidenceItem.deleted_at.is_(None))
+                                      .order_by(EvidenceItem.display_no))]
+    assert set(after).isdisjoint(set(nums[:1])) and max(after) > max(nums)  # numbers of the deleted document are not handed out again
     other = new_client(); sign_up(other, email="o@o.test", company="O")
     up(other, "/api/evidence/documents", d(9), "z.txt")
     db.expire_all()
