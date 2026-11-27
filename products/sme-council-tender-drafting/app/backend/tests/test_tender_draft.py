@@ -246,6 +246,45 @@ def test_a_typical_draft_and_check_pair_reserves_at_most_30k():
     assert d + c <= 30_000, (d, c)
 
 
+def test_a_typical_draft_shorten_retry_and_check_stay_within_30k():
+    """R3: the shorten retry re-sends only the prior answer and caps its output, so all three fit one trial day."""
+    provider = AzureLike()
+    typical = dr.draft_payload("Describe your quality system. " * 12, 300, 10, _hits(5, 900), dr.Limits())
+    over = "Our teams are trained to BICSc standards and hold ISO 9001 [E-1]. " * 40  # about 480 words, over the limit
+    short = "Our teams are trained to BICSc standards and hold ISO 9001 [E-1]. " * 25
+    cited = dr.passage_block(_hits(4, 900), dr.Limits())
+    # A reservation is released when the call settles at actual use, so at each step the day's settled use plus the
+    # next reservation must fit. A typical answer settles at its input plus about 600 output tokens.
+    typical_out = 600
+    d = dr.draft_reservation(provider, typical)
+    d_used = d - dr.DRAFT_SPEC.max_output_tokens - int(provider.output_headroom) + typical_out
+    r = dr.shorten_reservation(provider, over, 300)
+    r_used = r - dr.SHORTEN_SPEC.max_output_tokens - int(provider.output_headroom) + typical_out
+    c = dr.check_reservation(provider, short, cited)
+    assert d <= 30_000 and d_used + r <= 30_000 and d_used + r_used + c <= 30_000, (d, d_used, r, r_used, c)
+    assert r < 0.6 * d  # the retry is a small call, not a second full draft
+
+
+def test_the_shorten_instruction_is_not_inside_a_data_block(client, app):
+    """The model is told to ignore DATA blocks, so the retry's instruction must be in the system prompt."""
+    pid, rid = confirmed_pack(client, app)
+    seen = []
+
+    class Spy(ScriptedFakeAI):
+        def complete(self, system, user, max_output_tokens=1200, **kw):
+            res = super().complete(system, user, max_output_tokens, **kw)
+            seen.append((system, user))
+            data = json.loads(res.text)
+            data["answer"] = long_answer(80) if len(seen) == 1 else "A short answer [E-1]."
+            return AIResult(json.dumps(data), res.input_tokens, res.output_tokens, res.model)
+    draft_now(client, app, pid, Spy())
+    assert len(seen) == 2
+    system, user = seen[1]
+    assert "shorten" in system.lower() and "word_limit" in system
+    assert "shorten" not in user.lower() and "instruction" not in user
+    assert "previous_answer:\n<<<DATA-" in user  # the prior draft is data
+
+
 def test_the_largest_app_path_draft_still_reserves_under_the_daily_cap():
     worst = dr.draft_payload("q" * 9000, 500, 100, _hits(8, 5000), dr.Limits())
     assert len(worst["question"]) == dr.QUESTION_CHARS and worst["passages"].count("[E-") == dr.APP_PASSAGES
@@ -263,3 +302,31 @@ def test_app_path_draft_goes_through_the_budget(client, app, db):
         cacheable = True
     draft_now(client, app, pid, Real())
     assert list(db.scalars(select(AIUsage).where(AIUsage.feature == "draft")))
+
+
+def test_evidence_shows_exactly_what_drafting_used(client, app):
+    pid = make_pack(client)
+    assert up(client, tender_url(pid), pdf([["1. Describe your cleaning quality system and accreditations (maximum 300 words)."]])).status_code == 201
+    for i in range(9):  # more matching documents than the app path passes to the model
+        r = up(client, "/api/evidence/documents", (EVIDENCE.replace("forty", f"{40 + i}") * 3).encode(), f"quality{i}.txt",
+               category="policy")
+        assert r.status_code == 201, r.text
+    client.post(f"/api/packs/{pid}/extract")
+    run(app)
+    assert client.post(f"/api/packs/{pid}/confirm").status_code == 200
+    rid = client.get(f"/api/packs/{pid}/requirements").json()["requirements"][0]["id"]
+    shown = [x["display_no"] for x in client.get(f"/api/requirements/{rid}/evidence").json()["results"]]
+    draft_now(client, app, pid)
+    d = latest(client, rid)["draft"]
+    assert 0 < len(shown) <= dr.APP_PASSAGES and shown == d["retrieved_ids"]
+
+
+def test_a_draft_task_does_not_write_to_a_pack_signed_meanwhile(client, app, db):
+    pid, rid = confirmed_pack(client, app)
+    assert client.post(f"/api/packs/{pid}/draft").status_code == 202
+    from app.tender_models import TenderPack
+    db.execute(TenderPack.__table__.update().where(TenderPack.id == pid).values(status="signed"))
+    db.commit()
+    run(app)
+    db.expire_all()
+    assert not list(db.scalars(select(Draft).where(Draft.requirement_id == rid)))

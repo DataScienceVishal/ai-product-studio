@@ -21,7 +21,7 @@ from ..ai import AIUnavailable, reservation_estimate
 from ..billing import ai_access
 from ..deps import subscription_of
 from ..errors import AppError
-from ..tender_models import AITask, Draft, Requirement
+from ..tender_models import AITask, Draft, Requirement, TenderPack
 from . import runner
 from .evidence import Hit, search_evidence
 from .llm import AppBudget, TaskSpec, build_user, full_system, run_task
@@ -40,6 +40,7 @@ CHECK_SYSTEM_BYTES = 2000      # upper bound for the claimcheck system prompt
 APP_PAIR_BUDGET = 30_000
 REDRAFTS_PER_REQUIREMENT_PER_DAY = 5
 MAX_PER_TASK = 40
+DRAFT_PACK_STATES = ("drafting", "checking", "ready")  # the routes use the same set
 
 _CITE = re.compile(r"\[E-(\d+)\]")
 _GAP = re.compile(r"\[NEEDS FIRM INPUT:[^\]]*\]")
@@ -60,6 +61,14 @@ DRAFT_SPEC = TaskSpec(
     "[NEEDS FIRM INPUT: what is missing] instead of guessing. Return JSON: answer, gaps (the markers you wrote), "
     "used_ids (the E numbers you cited).",
     DraftOutput, 4000, "low")
+
+
+SHORTEN_SPEC = TaskSpec(
+    "draft", "v1-shorten",
+    "You shorten a draft tender answer. Rewrite the text in previous_answer so that it has at most the number of words "
+    "in word_limit. Keep the [E-n] markers on the claims they support, keep any [NEEDS FIRM INPUT: ...] marker, and do "
+    "not add facts, figures or citations. Return JSON: answer, gaps (the markers present), used_ids (the E numbers cited).",
+    DraftOutput, 1500, "low")
 
 
 def count_words(text_: str) -> int:
@@ -131,6 +140,12 @@ def draft_reservation(provider, payload: dict) -> int:
     return reservation_estimate(provider, full_system(DRAFT_SPEC), build_user(payload, "0" * 16), DRAFT_SPEC.max_output_tokens)
 
 
+def shorten_reservation(provider, answer: str, word_limit: int) -> int:
+    payload = {"word_limit": f"{word_limit} words", "previous_answer": answer}
+    return reservation_estimate(provider, full_system(SHORTEN_SPEC), build_user(payload, "0" * 16),
+                                SHORTEN_SPEC.max_output_tokens)
+
+
 def check_reservation(provider, answer: str, cited_passages: str) -> int:
     """What the re-check will reserve on the app path: the draft and the cited passages only (S6 sends the same)."""
     user = build_user({"draft": answer, "passages": cited_passages}, "0" * 16)
@@ -168,10 +183,11 @@ def draft_answer(req_text: str, word_limit: int | None, marks: int | None, hits:
     res = run_task(DRAFT_SPEC, payload, tenant_id, budget, provider=provider, sessions=sessions, before_call=before_call)
     answer, tin, tout, flags = res.output.answer.strip(), res.input_tokens, res.output_tokens, []
     if word_limit and count_words(answer) > word_limit:
-        retry = payload | {"previous_answer": answer,
-                           "instruction": f"Shorten the answer to at most {word_limit} words. Keep the [E-n] markers."}
+        # the instruction lives in SHORTEN_SPEC's system prompt; the prior draft is data. No passages are re-sent, which
+        # keeps the retry's reservation small (R3).
+        retry = {"word_limit": f"{word_limit} words", "previous_answer": answer}
         try:
-            again = run_task(DRAFT_SPEC, retry, tenant_id, budget, provider=provider, sessions=sessions,
+            again = run_task(SHORTEN_SPEC, retry, tenant_id, budget, provider=provider, sessions=sessions,
                              before_call=before_call)
             answer, flags = again.output.answer.strip(), ["shortened"]
             tin, tout = tin + again.input_tokens, tout + again.output_tokens
@@ -234,12 +250,20 @@ def draft_handler(sessions: sessionmaker, task: AITask, heartbeat, provider) -> 
     for rid, rtext, limit, marks in reqs:
         heartbeat()
         with sessions() as db:
-            hits = search_evidence(db, task.tenant_id, rtext, min_score=RETRIEVAL_FLOOR)
+            hits = search_evidence(db, task.tenant_id, rtext, limit=APP_PASSAGES, min_score=RETRIEVAL_FLOOR)
             db.rollback()
         d = draft_answer(rtext, limit, marks, hits, task.tenant_id, budget, provider=provider, sessions=sessions,
                          before_call=heartbeat)
         tin, tout = tin + d.input_tokens, tout + d.output_tokens
         with sessions() as db:
+            # Sign-off is a digest of the draft hashes, so no version may be written once the pack is signed or exported.
+            # FOR SHARE makes a concurrent sign-off (which updates the pack row) wait for this save, or this save wait for it.
+            pack_status = db.scalar(select(TenderPack.status).where(
+                TenderPack.tenant_id == task.tenant_id, TenderPack.id == task.pack_id).with_for_update(read=True))
+            if pack_status not in DRAFT_PACK_STATES:
+                log.info("draft skipped: pack no longer open", extra={"status": pack_status})
+                db.rollback()
+                break
             if db.scalar(select(Requirement.id).where(Requirement.tenant_id == task.tenant_id, Requirement.id == rid,
                                                       Requirement.status == "confirmed")) is None:
                 continue  # removed while drafting

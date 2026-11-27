@@ -33,6 +33,13 @@ upgrade, check, downgrade -1, upgrade, check clean. No live model calls (Scripte
 Full suite NOT completed in the T-189 session (time limit; it ran about 10 tests a minute here): first 30% had no failure; S5 (16) and
 S4 extract (18) files green. Reviewer must run the full suite (expect 947 + 16).
 
+## Review fixes (T-189, after reviewer CHANGES)
+- F1: the shorten retry now uses `SHORTEN_SPEC` (instruction in the system prompt); only `word_limit` and `previous_answer` are data. Test added.
+- F2: `/evidence` and the draft handler both call `search_evidence(limit=APP_PASSAGES)`, so the user sees exactly what drafting used. Test added. DESIGN line (8 passages) and DECISIONS.md still to update by the Lead.
+- F3: retry re-sends no passages and caps output at 1,500 tokens (reservation about 6.2k vs 14.9k). Sizing test checks draft + retry + re-check against 30k with settled use.
+- F4: the save session reads the pack `FOR SHARE` and stops (no version) unless the pack is in `DRAFT_PACK_STATES`. Test added.
+- Nits 5-10 not done. Full suite: 967 passed, 1 skipped.
+
 # STATUS (T-188, slice S4: extraction and checklist API) - code done, awaiting reviewer PASS
 
 Branch `p/sme-council-tender-drafting/T-188`. Not merged. Migration 0015 (requirements.model_json JSONB, flags text[]); alembic

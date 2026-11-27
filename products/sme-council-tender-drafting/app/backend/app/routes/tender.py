@@ -307,7 +307,7 @@ def confirm_checklist(pack_id: uuid.UUID, me: Current = Depends(current), db: Se
 
 
 # ---------- drafting (S5) ----------
-DRAFT_PACK_STATES = ("drafting", "checking", "ready")
+DRAFT_PACK_STATES = _draft.DRAFT_PACK_STATES
 
 
 class DraftIn(BaseModel):
@@ -376,7 +376,7 @@ def redraft(req_id: uuid.UUID, me: Current = Depends(current), db: Session = Dep
 def requirement_evidence(req_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
     """What retrieval finds for the question, as drafting would see it."""
     r, _ = _question(db, me, req_id)
-    hits = search_evidence(db, me.tenant.id, r.text, min_score=_draft.RETRIEVAL_FLOOR)
+    hits = search_evidence(db, me.tenant.id, r.text, limit=_draft.APP_PASSAGES, min_score=_draft.RETRIEVAL_FLOOR)
     return {"results": [{"id": str(h.id), "label": f"E-{h.display_no}", "display_no": h.display_no, "document": h.document_name,
                          "page_from": h.page_from, "page_to": h.page_to, "heading": h.heading, "text": h.text,
                          "rank": round(h.rank, 4), "score": round(h.score, 4)} for h in hits],
