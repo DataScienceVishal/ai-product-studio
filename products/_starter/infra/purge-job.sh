@@ -64,24 +64,24 @@ for name in $jobs; do
   want_billing=mock # only the cancels job calls the payment provider
   [ "$name" = "cancels" ] && want_billing=$billing
   extra=()
+  remove=()
   if [ "$name" = "cancels" ] && [ "$want_billing" = "stripe" ]; then
     # The secrets are always defined on the job (main.bicep); only the references follow the provider.
     extra=("BILLING_WEBHOOK_SECRET=secretref:billing-webhook-secret" "STRIPE_SECRET_KEY=secretref:stripe-secret-key")
   elif [ "$name" = "cancels" ]; then
     # Mock billing must not carry a Stripe reference: its settings reject the placeholder secret. Remove only the
-    # ones that exist (the CLI may refuse to remove an absent variable), in a call of its own.
+    # ones that exist (some CLI versions may refuse an absent variable), in the same update that sets
+    # BILLING_PROVIDER=mock, so a scheduled run never sees stripe without its references (T-178 R2). az applies
+    # --set-env-vars then --remove-env-vars in one PATCH (azure-cli 2.93.0, containerapp custom.py); the names differ.
     before=$("$az_cli" containerapp job show --resource-group "$RESOURCE_GROUP" --name "$job" --output json --only-show-errors) \
       || fail "couldn't read $job"
     present=$(jq -r --arg n "$name" '[.properties.template.containers[] | select(.name == $n) | .env[]? | select(.name == "BILLING_WEBHOOK_SECRET" or .name == "STRIPE_SECRET_KEY") | .name] | join(" ")' <<<"$before")
-    if [ -n "$present" ]; then
-      # shellcheck disable=SC2086 # names are fixed words from jq's filter above
-      "$az_cli" containerapp job update --resource-group "$RESOURCE_GROUP" --name "$job" --container-name "$name" \
-        --remove-env-vars $present --only-show-errors --output none || fail "couldn't remove the Stripe references from $job"
-    fi
+    # shellcheck disable=SC2206 # names are fixed words from jq's filter above
+    [ -n "$present" ] && remove=(--remove-env-vars $present)
   fi
   "$az_cli" containerapp job update --resource-group "$RESOURCE_GROUP" --name "$job" --container-name "$name" \
     --image "$image" --set-env-vars "REQUIRE_EMAIL_VERIFICATION=$verify" "EMAIL_PROVIDER=$provider" "BILLING_PROVIDER=$want_billing" ${extra[@]+"${extra[@]}"} \
-    --only-show-errors --output none || fail "couldn't update $job"
+    ${remove[@]+"${remove[@]}"} --only-show-errors --output none || fail "couldn't update $job"
 
   now=$("$az_cli" containerapp job show --resource-group "$RESOURCE_GROUP" --name "$job" --output json --only-show-errors) \
     || fail "couldn't read $job back"
