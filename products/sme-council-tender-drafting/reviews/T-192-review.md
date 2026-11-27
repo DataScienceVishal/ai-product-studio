@@ -43,3 +43,26 @@ Branch `p/sme-council-tender-drafting/T-192`, commit ba8c499 against `main`. Rev
 
 ## Re-review scope
 Items 1 and 2, plus their tests. Nothing else needs re-reviewing if S1 to S8 are left alone.
+
+---
+
+## Re-review (fixes at 3c9ccf2)
+
+**Verdict: PASS.** Scope was M1, M2, S3 and S6 only, as the coordinator asked. No other code changed between afb5afc and 3c9ccf2: the 4 changed files are `export.py`, `test_tender_export.py`, `tender.tsx` and `tender.test.tsx`.
+
+### Evidence (on tree 3c9ccf2)
+- Backend full suite: **1192 passed in 270.92s**, 0 failed.
+- Frontend: `npx vitest run` gave **7 files, 232 tests passed**. `npx tsc -b` is clean. `npm run build` built OK (`dist/assets/index-*.js` 279.99 kB). The working tree is clean afterwards.
+
+### Items
+- **M1, fixed.** `export.py:122-143` now renders "Appendix: claims and their sources" as a 5-column table (Claim, Evidence, Document, Page, Supporting quote).
+  - **Rows:** one per claim of each question's latest draft, in question `seq` then claim `seq`. `by_draft` is keyed on `str(c.draft_id)`, which matches `GateDraft.id`, a string.
+  - **Content:** a claim with no citation shows "no citation". The ref plus span, the document names and the quote all go through `clean()`. The E-n and page cells are built from integers.
+  - **Live evidence:** the gate already includes every claim's `cited_ids` in its live-evidence check, so `rows.evidence[n]` cannot miss.
+  - **Test:** checks the header row, the row count against the claims, and each row's span, E-n list, document, page and exact quote.
+- **M2, fixed.** `export.py:102` now reads "Draft prepared with AI assistance; reviewed by {name} on {date}". The test asserts the whole header string.
+- **S3, fixed.** The wrong comment is gone. The new comment says a miss would be a bug, which is accurate (an uncaught 500, unreachable behind the gate).
+- **S6, fixed.** `tender.tsx:717` now calls `setTimeout(() => URL.revokeObjectURL(url), 1000)`. The test waits for the revoke with `waitFor`.
+
+### Still open (non-blocking, from the first review)
+S1 (one loader for the gate inputs), S2 (unbounded evidence load per export), S4 (the `exported` status), S5 (side effect on GET), S7 (record reopen in DECISIONS/DESIGN), S8. Minor: the test's `len(table.rows) == 1 + len(claims)` counts claims across all draft versions. That holds for this fixture, which has one version, but would break if older versions carried claims. Filtering on the latest draft id would make the test sturdier.
