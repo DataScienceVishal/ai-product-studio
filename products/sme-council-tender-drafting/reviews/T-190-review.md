@@ -111,3 +111,39 @@ of unsupported claims), as the task asks.
 
 Must-fix 1: rule 3 checks numbers and codes but not names, and any one-word quote passes the substring rule, so an injected or
 careless checker can mark an invented client `supported`. Fix in `apply_rules`, pure, with three tests.
+
+## Re-review at 6be175a (after builder fixes)
+
+**Verdict: CHANGES** (one must-fix left, a residual of must-fix 1). **Security verdict: CHANGES** (same item).
+
+Evidence: full backend suite on 6be175a: **1022 passed, 1 skipped, 0 failed** (244 s, exit 0; per-run database,
+`TEST_DATABASE_SHARED` unset). No migration change apart from a comment, so the alembic round trip from the first pass still holds.
+
+Fixed and verified (re-run probe against `apply_rules`):
+- Must-fix 1 (multi-word names, trivial quote): "Manchester City Council" with quote "the" is now `unsupported`; "NHS Trust" with
+  quote "40 offices in 2023" is `unsupported`; an injected draft line plus an obedient checker naming "Leeds City Council and Bristol
+  Water" is `unsupported`. Honest claims whose quote holds the name or the figures stay `supported`.
+- Must-fix 2: DATA.md rows for `source_documents` and `evidence_items` now describe the soft delete and say there is no purge horizon yet.
+- Should-fix 3: a sentence with no marker of its own can no longer borrow another sentence's citation ("Our 40 offices are
+  spotless." is `unsupported`), and a repeated sentence without a marker becomes `unchecked`.
+- Should-fix 4: the gate is now an allow-list (`PACK_STATES_EXPORTABLE`); unknown states give `pack_not_ready`, with a test.
+- Should-fix 6: the 0018 downgrade is marked DESTRUCTIVE.
+- Should-fix 5, 7 and 8 are noted in NEXT.md for S7/S8. That is acceptable: none of them opens the gate.
+
+### Must-fix (remaining)
+
+1b. **`app/tender/claimcheck.py:94-107` (`names_in`): a one-word proper name is not treated as a name.** `_CAPS_RUN` needs two or
+   more capitalised words in a row, so a single-word client or a name with a lowercase connector is never compared with the quote.
+   Probes, each with an obedient checker and a 3-word quote taken from a passage that names neither:
+   - "We clean every store for Tesco [E-3]." with quote "serve the schools" is **supported**;
+   - "We are a supplier to the University of Bristol [E-3]." with quote "under a contract with" is **supported**.
+   This is the same failure as must-fix 1 (an invented client reaching `supported`), and single-word buyers and clients (Tesco,
+   Serco, Bristol, Kent) are common in council tenders.
+   **Fix:** in `names_in` (rule 3 only; the rule 6 detector can stay as designed), also return every capitalised word that is not
+   the first word of a sentence and not in `_COMMON_FIRST` / `_STOP`. Codes the code already handles (ISO and so on) can be excluded.
+   Add the two probes as tests (`unsupported`), plus an honest "contract with Tesco" whose quote holds "Tesco" (`supported`).
+
+### Residual, accepted (not blocking)
+- A claim with no figure, code or name ("We hold a framework contract [E-3]") is still `supported` on any 3-word substring of the
+  cited passage ("of the county"). No rule can check that meaning; it is the model's judgement plus the human sign-off, and A6a
+  measures it. Record it in the EVAL.md threat notes.
