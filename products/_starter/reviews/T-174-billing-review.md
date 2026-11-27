@@ -94,3 +94,56 @@ in `parse_webhook`. That is why the decision has to be keyed on "was this ref ev
 - No network call is made while the row lock is held. `_fill_period_end` commits its read before calling the provider
   and locks the row again before writing.
 - The README note matches the code.
+
+---
+
+# Re-review: c1781b6 (B1 fix)
+
+Reviewer: reviewer agent, 2026-11-27.
+
+## Verdict: CHANGES
+
+## Tests
+
+Full suite in a clean worktree: exit 0, 781 passed, 1 skipped (`tests/test_spa.py:152`, frontend not built). The new
+test `test_s3_early_cancel_of_an_untracked_subscription_blocks_its_late_checkout` covers the B1 order. The original B1
+case is fixed.
+
+## The builder's residual risk is not acceptable: staleness must be per ref
+
+The fix stores the dead ref's event time in the tenant-wide `last_event_at`. The stale check (`occurred_at <
+last_event_at`) also applies to *other* refs, so a paid subscription for a different ref can be dropped. I reproduced
+this with a throwaway test (not committed):
+
+- `customer.subscription.deleted` for sub_1 at now-10.
+- Then `checkout.session.completed` (paid) for sub_2 at now-20, delivered after.
+- Result: `('trialing', 'trial', None)`.
+
+Why this matters more than the bug it fixes:
+
+- **It is silent and nothing tracks the dropped subscription.** sub_2 is a live subscription the customer pays for every
+  month. The app drops it with an INFO line ("stale billing event ignored"), never cancels it at Stripe, and the tenant
+  gets no paid access. When the trial ends the customer is locked out while still being charged. Support cannot see it,
+  because the row has no ref.
+- **It can happen.** A trial owner opens two checkout tabs. Tab A's card fails, so Stripe leaves that subscription
+  `incomplete` and later sends `incomplete_expired`, which maps to `canceled`, at t2. Tab B is paid at t1 < t2. Both
+  events then sit in Stripe's retry queue during an outage and are redelivered in any order. Stripe documents that it
+  does not guarantee event order.
+- **The two failures are not equal.** B1's failure gives one tenant access it did not pay for. This one charges a
+  customer for nothing. The second is the worse money bug, and it is the one the rule now introduces.
+- **The update is too broad.** It also moves `last_event_at` forward for `past_due` events on untracked refs. That is not
+  needed for B1, because a non-terminal event does not prove the ref is dead.
+
+### B2. Make the dead-ref marker per ref
+
+`app/routes/billing.py` lines 133-135.
+
+1. Remove the `last_event_at` update from the S-3 branch.
+2. When `update.status == "canceled"`, record a tombstone for the ref. This needs no migration: insert a
+   `BillingEvent(id=f"dead:{provider}:{update.provider_ref}")` (the 255-char limit holds, because `provider_ref` is
+   capped at 255 by `_check_fields`, so trim the prefix or hash if needed). Ignore an IntegrityError on a repeat.
+3. Before the stale check, if a `starts_subscription` event's ref has a tombstone, ignore the event.
+4. Keep the existing B1 test, and add the sub_1 dead / sub_2 paid-late test above, asserting `("active", "pro", "sub_2")`.
+
+Optional hardening, carried over from suggestion 5 in the first review: when a paid `starts_subscription` event for a new
+ref is dropped as stale, log at ERROR with the ref, or cancel it, instead of an INFO line.
