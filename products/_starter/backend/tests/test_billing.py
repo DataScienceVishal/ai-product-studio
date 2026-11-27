@@ -1242,3 +1242,12 @@ def test_s6_takeover_from_another_provider_logs_a_todo_instead_of_cancelling(own
             apply_update(db, update, "stripe", stripe_side)
     assert stripe_side.cancelled == []  # the Stripe adapter must not be asked to cancel a mock subscription
     assert any("cancel it by hand" in r.getMessage() for r in caplog.records)
+
+
+def test_s3_early_cancel_of_an_untracked_subscription_blocks_its_late_checkout(owner, database):
+    """Reviewer B1: deleted (t2) arrives before checkout.completed (t1 < t2) for the same ref: no access on a dead sub."""
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    _stripe_apply(database, t, "b1a", "customer.subscription.deleted", now - 10, "sub_1", "canceled")
+    _stripe_apply(database, t, "b1b", "checkout.session.completed", now - 20, "sub_1")
+    assert _stripe_sub(database, t) == ("trialing", "trial", None)

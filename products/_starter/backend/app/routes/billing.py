@@ -130,6 +130,9 @@ def apply_update(db: Session, update: BillingUpdate, provider: str, billing=None
     if update.provider_ref and update.status != "active" and sub.status == "trialing" and not sub.provider_ref:
         # T-174 (T-173 S-3): a failed first payment (past_due, incomplete_expired, deleted) for a subscription we never
         # activated must not end the free trial early. The trial runs to its end; only a paid checkout changes it.
+        if update.occurred_at and (sub.last_event_at is None or update.occurred_at > sub.last_event_at):
+            # Remember when it died, so a checkout for it that arrives late (older timestamp) is stale, not paid access.
+            sub.last_event_at = update.occurred_at
         db.commit()
         log.info("event for a never-activated subscription ignored: the trial keeps running")
         return True
