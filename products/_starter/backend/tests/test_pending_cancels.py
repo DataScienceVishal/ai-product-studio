@@ -146,3 +146,83 @@ def test_dead_marker_collision_keeps_the_second_events_id(owner, database):
         assert db.get(BillingEvent, "d2") is not None
         assert db.get(BillingEvent, _dead_marker("stripe", "sub_9")) is not None
     assert _stripe_apply(database, t, "d2", "customer.subscription.deleted", now - 40, "sub_9", "canceled") is False
+
+
+def test_b1_a_pending_cancel_never_cancels_the_tenants_current_subscription(owner, database):
+    """Reviewer's sequence: sub_1 comes back as the current subscription while it still has a to-do."""
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    provider = MockBilling("x", "https://app.test")
+    real = provider.cancel_subscription
+    provider.cancel_subscription = _down
+    _stripe_apply(database, t, "p1", "checkout.session.completed", now - 300, "sub_1")
+    _stripe_apply(database, t, "p2", "customer.subscription.updated", now - 250, "sub_1", "past_due")
+    _stripe_apply(database, t, "p3", "checkout.session.completed", now - 200, "sub_2", plan="pro", billing=provider)
+    _stripe_apply(database, t, "p4", "customer.subscription.updated", now - 150, "sub_2", "past_due", plan="pro",
+                  billing=provider)
+    _stripe_apply(database, t, "p5", "checkout.session.async_payment_succeeded", now - 100, "sub_1", billing=provider)
+    assert _stripe_sub(database, t)[2] == "sub_1"
+    assert [r[1] for r in _rows(database)] == ["sub_2"]  # sub_1 is current, so its to-do is gone
+    provider.cancel_subscription = real  # the provider is back up
+    _stripe_apply(database, t, "p6", "customer.subscription.updated", now - 50, "sub_1", "active", billing=provider)
+    assert provider.cancelled == ["sub_2"]
+    assert _stripe_sub(database, t) == ("active", "starter", "sub_1") and _rows(database) == []
+
+
+def test_b1_the_retry_and_the_sweep_skip_and_drop_a_row_for_the_current_ref(owner, database):
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    _stripe_apply(database, t, "q1", "checkout.session.completed", now - 100, "sub_1")
+    with database.sessions() as db:
+        db.add(PendingCancel(tenant_id=uuid.UUID(t), provider="stripe", ref="sub_1"))
+        db.commit()
+    provider = MockBilling("x", "https://app.test")
+    with database.sessions() as db:
+        assert sweep_pending_cancels(db, {"stripe": provider}) == {"cancelled": 0, "failed": 0}
+    assert provider.cancelled == [] and _rows(database) == []
+
+
+def test_b1_one_bad_row_does_not_stop_the_sweep(owner, database, monkeypatch):
+    import app.routes.billing as routes
+    client, _ = owner
+    with database.sessions() as db:
+        for ref in ("old_1", "old_2"):
+            db.add(PendingCancel(tenant_id=uuid.UUID(_tenant_id(client)), provider="stripe", ref=ref))
+        db.commit()
+    real, seen = routes.attempt_pending_cancel, []
+
+    def flaky(db, row_id, billing):
+        ref = db.scalar(select(PendingCancel.ref).where(PendingCancel.id == row_id))
+        seen.append(ref)
+        if ref == "old_1":
+            raise RuntimeError("stale data")
+        return real(db, row_id, billing)
+
+    monkeypatch.setattr(routes, "attempt_pending_cancel", flaky)
+    provider = MockBilling("x", "https://app.test")
+    with database.sessions() as db:
+        assert sweep_pending_cancels(db, {"stripe": provider}) == {"cancelled": 1, "failed": 1}
+    assert seen == ["old_1", "old_2"] and provider.cancelled == ["old_2"]
+
+
+def test_s4_a_concurrent_dead_marker_insert_keeps_the_events_dedup_row(owner, database):
+    """Another transaction inserts the marker and commits while this event waits on it: the savepoint path."""
+    import threading
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    other = database.sessions().__enter__()
+    other.add(BillingEvent(id=_dead_marker("stripe", "sub_9")))
+    other.flush()  # held uncommitted
+    result = {}
+    worker = threading.Thread(target=lambda: result.update(
+        applied=_stripe_apply(database, t, "c1", "customer.subscription.deleted", now - 40, "sub_9", "canceled")))
+    worker.start()
+    time.sleep(1.0)
+    assert worker.is_alive()  # blocked on the other transaction's unique key
+    other.commit()
+    other.close()
+    worker.join(10)
+    assert result == {"applied": True}
+    with database.sessions() as db:
+        assert db.get(BillingEvent, "c1") is not None
+    assert _stripe_apply(database, t, "c1", "customer.subscription.deleted", now - 40, "sub_9", "canceled") is False

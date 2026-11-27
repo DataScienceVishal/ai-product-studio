@@ -381,4 +381,4 @@ Done: `pending_cancels` table (migration 0010, model `PendingCancel`, unique pro
 `apply_update` retries the tenant's pending cancels after every event; `python -m app.maintenance cancels` sweeps all;
 dead-marker collision no longer rolls back the event's own dedup row. Tests: tests/test_pending_cancels.py, test_migrations.py.
 Left: add a Container Apps job for `app.maintenance cancels` in infra/main.bicep (not done, outside this task); DATA.md row for pending_cancels.
-Verify: `cd backend && python -m pytest` (796 passed, 1 skipped; needs Postgres).
+Verify: `cd backend && python -m pytest` (804 passed, 1 skipped; needs Postgres).

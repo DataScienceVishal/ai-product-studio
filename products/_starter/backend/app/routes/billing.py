@@ -216,6 +216,11 @@ def _apply_update(db: Session, update: BillingUpdate, provider: str, billing=Non
     if update.current_period_end:
         sub.current_period_end = update.current_period_end
     sub.provider = provider
+    if update.provider_ref and update.starts_subscription:
+        # A ref that becomes current is no longer a to-do (it may have a row from an earlier takeover): cancelling it
+        # would cancel what the customer just paid for.
+        db.execute(delete(PendingCancel).where(PendingCancel.provider == provider,
+                                               PendingCancel.ref == update.provider_ref))
     if old_ref and old_provider == provider:
         # T-175: write the to-do in the same transaction as the takeover, so a crash after the commit cannot lose it.
         # apply_update retries it right after this event (and again on the tenant's next event, or by the sweep).
@@ -241,11 +246,26 @@ def _record_pending_cancel(db: Session, tenant_id: uuid.UUID, provider: str, ref
         db.add(PendingCancel(tenant_id=tenant_id, provider=provider, ref=ref))
 
 
-def attempt_pending_cancel(db: Session, row: PendingCancel, billing) -> bool:
-    """Cancel one pending subscription at the provider. On success the row is deleted; on failure the attempt is
-    counted, the error kept and an ERROR logged (an unpaid-for duplicate may still be billing the customer).
+def attempt_pending_cancel(db: Session, row_id: uuid.UUID, billing) -> bool | None:
+    """Cancel one pending subscription at the provider. True: cancelled (row deleted). False: failed (attempt counted,
+    error kept, ERROR logged: an unpaid-for duplicate may still be billing the customer). None: skipped, because the row
+    is gone or locked by another worker, or its ref is the tenant's current subscription (the row is then dropped).
+    The row is re-read FOR UPDATE SKIP LOCKED and stays locked until the commit after the cancel, so a takeover that
+    makes this ref current waits for an in-flight cancel instead of racing it.
     A subscription the provider reports as already cancelled or gone counts as success (the adapter handles that)."""
+    row = db.scalar(select(PendingCancel).where(PendingCancel.id == row_id).with_for_update(skip_locked=True)
+                    .execution_options(populate_existing=True))
+    if row is None:
+        db.rollback()
+        return None
     todo = {"tenant_id": str(row.tenant_id), "old_subscription": row.ref, "old_provider": row.provider}
+    sub = db.scalar(select(Subscription).where(Subscription.tenant_id == row.tenant_id)
+                    .execution_options(populate_existing=True)) if row.tenant_id else None
+    if sub is not None and sub.provider == row.provider and sub.provider_ref == row.ref:
+        db.delete(row)
+        db.commit()
+        log.warning("pending cancel dropped: that subscription is the tenant's current one", extra=todo)
+        return None
     try:
         billing.cancel_subscription(row.ref)
     except Exception as error:
@@ -263,11 +283,11 @@ def attempt_pending_cancel(db: Session, row: PendingCancel, billing) -> bool:
 
 def retry_pending_cancels(db: Session, tenant_id: uuid.UUID, provider: str, billing) -> None:
     """T-175: try this tenant's pending cancels for `provider`. Runs after every billing event for the tenant."""
-    rows = db.scalars(select(PendingCancel).where(PendingCancel.tenant_id == tenant_id,
-                                                  PendingCancel.provider == provider)
-                      .order_by(PendingCancel.created_at)).all()
-    for row in rows:
-        attempt_pending_cancel(db, row, billing)
+    ids = db.scalars(select(PendingCancel.id).where(PendingCancel.tenant_id == tenant_id,
+                                                    PendingCancel.provider == provider)
+                     .order_by(PendingCancel.created_at)).all()
+    for row_id in ids:
+        attempt_pending_cancel(db, row_id, billing)
 
 
 def _fill_period_end(db: Session, update: BillingUpdate, billing) -> None:
