@@ -226,7 +226,7 @@ def stripe_event(kind, obj, livemode=False, created=None):
 def test_stripe_checkout_completion_records_plan_offer_and_customer():
     tenant = uuid.uuid4()
     payload = stripe_event("checkout.session.completed", {
-        "client_reference_id": str(tenant), "subscription": "sub_1", "customer": "cus_1",
+        "client_reference_id": str(tenant), "subscription": "sub_1", "customer": "cus_1", "payment_status": "paid",
         "metadata": {"tenant_id": str(tenant), "plan": "pro", "offer": "EARLY50"}})
     update_ = stripe().parse_webhook(payload, sign(payload, SECRET))
     assert (update_.plan, update_.offer, update_.customer_ref, update_.provider_ref) == ("pro", "EARLY50", "cus_1", "sub_1")

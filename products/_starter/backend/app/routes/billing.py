@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
-from ..billing import LIMITED_PROVIDERS, OFFERS, PLANS, BillingUpdate, MockBilling, sign
+from ..billing import LIMITED_PROVIDERS, OFFERS, PLANS, BillingUpdate, MockBilling, has_access, sign
 from ..db import get_db
 from ..deps import Current, owner, subscription_of, verified_owner
 from ..errors import AppError
@@ -45,7 +45,9 @@ def checkout(data: CheckoutIn, request: Request, me: Current = Depends(verified_
     request.app.state.limiter.check(f"checkout:{me.tenant.id}", 10)
     sub = subscription_of(db, me.tenant.id)
     db.commit()  # don't hold a transaction while the payment provider is called
-    if sub.status == "active" and sub.provider_ref and sub.provider == request.app.state.billing.name:
+    if (sub.status == "active" and sub.provider_ref and sub.provider == request.app.state.billing.name
+            and has_access(sub.status, sub.trial_ends_at, current_period_end=sub.current_period_end)):
+        # (An "active" subscription past its grace period has no access, so a new checkout is allowed.)
         raise AppError(409, "already_subscribed", "You already have an active plan. To change it, contact support.")
     if sub.status == "past_due" and sub.provider_ref and sub.provider == request.app.state.billing.name:
         # A second checkout would start a new subscription next to the unpaid one: the customer pays twice.
@@ -79,9 +81,20 @@ def portal(request: Request, me: Current = Depends(verified_owner), db: Session 
     return {"url": billing.portal_session(sub.provider_customer, f"{base}/billing")}
 
 
-def apply_update(db: Session, update: BillingUpdate, provider: str) -> bool:
+def _check_fields(update: BillingUpdate) -> None:
+    """Refuse fields the columns cannot hold (wrong type, too long) with a 400, before the event id is recorded."""
+    for name, limit in (("plan", 40), ("offer", 40), ("provider_ref", 255), ("customer_ref", 255)):
+        value = getattr(update, name)
+        if value is not None and (not isinstance(value, str) or len(value) > limit):
+            log.warning("billing event has an unreadable field", extra={"field": name})
+            raise AppError(400, "bad_event", "The event could not be read.")
+
+
+def apply_update(db: Session, update: BillingUpdate, provider: str, billing=None) -> bool:
     """Apply a provider event once, in order. Returns False if this event id was already applied.
-    An event older than the last one applied is recorded as seen but changes nothing."""
+    An event older than the last one applied is recorded as seen but changes nothing.
+    `billing` is the provider, used to cancel a duplicate subscription (see below)."""
+    _check_fields(update)
     if update.status == "active" and update.plan is not None and (update.plan not in PLANS or update.plan == "trial"):
         # Wrong provider metadata would otherwise activate the subscription on whatever plan the tenant had
         # (a free upgrade). Refuse before recording the event id, so a redelivery works once the catalogue or
@@ -116,6 +129,22 @@ def apply_update(db: Session, update: BillingUpdate, provider: str) -> bool:
     if update.occurred_at and sub.last_event_at and (update.occurred_at < sub.last_event_at or tie_after_cancel):
         db.commit()  # stale (arrived out of order): keep the event id, ignore its content
         log.info("stale billing event ignored")
+        return True
+    duplicate = (other_sub and update.starts_subscription and update.status == "active" and sub.status == "active"
+                 and has_access(sub.status, sub.trial_ends_at, current_period_end=sub.current_period_end))
+    if duplicate:
+        # T-172 B1: the tenant already pays for a working subscription. A second one must not silently replace it
+        # (the first would keep billing, untracked). Keep the first, cancel the extra one at the provider.
+        db.commit()
+        log.warning("duplicate subscription for a tenant with an active one: cancelling the extra",
+                    extra={"tenant_id": str(update.tenant_id), "extra_subscription": update.provider_ref})
+        if billing is not None:
+            try:
+                billing.cancel_subscription(update.provider_ref)
+            except Exception:  # never fail the webhook (the event is recorded); the log line is the to-do
+                log.error("could not cancel the duplicate subscription: cancel or refund it by hand",
+                          extra={"tenant_id": str(update.tenant_id), "extra_subscription": update.provider_ref},
+                          exc_info=True)
         return True
     sub.status = update.status
     if update.plan in PLANS:
@@ -171,7 +200,8 @@ async def webhook(request: Request, db: Session = Depends(get_db)):
         raise AppError(400, "bad_event", "The event could not be read.")
     if update is None:
         return {"received": True, "applied": False}
-    applied = await run_in_threadpool(apply_update, db, update, request.app.state.billing.name)
+    applied = await run_in_threadpool(apply_update, db, update, request.app.state.billing.name,
+                                      request.app.state.billing)
     return {"received": True, "applied": applied}
 
 
@@ -186,6 +216,6 @@ def mock_complete(session_id: str, request: Request, me: Current = Depends(owner
         raise AppError(404, "not_found", "Unknown checkout session.")
     payload = billing.completion_event(session_id)
     update = billing.parse_webhook(payload, sign(payload, billing.secret))
-    apply_update(db, update, billing.name)
+    apply_update(db, update, billing.name, billing)
     sub = subscription_of(db, me.tenant.id)
     return {"plan": sub.plan, "status": sub.status, "offer": sub.offer}
