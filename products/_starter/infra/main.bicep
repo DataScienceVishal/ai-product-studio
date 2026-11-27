@@ -401,21 +401,8 @@ var migrateEnv = concat(commonEnv, jobSettings, emailEnv, migrateDbAuthEnv)
 var purgeEnv = concat(commonEnv, jobSettings, purgeEmailEnv, appDbAuthEnv)
 
 // The cancels job (T-176) calls the payment provider, so unlike the purge it gets this release's billing provider
-// and the two Stripe secrets. It still never calls the AI. Image and email settings are the purge job's
-// (purge* parameters), so the workflow moves both jobs to a release together.
-// Both Stripe secrets and both secretRefs are ALWAYS defined, whatever useStripe says: a job's secrets are not per
-// revision, and purge-job.sh `follow` may switch BILLING_PROVIDER on a rollback without a Bicep deploy. The job must
-// then find the Stripe secrets already there (placeholder when unset, like webSecrets).
-var cancelsStripeEnv = [
-  {
-    name: 'BILLING_WEBHOOK_SECRET'
-    secretRef: 'billing-webhook-secret'
-  }
-  {
-    name: 'STRIPE_SECRET_KEY'
-    secretRef: 'stripe-secret-key'
-  }
-]
+// and, for Stripe, the two Stripe secrets. It still never calls the AI. Image and email settings are the purge
+// job's (purge* parameters), so the workflow moves both jobs to a release together.
 var cancelsEnv = concat(commonEnv, [
   {
     name: 'AI_PROVIDER'
@@ -425,12 +412,13 @@ var cancelsEnv = concat(commonEnv, [
     name: 'BILLING_PROVIDER'
     value: useStripe ? 'stripe' : 'mock'
   }
-], purgeEmailEnv, cancelsStripeEnv, appDbAuthEnv)
-var cancelsSecrets = [
+], purgeEmailEnv, stripeEnv, appDbAuthEnv)
+var cancelsSecrets = concat([
   {
     name: 'database-url'
     value: databaseUrl
   }
+], useStripe ? [
   {
     name: 'billing-webhook-secret'
     value: empty(billingWebhookSecret) ? notConfigured : billingWebhookSecret
@@ -439,7 +427,7 @@ var cancelsSecrets = [
     name: 'stripe-secret-key'
     value: empty(stripeSecretKey) ? notConfigured : stripeSecretKey
   }
-]
+] : [])
 
 var jobResources = {
   cpu: json('0.25')
