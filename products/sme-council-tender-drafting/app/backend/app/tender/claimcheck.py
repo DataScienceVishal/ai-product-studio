@@ -94,7 +94,8 @@ _STOP = _COMMON_FIRST | frozenset("is are was were be been have has had will can
 
 def names_in(span: str) -> list[str]:
     """Proper names in a span: each run of capitalised words, markers ignored. A sentence-initial common word ("We", "Our",
-    "The") is not part of a name and is dropped from the front of a run that starts the span."""
+    "The") is not part of a name and is dropped from the front of a run that starts the span. Every other capitalised word
+    that is not the first of a sentence and not a stop word is returned too, so a single-word name is checked."""
     s = strip_marks(span)
     out = []
     for m in _CAPS_RUN.finditer(s):
@@ -104,6 +105,14 @@ def names_in(span: str) -> list[str]:
                 words.pop(0)
         if words:
             out.append(" ".join(words))
+    # one-word names and names split by a lowercase word ("Tesco", "University of Bristol"): every other capitalised word
+    # that does not start a sentence and is not a stop word is checked on its own
+    for m in re.finditer(r"\b[A-Z][A-Za-z]+\b", s):
+        before = s[:m.start()]
+        if not before.strip(" \t\n\"'(") or re.search(r"[.!?]\s*$", before) or m.group(0).casefold() in _STOP \
+                or any(m.group(0) in n.split() for n in out):
+            continue
+        out.append(m.group(0))
     return out
 
 

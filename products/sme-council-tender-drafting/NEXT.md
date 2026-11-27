@@ -287,3 +287,5 @@ Board-worthy: **add a purge horizon for soft-deleted evidence documents and thei
 Left for S7/S8 (reviewer items): 5 (`pack_checked` ignores evidence liveness; a delete during `checking` is not reopened), 7 (extract heading heuristic
 can give an imperative-question line the previous question's word window; known limitation), 8 (S7 sign-off and the check route should lock the pack row
 `FOR UPDATE`). Also: `hypothesis` is now in the dev extras and requirements-dev.txt (the T-190 line above is out of date).
+
+Threat note (S6): claims with no figure, code or name rest on the model's judgement plus the human sign-off; A6a measures how often the model gets them wrong.

@@ -441,7 +441,7 @@ def test_a_quote_without_the_name_is_unsupported_and_one_with_it_is_supported():
 
 def test_sentence_initial_common_word_is_not_a_name_and_markers_are_ignored():
     assert cc.names_in("Our Leeds City Council work [E-3]") == ["Leeds City Council"]
-    assert cc.names_in("We hold ISO 9001 [E-1]") == []
+    assert cc.names_in("We hold ISO 9001 [E-1]") == ["ISO"]  # checked against the quote like any capitalised word
 
 
 def test_a_short_quote_is_too_small_even_with_no_names():
@@ -471,3 +471,22 @@ def test_a_repeated_unmarked_sentence_does_not_ride_on_the_first_verdict():
                 passages={4: "We cleaned 40 offices in 2023."})
     assert out[0].verdict == "supported"
     assert any(c.verdict == "unchecked" for c in out) and cc.blocking(out)
+
+
+def test_a_one_word_client_name_must_be_in_the_quote():
+    out = rules([claim("We clean every store for Tesco", [3], quote="serve the schools")],
+                draft="We clean every store for Tesco [E-3].", passages={3: "We serve the schools in the area."})
+    assert out[0].verdict == "unsupported" and "name" in out[0].reason
+
+
+def test_a_name_split_by_a_lowercase_word_must_be_in_the_quote():
+    out = rules([claim("We are a supplier to the University of Bristol", [3], quote="under a contract with")],
+                draft="We are a supplier to the University of Bristol [E-3].", passages={3: "We work under a contract with councils."})
+    assert out[0].verdict == "unsupported" and "name" in out[0].reason
+
+
+def test_an_honest_one_word_name_with_the_name_in_the_quote_is_supported():
+    p = {3: "We hold a contract with Tesco for cleaning."}
+    out = rules([claim("We hold a contract with Tesco", [3], quote="We hold a contract with Tesco")],
+                draft="We hold a contract with Tesco [E-3].", passages=p)
+    assert out[0].verdict == "supported"
