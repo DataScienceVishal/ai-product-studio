@@ -110,7 +110,7 @@ def summarize(note_id: uuid.UUID, request: Request, me: Current = Depends(curren
     plan = PLANS["trial"] if limited else PLANS.get(sub.plan, PLANS["trial"])
     version = (note.title, note.body)
     prompt = f"<note>\n{_as_data(note.title)}\n\n{_as_data(note.body)}\n</note>"
-    ensure_ai_enabled(request.app.state.ai)  # the provider switched itself off (reported model too dear)
+    ensure_ai_enabled(request.app.state.ai, db)  # the provider switched itself off (reported model too dear)
     reservation = reserve(db, me.tenant.id, plan.ai_monthly_tokens,
                           reservation_estimate(request.app.state.ai, SUMMARY_SYSTEM, prompt, MAX_SUMMARY_TOKENS),
                           "note_summary",

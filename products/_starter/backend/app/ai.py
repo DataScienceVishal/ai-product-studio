@@ -83,13 +83,15 @@ class AIUnavailable(AppError):
         self.input_tokens, self.output_tokens = input_tokens, output_tokens
 
 
-def ensure_ai_enabled(provider) -> None:
+def ensure_ai_enabled(provider, db=None) -> None:
     """Refuse like an exhausted budget when the provider switched itself off (reported model too dear, T-100 M1).
     `disabled` is the in-memory fast path; a provider with a trip store also asks the database, so a restart or
-    another replica honours a trip (T-163). A provider that has no `check_persisted_trip` is in-memory only."""
+    another replica honours a trip (T-163). A provider that has no `check_persisted_trip` is in-memory only.
+    Pass the caller's `db` session when it already holds a connection: the read then reuses it instead of checking out
+    a second pooled connection (a nested checkout can starve the pool under load)."""
     check = getattr(provider, "check_persisted_trip", None)
     if check is not None and not getattr(provider, "disabled", False):
-        check()
+        check(db) if db is not None else check()
     if getattr(provider, "disabled", False):
         raise AppError(503, "ai_budget_reached", getattr(provider, "disabled_message", None)
                        or "The AI is resting until tomorrow. Everything else still works.")
@@ -102,9 +104,12 @@ class TripStore:
     def __init__(self, sessions: sessionmaker):
         self.sessions = sessions
 
-    def tripped(self, fingerprint: str) -> bool:
-        with self.sessions() as db:
+    def tripped(self, fingerprint: str, db=None) -> bool:
+        """With `db` the primary-key read runs on that session (no new connection, no commit)."""
+        if db is not None:
             return db.get(AIGuardTrip, fingerprint) is not None
+        with self.sessions() as own:
+            return own.get(AIGuardTrip, fingerprint) is not None
 
     def record(self, fingerprint: str, model: str) -> None:
         with self.sessions() as db:
@@ -344,19 +349,21 @@ class AzureOpenAI:
         basis = "\n".join([self.url, (self.deployment or "").strip().lower(), repr(self.checked_price)])
         self.trip_fingerprint = hashlib.sha256(basis.encode()).hexdigest()
 
-    def check_persisted_trip(self) -> None:
+    def check_persisted_trip(self, db=None) -> None:
         """Latch `disabled` when the database says this config tripped (another replica, or before a restart).
         FAIL CLOSED: if the table cannot be read the call is refused (503 ai_budget_reached), because an unreadable
-        guard cannot say the AI is safe. That costs nothing extra in practice: `reserve()` needs the same database,
-        so with it down no AI call could run anyway. A read error does NOT latch `disabled`: the next call asks again.
+        guard cannot say the AI is safe. `db` is the caller's open session, when it has one, so the read needs no
+        second pooled connection. A read error does NOT latch `disabled`: the next call asks again.
         The log line carries the exception type only, never its text."""
         if self.trip_store is None or self.disabled:
             return
         try:
-            tripped = self.trip_store.tripped(self.trip_fingerprint)
+            tripped = (self.trip_store.tripped(self.trip_fingerprint, db) if db is not None
+                       else self.trip_store.tripped(self.trip_fingerprint))
         except Exception as exc:
             log.error("AI refused: the guard-trip record could not be read (%s)", type(exc).__name__)
-            raise AppError(503, "ai_budget_reached", self.disabled_message) from None
+            raise AppError(503, "ai_budget_reached",
+                           "The AI is unavailable right now. Everything else still works.") from None
         if tripped:
             self.disabled = True
             log.error("AI stays off: the model guard tripped earlier for this configuration. Fix AZURE_OPENAI_DEPLOYMENT "

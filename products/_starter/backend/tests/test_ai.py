@@ -1395,9 +1395,19 @@ def test_changing_the_ai_config_clears_the_trip(settings, outbox, database):
     finally:
         app.state.db.dispose()
     assert (a.status_code, b.status_code) == (200, 503)
-    for change in ({"deployment": "gpt-5-nano"}, {"endpoint": "https://other.openai.azure.com/"}, {"explicit": 3.0}):
+    # deployment alone: two unknown names with the same explicit price, so the guard stays on (price known) and
+    # only the deployment differs between the tripped config and the changed one
+    tripped_cfg = _store_app(settings, outbox, "gpt-5.4-pro-2026-03-05", deployment="chat", explicit=2.0)
+    assert tripped_cfg.state.ai.checked_price is not None
+    try:
+        a, b = _summaries_again_two(tripped_cfg)
+        assert (a.status_code, b.status_code) == (200, 503)
+    finally:
+        tripped_cfg.state.db.dispose()
+    for change in ({"deployment": "chat2", "explicit": 2.0}, {"endpoint": "https://other.openai.azure.com/"}, {"explicit": 3.0}):
         calls = []
         fixed = _store_app(settings, outbox, "gpt-5-nano", calls=calls, **change)
+        assert fixed.state.ai.checked_price is not None, change
         try:
             assert _summaries_again(fixed).status_code == 200, change
         finally:
@@ -1473,3 +1483,33 @@ def test_build_provider_explicit_price_only_counts_for_unknown_deployments():
     unknown = build_provider(SimpleNamespace(**base, azure_openai_deployment="chat", ai_price_per_million_tokens=2.0))
     assert known.price_explicit is False and known.checked_price == 2.0
     assert unknown.price_explicit is True and unknown.checked_price == 2.0
+
+
+def test_route_trip_check_uses_the_request_session_not_a_second_connection(settings, outbox, database):
+    """T-163 review blocking 1: with a one-connection pool the route-level trip check must reuse the request's
+    session. A second checkout waited 10 s, then failed closed with a false 503."""
+    import time
+    tiny = settings.model_copy(update={"db_pool_size": 1, "db_max_overflow": 0})
+    healthy = _store_app(tiny, outbox, "gpt-5-mini")
+    started = time.monotonic()
+    try:
+        (ok,) = _summaries(healthy, outbox, 1)
+    finally:
+        healthy.state.db.dispose()
+    assert ok.status_code == 200 and time.monotonic() - started < 8
+    # a tripped config is still refused, on the same tiny pool
+    dear = _store_app(tiny, outbox, "gpt-5.4-pro-2026-03-05")
+    try:
+        first, second = _summaries_again_two(dear)
+    finally:
+        dear.state.db.dispose()
+    assert second.status_code == 503 and second.json()["error"] == "ai_budget_reached"
+
+
+def _summaries_again_two(app):
+    from fastapi.testclient import TestClient
+    from tests.conftest import PASSWORD
+    with TestClient(app, base_url="https://testserver", headers={"X-Requested-With": "test"}) as client:
+        assert client.post("/api/auth/login", json={"email": "owner@acme.test", "password": PASSWORD}).status_code == 200
+        note_id = client.get("/api/notes").json()["items"][0]["id"]
+        return [client.post(f"/api/notes/{note_id}/summarize") for _ in range(2)]

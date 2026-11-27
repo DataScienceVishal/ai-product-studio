@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, Uuid, false, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, Uuid, false, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base
@@ -117,7 +117,8 @@ class AIGuardTrip(Base):
     no tenant, prompt or answer data: only the cleaned model name Azure reported. Delete the row to clear by hand."""
     __tablename__ = "ai_guard_trips"
     fingerprint: Mapped[str] = mapped_column(String(64), primary_key=True)
-    tripped_at: Mapped[datetime] = _created()
+    tripped_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow,
+                                                 server_default=func.now(), nullable=False)
     model: Mapped[str] = mapped_column(String(80), nullable=False)
 
 
