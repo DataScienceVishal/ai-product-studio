@@ -1,5 +1,8 @@
+import logging
 from datetime import datetime, timedelta, timezone
 
+import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import select, update
 
 from app.models import Invitation, User
@@ -372,6 +375,93 @@ def test_a_deadlock_during_accept_is_a_409_email_taken(owner, new_client, outbox
     monkeypatch.setattr(Session, "flush", flush)
     response = _accept(new_client(), token)
     assert response.status_code == 409 and response.json()["error"] == "email_taken"
+
+
+def _inject_on_accept(monkeypatch, where, error):
+    """Raise `error` (a psycopg error) from the accept's `flush` (the user insert) or from its `execute` of the
+    UPDATE on invitations (the revoke of other tenants' links for the same address)."""
+    from sqlalchemy.exc import OperationalError
+    from sqlalchemy.orm import Session
+    from sqlalchemy.sql.dml import Update
+    real_flush, real_execute = Session.flush, Session.execute
+
+    def flush(self, *args, **kwargs):
+        if where == "flush" and any(isinstance(o, User) for o in self.new):
+            raise OperationalError("INSERT", {}, error)
+        return real_flush(self, *args, **kwargs)
+
+    def execute(self, statement, *args, **kwargs):
+        if where == "revoke" and isinstance(statement, Update) and statement.table.name == "invitations":
+            raise OperationalError("UPDATE", {}, error)
+        return real_execute(self, statement, *args, **kwargs)
+
+    monkeypatch.setattr(Session, "flush", flush)
+    monkeypatch.setattr(Session, "execute", execute)
+
+
+def _users_with(app, email):
+    with app.state.db.engine.connect() as conn:
+        return conn.execute(text("SELECT count(*) FROM users WHERE email = :e"), {"e": email}).scalar()
+
+
+def test_a_deadlock_on_the_revoke_update_is_a_409_email_taken(app, owner, new_client, outbox, monkeypatch):
+    """The other side of the catch: the victim is the transaction running the revoke UPDATE, not the user insert.
+    The catch must cover it too, and nothing from the failed transaction may survive."""
+    from psycopg import errors
+    owner_client, _ = owner
+    invitation, token = _invite(owner_client, outbox, "rev@acme.test")
+    _inject_on_accept(monkeypatch, "revoke", errors.DeadlockDetected("deadlock detected"))
+    response = _accept(new_client(), token)
+    assert response.status_code == 409 and response.json()["error"] == "email_taken"
+    assert _users_with(app, "rev@acme.test") == 0
+    with app.state.db.engine.connect() as conn:
+        accepted = conn.execute(text("SELECT accepted_at FROM invitations WHERE email = 'rev@acme.test'")).scalar()
+    assert accepted is None  # rolled back, the link was not consumed
+
+
+def test_a_deadlock_in_accept_is_logged_without_personal_data(app, owner, new_client, outbox, monkeypatch):
+    """A 40P01 reads as email_taken to the caller, so it must leave a WARNING with ids only, to stay visible."""
+    from psycopg import errors
+    owner_client, me = owner
+    invitation, token = _invite(owner_client, outbox, "logme@acme.test")
+    records = []
+
+    class Grab(logging.Handler):  # the app's logging setup may not propagate to caplog
+        def emit(self, record):
+            records.append(record)
+
+    logger = logging.getLogger("app.team")
+    handler = Grab(level=logging.DEBUG)
+    logger.addHandler(handler)
+    try:
+        _inject_on_accept(monkeypatch, "revoke", errors.DeadlockDetected("deadlock detected"))
+        response = _accept(new_client(), token)
+    finally:
+        logger.removeHandler(handler)
+    assert response.status_code == 409
+    warnings = [r for r in records if r.levelno == logging.WARNING and "deadlock" in r.getMessage()]
+    assert len(warnings) == 1
+    record = warnings[0]
+    assert record.tenant_id == me["tenant"]["id"]
+    assert record.invitation_id == str(invitation["id"])
+    everything = record.getMessage() + repr(record.__dict__)
+    assert "logme@acme.test" not in everything and token not in everything and MEMBER_PASSWORD not in everything
+
+
+@pytest.mark.parametrize("where", ["flush", "revoke"])
+def test_a_non_deadlock_operational_error_is_not_swallowed_as_409(app, owner, new_client, outbox, monkeypatch, where):
+    """Only 40P01 means 'the other accept won'. A statement timeout (QueryCanceled) must stay a 500, and leave no
+    account behind."""
+    from psycopg import errors
+    owner_client, _ = owner
+    _, token = _invite(owner_client, outbox, "cancel@acme.test")
+    _inject_on_accept(monkeypatch, where, errors.QueryCanceled("canceling statement due to statement timeout"))
+    client = TestClient(app, base_url="https://testserver", headers={"X-Requested-With": "test"},
+                        raise_server_exceptions=False)
+    response = _accept(client, token)
+    assert response.status_code == 500
+    assert response.json().get("error") != "email_taken"
+    assert _users_with(app, "cancel@acme.test") == 0
 
 
 def test_invitation_email_is_indexed(database):
