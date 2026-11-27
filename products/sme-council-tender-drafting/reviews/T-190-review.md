@@ -132,7 +132,7 @@ Fixed and verified (re-run probe against `apply_rules`):
 
 ### Must-fix (remaining)
 
-1b. **`app/tender/claimcheck.py:94-107` (`names_in`): a one-word proper name is not treated as a name.** `_CAPS_RUN` needs two or
+1b. **`app/tender/claimcheck.py:95-107` (`names_in`): a one-word proper name is not treated as a name.** `_CAPS_RUN` needs two or
    more capitalised words in a row, so a single-word client or a name with a lowercase connector is never compared with the quote.
    Probes, each with an obedient checker and a 3-word quote taken from a passage that names neither:
    - "We clean every store for Tesco [E-3]." with quote "serve the schools" is **supported**;
