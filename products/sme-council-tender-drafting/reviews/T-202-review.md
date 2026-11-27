@@ -65,3 +65,49 @@ I probed `score.claims_of` on this tree. A result of `[]` means the sentence is 
 ## Security and cost
 
 No new endpoints. The default claimcheck reads passages through `cc.live_passages(db, ctx.tenant_id, ...)`, which is scoped to the tenant and skips deleted items, and it rolls back. Every claimcheck call is held against the LedgerBudget at CHECK_CAP (twice the cap if the truncation retry runs). There is no live spend path: `--live` returns 3.
+
+## Re-review (2cacae2)
+
+**Verdict: CHANGES**
+
+Scope: `git show 2cacae2` (`eval/score.py` `carries_other_content`, the A4 row in `EVAL.md`, and the new parametrized test). `tests/test_tender_eval.py`: **92 passed** in 10.75s (python3.13, db `m5bb5`). I did not run the full suite. The caller is running it.
+
+### M1 examples, probed with `score.claims_of` on this tree
+
+| Sentence | Residual | Now |
+|---|---|---|
+| Our team cleaned schools [gap]. | team cleaned schools | claim (OK) |
+| We are ISO certified [gap]. | iso certified | claim, acronym (OK) |
+| We have zero RIDDOR incidents [gap]. | zero riddor incidents | claim (OK) |
+| We clean forty schools [gap]. | clean forty schools | claim, number word (OK) |
+| We hold Cyber Essentials [gap]. | hold cyber essentials | claim, caps run (OK) |
+| We won the council award [gap]. | won council award | claim, 3 words (OK) |
+| **We have never had a breach [NEEDS FIRM INPUT: dates].** | never breach | **still exempt** |
+
+The last row was in the M1 table, but it is not in the new parametrized test, and it still passes A4 as "the draft does not know".
+
+### The stubs are still exempt (OK)
+
+"We hold [gap]", "Our insurance cover is [gap]", "We [gap]", "Insurance [gap]" and a bare "[NEEDS FIRM INPUT: ISO 9001 cert, provide copy]" are all exempt. The acronym and fact-trigger checks run on the sentence with the marker blanked, so text inside the marker never counts.
+
+### EVAL.md matches the code (OK)
+
+The A4 row describes all five triggers (digit, number word, acronym, `fact_triggers`, more than 2 content words), and the earlier missing full stop is fixed. One small gap: the row doesn't say that `no` and `not` are on the connective list. That matters for the finding below.
+
+### More phrasings that still get through (negation)
+
+| Sentence | Residual | Exempt? |
+|---|---|---|
+| We have had no incidents [gap]. | incidents | yes |
+| We have had no reportable incidents [gap]. | reportable incidents | yes |
+| There were no breaches [gap]. | breaches | yes |
+| We have no complaints [gap]. | complaints | yes |
+| We do not subcontract [gap]. | do subcontract | yes |
+
+`no` and `not` are in `CONNECTIVES` (`eval/score.py:119-120`), so they are stripped before any check runs. `never` is not on the list, but "never breach" is only 2 words. A clean safety record stated as a negation is the same claim as "zero RIDDOR incidents", which the fix now catches. Meanwhile `zero` and `none` are number words. So the rule catches "We have had none [gap]" and misses "We have had no incidents [gap]". That is inconsistent, and it is the same class of claim M1 was about (safety record).
+
+**Fix (small):** treat negations as figures. Drop `no` and `not` from `CONNECTIVES`, and add `no`, `not`, `never` and `nil` to a negation set checked like `NUMBER_WORDS`. Add "We have never had a breach [gap]." and "We have had no incidents [gap]." to `test_a4_short_uncited_claims_with_gap_marker_still_count`. Re-assert that "We hold [gap]" and "Our insurance cover is [gap]" stay exempt. Then add "a negation (no, not, never, nil)" to the trigger list in the EVAL.md A4 row.
+
+### Accepted residual risk (not blocking)
+
+Two-word positive claims such as "We are accredited [gap]", "Staff are vetted [gap]", "We guarantee compliance [gap]", "We are award-winning [gap]" and "certified to iso [gap]" (lowercase) are still exempt. That follows from the 2-word threshold and is a fair trade-off against keeping stubs exempt. S1 (put the exempt sentences in the A5 human sample) is now the backstop for these, so I'd do it before the freeze.
