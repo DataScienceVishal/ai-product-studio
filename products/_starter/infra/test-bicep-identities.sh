@@ -39,8 +39,9 @@ check "two user-assigned identities, id-<slug>-app and id-<slug>-migrate, API 20
 
 PICK_ca='[$t.resources[] | select(.type == "Microsoft.App/containerApps")][0]'
 PICK_purge='[$t.resources[] | select(.type == "Microsoft.App/jobs" and (.name | contains("purge")))][0]'
+PICK_cancels='[$t.resources[] | select(.type == "Microsoft.App/jobs" and (.name | contains("cancels")))][0]'
 PICK_migrate='[$t.resources[] | select(.type == "Microsoft.App/jobs" and (.name | contains("migrate")))][0]'
-for spec in "ca:app:migrate" "purge:app:migrate" "migrate:migrate:app"; do
+for spec in "ca:app:migrate" "purge:app:migrate" "cancels:app:migrate" "migrate:migrate:app"; do
   IFS=: read -r key db other <<<"$spec"
   eval "pick=\$PICK_$key"
   check "$key: exactly the pull identity and id-<slug>-$db are attached" \
@@ -61,10 +62,11 @@ check "dbAuth parameter allows password and entra, defaults to entra" \
 # Bicep inlines the env arrays into each resource, so look at the container env expression itself.
 ENV_ca='[$t.resources[] | select(.type == "Microsoft.App/containerApps")][0].properties.template.containers[0].env'
 ENV_purge='[$t.resources[] | select(.type == "Microsoft.App/jobs" and (.name | contains("purge")))][0].properties.template.containers[0].env'
+ENV_cancels='[$t.resources[] | select(.type == "Microsoft.App/jobs" and (.name | contains("cancels")))][0].properties.template.containers[0].env'
 ENV_migrate='[$t.resources[] | select(.type == "Microsoft.App/jobs" and (.name | contains("migrate")))][0].properties.template.containers[0].env'
 check "useEntra is dbAuth == entra" \
   '.variables.useEntra | contains("parameters('"'"'dbAuth'"'"')") and contains("'"'"'entra'"'"'")' "$main"
-for spec in "ca:app:migrate" "purge:app:migrate" "migrate:migrate:app"; do
+for spec in "ca:app:migrate" "purge:app:migrate" "cancels:app:migrate" "migrate:migrate:app"; do
   IFS=: read -r key db other <<<"$spec"
   eval "envp=\$ENV_$key"
   check "$key env: DB_AUTH=entra and the id-<slug>-$db client id, only when dbAuth is entra" \
@@ -74,6 +76,34 @@ for spec in "ca:app:migrate" "purge:app:migrate" "migrate:migrate:app"; do
        and ($e | contains("id-{0}-'"$other"'") | not)
        and ($e | contains("), createArray())"))' "$main"
 done
+# T-176: the cancels job is the purge job's twin with a different command, schedule and billing settings.
+check "cancels job: python -m app.maintenance cancels, container 'cancels', same image variable as the purge job" \
+  "$DEFS"'
+  named("Microsoft.App/jobs"; "cancels")[0].properties.template.containers[0] as $c
+  | named("Microsoft.App/jobs"; "purge")[0].properties.template.containers[0] as $p
+  | ($c.name == "cancels") and ($c.command == ["python"]) and ($c.args == ["-m","app.maintenance","cancels"])
+    and ($c.image == $p.image) and ($c.image | contains("purgeImageNow"))' "$main"
+check "cancels job: schedule job on the Consumption plan, cron from cancelsSchedule defaulting to every 30 minutes" \
+  "$DEFS"'
+  named("Microsoft.App/jobs"; "cancels")[0] as $j
+  | ($j.properties.workloadProfileName == "Consumption")
+    and ($j.properties.configuration.triggerType == "Schedule")
+    and ($j.properties.configuration.scheduleTriggerConfig.cronExpression == "[parameters('"'"'cancelsSchedule'"'"')]")
+    and ($t.parameters.cancelsSchedule.defaultValue == "*/30 * * * *")
+    and ($j.properties.configuration.scheduleTriggerConfig.parallelism == 1)' "$main"
+check "cancels job: replica timeout fits the sweep and is shorter than the schedule (no overlap), one retry" \
+  "$DEFS"'
+  named("Microsoft.App/jobs"; "cancels")[0].properties.configuration as $c
+  | ($c.replicaTimeout >= 600) and ($c.replicaTimeout < 1800) and ($c.replicaRetryLimit == 1)' "$main"
+check "cancels job env: billing provider follows useStripe, AI stays fake, no AI key" \
+  ". as \$t | $ENV_cancels"' | tostring as $e
+   | ($e | contains("BILLING_PROVIDER")) and ($e | contains("useStripe"))
+     and ($e | contains("AI_PROVIDER")) and ($e | contains("azure-openai-api-key") | not)' "$main"
+check "cancels job secrets: defined, so the app's database-url reference resolves" \
+  "$DEFS"'
+  named("Microsoft.App/jobs"; "cancels")[0].properties.configuration | has("secrets")' "$main"
+check "output cancelsJobName exists" '.outputs | has("cancelsJobName")' "$main"
+
 check "outputs: client ids and principal ids of both identities" \
   '(.outputs | keys) as $k | ["appIdentityClientId","appIdentityPrincipalId","migrateIdentityClientId","migrateIdentityPrincipalId"] | all(. as $o | $k | index($o))' "$main"
 

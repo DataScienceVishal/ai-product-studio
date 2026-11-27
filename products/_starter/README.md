@@ -58,7 +58,7 @@ and in-order webhooks, account deletion at the provider, log redaction and the r
 
 Run the retention purge daily: `python -m app.maintenance purge`.
 
-Run `python -m app.maintenance cancels` every few minutes or hourly (T-175): it retries subscription cancels that failed after a new checkout replaced a lapsed subscription (table `pending_cancels`, written in the takeover transaction; also retried on the tenant's next billing event). It prints counts, and each failure is logged at ERROR. Add it as a second Container Apps job next to the purge job. What is stored and for how long is in `DATA.md`.
+Run `python -m app.maintenance cancels` every few minutes or hourly (T-175): it retries subscription cancels that failed after a new checkout replaced a lapsed subscription (table `pending_cancels`, written in the takeover transaction; also retried on the tenant's next billing event). It prints counts, and each failure is logged at ERROR. In Azure it runs as the Container Apps job `caj-<slug>-cancels` every 30 minutes (`infra/main.bicep`, `cancelsSchedule`), next to the purge job. What is stored and for how long is in `DATA.md`.
 Security findings and their status are in `SECURITY.md`; the code review is in `reviews/`.
 
 ## One image, one origin

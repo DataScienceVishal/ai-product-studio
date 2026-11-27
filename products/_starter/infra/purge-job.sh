@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Keeps the scheduled purge job on the revision that serves traffic (ADR 0002, decision 10).
+# Keeps the scheduled purge job and cancels job (T-176) on the revision that serves traffic (ADR 0002, decision 10).
 # Container Apps jobs have no revisions, so the job that deletes data must never run a release's code before
 # that release has passed. The deploy workflow calls this after the public smoke test, and on every rollback.
 #
 #   purge-job.sh settings <revision>   print PURGE_IMAGE=..., PURGE_REQUIRE_EMAIL_VERIFICATION=... and
 #                                      PURGE_EMAIL_PROVIDER=... for that web revision (for $GITHUB_ENV)
-#   purge-job.sh follow <revision>     point caj-<product>-purge at that revision's image and email settings
+#   purge-job.sh follow <revision>     point caj-<product>-purge and caj-<product>-cancels at that revision's image and email settings
 #
 # Needs RESOURCE_GROUP and PRODUCT, and a signed-in Azure CLI. AZ can name a stand-in for tests.
 set -euo pipefail
@@ -15,7 +15,7 @@ command="${1:-}"
 revision="${2:-}"
 : "${RESOURCE_GROUP:?RESOURCE_GROUP is not set}" "${PRODUCT:?PRODUCT is not set}"
 app="ca-$PRODUCT"
-job="caj-$PRODUCT-purge"
+jobs="purge cancels" # job caj-$PRODUCT-<name>, whose container is called <name> too
 
 fail() {
   echo "::error::purge-job.sh: $*" >&2
@@ -45,12 +45,15 @@ if [ "$command" = "settings" ]; then
   exit 0
 fi
 
-"$az_cli" containerapp job update --resource-group "$RESOURCE_GROUP" --name "$job" --container-name purge \
-  --image "$image" --set-env-vars "REQUIRE_EMAIL_VERIFICATION=$verify" "EMAIL_PROVIDER=$provider" \
-  --only-show-errors --output none || fail "couldn't update $job"
+for name in $jobs; do
+  job="caj-$PRODUCT-$name"
+  "$az_cli" containerapp job update --resource-group "$RESOURCE_GROUP" --name "$job" --container-name "$name" \
+    --image "$image" --set-env-vars "REQUIRE_EMAIL_VERIFICATION=$verify" "EMAIL_PROVIDER=$provider" \
+    --only-show-errors --output none || fail "couldn't update $job"
 
-now=$("$az_cli" containerapp job show --resource-group "$RESOURCE_GROUP" --name "$job" --output json --only-show-errors) \
-  || fail "couldn't read $job back"
-got=$(jq -r '[.properties.template.containers[] | select(.name == "purge") | .image][0] // ""' <<<"$now")
-[ "$got" = "$image" ] || fail "$job still runs '$got', not '$image'"
-echo "$job now runs $image (REQUIRE_EMAIL_VERIFICATION=$verify, EMAIL_PROVIDER=$provider), as $revision does."
+  now=$("$az_cli" containerapp job show --resource-group "$RESOURCE_GROUP" --name "$job" --output json --only-show-errors) \
+    || fail "couldn't read $job back"
+  got=$(jq -r --arg n "$name" '[.properties.template.containers[] | select(.name == $n) | .image][0] // ""' <<<"$now")
+  [ "$got" = "$image" ] || fail "$job still runs '$got', not '$image'"
+  echo "$job now runs $image (REQUIRE_EMAIL_VERIFICATION=$verify, EMAIL_PROVIDER=$provider), as $revision does."
+done

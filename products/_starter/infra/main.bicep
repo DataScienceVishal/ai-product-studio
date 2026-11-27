@@ -1,5 +1,5 @@
-// One product on the shared studio platform (ADR 0002): the web app, its migration job and its daily
-// retention purge. Deployed by .github/workflows/_starter-deploy.yml on every release.
+// One product on the shared studio platform (ADR 0002): the web app, its migration job, its daily
+// retention purge and its cancel retries. Deployed by .github/workflows/_starter-deploy.yml on every release.
 //
 //   browser ──https──► ca-<slug> (one origin: API now, the built frontend after T-16)
 //                        ├─ revision being replaced (keeps 100% until the new one passes its smoke test)
@@ -9,6 +9,8 @@
 //                        it keeps the image and email settings of the revision that serves traffic
 //                        (purge* parameters). The workflow moves it to the new release only after the
 //                        public smoke test passes, and moves it back on every rollback.
+//   caj-<slug>-cancels   scheduled job: python -m app.maintenance cancels, every 30 minutes (T-176). Retries failed
+//                        subscription takeover-cancels. Same image, identity and follow rule as the purge job.
 //
 // Secrets arrive as secure parameters and become Container Apps secrets referenced by name. No secret
 // value is ever a plain environment variable or a literal in this file.
@@ -76,7 +78,7 @@ param requireEmailVerification bool = true
 @description('outbox (no real email; the only provider today). A real provider needs approval and requireEmailVerification=true.')
 param emailProvider string = 'outbox'
 
-// What the purge job runs: the image and email settings of the revision that serves traffic now. Empty means
+// What the purge and cancels jobs run: the image and email settings of the revision that serves traffic now. Empty means
 // this release's values (its first release, when nothing serves yet).
 param purgeImage string = ''
 param purgeRequireEmailVerification string = ''
@@ -84,6 +86,9 @@ param purgeEmailProvider string = ''
 
 @description('Daily retention purge, as a cron expression in UTC.')
 param purgeSchedule string = '17 3 * * *'
+
+@description('Retry of failed subscription takeover-cancels (T-176), as a cron expression in UTC. Every 30 minutes.')
+param cancelsSchedule string = '*/30 * * * *'
 
 param cpu string = '0.5'
 param memory string = '1Gi' // SECURITY.md re-test 3: 2 hashing slots peak at about 225 MiB
@@ -395,6 +400,35 @@ var jobSettings = [
 var migrateEnv = concat(commonEnv, jobSettings, emailEnv, migrateDbAuthEnv)
 var purgeEnv = concat(commonEnv, jobSettings, purgeEmailEnv, appDbAuthEnv)
 
+// The cancels job (T-176) calls the payment provider, so unlike the purge it gets this release's billing provider
+// and, for Stripe, the two Stripe secrets. It still never calls the AI. Image and email settings are the purge
+// job's (purge* parameters), so the workflow moves both jobs to a release together.
+var cancelsEnv = concat(commonEnv, [
+  {
+    name: 'AI_PROVIDER'
+    value: 'fake'
+  }
+  {
+    name: 'BILLING_PROVIDER'
+    value: useStripe ? 'stripe' : 'mock'
+  }
+], purgeEmailEnv, stripeEnv, appDbAuthEnv)
+var cancelsSecrets = concat([
+  {
+    name: 'database-url'
+    value: databaseUrl
+  }
+], useStripe ? [
+  {
+    name: 'billing-webhook-secret'
+    value: empty(billingWebhookSecret) ? notConfigured : billingWebhookSecret
+  }
+  {
+    name: 'stripe-secret-key'
+    value: empty(stripeSecretKey) ? notConfigured : stripeSecretKey
+  }
+] : [])
+
 var jobResources = {
   cpu: json('0.25')
   memory: '0.5Gi'
@@ -597,11 +631,57 @@ resource purge 'Microsoft.App/jobs@2025-07-01' = {
   }
 }
 
+// T-176: retries failed subscription takeover-cancels, also for tenants with no more billing events or deleted tenants.
+// Each cancel can take about 17 s (provider timeouts and retries), so the replica gets 15 minutes; that is less than
+// the 30-minute schedule, so two runs never overlap.
+resource cancels 'Microsoft.App/jobs@2025-07-01' = {
+  name: 'caj-${appName}-cancels'
+  location: location
+  tags: tags
+  identity: webIdentity
+  properties: {
+    environmentId: cae.id
+    workloadProfileName: 'Consumption'
+    configuration: {
+      triggerType: 'Schedule' // follows the live revision like the purge job
+      scheduleTriggerConfig: {
+        cronExpression: cancelsSchedule
+        parallelism: 1
+        replicaCompletionCount: 1
+      }
+      replicaTimeout: 900
+      replicaRetryLimit: 1
+      registries: registries
+      identitySettings: webIdentitySettings
+      secrets: cancelsSecrets
+    }
+    template: {
+      containers: [
+        {
+          name: 'cancels'
+          image: purgeImageNow
+          command: [
+            'python'
+          ]
+          args: [
+            '-m'
+            'app.maintenance'
+            'cancels'
+          ]
+          resources: jobResources
+          env: cancelsEnv
+        }
+      ]
+    }
+  }
+}
+
 output appUrl string = appUrl
 output appFqdn string = web.properties.configuration.ingress.fqdn
 output candidateRevision string = candidateRevision
 output migrateJobName string = migrate.name
 output purgeJobName string = purge.name
+output cancelsJobName string = cancels.name
 output purgeImage string = purgeImageNow
 output dbAuth string = dbAuth
 output appIdentityName string = appIdentity.name
