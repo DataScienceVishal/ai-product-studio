@@ -334,3 +334,60 @@ def test_page_limit_wording_sides_of_a4():
             "source_page": 1, "source_quote": "Describe your approach."}
     assert ex.check_item(item, {1: page}) == (True, ["limit_mismatch"])
     assert ex.check_item({**item, "page_limit": 2}, {1: page}) == (True, [])
+
+
+# ---------- T-200: the heading limit window and the pack lock ----------
+
+def test_a_limit_in_the_heading_before_the_quote_is_found():
+    page = ("1. Quality system\nDescribe your quality system. (maximum 300 words)\n\n"
+            "Q3 Social Value (max 500 words, 10%)\nDescribe the social value you will deliver.\n\n"
+            "Q4 Mobilisation\nExplain your mobilisation plan. (maximum 200 words)")
+    assert ex.stated_word_limit(page, "Describe the social value you will deliver.") == 500   # heading on the line above
+    assert ex.stated_word_limit(page, "Explain your mobilisation plan.") == 200
+    blank = "Q3 Social Value (max 500 words, 10%)\n\nDescribe the social value you will deliver."
+    assert ex.stated_word_limit(blank, "Describe the social value you will deliver.") == 500   # heading block above
+    assert ex.stated_word_limit(page, "Describe your quality system.") == 300
+
+
+def test_the_heading_window_never_borrows_the_previous_questions_limit():
+    page = ("Q2 Quality (max 300 words)\nDescribe your quality system.\n\n"
+            "Q3 Insurance\nState your insurance cover.\n")
+    assert ex.stated_word_limit(page, "State your insurance cover.") is None
+    page2 = "2. Quality (maximum 300 words).\n\n3. State your insurance cover."
+    assert ex.stated_word_limit(page2, "State your insurance cover.") is None  # previous block ends a sentence: not a heading
+    numbered = "2. Quality (maximum 300 words)\nBody two.\n3. Insurance\nState your insurance cover."
+    assert ex.stated_word_limit(numbered, "State your insurance cover.") is None
+
+
+def test_a_wrong_limit_is_flagged_when_the_limit_is_in_the_heading():
+    page = {1: "Q3 Social Value (max 500 words, 10%)\nDescribe the social value you will deliver."}
+    item = {"ref": "Q3", "kind": "question", "text": "Describe the social value you will deliver.", "word_limit": 300,
+            "page_limit": None, "source_page": 1, "source_quote": "Describe the social value you will deliver."}
+    assert "limit_mismatch" in ex.check_item(item, page)[1]
+    assert "limit_mismatch" not in ex.check_item(item | {"word_limit": 500}, page)[1]
+
+
+def test_extraction_write_takes_the_pack_lock_first_so_a_concurrent_user_row_is_not_duplicated(client, app, db):
+    """T-200 F1: a user row committed while the extraction waits for the pack lock is seen by its dedupe."""
+    import threading
+    import time
+    from app.tender import extract as extract_mod
+    pid = setup_pack(client, [["1. Describe your quality system (maximum 300 words)."]])
+    assert client.post(f"/api/packs/{pid}/extract").status_code == 202
+    sessions = app.state.db.sessions
+    holder = sessions()
+    tenant_id = holder.scalar(select(TenderPack.tenant_id).where(TenderPack.id == pid))
+    holder.execute(select(TenderPack.id).where(TenderPack.id == pid).with_for_update())  # the user's transaction holds the pack
+    worker = threading.Thread(target=lambda: run(app))
+    worker.start()
+    time.sleep(2.0)  # the extraction has made its (instant) model calls and now waits for the pack row
+    assert worker.is_alive(), "the extraction write did not wait for the pack lock"
+    holder.add(Requirement(tenant_id=tenant_id, pack_id=pid, seq=1, ref="1", kind="question", origin="user",
+                           text="Describe your quality system (maximum 300 words).", source_page=1, status="proposed"))
+    holder.commit()
+    holder.close()
+    worker.join(timeout=30)
+    assert not worker.is_alive()
+    db.expire_all()
+    rows = list(db.scalars(select(Requirement).where(Requirement.pack_id == pid)))
+    assert len(rows) == 1 and rows[0].origin == "user"  # no duplicate proposal beside the user's row

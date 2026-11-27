@@ -96,11 +96,16 @@ def sentence_spans(text: str) -> list[tuple[int, int]]:
         if a >= b:
             continue
         seg = text[a:b]
-        if segs and (text[segs[-1][0]:segs[-1][1]].count("[") > text[segs[-1][0]:segs[-1][1]].count("]")
-                     or re.match(r"\[E-\d+\]", seg)):
-            segs[-1][1] = b
-        else:
-            segs.append([a, b])
+        if segs and text[segs[-1][0]:segs[-1][1]].count("[") > text[segs[-1][0]:segs[-1][1]].count("]"):
+            segs[-1][1] = b  # inside a [NEEDS FIRM INPUT: ...] marker
+            continue
+        lead = re.match(r"(?:\[E-\d+\]\s*)+", seg)
+        if segs and lead:  # a citation that follows the full stop belongs to the sentence before it
+            segs[-1][1] = a + lead.end()
+            a += lead.end()
+            if a >= b:
+                continue
+        segs.append([a, b])
     out = []
     for a, b in segs:
         while a < b and text[a].isspace():
