@@ -15,3 +15,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - run 1790: security check of the starter's newest AI-cost code passed (1 small issue: if saving the "AI off" switch failed, it was never retried, so a restart could pay for one extra pricey call). Fixed as T-167, reviewed and merged; 729 tests pass.
 
 - (run 74e6, 2026-11-27T03:36Z) _starter T-168 merged: the model-guard trip retry now rolls back a failed caller session and is documented as possibly committing the session; reviewer PASS with mutation evidence; 733 tests pass on main. Three optional low follow-ups queued as T-169. Idea pipeline still waits on Q-18 (no new scout round this run; the last six rounds found nothing).
+- (run 74e6, 2026-11-27T03:51Z) _starter T-169 merged (tests only): proves a request refused by the model guard reserves no AI budget, and closes three test gaps the T-168 review found surviving; reviewer PASS; 734 tests pass on main.

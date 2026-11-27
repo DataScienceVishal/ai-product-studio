@@ -1622,6 +1622,34 @@ def test_failed_trip_save_is_retried_into_the_real_table(settings, outbox, datab
         app.state.db.dispose()
 
 
+def test_request_refused_by_the_trip_writes_no_budget_reservation(settings, outbox, database):
+    """T-169 S3: a request the model guard refuses (in place, in memory or read from the database by a fresh
+    process) must not reserve budget: the ai_usage ledger gets no row from it."""
+    from sqlalchemy import text as sql_text
+
+    def usage_rows():
+        with database.sessions() as db:
+            return db.execute(sql_text("SELECT count(*) FROM ai_usage")).scalar()
+
+    app = _store_app(settings, outbox, "gpt-5.4-pro-2026-03-05")
+    try:
+        first, second = _summaries(app, outbox, 2)  # the first call trips the guard (its own reservation is settled)
+        assert (first.status_code, second.status_code) == (200, 503)
+        baseline = usage_rows()
+        assert baseline >= 1
+        assert _summaries_again(app).status_code == 503  # in-memory flag
+        assert usage_rows() == baseline
+        fresh_calls = []
+        fresh = _store_app(settings, outbox, "gpt-5.4-pro-2026-03-05", calls=fresh_calls)
+        try:
+            assert _summaries_again(fresh).status_code == 503  # trip read from the database on the request session
+            assert fresh_calls == [] and usage_rows() == baseline
+        finally:
+            fresh.state.db.dispose()
+    finally:
+        app.state.db.dispose()
+
+
 def test_explicit_price_does_not_cover_unknown_models_for_a_table_deployment(settings, outbox, new_client, database):
     """T-161 L1: gpt-5-mini is in the table, so a reported model the table does not know trips even at price 2.0."""
     app = _guarded_app(settings, outbox, "o1-pro-2025-03-19", deployment="gpt-5-mini", explicit=2.0)
@@ -1737,27 +1765,34 @@ def test_notes_route_calls_ensure_ai_enabled_on_a_session_with_no_writes(setting
     from app.routes import notes as notes_routes
 
     wrote = weakref.WeakSet()  # sessions that ever had pending ORM changes at flush time (ids get reused)
+    sql_writes = weakref.WeakSet()  # T-169 S1: connections that ran INSERT/UPDATE/DELETE, ORM or raw SQL
 
     def on_flush(session, context, instances):
         if session.new or session.dirty or session.deleted:
             wrote.add(session)
+
+    def on_execute(conn, cursor, statement, parameters, context, executemany):
+        if statement.lstrip()[:6].upper() in ("INSERT", "UPDATE", "DELETE"):
+            sql_writes.add(conn)
 
     seen = []
     real = notes_routes.ensure_ai_enabled
 
     def spy(provider, db=None):
         seen.append({"has_db": db is not None, "pending": bool(db and (db.new or db.dirty or db.deleted)),
-                     "flushed": db in wrote})
+                     "flushed": db in wrote, "sql_wrote": bool(db and db.connection() in sql_writes)})
         return real(provider, db)
 
     monkeypatch.setattr(notes_routes, "ensure_ai_enabled", spy)
     event.listen(OrmSession, "before_flush", on_flush)
     app = _store_app(settings, outbox, "gpt-5-mini")
+    event.listen(app.state.db.engine, "before_cursor_execute", on_execute)
     try:
         response, = _summaries(app, outbox, 1)
         assert response.status_code == 200
         assert len(seen) == 1 and seen[0]["has_db"] is True
         assert seen[0]["pending"] is False and seen[0]["flushed"] is False
+        assert seen[0]["sql_wrote"] is False  # raw db.execute(UPDATE ...) writes count too
     finally:
         event.remove(OrmSession, "before_flush", on_flush)
         app.state.db.dispose()
@@ -1801,7 +1836,7 @@ def test_rollback_failure_in_the_retry_is_swallowed_and_logged_by_type_only(capl
     assert "ConnectionError" in caplog.text and "SECRET-DSN" not in caplog.text
 
 
-def test_failed_retry_without_a_caller_session_does_not_need_rollback():
+def test_failed_retry_without_a_caller_session_does_not_need_rollback(caplog):
     class Store:
         def record(self, fingerprint, model, db=None):
             raise RuntimeError("db down")
@@ -1809,3 +1844,4 @@ def test_failed_retry_without_a_caller_session_does_not_need_rollback():
     provider = _trip_store_provider(Store())
     provider._save_trip()
     assert provider.trip_unsaved is True
+    assert "rollback" not in caplog.text.lower()  # T-169 S2: no None.rollback() attempt, no misleading log
