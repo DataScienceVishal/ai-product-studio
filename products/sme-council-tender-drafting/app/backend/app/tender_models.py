@@ -75,7 +75,7 @@ class Requirement(Base):
     __table_args__ = (UniqueConstraint("tenant_id", "id", name="uq_requirements_tenant_id"),
                       _child("fk_requirements_pack", "pack_id", "tender_packs"),
                       # NO ACTION, not CASCADE: deleting a source document that requirements still cite is refused, so it cannot
-                      # silently wipe drafts and claims. (Not RESTRICT: see migration 0014.)
+                      # silently wipe drafts and claims. (NO ACTION, not RESTRICT: the check does not depend on cascade trigger order; see migration 0014.)
                       _child("fk_requirements_document", "source_document_id", "source_documents", "NO ACTION"),
                       Index("ix_requirements_tenant_source_document", "tenant_id", "source_document_id"))
     id: Mapped[uuid.UUID] = _id()

@@ -90,8 +90,9 @@ def test_txt_accepted_for_evidence_only_and_strict(client):
 
 
 def test_filename_is_sanitised(client):
-    r = up(client, "/api/evidence/documents", ("Policy words here. " * 20).encode(), "../../etc/pa\x01ss.txt")
-    assert r.status_code == 201 and r.json()["filename"] == "pass.txt"
+    r = up(client, "/api/evidence/documents", ("Policy words here. " * 20).encode(), "../../etc/passwd.txt")
+    assert r.status_code == 201 and r.json()["filename"] == "passwd.txt"
+    assert ingest.clean_filename("..\\..\\a/pa\x01ss.txt") == "pass.txt" and ingest.clean_filename("\x00") == "document"
     assert "/" not in r.json()["filename"] and ".." not in r.json()["filename"]
 
 

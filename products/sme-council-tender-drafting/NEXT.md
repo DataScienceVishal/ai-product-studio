@@ -1,3 +1,32 @@
+# STATUS (T-186, slice S2: ingest and retrieval) - code done, awaiting reviewer PASS
+
+Branch `p/sme-council-tender-drafting/T-186`. Not merged.
+
+## Done
+- Tests: backend 892 passed, 1 skipped (857 before + 35 in test_tender_ingest.py); alembic up, check, down -1, up, check clean (no new migration).
+- Per-route 15 MB limit: `BodyLimit` takes a path table (`UPLOAD_PATHS` in main.py); other routes keep 1 MB. Settings `upload_*`.
+- `app/tender/ingest.py`: magic-byte sniffing (PDF, ZIP/DOCX, OLE = encrypted, evidence-only strict UTF-8 text), fixed refusal codes
+  with 415/422 messages, worker runner (`python -I parse_worker.py`, empty env, 45 s wall, temp file removed).
+- `app/tender/parse_worker.py`: standalone (stdlib, pypdf, python-docx only); RLIMIT_AS 512 MiB / CPU 30 s set before the parsers load;
+  refusals: encrypted, macro (.docm), zip bomb (entries, 50 MB total, ratio 100), XML DOCTYPE/ENTITY (XXE), too many pages (60),
+  image-only (tender: any page under 30 chars; any file under 30 chars total). DOCX pages: `docx_break` or `docx_block`; text: `text_block`.
+- `app/tender/chunking.py` (120 to 400 words, headings, pages), `app/tender/evidence.py` (E-n counter under an advisory lock, never
+  reused; FTS OR query; must-have token boost; top 8, at most 3 per document; tenant_id in SQL).
+- Routes `app/routes/tender.py`: packs create/list/delete, pack documents upload/list, evidence upload/list, `DELETE /api/documents/{id}`,
+  `GET /api/evidence/search`. Upload caps: 10/hour and 300 pages/day per tenant, 40 MB per pack, duplicate sha256 is 409.
+- T-197 leftovers: delete routes map fk_requirements_document to 409 `document_in_use`; `ensure_requirement_document` (422
+  `document_not_in_pack`, for the S4 requirement write path); DATA.md `created_by`; migration 0014 and model comment wording.
+- requirements.txt / requirements-dev.txt regenerated with `uv pip compile --generate-hashes` (adds pypdf, python-docx, python-multipart,
+  lxml; dev adds reportlab for PDF fixtures).
+
+## Left (next slices)
+- Rejected files are not stored (no `status=rejected` rows); S7 UI should show the refusal message from the 4xx.
+- No retrieval floor yet (`min_score` param exists, default 0), to be tuned with the demo packs (DESIGN 4.2).
+- `ai_cache` purge still not coded. Frontend untouched. Docker image and e2e not run here.
+
+## Verify
+`cd app/backend && TEST_DATABASE_URL=... python -m pytest -q -o addopts=""` (Postgres 16). New tests: `tests/test_tender_ingest.py`.
+
 # STATUS (T-197, review fixes for T-185): all items done, tests green
 
 F1 DATA.md rows, F3 isolated FK tests, S4 cross-tenant sha256, F2 migration 0014 (FK NO ACTION + index; not RESTRICT,
