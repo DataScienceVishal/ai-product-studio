@@ -34,8 +34,8 @@ cd "$here/backend"
 DATABASE_URL="$db_url" "$python" -m alembic upgrade head >"$logs/migrate.log" 2>&1
 ENV=dev DATABASE_URL="$db_url" COOKIE_SECURE=false APP_BASE_URL="http://127.0.0.1:$web_port" \
   CORS_ORIGINS="[\"http://127.0.0.1:$web_port\"]" AI_PROVIDER=fake BILLING_PROVIDER=mock LOG_LEVEL=INFO \
-  REQUIRE_EMAIL_VERIFICATION=false MOCK_CHECKOUT_ENABLED=true \
-  setsid "$python" -m uvicorn app.main:app --host 127.0.0.1 --port "$api_port" >"$logs/api.log" 2>&1 &
+  REQUIRE_EMAIL_VERIFICATION=false MOCK_CHECKOUT_ENABLED=true AI_WORKER_THREADS=2 \
+  setsid "$python" -m uvicorn e2e_app:app --app-dir "$here/tests/e2e" --host 127.0.0.1 --port "$api_port" >"$logs/api.log" 2>&1 &
 api_pid=$!
 web_pid=""
 trap 'kill -- -"$api_pid" ${web_pid:+-"$web_pid"} 2>/dev/null || true' EXIT  # set as soon as a server runs
@@ -51,5 +51,11 @@ for _ in $(seq 1 60); do
 done
 curl -fsS "http://127.0.0.1:$web_port/healthz" >/dev/null || { echo "servers did not start; logs in $logs"; cat "$logs/api.log" | tail -20; exit 1; }
 
-E2E_BASE_URL="http://127.0.0.1:$web_port" E2E_SCREENSHOT="$logs/failure.png" node "$here/tests/e2e/core_flow.cjs"
+fixtures="$logs/fixtures"
+"$python" "$here/tests/e2e/make_fixtures.py" "$fixtures"
+E2E_BASE_URL="http://127.0.0.1:$web_port" E2E_SCREENSHOT="$logs/tender-failure.png" E2E_FIXTURES="$fixtures" PYTHON="$python" \
+  node "$here/tests/e2e/tender_flow.cjs"
+status=0
+E2E_BASE_URL="http://127.0.0.1:$web_port" E2E_SCREENSHOT="$logs/failure.png" node "$here/tests/e2e/core_flow.cjs" || status=$?
 echo "logs: $logs"
+exit $status
