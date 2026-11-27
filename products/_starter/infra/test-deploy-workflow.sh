@@ -300,6 +300,30 @@ for f in main shared; do
   grep -qE "^param location = 'francecentral'" "$here/$f.bicepparam" && ok "$f.bicepparam sets location = francecentral" || bad "$f.bicepparam sets location = francecentral"
 done
 
+# ---- T-176: the cancels job moves with the purge job -----------------------------------------------------------------
+present "workflow: promote step names the cancels job" 'Point the purge and cancels jobs at the new release'
+present "workflow: rollback job also follows" 'Point the purge and cancels jobs at the same revision'
+[ "$(grep -c 'purge-job.sh" follow' "$wf")" = 3 ] && ok "purge-job.sh follow is called on promote, on failure and on rollback" || bad "purge-job.sh follow is called on promote, on failure and on rollback"
+# purge-job.sh follow, against a stand-in az: both jobs get the image and email settings, and each is read back
+stub=$(mktemp -d)
+cat > "$stub/az" <<'STUB'
+#!/usr/bin/env bash
+echo "$*" >> "$STUB_LOG"
+case "$*" in
+  "containerapp revision show"*) echo '{"properties":{"template":{"containers":[{"name":"web","image":"acr1.azurecr.io/app@sha256:'"$(printf 'a%.0s' {1..64})"'","env":[]}]}}}' ;;
+  "containerapp job show"*) n=$(sed -E 's/.*caj-starter-([a-z]+).*/\1/' <<<"$*"); echo '{"properties":{"template":{"containers":[{"name":"'"$n"'","image":"acr1.azurecr.io/app@sha256:'"$(printf 'a%.0s' {1..64})"'"}]}}}' ;;
+esac
+STUB
+chmod +x "$stub/az"
+if STUB_LOG="$stub/log" AZ="$stub/az" RESOURCE_GROUP=rg PRODUCT=starter bash "$here/purge-job.sh" follow ca-starter--abc12 > "$stub/out" 2>&1 \
+   && [ "$(grep -c '^containerapp job update' "$stub/log")" = 2 ] \
+   && grep -q 'job update .*--name caj-starter-purge --container-name purge ' "$stub/log" \
+   && grep -q 'job update .*--name caj-starter-cancels --container-name cancels ' "$stub/log" \
+   && grep -q 'caj-starter-cancels now runs' "$stub/out"; then ok "purge-job.sh follow updates and verifies both caj-starter-purge and caj-starter-cancels"
+else bad "purge-job.sh follow updates and verifies both caj-starter-purge and caj-starter-cancels"; cat "$stub/out" 2>/dev/null; fi
+rm -rf "$stub"
+bash -n "$here/purge-job.sh" && ok "bash -n purge-job.sh" || bad "bash -n purge-job.sh"
+
 # ---- syntax tools, when present -----------------------------------------------------------------------------------
 bash -n "$here/jwt-oid.sh" && ok "bash -n jwt-oid.sh" || bad "bash -n jwt-oid.sh"
 if command -v actionlint > /dev/null; then

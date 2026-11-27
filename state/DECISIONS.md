@@ -445,3 +445,6 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Dead-marker collision uses db.get + begin_nested() instead of rollback, so the event's dedup row survives.
 - Team: 40P01 in accept is logged at WARNING with ids only.
 - Process: parallel builders must use separate git worktrees (two builders briefly shared one checkout this run; no harm, caught early).
+
+## 2026-11-27T11:40Z, run f775: T-176
+- Failed takeover cancels are swept by a separate scheduled Container Apps job, caj-<slug>-cancels, every 30 minutes (replica timeout 900 s), not by chaining onto the daily purge: a customer can be double-charged while a to-do waits, so a day is too slow. Unlike purge, the job gets the release's real BILLING_PROVIDER and Stripe secrets, since it calls the provider. Cost about $0.11 a month without the free grant.

@@ -21,10 +21,10 @@
 # the registry and of Postgres, after the long steps. Keep a fresh sign-in before any new long-delayed resource.
 #
 # Release order: build, then scan (both before any Azure sign-in); read the live release, failing closed on
-# any Azure error; push by digest; deploy a new revision with no traffic (the purge job stays on the live
+# any Azure error; push by digest; deploy a new revision with no traffic (the purge and cancels jobs stay on the live
 # revision); migrate as a separate job; smoke-test the new revision; move all traffic to it; smoke-test the
-# public address; only then move the purge job to the new image. Any failure after traffic moved sends
-# traffic and the purge job back to the previous revision.
+# public address; only then move the purge and cancels jobs to the new image. Any failure after traffic moved sends
+# traffic and both jobs back to the previous revision.
 name: _starter-deploy
 
 on:
@@ -69,7 +69,7 @@ defaults:
     shell: bash
 
 env:
-  PRODUCT: starter # Azure-safe slug: ca-starter, caj-starter-migrate, caj-starter-purge
+  PRODUCT: starter # Azure-safe slug: ca-starter, caj-starter-migrate, caj-starter-purge, caj-starter-cancels
   PRODUCT_DIR: products/_starter
   DB_NAME: starter # this product's database; its roles are starter_migrator and starter_app
   RESOURCE_GROUP: rg-ai-studio
@@ -269,7 +269,7 @@ jobs:
           echo "IMAGE=$image" >> "$GITHUB_ENV"
           echo "Pushed $image"
 
-      - name: Deploy the app and jobs (the new revision gets no traffic; the purge job stays on the live one)
+      - name: Deploy the app and jobs (the new revision gets no traffic; the purge and cancels jobs stay on the live one)
         working-directory: ${{ env.PRODUCT_DIR }}/infra
         env:
           # Passed whenever they exist, whichever provider this release uses, so a provider switch never
@@ -467,18 +467,18 @@ jobs:
         id: public
         run: bash "$PRODUCT_DIR/infra/smoke.sh" "https://$APP_FQDN"
 
-      - name: Point the purge job at the new release (only now that it has passed)
+      - name: Point the purge and cancels jobs at the new release (only now that it has passed)
         id: promote
         run: bash "$PRODUCT_DIR/infra/purge-job.sh" follow "$CANDIDATE"
 
-      - name: Roll back traffic and the purge job to the previous revision
+      - name: Roll back traffic and the jobs to the previous revision
         # Also when someone cancels the run halfway.
         if: (failure() || cancelled()) && steps.shift.outcome != 'skipped' && env.LIVE_REVISION != '' && env.CANDIDATE != ''
         run: |
           az containerapp ingress traffic set --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
             --revision-weight "$LIVE_REVISION=100" "$CANDIDATE=0" --only-show-errors --output none
           if ! bash "$PRODUCT_DIR/infra/purge-job.sh" follow "$LIVE_REVISION"; then
-            echo "::error::The purge job couldn't be pointed back at $LIVE_REVISION. Run this workflow with rollback_to=$LIVE_REVISION."
+            echo "::error::The purge and cancels jobs couldn't be pointed back at $LIVE_REVISION. Run this workflow with rollback_to=$LIVE_REVISION."
           fi
           az containerapp revision deactivate --resource-group "$RESOURCE_GROUP" --name "ca-$PRODUCT" \
             --revision "$CANDIDATE" --only-show-errors --output none || true
@@ -516,7 +516,7 @@ jobs:
             echo "- Address: https://${APP_FQDN:-not deployed}"
             echo "- New revision: ${CANDIDATE:-none} (image ${IMAGE:-not pushed})"
             echo "- Previous revision, still active for a quick rollback: ${LIVE_REVISION:-none (first release)}"
-            echo "- Purge job moved to the new image: ${PROMOTED:-not reached}"
+            echo "- Purge and cancels jobs moved to the new image: ${PROMOTED:-not reached}"
             echo "- AI: $AI_PROVIDER; billing: $BILLING_PROVIDER; email verification: $REQUIRE_EMAIL_VERIFICATION; mock checkout: $MOCK_CHECKOUT_ENABLED"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -578,7 +578,7 @@ jobs:
             --query properties.configuration.ingress.fqdn --output tsv)
           bash "$PRODUCT_DIR/infra/smoke.sh" "https://$fqdn"
 
-      - name: Point the purge job at the same revision
+      - name: Point the purge and cancels jobs at the same revision
         run: bash "$PRODUCT_DIR/infra/purge-job.sh" follow "$TARGET"
 
       - name: Summary
@@ -587,7 +587,7 @@ jobs:
           {
             echo "### Rollback of $PRODUCT to $TARGET"
             echo "- Traffic was on: ${PREVIOUS:-unknown}. Check the steps above for the result."
-            echo "- The purge job follows the revision that serves traffic (purge-job.sh)."
+            echo "- The purge and cancels jobs follow the revision that serves traffic (purge-job.sh)."
             echo "- The database schema is NOT rolled back. It stays on the newest migration, which the older code"
             echo "  must still work with (ADR 0002, decision 9: expand first, contract in a later release)."
           } >> "$GITHUB_STEP_SUMMARY"
