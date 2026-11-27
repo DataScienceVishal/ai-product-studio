@@ -21,13 +21,16 @@ from ..tender_models import AITask
 
 log = logging.getLogger("app.tender.runner")
 MAX_ATTEMPTS = 2
-# kind -> handler(sessions, task, heartbeat) -> (input_tokens, output_tokens). Slices S4 to S6 register theirs.
-# `provider` is the worker provider the Runner built (180 s limits); a handler never builds its own.
-Handler = Callable[[sessionmaker, AITask, Callable[[], None], object], tuple[int, int]]
 
 
 class LeaseLost(Exception):
     """This worker no longer owns the task (its lease expired and another worker took it over). Stop quietly."""
+
+
+# kind -> handler(sessions, task, heartbeat, provider) -> (input_tokens, output_tokens). Slices S4 to S6 register theirs.
+# `provider` is the worker provider the Runner built (180 s limits); a handler never builds its own.
+Handler = Callable[[sessionmaker, AITask, Callable[[], None], object], tuple[int, int]]
+
 HANDLERS: dict[str, Handler] = {}
 
 

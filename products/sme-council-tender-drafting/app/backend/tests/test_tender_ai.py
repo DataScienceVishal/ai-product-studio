@@ -473,3 +473,17 @@ def test_a_corrupt_recording_is_ai_invalid_output(database, tenant, tmp_path):
     with pytest.raises(TaskFailed) as caught:
         run_task(SPEC, {"q": "bad"}, tenant, MemBudget(), provider=ScriptedFakeAI(tmp_path), sessions=database.sessions)
     assert caught.value.code == "ai_invalid_output"
+
+
+def test_the_worker_provider_built_in_lifespan_has_the_trip_store(settings):
+    from fastapi.testclient import TestClient
+    from app.main import create_app
+    from app.ai import TripStore
+    cfg = settings.model_copy(update={"ai_provider": "azure", "azure_openai_endpoint": "https://res.openai.azure.com",
+                                      "ai_worker_threads": 1})
+    application = create_app(cfg)
+    with TestClient(application):
+        worker = application.state.runner.provider
+        assert worker is not application.state.ai and worker.timeout == 180.0
+        assert isinstance(worker.trip_store, TripStore) and worker.trip_fingerprint
+        assert worker.trip_fingerprint == application.state.ai.trip_fingerprint  # same config: one shared trip

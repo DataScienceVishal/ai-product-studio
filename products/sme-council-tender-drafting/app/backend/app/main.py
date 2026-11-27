@@ -180,8 +180,13 @@ def create_app(settings: Settings | None = None, *, ai: AIProvider | None = None
     async def lifespan(app: FastAPI):
         runner = None
         if settings.ai_worker_threads > 0:  # off by default and in tests (DESIGN 4.6)
+            # An injected test provider (`ai`) also becomes the worker provider.
+            worker_ai = ai or build_worker_provider(settings)
+            if hasattr(worker_ai, "attach_trip_store"):  # the worker path honours and saves cost-guard trips too (T-163)
+                worker_ai.attach_trip_store(TripStore(app.state.db.sessions))
             runner = Runner(app.state.db.sessions, settings.ai_worker_threads, settings.ai_task_lease_seconds,
-                            provider=ai or build_worker_provider(settings))
+                            provider=worker_ai)
+            app.state.runner = runner
             runner.start()
         yield
         if runner is not None:
