@@ -13,7 +13,8 @@ export function Dashboard({ me }: { me: Me }) {
       <VerifyBanner me={me} />
       <TrialBanner me={me} />
       <Card title="Tender packs">
-        <p className="text-slate-700">Your tender packs will appear here. Upload a council tender pack to start a draft.</p>
+        <p className="text-slate-700">Upload a council tender pack to start a draft, and keep your own evidence in the library.</p>
+        <p className="mt-3 flex gap-4"><Link to="/packs">Open your tender packs</Link><Link to="/evidence">Evidence library</Link></p>
       </Card>
     </div>
   );

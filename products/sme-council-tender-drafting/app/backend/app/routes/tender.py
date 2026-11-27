@@ -24,7 +24,8 @@ from ..tender.service import delete_row
 from ..tender import draft as _draft
 from ..tender import claimcheck as _check
 from ..tender import extract as _extract  # noqa: F401  (registers the extract and draft handlers)
-from ..tender_models import Claim as _Claim, AITask, Draft, DocumentPage, EvidenceItem, Requirement, SourceDocument, TenderPack
+from ..tender import gate
+from ..tender_models import Claim as _Claim, Signoff as _Signoff, AITask, Draft, DocumentPage, EvidenceItem, Requirement, SourceDocument, TenderPack
 from ..textsafe import FreeText, StrippedLine
 
 log = logging.getLogger("app.tender")
@@ -413,12 +414,12 @@ def requirement_evidence(req_id: uuid.UUID, me: Current = Depends(current), db: 
 @router.get("/requirements/{req_id}/draft")
 def get_draft(req_id: uuid.UUID, version: int | None = Query(default=None, ge=1), me: Current = Depends(current),
               db: Session = Depends(get_db)):
-    _question(db, me, req_id)
+    req, _ = _question(db, me, req_id)
     rows = list(db.scalars(scoped(Draft, me.tenant.id).where(Draft.requirement_id == req_id).order_by(Draft.version.desc())))
     chosen = next((d for d in rows if version is None or d.version == version), None)
     if version is not None and chosen is None:
         raise AppError(404, "not_found", "That version doesn't exist.")
-    return {"draft": draft_out(chosen) if chosen else None,
+    return {"requirement": req_out(req), "draft": draft_out(chosen) if chosen else None,
             "versions": [{"version": d.version, "author": d.author, "word_count": d.word_count,
                           "created_at": d.created_at.isoformat()} for d in rows]}
 
@@ -448,7 +449,10 @@ def edit_draft(req_id: uuid.UUID, body: DraftIn, me: Current = Depends(current),
 @router.post("/packs/{pack_id}/check", status_code=202)
 def queue_check(pack_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
     """Check every latest draft that has no claim check for its current text. Idempotent while a check task is live."""
-    pack = get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
+    get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
+    # T-201 item 8: the pack row is taken FOR UPDATE and re-read, so a sign-off or an edit that commits first is seen here.
+    pack = db.scalar(scoped(TenderPack, me.tenant.id).where(TenderPack.id == pack_id).with_for_update()
+                     .execution_options(populate_existing=True))
     if pack.status not in _check.CHECK_PACK_STATES:
         raise AppError(409, "not_ready", "Confirm the checklist first." if pack.status in ("uploaded", "extracting", "review")
                        else "This pack is already signed off.")
@@ -482,3 +486,95 @@ def get_claims(req_id: uuid.UUID, me: Current = Depends(current), db: Session = 
     return {"draft_version": d.version if d else None, "checked": bool(d and d.check_sha256 == d.text_sha256),
             "claims": [{"seq": c.seq, "span": c.span, "kind": c.kind, "cited_ids": list(c.cited_ids), "verdict": c.verdict,
                         "evidence_quote": c.evidence_quote, "reason": c.reason, "decided_by": c.decided_by} for c in rows]}
+
+
+# ---------- screens: one pack, cited passages, coverage and sign-off (S7) ----------
+class SignoffIn(BaseModel):
+    reviewer_name: StrippedLine = Field(min_length=1, max_length=120)
+    accept_statement: bool = False
+    statement_version: str = Field(default="", max_length=20)
+
+
+@router.get("/packs/{pack_id}")
+def get_pack(pack_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
+    return pack_out(get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack"))
+
+
+@router.get("/evidence/passages")
+def evidence_passages(ids: str = Query(min_length=1, max_length=400), me: Current = Depends(current),
+                      db: Session = Depends(get_db)):
+    """The passages a draft cites, by E-number, with their document and page; soft-deleted ones are listed as removed
+    without their text."""
+    try:
+        numbers = sorted({int(x) for x in ids.split(",") if x.strip()})[:100]
+    except ValueError:
+        raise AppError(422, "invalid_input", "ids must be numbers separated by commas.")
+    rows = db.execute(select(EvidenceItem, SourceDocument.filename, SourceDocument.deleted_at).join(
+        SourceDocument, (SourceDocument.tenant_id == EvidenceItem.tenant_id) & (SourceDocument.id == EvidenceItem.document_id))
+        .where(EvidenceItem.tenant_id == me.tenant.id, EvidenceItem.display_no.in_(numbers))).all()
+    out = []
+    for e, filename, doc_deleted in rows:
+        removed = e.deleted_at is not None or doc_deleted is not None
+        out.append({"display_no": e.display_no, "label": f"E-{e.display_no}", "document": filename, "page_from": e.page_from,
+                    "page_to": e.page_to, "heading": e.heading, "removed": removed, "text": "" if removed else e.text})
+    return {"passages": sorted(out, key=lambda p: p["display_no"])}
+
+
+@router.get("/packs/{pack_id}/coverage")
+def coverage(pack_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
+    """One row per confirmed requirement, the gate's verdict and the sign-off state. It is a checklist, not a statement that
+    the bid is compliant."""
+    pack = get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
+    reqs = list(db.scalars(scoped(Requirement, me.tenant.id).where(Requirement.pack_id == pack_id, Requirement.status == "confirmed")
+                           .order_by(Requirement.seq)))
+    rows = []
+    for r in reqs:
+        d = db.scalar(scoped(Draft, me.tenant.id).where(Draft.requirement_id == r.id).order_by(Draft.version.desc()).limit(1))
+        verdicts: dict[str, int] = {}
+        if d is not None:
+            for v, n in db.execute(select(_Claim.verdict, func.count()).where(
+                    _Claim.tenant_id == me.tenant.id, _Claim.draft_id == d.id).group_by(_Claim.verdict)):
+                verdicts[v] = n
+        question = r.kind == "question"
+        words = d.word_count if d else None
+        rows.append({"requirement_id": str(r.id), "seq": r.seq, "ref": r.ref, "kind": r.kind, "text": r.text,
+                     "answered": (d is not None) if question else None, "words": words, "word_limit": r.word_limit,
+                     "within_limit": None if words is None or r.word_limit is None else words <= r.word_limit,
+                     "gaps": d.gap_count if d else 0, "checked": bool(d and d.check_sha256 == d.text_sha256),
+                     "claims": verdicts, "covered": (d is not None) if question else True})
+    allowed, reasons = _check.export_check(db, me.tenant.id, pack_id)
+    so = db.scalar(scoped(_Signoff, me.tenant.id).where(_Signoff.pack_id == pack_id).order_by(_Signoff.signed_at.desc()).limit(1))
+    return {"pack": pack_out(pack), "rows": rows, "export": {"allowed": allowed, "reasons": reasons},
+            "statement": {"version": gate.STATEMENT_VERSION, "text": gate.STATEMENT_TEXT},
+            "signoff": None if so is None else {"reviewer_name": so.reviewer_name, "statement_version": so.statement_version,
+                                                "signed_at": so.signed_at.isoformat()},
+            "notice": "This is a checklist of what is answered and checked. It does not say the bid is compliant."}
+
+
+@router.post("/packs/{pack_id}/signoff", status_code=201)
+def sign_off(pack_id: uuid.UUID, body: SignoffIn, me: Current = Depends(current), db: Session = Depends(get_db)):
+    """Record a named sign-off on a digest of the answers. The gate is re-run here on the server with the sign-off the
+    request would create; if anything else blocks export, no sign-off is stored (T-201)."""
+    get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
+    pack = db.scalar(scoped(TenderPack, me.tenant.id).where(TenderPack.id == pack_id).with_for_update()
+                     .execution_options(populate_existing=True))  # T-201 item 8: a concurrent edit or check waits or is seen
+    if not body.accept_statement or body.statement_version != gate.STATEMENT_VERSION:
+        raise AppError(422, "statement_required", "Tick the responsibility statement as shown to sign off.")
+    if pack.status in ("signed", "exported"):
+        raise AppError(409, "already_signed", "This pack is already signed off.")
+    if pack.status != "ready":
+        raise AppError(409, "not_ready", "Every answer must be checked and clear before sign-off.")
+    gpack, reqs, drafts, claims, _, live = _check.load_gate_inputs(db, me.tenant.id, pack_id)
+    digest = gate.drafts_digest(reqs, drafts)
+    allowed, reasons = gate.export_allowed(gpack, reqs, drafts, claims, gate.GateSignoff(gate.STATEMENT_VERSION, digest), live,
+                                           gate.STATEMENT_VERSION)
+    if not allowed:
+        raise AppError(409, "export_blocked", "Sign-off is not possible yet: " + "; ".join(reasons))
+    row = _Signoff(tenant_id=me.tenant.id, pack_id=pack_id, reviewer_user_id=me.user.id, reviewer_name=body.reviewer_name,
+                   statement_version=gate.STATEMENT_VERSION, drafts_digest=digest)
+    db.add(row)
+    pack.status = "signed"
+    db.commit()
+    log.info("pack signed off", extra={"pack_id": str(pack_id)})
+    return {"reviewer_name": row.reviewer_name, "statement_version": row.statement_version,
+            "signed_at": row.signed_at.isoformat(), "pack": pack_out(pack)}

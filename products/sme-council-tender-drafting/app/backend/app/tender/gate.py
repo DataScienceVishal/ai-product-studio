@@ -12,6 +12,10 @@ from dataclasses import dataclass, field
 from typing import Iterable, Sequence
 
 STATEMENT_VERSION = "v1"
+# Fixed in code (DESIGN 4.5): the sign-off stores the version, and a change of text means a new version.
+STATEMENT_TEXT = ("I understand that my firm, not the software, is responsible for every statement in this bid. I have read each "
+                  "answer, checked each claim against our own records, and I will remove the [E-n] markers and any gap markers "
+                  "before submission.")
 PACK_STATES_BEFORE_CONFIRM = frozenset({"uploaded", "extracting", "review"})
 # Allow-list (fail closed): export is legitimate only from these states. A new, misspelt or unknown status blocks.
 PACK_STATES_EXPORTABLE = frozenset({"ready", "signed", "exported"})

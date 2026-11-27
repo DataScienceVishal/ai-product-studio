@@ -58,7 +58,7 @@ const AUTH_PATHS = ["/api/auth/me", "/api/auth/login", "/api/auth/signup", "/api
   "/api/auth/password-reset/request", "/api/auth/password-reset/confirm"];
 export const SESSION_ENDED = "session-ended";
 
-export async function api<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
+export async function api<T>(path: string, options: { method?: string; body?: unknown; form?: FormData } = {}): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), requestTimeoutMs);
   let response: Response;
@@ -66,8 +66,9 @@ export async function api<T>(path: string, options: { method?: string; body?: un
     response = await fetch(path, {
       method: options.method ?? "GET",
       credentials: "same-origin",
-      headers: { "Content-Type": "application/json", "X-Requested-With": "fetch" },
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      // a FormData body sets its own multipart Content-Type (with the boundary)
+      headers: options.form ? { "X-Requested-With": "fetch" } : { "Content-Type": "application/json", "X-Requested-With": "fetch" },
+      body: options.form ?? (options.body === undefined ? undefined : JSON.stringify(options.body)),
       signal: controller.signal,
     });
   } catch (err) {

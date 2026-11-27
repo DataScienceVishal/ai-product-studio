@@ -344,7 +344,9 @@ def pack_checked(db: Session, tenant_id, pack_id) -> bool:
                       .order_by(Draft.version.desc()).limit(1))
         if d is None or d.check_sha256 != d.text_sha256 or d.status != "checked_ok":
             return False
-    return True
+    # T-201 item 5: evidence deleted while the check ran must not leave the pack `ready` (the gate would block it anyway).
+    allowed, reasons = export_check(db, tenant_id, pack_id)
+    return not (gate.reason_codes(reasons) & {"evidence_removed", "claims_blocked", "over_limit", "not_checked", "missing_draft"})
 
 
 def claimcheck_handler(sessions: sessionmaker, task: AITask, heartbeat, provider) -> tuple[int, int]:
