@@ -190,6 +190,7 @@ class Signoff(Base):
     statement_version: Mapped[str] = mapped_column(String(20), nullable=False)
     drafts_digest: Mapped[str] = mapped_column(String(64), nullable=False)
     signed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    voided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # set by a reopen; the row is kept for audit
 
 
 class ExportRecord(Base):

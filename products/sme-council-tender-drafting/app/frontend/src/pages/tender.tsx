@@ -1,7 +1,7 @@
 // Review screens (S7). Static routes with the id in the query string (/pack?id=...), so the server needs no pattern routes (R7).
 // No price or plan text anywhere on these pages.
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { api, ApiError } from "../api";
+import { api, apiDownload, ApiError } from "../api";
 import { Alert, Button, Card, Field, Link, navigate } from "../ui";
 
 // ---------- types (the API's shapes) ----------
@@ -689,6 +689,7 @@ function CoveragePageView({ id }: { id: string }) {
   const [problem, setProblem] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
 
+  const [note, setNote] = useState<string | null>(null);
   const c = cov.data;
   const blockers = (c?.export.reasons ?? []).filter((r) => reasonCode(r) !== "no_signoff");
   const signed = !!c && ["signed", "exported"].includes(c.pack.status) && !!c.signoff;
@@ -700,6 +701,31 @@ function CoveragePageView({ id }: { id: string }) {
     setWorking(true); setProblem(null);
     try {
       await api(`/api/packs/${id}/signoff`, { method: "POST", body: { reviewer_name: name, accept_statement: ticked, statement_version: c.statement.version } });
+      cov.reload();
+    } catch (err) { setProblem(errorText(err)); }
+    setWorking(false);
+  };
+
+  const exportDoc = async () => {
+    setWorking(true); setProblem(null); setNote(null);
+    try {
+      const { blob, filename } = await apiDownload(`/api/packs/${id}/export`);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000); // not at once: some browsers cancel the download
+      setNote("The Word document was downloaded.");
+      cov.reload();
+    } catch (err) { setProblem(errorText(err)); cov.reload(); }
+    setWorking(false);
+  };
+
+  const reopen = async () => {
+    if (!window.confirm("Reopen this pack for edits? The sign-off will be cancelled and you will need to sign off again before exporting.")) return;
+    setWorking(true); setProblem(null); setNote(null);
+    try {
+      await api(`/api/packs/${id}/reopen`, { method: "POST" });
       cov.reload();
     } catch (err) { setProblem(errorText(err)); }
     setWorking(false);
@@ -737,7 +763,15 @@ function CoveragePageView({ id }: { id: string }) {
       {c && (
         <Card title="Sign-off">
           {signed && c.signoff ? (
+            <div className="space-y-4">
             <Alert kind="success">Signed off by {c.signoff.reviewer_name} on {new Date(c.signoff.signed_at).toLocaleDateString("en-GB")}. The answers and the checklist are now locked.</Alert>
+              {problem && <Alert>{problem}</Alert>}
+              {note && <Alert kind="success">{note}</Alert>}
+              <div className="flex flex-wrap gap-3">
+                <Button type="button" busy={working} onClick={exportDoc}>Export Word document</Button>
+                <Button type="button" busy={working} onClick={reopen}>Reopen for edits</Button>
+              </div>
+              </div>
           ) : (
             <form onSubmit={sign} className="space-y-4">
               {blockers.length > 0 && (

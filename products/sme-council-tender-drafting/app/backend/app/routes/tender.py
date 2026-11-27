@@ -25,7 +25,8 @@ from ..tender import draft as _draft
 from ..tender import claimcheck as _check
 from ..tender import extract as _extract  # noqa: F401  (registers the extract and draft handlers)
 from ..tender import gate
-from ..tender_models import Claim as _Claim, Signoff as _Signoff, AITask, Draft, DocumentPage, EvidenceItem, Requirement, SourceDocument, TenderPack
+from ..tender import export as _export
+from ..tender_models import Claim as _Claim, ExportRecord, Signoff as _Signoff, AITask, Draft, DocumentPage, EvidenceItem, Requirement, SourceDocument, TenderPack
 from ..textsafe import FreeText, StrippedLine
 
 log = logging.getLogger("app.tender")
@@ -553,7 +554,7 @@ def coverage(pack_id: uuid.UUID, me: Current = Depends(current), db: Session = D
                      "gaps": d.gap_count if d else 0, "checked": bool(d and d.check_sha256 == d.text_sha256),
                      "claims": verdicts, "covered": (d is not None) if question else True})
     allowed, reasons = _check.export_check(db, me.tenant.id, pack_id)
-    so = db.scalar(scoped(_Signoff, me.tenant.id).where(_Signoff.pack_id == pack_id).order_by(_Signoff.signed_at.desc()).limit(1))
+    so = db.scalar(scoped(_Signoff, me.tenant.id).where(_Signoff.pack_id == pack_id, _Signoff.voided_at.is_(None)).order_by(_Signoff.signed_at.desc()).limit(1))
     return {"pack": pack_out(pack), "rows": rows, "export": {"allowed": allowed, "reasons": reasons},
             "statement": {"version": gate.STATEMENT_VERSION, "text": gate.STATEMENT_TEXT},
             "signoff": None if so is None else {"reviewer_name": so.reviewer_name, "statement_version": so.statement_version,
@@ -588,3 +589,40 @@ def sign_off(pack_id: uuid.UUID, body: SignoffIn, me: Current = Depends(current)
     log.info("pack signed off", extra={"pack_id": str(pack_id)})
     return {"reviewer_name": row.reviewer_name, "statement_version": row.statement_version,
             "signed_at": row.signed_at.isoformat(), "pack": pack_out(pack)}
+
+
+@router.get("/packs/{pack_id}/export")
+def export_docx(pack_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
+    """The Word file, only if the gate passes on the rows as they are now (and the pack is signed, the sign-off valid and
+    its digest current). The pack row is held FOR SHARE: a reopen or an edit waits until the file and its record commit."""
+    get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
+    db.scalar(scoped(TenderPack, me.tenant.id).where(TenderPack.id == pack_id).with_for_update(read=True)
+              .execution_options(populate_existing=True))
+    try:
+        data, rows = _export.build(db, me.tenant.id, pack_id)
+    except _export.ExportRefused as e:
+        db.rollback()
+        raise AppError(409, "export_blocked", "Export is blocked: " + "; ".join(e.reasons))
+    db.add(ExportRecord(tenant_id=me.tenant.id, pack_id=pack_id, signoff_id=rows.signoff.id,
+                        docx_sha256=_export.sha256(data), created_by=me.user.id))
+    db.commit()
+    log.info("pack exported", extra={"pack_id": str(pack_id)})
+    return Response(content=data, media_type=_export.DOCX_TYPE, headers={
+        "Content-Disposition": f'attachment; filename="{_export.safe_filename(rows.pack.title)}"',
+        "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"})
+
+
+@router.post("/packs/{pack_id}/reopen")
+def reopen_signed_pack(pack_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
+    """Void the sign-off so the answers can be edited again. The sign-off row is kept (voided_at) for audit; the pack goes
+    back to `ready`, and export is refused until it is signed again."""
+    get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
+    pack = _lock_pack(db, me.tenant.id, pack_id)
+    if pack.status not in ("signed", "exported"):
+        raise AppError(409, "not_signed", "Only a signed-off pack can be reopened.")
+    db.execute(update(_Signoff).where(_Signoff.tenant_id == me.tenant.id, _Signoff.pack_id == pack_id,
+                                      _Signoff.voided_at.is_(None)).values(voided_at=datetime.now(timezone.utc)))
+    pack.status = "ready"
+    db.commit()
+    log.info("pack reopened", extra={"pack_id": str(pack_id)})
+    return {"pack": pack_out(pack)}

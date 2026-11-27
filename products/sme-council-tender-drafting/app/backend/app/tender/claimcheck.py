@@ -413,8 +413,8 @@ def load_gate_inputs(db: Session, tenant_id, pack_id):
               for d in drafts_rows]
     claims = [gate.GateClaim(str(c.draft_id), c.verdict, tuple(c.cited_ids)) for c in db.scalars(
         select(Claim).where(Claim.tenant_id == tenant_id, Claim.draft_id.in_([d.id for d in drafts_rows])))]
-    so = db.scalar(select(Signoff).where(Signoff.tenant_id == tenant_id, Signoff.pack_id == pack_id)
-                   .order_by(Signoff.signed_at.desc()).limit(1))
+    so = db.scalar(select(Signoff).where(Signoff.tenant_id == tenant_id, Signoff.pack_id == pack_id,
+                                       Signoff.voided_at.is_(None)).order_by(Signoff.signed_at.desc()).limit(1))
     signoff = gate.GateSignoff(so.statement_version, so.drafts_digest) if so else None
     live = {n for (n,) in db.execute(select(EvidenceItem.display_no).join(
         SourceDocument, (SourceDocument.tenant_id == EvidenceItem.tenant_id) & (SourceDocument.id == EvidenceItem.document_id))
