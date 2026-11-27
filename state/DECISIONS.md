@@ -413,3 +413,4 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - 2026-11-27T00:04Z | run 20261126T231926Z-run-6fea | T-163 M1 fix persists the model-guard trip in the DB with fail-closed reads; reviewer CHANGES on a pool-starvation false-503. Left on its branch with NEXT note rather than rushing a fix past the 45-minute hand-off.
 
 - 2026-11-27T00:50Z run b4e0: T-163 merged to main after reviewer PASS (fix (a): trip read on caller session). Remaining two test gaps queued as T-164 (low; not blocking).
+- 2026-11-27T01:45Z | run 20261127T011938Z-run-7b52 | T-164 merged to main after reviewer PASS. Accepted behaviour change: a missing finish_reason now logs "none" instead of null (nothing reads the field). Left the one nit (no test pins None -> "none") unfixed. It is low value and not worth another review cycle.
