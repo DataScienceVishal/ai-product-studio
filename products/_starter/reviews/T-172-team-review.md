@@ -46,3 +46,14 @@ Both code changes are correct and do what the bug report asks. The suite is gree
 - Assert in the B7 test that an already-revoked or expired invite in another tenant keeps its original `revoked_at`. This kills M4, which would otherwise silently rewrite audit timestamps.
 - Move the B7 comment (`team.py:147-148`) down to the UPDATE it describes. It currently sits above the `try/flush`.
 - The B6 test could also assert the daily-quota side (see issue 1) to keep both halves of the B6 contract in one place.
+
+## Re-review at 59839d3: PASS
+
+Reviewer: reviewer agent, 2026-11-27. This commit changes tests only: `tests/test_team.py` gains 22 lines and no product code changed.
+
+- `test_daily_invite_quota_counts_resends` covers issue 1. With mutant M6 (the quota skips revoked rows) applied, it fails with `assert 201 == 429`. **Killed.**
+- `test_resend_exemption_is_tenant_scoped` covers issue 2. With mutant M8 (the `is_resend` lookup drops its tenant filter) applied, it fails with `assert (201 == 409)`. It also checks that tenant B's invite can still be accepted. **Killed.**
+- Each mutant was applied to `app/routes/team.py`, the test was run, and the file was restored. The worktree was clean afterwards.
+- Full backend suite at 59839d3 on local Postgres 16: **739 passed, 1 skipped** (107.7 s).
+
+Both must-fix items are closed. The pre-existing races and the suggestions above (missing index on `invitations(email)`, the M4 assertion, `with_for_update()` in accept) are not blockers. They remain recommended follow-ups. Clear to merge once the tests are green on main.
