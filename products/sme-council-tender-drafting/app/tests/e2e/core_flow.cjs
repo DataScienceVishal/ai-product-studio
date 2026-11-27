@@ -20,29 +20,11 @@ const BASE = process.env.E2E_BASE_URL || "http://127.0.0.1:4173";
     await page.getByRole("button", { name: "Create account" }).click();
     await page.getByText("Free trial:").waitFor();
 
-    step("empty state offers sample data, then a guided first task");
-    await page.getByText("No notes yet.").waitFor();
-    await page.getByRole("button", { name: "Add two sample notes" }).click();
-    await page.getByText("Supplier price rise").waitFor();
-
-    step("create a note and get an AI summary");
-    await page.getByLabel("Title").fill("Oven repair");
-    await page.getByLabel("Details").fill("The deck oven needs a new thermostat. Engineer can come Tuesday for 180 pounds.");
-    await page.getByRole("button", { name: "Save note" }).click();
-    const item = page.locator("li", { hasText: "Oven repair" });
-    await item.waitFor();
-    await item.getByRole("button", { name: "Summarise" }).click();
-    const summary = item.getByTestId("summary");
-    await summary.waitFor();
-    assert.match(await summary.innerText(), /Summary:/);
-
-    step("choose a plan with the early-customer offer and pay in test mode");
-    await page.getByRole("link", { name: "Billing" }).click();
-    await page.getByLabel("Offer code (optional)").fill("EARLY50");
-    await page.getByRole("button", { name: "Choose Pro" }).click();
-    await page.getByRole("button", { name: "Pay (test)" }).click();
-    await page.getByText("Status: active").waitFor();
-    await page.getByText("Offer: EARLY50").waitFor();
+    step("the dashboard shows tender packs and no prices, plans or billing link");
+    await page.getByRole("heading", { name: "Tender packs" }).waitFor();
+    assert.equal(await page.getByRole("link", { name: "Billing" }).count(), 0);
+    assert.doesNotMatch(await page.locator("body").innerText(), /£|upgrade|pricing|per month/i);
+    assert.equal(await page.evaluate(async () => (await fetch("/api/billing/plans")).status), 404);
 
     step("sign out and back in");
     const email = await page.evaluate(async () => (await (await fetch("/api/auth/me")).json()).user.email);
@@ -51,7 +33,7 @@ const BASE = process.env.E2E_BASE_URL || "http://127.0.0.1:4173";
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill("a long enough passphrase");
     await page.getByRole("button", { name: "Sign in" }).click();
-    await page.getByRole("heading", { name: "Oven repair" }).waitFor();
+    await page.getByRole("heading", { name: "Tender packs" }).waitFor();
 
     step("a wrong password on delete shows an error and keeps you signed in");
     await page.getByRole("link", { name: "Settings" }).click();

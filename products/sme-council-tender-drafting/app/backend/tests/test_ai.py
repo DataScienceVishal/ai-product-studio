@@ -12,6 +12,8 @@ from app.ai import AIUnavailable, AzureOpenAI, ensure_ai_enabled
 from app.errors import AppError
 from app.models import AIUsage, Subscription, Tenant
 
+from . import vehicle
+
 
 @pytest.fixture(autouse=True)
 def _no_sleep(monkeypatch):
@@ -959,7 +961,8 @@ def test_config_endpoint_serves_the_configured_frontend_timeout(settings, ai, ou
     from app.main import create_app
     custom = settings.model_copy(update={"frontend_timeout_seconds": 60.0, "ai_deadline_seconds": 55.0})
     application = create_app(custom, ai=ai, email=outbox,
-                             billing_provider=MockBilling(custom.billing_webhook_secret, custom.app_base_url))
+                             billing_provider=MockBilling(custom.billing_webhook_secret, custom.app_base_url),
+                             extra_routers=(vehicle.router,))
     try:
         with TestClient(application, base_url="https://testserver") as client:
             assert client.get("/api/config").json() == {"api_timeout_seconds": 60.0, "billing_provider": "mock", "billing_enabled": True}
@@ -1074,7 +1077,8 @@ def _guarded_app(settings, outbox, reported, *, deployment="gpt-5-mini", explici
                            checked_price=explicit or {"gpt-5-mini": 2.0}.get(deployment),
                            price_explicit=explicit is not None)
     return create_app(settings, ai=provider, email=outbox,
-                      billing_provider=MockBilling(settings.billing_webhook_secret, settings.app_base_url))
+                      billing_provider=MockBilling(settings.billing_webhook_secret, settings.app_base_url),
+                      extra_routers=(vehicle.router,))
 
 
 def _two_summaries(app, new_client, outbox):
@@ -1345,7 +1349,8 @@ def _store_app(settings, outbox, reported, *, deployment="gpt-5-mini", explicit=
     provider = AzureOpenAI(endpoint, deployment, "k", retries=0, client=httpx.Client(transport=httpx.MockTransport(handler)),
                            checked_price=max(table or 0, explicit or 0) or None, price_explicit=explicit is not None)
     return create_app(settings, ai=provider, email=outbox,
-                      billing_provider=MockBilling(settings.billing_webhook_secret, settings.app_base_url))
+                      billing_provider=MockBilling(settings.billing_webhook_secret, settings.app_base_url),
+                      extra_routers=(vehicle.router,))
 
 
 def _summaries(app, outbox, count):
@@ -1777,14 +1782,13 @@ def test_write_detector_catches_cte_and_merge_writes():
         assert not _is_write_sql(sql), sql
 
 
-def test_notes_route_calls_ensure_ai_enabled_on_a_session_with_no_writes(settings, outbox, database, monkeypatch):
+def test_summary_route_calls_ensure_ai_enabled_on_a_session_with_no_writes(settings, outbox, database, monkeypatch):
     """T-168 L1: the retry may commit the caller's session, so the route must call it before writing anything:
     nothing pending (new/dirty/deleted) and nothing flushed on that session by then."""
     import weakref
     from sqlalchemy import event
     from sqlalchemy.orm import Session as OrmSession
-    from . import vehicle as notes_routes
-
+    
     wrote = weakref.WeakSet()  # sessions that ever had pending ORM changes at flush time (ids get reused)
     sql_writes = weakref.WeakSet()  # T-169 S1: connections that ran INSERT/UPDATE/DELETE, ORM or raw SQL
 
@@ -1797,7 +1801,7 @@ def test_notes_route_calls_ensure_ai_enabled_on_a_session_with_no_writes(setting
             sql_writes.add(conn)
 
     seen = []
-    real = notes_routes.ensure_ai_enabled
+    real = vehicle.ensure_ai_enabled
 
     def spy(provider, db=None):
         seen.append({"has_db": db is not None, "pending": bool(db and (db.new or db.dirty or db.deleted)),
@@ -1806,7 +1810,7 @@ def test_notes_route_calls_ensure_ai_enabled_on_a_session_with_no_writes(setting
                      "sql_wrote": bool(db and db.in_transaction() and db.connection() in sql_writes)})
         return real(provider, db)
 
-    monkeypatch.setattr(notes_routes, "ensure_ai_enabled", spy)
+    monkeypatch.setattr(vehicle, "ensure_ai_enabled", spy)
     event.listen(OrmSession, "before_flush", on_flush)
     app = _store_app(settings, outbox, "gpt-5-mini")
     event.listen(app.state.db.engine, "before_cursor_execute", on_execute)

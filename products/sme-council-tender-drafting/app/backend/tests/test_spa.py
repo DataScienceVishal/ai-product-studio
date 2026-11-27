@@ -175,7 +175,7 @@ def test_probes_and_api_unchanged(web):
     health = web.get("/healthz")
     assert health.status_code == 200 and health.json()["db"] == "ok"
     assert "content-security-policy" not in health.headers or health.headers["content-security-policy"] != HTML_CSP
-    assert web.get("/api/vehicle").status_code == 401
+    assert web.get("/api/auth/me").status_code == 401
 
 
 @pytest.mark.parametrize("path", [

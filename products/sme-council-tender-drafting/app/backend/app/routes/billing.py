@@ -50,7 +50,7 @@ def plans(request: Request):
                   for p in PLANS.values() if p.id != "trial"],
         "offers": [{"code": o.code, "description": o.description} for o in OFFERS.values()],
         # T-94: while the provider is in LIMITED_PROVIDERS every plan's AI use is capped at the trial allowance
-        # (routes/notes.py), so the page must not promise the plan's own allowance yet.
+        # (the AI routes), so the page must not promise the plan's own allowance yet.
         "ai_allowance": {"trial_sized": request.app.state.settings.billing_provider in LIMITED_PROVIDERS,
                          "monthly_tokens": trial.ai_monthly_tokens, "daily_tokens": trial.ai_daily_tokens},
     }

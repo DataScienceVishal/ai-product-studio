@@ -1,6 +1,6 @@
 """Structured JSON logs with request ids. Never log secrets or personal data.
 
-Log ids (user_id, tenant_id), never emails, names, passwords, tokens or note text.
+Log ids (user_id, tenant_id), never emails, names, passwords, tokens or document text.
 Sensitive-looking keys passed as `extra` are redacted as a safety net.
 """
 from __future__ import annotations

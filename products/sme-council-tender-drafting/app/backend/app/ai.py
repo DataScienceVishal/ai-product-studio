@@ -312,8 +312,8 @@ _NO_ANSWER = {
     "max_output_tokens": "The AI ran out of room before finishing its answer. Try a shorter input.",
     "length": "The AI ran out of room before finishing its answer. Try a shorter input.",
     "reasoning": "The AI spent its whole allowance thinking and didn't answer. Try a shorter or simpler input.",
-    "content_filter": "The AI's safety filter blocked this answer. Try rewording the note.",
-    "refusal": "The AI declined to answer this note. Try rewording it.",
+    "content_filter": "The AI's safety filter blocked this answer. Try rewording the text.",
+    "refusal": "The AI declined to answer this text. Try rewording it.",
     "failed": "The AI couldn't finish this request. Please try again.",
     None: "The AI returned no answer. Please try again.",
 }

@@ -159,7 +159,7 @@ because delayed payment methods can report `active` before the money arrives).
 
 1. Copy the folder to `products/<slug>/` and the workflow to `.github/workflows/<slug>-ci.yml`, replacing
    `_starter` in the paths.
-2. Replace `Note` (model, routes, page) with the product's core objects. Keep `_scoped()`: every query filters by
+2. (Done in T-185: the starter `Note` is removed; tests/vehicle.py is the test-only AI-route vehicle.) Add the product's core objects. Keep `_scoped()`: every query filters by
    `tenant_id`, and the tenancy tests are copied for each new object.
 3. Set the plans and prices from the product's SPEC.md in `app/billing.py`.
 4. Add an Alembic migration for every model change: `alembic revision --autogenerate -m "..."`.

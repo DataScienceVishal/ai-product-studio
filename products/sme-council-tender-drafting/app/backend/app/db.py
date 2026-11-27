@@ -2,7 +2,7 @@
 
 Rule for every endpoint: never hold a transaction (and so a pooled connection) across a slow external
 call such as the AI or the payment provider. `deps.current` commits after loading the user, and
-endpoints that call out commit before the call and reopen afterwards (see routes/notes.py summarize).
+endpoints that call out commit before the call and reopen afterwards (see the AI route pattern in tests/vehicle.py).
 """
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ class Database:
             connect_args = {"connect_timeout": 5,
                             "options": f"-c statement_timeout={statement_timeout_ms} "
                                        f"-c idle_in_transaction_session_timeout={idle_in_transaction_timeout_ms}"}
-        # hide_parameters: SQLAlchemy otherwise puts bound values (emails, password hashes, note text)
+        # hide_parameters: SQLAlchemy otherwise puts bound values (emails, password hashes, document text)
         # into exception messages, and those reach the logs.
         self.engine: Engine = create_engine(url, pool_pre_ping=True, pool_size=pool_size, max_overflow=max_overflow,
                                             pool_timeout=10, hide_parameters=True, connect_args=connect_args, **extra)

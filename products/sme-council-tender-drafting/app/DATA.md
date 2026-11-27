@@ -12,7 +12,6 @@ review before launch.
 | `password_resets` | link to a user, hashed token | password reset | 7 days after use or expiry | purge job; cascade |
 | `email_verifications` | link to a user, hashed token | proving the address | 7 days after use or expiry | purge job; cascade |
 | `invitations` | invitee email | adding team members | 30 days after accepted, cancelled or expired; at once when the member is removed or leaves | purge job; member removal; cascade |
-| `notes` (example) | whatever users type | the product's core job | the user or the account deletes it | user; cascade |
 | `subscriptions` | provider customer and subscription ids | billing | account deletion (the provider customer is deleted first) | account deletion |
 | `billing_events` | provider event ids only | applying each webhook once | 400 days | purge job |
 | `pending_cancels` | provider name, subscription ref, tenant id (cleared if the account is deleted), attempt count, time of the last attempt, last error text (fixed messages, no provider text) | retrying the cancel of a lapsed subscription that a new checkout replaced, so the customer is not billed twice | deleted when the cancel works, or is skipped because that subscription became the current one; normally minutes. A row that keeps failing stays: logged at ERROR, one CRITICAL line ("pending cancel needs operator") at the 10th failure, then WARNING; the sweep backs off min(2^attempts minutes, 24 h) between attempts | cancel sweep (`python -m app.maintenance cancels`, every 30 min); the tenant's next billing event (only rows with fewer than 3 failures) |
@@ -22,7 +21,7 @@ review before launch.
 for later retrieval. Azure's abuse monitoring is separate and may keep flagged content for human review (Microsoft
 Learn, "Data, privacy, and security for Azure OpenAI"); check its terms before real customer data.
 
-**Logs** hold request ids, tenant ids and user ids, never emails, names, note text, tokens or SQL parameters
+**Logs** hold request ids, tenant ids and user ids, never emails, names, document text, tokens or SQL parameters
 (see `app/logs.py`). Database error messages are reduced to their SQLSTATE code. When deployed (ADR 0002):
 - The app's and jobs' console output and the platform's system logs go to Log Analytics (`log-studio`). They are
   kept 30 days, then deleted.

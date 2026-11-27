@@ -57,7 +57,7 @@ PLANS: dict[str, Plan] = {
 
 # Providers whose plans get the free-trial AI allowance, whatever plan was bought: mock is a demo and Stripe is
 # test-mode only until `unlock selling`, so neither plan has been paid for yet. Remove "stripe" in the same change
-# that allows live keys (a selling ADR). Used by the AI cap (routes/notes.py) and the plans list (routes/billing.py).
+# that allows live keys (a selling ADR). Used by the AI cap (app/ai.py callers) and the plans list (routes/billing.py).
 LIMITED_PROVIDERS = {"mock", "stripe"}
 
 OFFERS: dict[str, Offer] = {
