@@ -58,3 +58,28 @@ Tests: full backend suite **939 passed, 1 skipped**, 0 failed (189.8 s). The new
 9. **The design asks for one extraction task per chunk (DESIGN 4.6); this is one task per pack.** NEXT.md already notes it, and the per-tenant cache makes a retry cheap. Log it in DECISIONS or fix it in S5, so `/status` can show progress.
 
 10. **The model can cite a `source_page` outside the chunk, or a negative one.** It is stored as is. It is harmless (the item goes amber), but consider clamping it or flagging it as `page_out_of_range`.
+
+---
+
+## Re-review at e30c928 (diff 9cbc549..e30c928): PASS
+
+Full backend suite: **947 passed, 1 skipped**, 0 failed (197.9 s). That is 8 more than before.
+
+- **Issue 1 fixed.** `extract_handler` now wraps `_extract`. On any failure except `LeaseLost`, `_reset_pack_status` sets the pack to `review` if it has items, or to `uploaded` if it has none. The update only applies while the status is still `extracting`. Confirm now accepts `uploaded`, so a checklist written by hand works. The R3 refusal test now asserts that the pack is in `uploaded` and that adding an item by hand and confirming both succeed. A new test covers a failed run on a pack that has items going back to `review`.
+- **Issue 2 fixed.**
+  - The delete now also requires `edited_by IS NULL`.
+  - New items are deduped against every row that survives (edited, confirmed, removed and user rows), document by document.
+  - The re-run test checks that the edited, removed, confirmed and user rows all survive, that the edited text is kept, and that no duplicates are added (4 rows).
+- **Issue 3 fixed.** Extract returns 409 unless the pack is `uploaded`, `extracting` or `review`. This is tested for drafting, checking, ready, signed and exported.
+- **Issue 4 fixed.** The tests above cover it.
+- **Issue 6 fixed.** `same_item` requires the same or an adjacent page and ignores blank refs, and it is unit-tested.
+- **Issue 8 fixed.** The ORM `server_default` now matches the migration.
+
+### Still open (non-blocking, recorded in NEXT.md)
+- Issue 5: the limit regex window and its page-wide fallback can still raise false `limit_mismatch` flags.
+- Issue 7: the `seq` race.
+- Issue 9: one task per pack instead of one per chunk.
+- Issue 10: `source_page` is not range-checked.
+- A worker killed until `attempts_exhausted` leaves the pack in `extracting`. Recommend a follow-up board task: the runner's exhaustion path should call a per-kind failure hook.
+- Minor: a user row (`source_page` 0) only dedupes against model items on page 1, and an edited row with no ref and rewritten text can be re-proposed as a near-duplicate. Both are acceptable; the user sees and removes it.
+- Nit: `tender_models.py` imports `text` twice, once directly and once as `sa_text`.
