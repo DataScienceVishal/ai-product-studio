@@ -433,3 +433,8 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 ## 2026-11-27T08:50Z, run f9ce: T-173 team lock choice
 - Invite takes the tenant row FOR NO KEY UPDATE, not FOR UPDATE: plain FOR UPDATE deadlocks against an in-flight accept (reviewer reproduced 40P01). Merged after reviewer PASS. Non-blocking reviewer items (vacuous resend smoke test, cross-tenant double-accept deadlock 500, sleep-based race tests) queued as a board task.
 - 2026-11-27, run f9ce: T-173 billing S5: access starts only from a paid checkout.session.completed / async_payment_succeeded (or an active event for the already-tracked subscription), because Stripe documents that delayed-payment subscriptions can be active while payment is processing. Operators must subscribe the webhook to checkout.session.* (documented). Reviewer noted a builder commit deleted a review file (restored); briefs should say never delete review files.
+
+## 2026-11-27T09:48Z, run 1469: T-174
+- Billing S-3: a non-active event for an untracked ref during a trial is ignored (trial runs on), but an ignored `canceled` writes a per-subscription marker (BillingEvent id dead:{provider}:{sha256(ref)}) so a late checkout for that dead ref grants no access. Rejected the tenant-wide last_event_at approach: reviewer showed it locks out a genuinely paid second subscription delivered out of order.
+- Billing S6: takeover cancel of the old ref is best-effort after commit (log to-do on failure), not a 503 redelivery, because the replacement is already committed. Durable retried to-do queued as T-175.
+- Team: 40P01 deadlock on cross-tenant double accept answers 409 email_taken (same as the existing answer); other OperationalErrors re-raise.
