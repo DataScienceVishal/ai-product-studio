@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (ARRAY, BigInteger, Boolean, Computed, DateTime, ForeignKey, ForeignKeyConstraint, Index,
-                        Integer, String, Text, UniqueConstraint, Uuid, text)
+                        Integer, String, Text, UniqueConstraint, Uuid)
 from sqlalchemy import text as sa_text
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column
@@ -74,6 +74,7 @@ class DocumentPage(Base):
 class Requirement(Base):
     __tablename__ = "requirements"
     __table_args__ = (UniqueConstraint("tenant_id", "id", name="uq_requirements_tenant_id"),
+                      UniqueConstraint("tenant_id", "pack_id", "seq", name="uq_requirements_pack_seq"),
                       _child("fk_requirements_pack", "pack_id", "tender_packs"),
                       # NO ACTION, not CASCADE: deleting a source document that requirements still cite is refused, so it cannot
                       # silently wipe drafts and claims. (NO ACTION, not RESTRICT: the check does not depend on cascade trigger order; see migration 0014.)

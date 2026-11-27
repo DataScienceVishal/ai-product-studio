@@ -1,3 +1,20 @@
+# STATUS (T-198, S4 review leftovers)
+
+**Done**
+- Runner `FAILURE_HOOKS` (kind -> hook), run when a task is failed as `attempts_exhausted`. Extract: pack back to `review`/`uploaded`. Draft: a pack stuck in `checking` goes back to `drafting`. A crashing hook is logged, never breaks the runner.
+- F7: migration 0017 adds UNIQUE (tenant_id, pack_id, seq) (renumbers existing duplicates first); `add_requirement` and the extract write both lock the pack row, so max+1 cannot race.
+- F10: out-of-range or negative `source_page` is clamped to the document and flagged `page_out_of_range`.
+- F5: limit check finds the quote on the raw text (whitespace tolerant), searches from the quote forward to the next numbered question, no page-wide fallback once the quote is located; `stated_page_limit` adds "N sides of A4"/"N pages".
+- Duplicate `text` import removed from `tender_models.py`.
+- F9 decision: keep ONE extract task per pack for the demo (per-tenant cache makes a retry cheap; per-chunk tasks only buy a progress bar). Revisit if `/status` needs chunk progress.
+
+**Left**
+- Per-chunk tasks (F9) and chunk progress in `/status`.
+- Migration 0017 duplicate-renumber SQL was not exercised on a table that actually holds duplicates.
+
+**Verify**
+- `pytest tests/test_tender_extract.py` (27 tests); alembic upgrade, check, downgrade -1, upgrade, check was clean.
+
 # STATUS (T-189, slice S5: drafting) - code done, awaiting reviewer PASS
 
 Branch `p/sme-council-tender-drafting/T-189`. Not merged. Migration 0016 (drafts.outside_ids int[], drafts.flags text[]); alembic

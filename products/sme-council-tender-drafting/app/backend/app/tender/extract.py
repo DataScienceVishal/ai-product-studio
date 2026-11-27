@@ -91,20 +91,40 @@ def quote_ok(quote: str, page_text: str) -> bool:
 
 
 _LIMIT = re.compile(r"(?:maximum(?: of)?|max\.?|no more than|not exceed(?:ing)?|up to|limit(?:ed)? to)\s+(\d[\d,]*)\s+words", re.I)
+_PAGE_LIMIT = re.compile(r"(?:maximum(?: of)?|max\.?|no more than|not exceed(?:ing)?|up to|limit(?:ed)? to)\s+(\d+)\s+"
+                         r"(?:sides? of A4|pages?(?: of A4)?)", re.I)
+_NEXT_QUESTION = re.compile(r"\n\s*(?:q(?:uestion)?\s*)?\d+(?:\.\d+)*\s*[.):]", re.I)  # the next numbered question starts a new window
+
+
+def _quote_window(page_text: str, near: str) -> str | None:
+    """The raw text from the start of the item's quote up to the next numbered question (at most 400 characters past
+    the quote). The quote is found on the raw text with whitespace-tolerant matching, so offsets never drift."""
+    words = near.split()[:12]
+    if not words:
+        return None
+    m = re.search(r"\s+".join(re.escape(w) for w in words), page_text, re.I)
+    if m is None:
+        return None
+    end = min(len(page_text), m.start() + max(len(near), m.end() - m.start()) + 400)
+    window = page_text[m.start():end]
+    nxt = _NEXT_QUESTION.search(window, m.end() - m.start())
+    return window[:nxt.start()] if nxt else window
+
+
+def _stated(pattern: re.Pattern, page_text: str, near: str) -> int | None:
+    window = _quote_window(page_text, near) if near else None
+    found = pattern.search(window if window is not None else page_text)  # no page-wide guess once the quote is located
+    return int(found.group(1).replace(",", "")) if found else None
 
 
 def stated_word_limit(page_text: str, near: str = "") -> int | None:
-    """The word limit the page states in words, preferring the sentence that holds the item's own quote."""
-    text = page_text
-    if near:
-        i = norm(page_text).find(norm(near)[:60])
-        if i >= 0:
-            window = page_text[max(0, i - 200): i + len(near) + 400]
-            m = _LIMIT.search(window)
-            if m:
-                return int(m.group(1).replace(",", ""))
-    m = _LIMIT.search(text)
-    return int(m.group(1).replace(",", "")) if m else None
+    """The word limit stated in words for the item's own question (its quote forward to the next question)."""
+    return _stated(_LIMIT, page_text, near)
+
+
+def stated_page_limit(page_text: str, near: str = "") -> int | None:
+    """A page limit stated as 'no more than 2 sides of A4' or '3 pages'."""
+    return _stated(_PAGE_LIMIT, page_text, near)
 
 
 def _trigrams(s: str) -> set[str]:
@@ -140,10 +160,14 @@ def check_item(item: dict, pages: dict[int, str]) -> tuple[bool, list[str]]:
     page_text = pages.get(item["source_page"], "")
     verified = quote_ok(item["source_quote"], page_text)
     flags = []
-    if item.get("word_limit") is not None or stated_word_limit(page_text, item["source_quote"]) is not None:
-        stated = stated_word_limit(page_text, item["source_quote"])
-        if stated is not None and item.get("word_limit") != stated:
-            flags.append("limit_mismatch")
+    if item["source_page"] not in pages:
+        flags.append("page_out_of_range")
+    stated = stated_word_limit(page_text, item["source_quote"])
+    if stated is not None and item.get("word_limit") != stated:
+        flags.append("limit_mismatch")
+    stated_pages = stated_page_limit(page_text, item["source_quote"])
+    if stated_pages is not None and item.get("page_limit") != stated_pages and "limit_mismatch" not in flags:
+        flags.append("limit_mismatch")
     return verified, flags
 
 
@@ -155,6 +179,14 @@ def extract_handler(sessions: sessionmaker, task: AITask, heartbeat, provider) -
     except BaseException:
         _reset_pack_status(sessions, task)  # a failed run (budget refusal, bad output) must not leave `extracting`
         raise
+
+
+def reset_pack_after_exhausted(sessions: sessionmaker, task: AITask) -> None:
+    """Failure hook: a task that hit attempts_exhausted never reached the handler's own reset."""
+    _reset_pack_status(sessions, task)
+
+
+runner.FAILURE_HOOKS["extract"] = reset_pack_after_exhausted
 
 
 def _reset_pack_status(sessions: sessionmaker, task: AITask) -> None:
@@ -203,6 +235,8 @@ def _extract(sessions: sessionmaker, task: AITask, heartbeat, provider) -> tuple
         existing = [{"ref": r.ref, "text": r.text, "source_page": r.source_page or 0, "doc": r.source_document_id}
                     for r in db.scalars(select(Requirement).where(Requirement.tenant_id == task.tenant_id,
                                                                   Requirement.pack_id == task.pack_id))]
+        db.execute(select(TenderPack.id).where(TenderPack.tenant_id == task.tenant_id, TenderPack.id == task.pack_id)
+                   .with_for_update())  # serialises with add_requirement, so seq max+1 cannot race
         base = db.scalar(select(func.coalesce(func.max(Requirement.seq), 0)).where(
             Requirement.tenant_id == task.tenant_id, Requirement.pack_id == task.pack_id)) or 0
         fresh = []
@@ -212,11 +246,14 @@ def _extract(sessions: sessionmaker, task: AITask, heartbeat, provider) -> tuple
                 fresh.append((doc_id, it, pages))
         for n, (doc_id, it, pages) in enumerate(fresh, 1):
             verified, flags = check_item(it, pages)
+            page = it["source_page"]
+            if page not in pages and pages:  # clamp to the document so the cited page always exists
+                page = min(max(page, min(pages)), max(pages))
             kind = it["kind"] if it["kind"] in ("question", "mandatory", "deadline", "other") else "other"
             db.add(Requirement(tenant_id=task.tenant_id, pack_id=task.pack_id, seq=base + n, ref=it["ref"][:40], kind=kind,
                                text=it["text"], word_limit=it["word_limit"], page_limit=it["page_limit"], marks=it["marks"],
                                weight_pct=it["weight_pct"], pass_fail=bool(it["pass_fail"]), source_document_id=doc_id,
-                               source_page=it["source_page"], source_quote=it["source_quote"], quote_verified=verified,
+                               source_page=page, source_quote=it["source_quote"], quote_verified=verified,
                                origin="model", status="proposed", model_json=it, flags=flags))
         db.execute(update(TenderPack).where(TenderPack.tenant_id == task.tenant_id, TenderPack.id == task.pack_id)
                    .values(status="review"))

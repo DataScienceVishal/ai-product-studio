@@ -10,7 +10,7 @@ from app.models import AIUsage
 from app.tender import extract as ex
 from app.tender import runner
 from app.tender.scripted_ai import ScriptedFakeAI
-from app.tender_models import AITask, Requirement
+from app.tender_models import AITask, Requirement, TenderPack
 
 from .conftest import sign_up
 from .tender_files import pdf
@@ -223,3 +223,114 @@ def test_a_blank_ref_or_a_far_page_does_not_merge():
     c = {"ref": "1", "text": "Same ref far away on another page entirely", "source_page": 9}
     d = {"ref": "1", "text": "A different question about pricing", "source_page": 1}
     assert ex.merge_items([a, b, c, d]) == [a, b, c, d]  # blank refs never match; ref 1 on page 9 is not ref 1 on page 1
+
+
+# ---------- T-198: review leftovers ----------
+
+def _exhaust(app, db, pid, kind):
+    """Queue a task that has already used its attempts and let the runner find it."""
+    from datetime import datetime, timezone
+    t = db.scalar(select(AITask).where(AITask.kind == kind)) if kind == "extract" else None
+    if t is None:
+        pack = db.scalar(select(TenderPack).where(TenderPack.id == pid))
+        t = AITask(tenant_id=pack.tenant_id, pack_id=pack.id, kind=kind, status="queued", attempts=runner.MAX_ATTEMPTS)
+        db.add(t)
+    t.status, t.attempts = "queued", runner.MAX_ATTEMPTS
+    db.commit()
+    runner.run_one(app.state.db.sessions, LEASE, provider=ScriptedFakeAI())  # False: the exhausted task is failed in claim
+    db.refresh(t)
+    assert t.status == "failed" and t.error_code == "attempts_exhausted"
+
+
+def test_attempts_exhausted_extract_resets_the_pack(client, app, db):
+    pid = setup_pack(client)
+    assert client.post(f"/api/packs/{pid}/extract").status_code == 202
+    assert client.get(f"/api/packs/{pid}/status").json()["pack"]["status"] == "extracting"
+    _exhaust(app, db, pid, "extract")
+    assert client.get(f"/api/packs/{pid}/status").json()["pack"]["status"] == "uploaded"
+    assert client.post(f"/api/packs/{pid}/requirements", json={"text": "By hand"}).status_code == 201
+    assert client.post(f"/api/packs/{pid}/confirm").status_code == 200
+
+
+def test_attempts_exhausted_draft_resets_a_stuck_checking_pack(client, app, db):
+    pid = setup_pack(client)
+    client.post(f"/api/packs/{pid}/requirements", json={"text": "Q one", "kind": "question"})
+    assert client.post(f"/api/packs/{pid}/confirm").status_code == 200
+    pack = db.scalar(select(TenderPack).where(TenderPack.id == pid))
+    pack.status = "checking"
+    db.commit()
+    _exhaust(app, db, pid, "draft")
+    db.refresh(pack)
+    assert pack.status == "drafting"
+
+
+def test_a_crashing_failure_hook_does_not_break_the_runner(client, app, db, monkeypatch):
+    pid = setup_pack(client)
+    client.post(f"/api/packs/{pid}/extract")
+
+    def boom(*a):
+        raise RuntimeError("hook down")
+    monkeypatch.setitem(runner.FAILURE_HOOKS, "extract", boom)
+    _exhaust(app, db, pid, "extract")
+
+
+def test_requirement_seq_is_unique_per_pack(client, app, db):
+    from sqlalchemy.exc import IntegrityError
+    pid = setup_pack(client)
+    for i in range(3):
+        assert client.post(f"/api/packs/{pid}/requirements", json={"text": f"Item {i}"}).status_code == 201
+    seqs = [r["seq"] for r in client.get(f"/api/packs/{pid}/requirements").json()["requirements"]]
+    assert seqs == [1, 2, 3]
+    first = db.scalar(select(Requirement).where(Requirement.seq == 1))
+    db.add(Requirement(tenant_id=first.tenant_id, pack_id=first.pack_id, seq=1, kind="other", text="dup"))
+    with pytest.raises(IntegrityError):
+        db.commit()
+    db.rollback()
+
+
+def test_concurrent_adds_get_distinct_seqs(client, app):
+    import threading
+    pid = setup_pack(client)
+    codes = []
+
+    def add(i):
+        codes.append(client.post(f"/api/packs/{pid}/requirements", json={"text": f"Item {i}"}).status_code)
+    threads = [threading.Thread(target=add, args=(i,)) for i in range(6)]
+    [t.start() for t in threads]
+    [t.join() for t in threads]
+    assert codes == [201] * 6
+    seqs = sorted(r["seq"] for r in client.get(f"/api/packs/{pid}/requirements").json()["requirements"])
+    assert seqs == [1, 2, 3, 4, 5, 6]
+
+
+def test_source_page_out_of_range_is_clamped_and_flagged():
+    pages = {1: "1. Describe X (maximum 300 words).", 2: "2. Describe Y."}
+    item = {"ref": "1", "kind": "question", "text": "Describe X", "word_limit": 300, "page_limit": None,
+            "source_page": 9, "source_quote": "Describe X"}
+    verified, flags = ex.check_item(item, pages)
+    assert verified is False and "page_out_of_range" in flags
+    assert ex.check_item({**item, "source_page": -3}, pages)[1] == ["page_out_of_range"]
+    assert ex.check_item({**item, "source_page": 1}, pages) == (True, [])
+
+
+def test_limit_check_ignores_a_neighbouring_questions_limit():
+    page = ("1. Describe your quality system (maximum 500 words).\n\n2. State your insurance cover.\n\n"
+            "3. Explain mobilisation (max 200 words).")
+    assert ex.stated_word_limit(page, "State your insurance cover.") is None  # no limit of its own: no fallback guess
+    assert ex.stated_word_limit(page, "Describe your quality system") == 500
+    assert ex.stated_word_limit(page, "Explain mobilisation") == 200
+    assert ex.stated_word_limit(page, "not on this page") == 500  # quote not located: the first limit on the page
+
+
+def test_limit_check_survives_collapsed_whitespace_in_the_raw_page():
+    page = "intro   text\n\n\n   1.   Describe   your   plan\n(maximum   250   words)."
+    assert ex.stated_word_limit(page, "Describe your plan") == 250
+
+
+def test_page_limit_wording_sides_of_a4():
+    page = "2. Describe your approach. Answers must be no more than 2 sides of A4.\n3. Another. Max 3 pages."
+    assert ex.stated_page_limit(page, "Describe your approach.") == 2
+    item = {"ref": "2", "kind": "question", "text": "Describe your approach.", "word_limit": None, "page_limit": 5,
+            "source_page": 1, "source_quote": "Describe your approach."}
+    assert ex.check_item(item, {1: page}) == (True, ["limit_mismatch"])
+    assert ex.check_item({**item, "page_limit": 2}, {1: page}) == (True, [])
