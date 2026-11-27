@@ -23,3 +23,4 @@
 271771352 | "1B" = Q-15 answered B (no buyer chat, edges-only desk rounds); QUESTIONS, DECISIONS updated; T-106 round 19 opened and claimed | 20261125T232013Z-run-8fd0
 271771354 | "1A" = Q-16 answered A ($2 cap for part B AI test); QUESTIONS, DECISIONS, BOARD updated; T-113 claimed | 20261126T211938Z-run-0abb
 271771355 | "2A" = Q-17 answered A (conditional G1, two-week demo build on made-up data); QUESTIONS, DECISIONS, BOARD updated; T-158 opened | 20261126T211938Z-run-0abb
+271771356 | "1C" = Q-18 answered C (build best parked idea as portfolio demo); picked sme-council-tender-drafting; QUESTIONS, DECISIONS, BOARD updated; T-183 claimed, T-184 queued | 20261127T152002Z-run-cb8f
