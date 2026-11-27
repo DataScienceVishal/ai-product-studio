@@ -72,7 +72,9 @@ def purge(db: Session, now: datetime | None = None, unverified_after_days: int |
 def sweep_pending_cancels(db: Session, clients: dict, now: datetime | None = None) -> dict[str, int]:
     """T-175: retry every pending subscription cancel (see routes/billing.py). `clients` maps provider name to its
     client; a row for a provider with no client is left alone. Safe to run often: a cancel is idempotent.
-    T-176: a row is left alone until min(2**attempts minutes, 24 h) have passed since its last attempt."""
+    T-176: a row is left alone until min(2**attempts minutes, 24 h) have passed since its last attempt. The check is
+    repeated under the row lock with this run's start time (`now`): a row that another worker attempted meanwhile is
+    skipped, and so is one whose backoff ends during a long run (it waits for the next run)."""
     from .routes import billing as routes
     now = now or datetime.now(timezone.utc)
     done = failed = 0

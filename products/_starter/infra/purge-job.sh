@@ -12,8 +12,10 @@
 #                                      Each job is read back and its image and billing provider verified.
 #                                      Idempotent and safe to re-run: if one job update fails, run it again (a rollback does).
 #
-# The cancels job needs both Stripe secrets defined whatever its provider is (main.bicep always defines them),
-# because `follow` can switch its provider without a Bicep deploy.
+# The cancels job has both Stripe secrets defined whatever its provider is (main.bicep always defines them), because
+# `follow` can switch its provider without a Bicep deploy. `follow` also adds the two secretRef env variables
+# (BILLING_WEBHOOK_SECRET, STRIPE_SECRET_KEY) for stripe and removes them for mock, because a mock job must not get
+# the placeholder secret (the app rejects it). Bicep sets the same provider and references from PURGE_BILLING_PROVIDER.
 #
 # Needs RESOURCE_GROUP and PRODUCT, and a signed-in Azure CLI. AZ can name a stand-in for tests.
 set -euo pipefail
@@ -56,12 +58,29 @@ if [ "$command" = "settings" ]; then
   exit 0
 fi
 
+stripe_names="BILLING_WEBHOOK_SECRET STRIPE_SECRET_KEY"
 for name in $jobs; do
   job="caj-$PRODUCT-$name"
   want_billing=mock # only the cancels job calls the payment provider
   [ "$name" = "cancels" ] && want_billing=$billing
+  extra=()
+  if [ "$name" = "cancels" ] && [ "$want_billing" = "stripe" ]; then
+    # The secrets are always defined on the job (main.bicep); only the references follow the provider.
+    extra=("BILLING_WEBHOOK_SECRET=secretref:billing-webhook-secret" "STRIPE_SECRET_KEY=secretref:stripe-secret-key")
+  elif [ "$name" = "cancels" ]; then
+    # Mock billing must not carry a Stripe reference: its settings reject the placeholder secret. Remove only the
+    # ones that exist (the CLI may refuse to remove an absent variable), in a call of its own.
+    before=$("$az_cli" containerapp job show --resource-group "$RESOURCE_GROUP" --name "$job" --output json --only-show-errors) \
+      || fail "couldn't read $job"
+    present=$(jq -r --arg n "$name" '[.properties.template.containers[] | select(.name == $n) | .env[]? | select(.name == "BILLING_WEBHOOK_SECRET" or .name == "STRIPE_SECRET_KEY") | .name] | join(" ")' <<<"$before")
+    if [ -n "$present" ]; then
+      # shellcheck disable=SC2086 # names are fixed words from jq's filter above
+      "$az_cli" containerapp job update --resource-group "$RESOURCE_GROUP" --name "$job" --container-name "$name" \
+        --remove-env-vars $present --only-show-errors --output none || fail "couldn't remove the Stripe references from $job"
+    fi
+  fi
   "$az_cli" containerapp job update --resource-group "$RESOURCE_GROUP" --name "$job" --container-name "$name" \
-    --image "$image" --set-env-vars "REQUIRE_EMAIL_VERIFICATION=$verify" "EMAIL_PROVIDER=$provider" "BILLING_PROVIDER=$want_billing" \
+    --image "$image" --set-env-vars "REQUIRE_EMAIL_VERIFICATION=$verify" "EMAIL_PROVIDER=$provider" "BILLING_PROVIDER=$want_billing" ${extra[@]+"${extra[@]}"} \
     --only-show-errors --output none || fail "couldn't update $job"
 
   now=$("$az_cli" containerapp job show --resource-group "$RESOURCE_GROUP" --name "$job" --output json --only-show-errors) \
@@ -70,5 +89,10 @@ for name in $jobs; do
   [ "$got" = "$image" ] || fail "$job still runs '$got', not '$image'"
   got_billing=$(jq -r --arg n "$name" '[.properties.template.containers[] | select(.name == $n) | .env[]? | select(.name == "BILLING_PROVIDER") | .value][0] // ""' <<<"$now")
   [ "$got_billing" = "$want_billing" ] || fail "$job has BILLING_PROVIDER='$got_billing', not '$want_billing'"
+  # Stripe references: exactly the right secretRefs on the cancels job with stripe, none anywhere else.
+  refs=$(jq -r --arg n "$name" '[.properties.template.containers[] | select(.name == $n) | .env[]? | select(.name == "BILLING_WEBHOOK_SECRET" or .name == "STRIPE_SECRET_KEY") | "\(.name)=\(.secretRef // "")"] | sort | join(" ")' <<<"$now")
+  want_refs=""
+  [ "$name" = "cancels" ] && [ "$want_billing" = "stripe" ] && want_refs="BILLING_WEBHOOK_SECRET=billing-webhook-secret STRIPE_SECRET_KEY=stripe-secret-key"
+  [ "$refs" = "$want_refs" ] || fail "$job has Stripe references '$refs', not '$want_refs'"
   echo "$job now runs $image (REQUIRE_EMAIL_VERIFICATION=$verify, EMAIL_PROVIDER=$provider, BILLING_PROVIDER=$want_billing), as $revision does."
 done

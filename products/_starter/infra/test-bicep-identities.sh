@@ -95,16 +95,17 @@ check "cancels job: replica timeout fits the sweep and is shorter than the sched
   "$DEFS"'
   named("Microsoft.App/jobs"; "cancels")[0].properties.configuration as $c
   | ($c.replicaTimeout >= 600) and ($c.replicaTimeout < 1800) and ($c.replicaRetryLimit == 1)' "$main"
-check "cancels job env: billing provider follows useStripe, AI stays fake, no AI key" \
+check "cancels job env: billing provider follows cancelsUseStripe, AI stays fake, no AI key" \
   ". as \$t | $ENV_cancels"' | tostring as $e
-   | ($e | contains("BILLING_PROVIDER")) and ($e | contains("useStripe"))
+   | ($e | contains("BILLING_PROVIDER")) and ($e | contains("cancelsUseStripe"))
      and ($e | contains("AI_PROVIDER")) and ($e | contains("azure-openai-api-key") | not)' "$main"
 check "cancels job secrets: defined, so the app's database-url reference resolves" \
   "$DEFS"'
   named("Microsoft.App/jobs"; "cancels")[0].properties.configuration | has("secrets")' "$main"
 # T-177 (infra review S2): every secretRef of the cancels job and of the web app names a secret that the same resource
-# defines, and the cancels job defines both Stripe secrets and refs whatever useStripe says (a rollback's
-# purge-job.sh follow can switch its provider without a Bicep deploy). Not run locally: needs the compiled JSON, CI runs it.
+# defines. The cancels job defines both Stripe secrets whatever its provider is (a rollback's purge-job.sh follow can
+# switch it without a Bicep deploy) but references them only for stripe (cancelsUseStripe), because mock billing rejects
+# the placeholder webhook secret (review C1). The provider comes from the live revision (purgeBillingProvider). Not run locally: needs the compiled JSON, CI runs it.
 # Compiled variables are either objects or expression strings, so look at the JSON text and follow variables('x') names.
 EXPAND='def expand($x; $d): ($x | tostring) as $s
   | if $d == 0 then $s else $s + ([$s | scan("variables\\(.([A-Za-z0-9]+).\\)") | .[0]] | unique
@@ -117,14 +118,18 @@ check "cancels job: every secretRef (env resolved through the variables) names o
   | (res($j.properties.configuration.secrets) | map(.name)) as $names
   | refs($j.properties.template.containers[0].env) as $refs
   | ($refs | length >= 3) and ($refs | all(. as $r | $names | index($r)))' "$main"
-check "cancels job: both Stripe secrets are always defined and always referenced, not conditional on useStripe" \
+check "cancels job: both Stripe secrets always defined; their env refs only under cancelsUseStripe, which follows purgeBillingProvider" \
   "$DEFS"'
   '"$EXPAND"'
   named("Microsoft.App/jobs"; "cancels")[0] as $j
   | (res($j.properties.configuration.secrets) | tostring) as $s
-  | refs($j.properties.template.containers[0].env) as $refs
-  | ($s | contains("billing-webhook-secret") and contains("stripe-secret-key") and (contains("useStripe") | not))
-    and ($refs | index("billing-webhook-secret") != null and index("stripe-secret-key") != null)' "$main"
+  | expand($j.properties.template.containers[0].env; 4) as $e
+  | ($s | contains("billing-webhook-secret") and contains("stripe-secret-key") and (contains("seStripe") | not))
+    and (refs($j.properties.template.containers[0].env) | index("billing-webhook-secret") != null and index("stripe-secret-key") != null)
+    and ($e | contains("cancelsUseStripe"))
+    and ($t.variables.cancelsStripeEnv | tostring | contains("cancelsUseStripe"))
+    and ($t.variables.cancelsUseStripe | contains("cancelsBillingNow"))
+    and ($t.variables.cancelsBillingNow | contains("purgeBillingProvider"))' "$main"
 check "web app: every secretRef in its env names one of its secrets" \
   "$DEFS"'
   '"$EXPAND"'

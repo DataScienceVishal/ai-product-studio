@@ -170,9 +170,12 @@ Postgres firewall rule. `bash infra/test-deploy-role.sh` checks all this without
 retries subscription cancels that failed after a new checkout replaced a lapsed subscription, so they finish even
 when the tenant has no more billing events, or was deleted. It is the purge job's twin: same image (the `purge*`
 parameters), same app identity and database URL (rows only), same follow-the-live-revision rule (`purge-job.sh`).
-It differs in three ways: it gets this release's `BILLING_PROVIDER` and the two Stripe secrets, which are always defined
-(a placeholder when unset; it calls the payment provider, the purge job does not); the replica timeout is 15 minutes (each cancel can take about 17 s),
-shorter than the schedule so runs never overlap; and it never calls the AI. Cost: job execution seconds only
+It differs in three ways: it gets a `BILLING_PROVIDER` and, for Stripe, the two Stripe secret references (it calls the
+payment provider; the purge job does not); the replica timeout is 15 minutes (each cancel can take about 17 s), shorter
+than the schedule so runs never overlap; and it never calls the AI. Both Stripe secrets are always defined on the job
+(a placeholder when unset), but the references follow the provider: with mock billing the app would reject the
+placeholder webhook secret. The provider comes from the revision that serves traffic (`PURGE_BILLING_PROVIDER`, like
+the email settings), and `purge-job.sh follow` adds or removes the two references with it. Cost: job execution seconds only
 (`state/BUDGET.md`). The deploy role's `jobs/write` already covers it. To see failures, search the logs for
 `pending cancel could not be processed` (ERROR). A rollback restores the cancels job's billing provider too: `purge-job.sh follow`
 copies `BILLING_PROVIDER` from the revision that serves traffic (the purge job stays on `mock`).

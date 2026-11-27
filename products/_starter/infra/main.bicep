@@ -83,6 +83,8 @@ param emailProvider string = 'outbox'
 param purgeImage string = ''
 param purgeRequireEmailVerification string = ''
 param purgeEmailProvider string = ''
+// The cancels job's billing provider, taken from the same revision (empty: this release's).
+param purgeBillingProvider string = ''
 
 @description('Daily retention purge, as a cron expression in UTC.')
 param purgeSchedule string = '17 3 * * *'
@@ -129,6 +131,8 @@ var useStripe = billingProvider == 'stripe'
 var verifyEmail = requireEmailVerification ? 'true' : 'false'
 var purgeImageNow = empty(purgeImage) ? image : purgeImage
 var purgeVerifyEmail = empty(purgeRequireEmailVerification) ? verifyEmail : purgeRequireEmailVerification
+var cancelsBillingNow = empty(purgeBillingProvider) ? billingProvider : purgeBillingProvider
+var cancelsUseStripe = cancelsBillingNow == 'stripe'
 var purgeEmailProviderNow = empty(purgeEmailProvider) ? emailProvider : purgeEmailProvider
 var notConfigured = 'not-configured' // placeholder for a secret no revision can use yet
 
@@ -400,13 +404,14 @@ var jobSettings = [
 var migrateEnv = concat(commonEnv, jobSettings, emailEnv, migrateDbAuthEnv)
 var purgeEnv = concat(commonEnv, jobSettings, purgeEmailEnv, appDbAuthEnv)
 
-// The cancels job (T-176) calls the payment provider, so unlike the purge it gets this release's billing provider
-// and the two Stripe secrets. It still never calls the AI. Image and email settings are the purge job's
-// (purge* parameters), so the workflow moves both jobs to a release together.
-// Both Stripe secrets and both secretRefs are ALWAYS defined, whatever useStripe says: a job's secrets are not per
-// revision, and purge-job.sh `follow` may switch BILLING_PROVIDER on a rollback without a Bicep deploy. The job must
-// then find the Stripe secrets already there (placeholder when unset, like webSecrets).
-var cancelsStripeEnv = [
+// The cancels job (T-176) calls the payment provider, so unlike the purge it gets a billing provider and, for Stripe,
+// the two Stripe secret references. It still never calls the AI. Image, email and billing provider are those of the
+// revision that serves traffic (purge* parameters), so the workflow moves both jobs to a release together.
+// Both Stripe SECRETS are always defined, whatever the provider: a job's secrets are not per revision, and
+// purge-job.sh `follow` may switch the provider on a rollback without a Bicep deploy (it then adds or removes the
+// two env references). The REFERENCES follow the provider: with mock billing the app must not get a placeholder
+// BILLING_WEBHOOK_SECRET, which its settings reject (shorter than 32 characters).
+var cancelsStripeEnv = cancelsUseStripe ? [
   {
     name: 'BILLING_WEBHOOK_SECRET'
     secretRef: 'billing-webhook-secret'
@@ -415,7 +420,7 @@ var cancelsStripeEnv = [
     name: 'STRIPE_SECRET_KEY'
     secretRef: 'stripe-secret-key'
   }
-]
+] : []
 var cancelsEnv = concat(commonEnv, [
   {
     name: 'AI_PROVIDER'
@@ -423,7 +428,7 @@ var cancelsEnv = concat(commonEnv, [
   }
   {
     name: 'BILLING_PROVIDER'
-    value: useStripe ? 'stripe' : 'mock'
+    value: cancelsUseStripe ? 'stripe' : 'mock'
   }
 ], purgeEmailEnv, cancelsStripeEnv, appDbAuthEnv)
 var cancelsSecrets = [

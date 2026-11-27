@@ -415,7 +415,7 @@ def test_s2_the_sweep_rechecks_the_backoff_under_the_lock(owner, database, monke
 
 
 def test_s2_the_webhook_retry_ignores_the_backoff(owner, database):
-    """Only the sweep backs off: a retry after a billing event (no due_at) still tries a row that was just attempted."""
+    """Only the sweep backs off: a retry after a billing event (no backoff_now) still tries a row that was just attempted."""
     from app.routes.billing import attempt_pending_cancel
     client, _ = owner
     _seed(database, _tenant_id(client), "old_1", attempts=2, last_attempt_at=datetime.now(timezone.utc))
@@ -424,3 +424,41 @@ def test_s2_the_webhook_retry_ignores_the_backoff(owner, database):
     with database.sessions() as db:
         assert attempt_pending_cancel(db, row_id, provider) is True
     assert provider.cancelled == ["old_1"]
+
+
+# --- T-177 review C1: the env the cancels job really gets must load as Settings ------------------------------------
+
+_CANCELS_ENV_KEYS = ("BILLING_PROVIDER", "BILLING_WEBHOOK_SECRET", "STRIPE_SECRET_KEY", "AI_PROVIDER")
+
+
+def _cancels_env(monkeypatch, **env):
+    from app.config import Settings
+    from app.billing import build_billing
+    for key in _CANCELS_ENV_KEYS:
+        monkeypatch.delenv(key, raising=False)
+    for key, value in {"ENV": "test", "AI_PROVIDER": "fake", **env}.items():
+        monkeypatch.setenv(key, value)
+    settings = Settings(_env_file=None)
+    return settings, build_billing(settings)
+
+
+def test_c1_a_mock_cancels_job_loads_with_no_stripe_variables(monkeypatch):
+    """Mock: main.bicep gives the job BILLING_PROVIDER=mock and no Stripe references (purge-job.sh removes them)."""
+    settings, provider = _cancels_env(monkeypatch, BILLING_PROVIDER="mock")
+    assert settings.billing_provider == "mock" and provider.name == "mock"
+
+
+def test_c1_the_placeholder_webhook_secret_fails_loudly_so_mock_jobs_must_not_get_it(monkeypatch):
+    from pydantic import ValidationError
+    with pytest.raises(ValidationError, match="BILLING_WEBHOOK_SECRET must be at least"):
+        _cancels_env(monkeypatch, BILLING_PROVIDER="mock", BILLING_WEBHOOK_SECRET="not-configured",
+                     STRIPE_SECRET_KEY="not-configured")
+    with pytest.raises(ValidationError, match="BILLING_WEBHOOK_SECRET must be at least"):
+        _cancels_env(monkeypatch, BILLING_PROVIDER="stripe", BILLING_WEBHOOK_SECRET="not-configured",
+                     STRIPE_SECRET_KEY="not-configured")
+
+
+def test_c1_a_stripe_cancels_job_loads_with_real_length_secrets(monkeypatch):
+    settings, _ = _cancels_env(monkeypatch, BILLING_PROVIDER="stripe", BILLING_WEBHOOK_SECRET="whsec_" + "x" * 32,
+                               STRIPE_SECRET_KEY="sk_test_" + "y" * 24)
+    assert settings.billing_provider == "stripe"
