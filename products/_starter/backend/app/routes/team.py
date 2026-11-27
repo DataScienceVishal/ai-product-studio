@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, func, select, update
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import Session
 
 from ..db import get_db
@@ -155,14 +155,22 @@ def accept(data: AcceptIn, request: Request, response: Response, db: Session = D
     invitation.accepted_at = now
     try:
         db.flush()  # the user insert; a duplicate email fails here
+        # The address is now an account: other tenants' pending invites for it can never be accepted, so revoke them
+        # in this same transaction (they would otherwise sit in those owners' lists as dead links). Plain equality on
+        # the indexed column: invitation emails are only written by `invite`, from the lower-casing `Email` type.
+        db.execute(update(Invitation).where(Invitation.id != invitation.id, Invitation.email == invitation.email,
+                                            *_pending(now)).values(revoked_at=now))
     except IntegrityError:
         db.rollback()
         raise AppError(409, "email_taken", "That email already has an account. Try signing in.")
-    # The address is now an account: other tenants' pending invites for it can never be accepted, so revoke them
-    # in this same transaction (they would otherwise sit in those owners' lists as dead links). Plain equality on the
-    # indexed column: invitation emails are only written by `invite`, from the lower-casing `Email` type.
-    db.execute(update(Invitation).where(Invitation.id != invitation.id, Invitation.email == invitation.email,
-                                        *_pending(now)).values(revoked_at=now))
+    except OperationalError as exc:
+        # One person accepting links from two tenants at the same moment: each holds its own invitation row and
+        # waits on the other (Postgres 40P01). Postgres aborts one; the other created the account, so the answer is
+        # the same as for a duplicate email.
+        db.rollback()
+        if getattr(exc.orig, "sqlstate", None) != "40P01":
+            raise
+        raise AppError(409, "email_taken", "That email already has an account. Try signing in.")
     _start_session(request, response, db, user)
     db.commit()
     tenant = db.get(Tenant, user.tenant_id)

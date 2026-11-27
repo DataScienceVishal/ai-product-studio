@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select, update
 
-from app.models import Invitation
+from app.models import Invitation, User
 from app.security import token_hash
 
 from .conftest import PASSWORD, link_token, sign_up
@@ -221,20 +221,41 @@ from sqlalchemy import text  # noqa: E402
 
 def _in_thread(fn):
     box = {}
-    thread = threading.Thread(target=lambda: box.setdefault("r", fn()))
+
+    def run():
+        try:
+            box["r"] = fn()
+        except Exception as exc:  # noqa: BLE001 - surfaced by the test's own assertions
+            box["error"] = exc
+
+    thread = threading.Thread(target=run)
     thread.start()
     return thread, box
 
 
+def _wait_for_lock_waiters(app, count, timeout=8.0):
+    """Poll until `count` backends of this database wait on a lock; False on timeout (no fixed sleeps).
+    Stay under the 15 s idle-in-transaction timeout that would kill the side connection the callers hold."""
+    deadline = time.monotonic() + timeout
+    with app.state.db.engine.connect() as conn:
+        while time.monotonic() < deadline:
+            waiting = conn.execute(text("SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock' "
+                                        "AND datname = current_database()")).scalar()
+            conn.rollback()
+            if waiting >= count:
+                return True
+            time.sleep(0.02)
+    return False
+
+
 def test_invites_for_one_tenant_are_serialised(app, owner, outbox):
-    """A second invite must wait while another invite holds the tenant row lock (NO KEY UPDATE: the FK insert only takes KEY SHARE, which would not block) (so concurrent resends of one
-    address cannot both pass the checks and leave two live links or pending at cap+1)."""
+    """A second invite must wait while another invite holds the tenant row lock, so concurrent resends of one
+    address cannot both pass the checks. The lock is NO KEY UPDATE: the FK insert only takes KEY SHARE, which would not block."""
     owner_client, me = owner
     with app.state.db.engine.connect() as side:
         side.execute(text("SELECT id FROM tenants WHERE id = :t FOR NO KEY UPDATE"), {"t": me["tenant"]["id"]})
         thread, box = _in_thread(lambda: owner_client.post("/api/team/invitations", json={"email": "r@acme.test"}))
-        time.sleep(0.7)
-        blocked = thread.is_alive()
+        blocked = _wait_for_lock_waiters(app, 1)
         side.rollback()
     thread.join(10)
     assert blocked, "invite did not wait for the tenant lock"
@@ -242,13 +263,21 @@ def test_invites_for_one_tenant_are_serialised(app, owner, outbox):
 
 
 def test_concurrent_resends_leave_one_live_link(app, owner, outbox, new_client):
+    """Two resends of one address start while the tenant lock is held elsewhere. With the lock both queue up
+    (two lock waiters) and run one after the other; without it they never wait and this test fails."""
     owner_client, me = owner
+    _invite(owner_client, outbox, "dup@acme.test")
     other = new_client()
     other.cookies.update(owner_client.cookies)
-    threads = [_in_thread(lambda c=c: c.post("/api/team/invitations", json={"email": "dup@acme.test"}))
-               for c in (owner_client, other)]
+    with app.state.db.engine.connect() as side:
+        side.execute(text("SELECT id FROM tenants WHERE id = :t FOR NO KEY UPDATE"), {"t": me["tenant"]["id"]})
+        threads = [_in_thread(lambda c=c: c.post("/api/team/invitations", json={"email": "dup@acme.test"}))
+                   for c in (owner_client, other)]
+        both_waiting = _wait_for_lock_waiters(app, 2)
+        side.rollback()
     for thread, _ in threads:
         thread.join(15)
+    assert both_waiting, "the resends did not both queue behind the tenant lock"
     assert [box["r"].status_code for _, box in threads] == [201, 201]
     with app.state.db.engine.connect() as conn:
         live = conn.execute(text("SELECT count(*) FROM invitations WHERE email = 'dup@acme.test' "
@@ -264,13 +293,85 @@ def test_accept_waits_for_a_concurrent_revoke_and_then_fails(app, owner, new_cli
     with app.state.db.engine.connect() as side:
         side.execute(text("SELECT id FROM invitations WHERE id = :i FOR UPDATE"), {"i": invite["id"]})
         thread, box = _in_thread(lambda: _accept(joiner, token))
-        time.sleep(0.7)
+        waiting = _wait_for_lock_waiters(app, 1)
         side.execute(text("UPDATE invitations SET revoked_at = now() WHERE id = :i"), {"i": invite["id"]})
         side.commit()
     thread.join(15)
+    assert waiting, "accept did not wait for the invitation lock"
     assert box["r"].status_code == 400
     with app.state.db.engine.connect() as conn:
         assert conn.execute(text("SELECT count(*) FROM users WHERE email = 'late@acme.test'")).scalar() == 0
+
+
+def _hold_email_slot(side, tenant_id, email):
+    """An uncommitted user row: anything inserting the same email waits on the unique index until we end."""
+    side.execute(text("INSERT INTO users (id, tenant_id, email, password_hash, role, created_at) "
+                      "VALUES (gen_random_uuid(), :t, :e, 'x', 'member', now())"), {"t": tenant_id, "e": email})
+
+
+def test_tenant_lock_is_no_key_update_so_a_resend_does_not_deadlock_with_an_accept(app, owner, new_client, outbox):
+    """Guards key_share=True on the tenant lock. An accept holds the invitation row and waits for the email slot;
+    a resend of that address takes the tenant lock and waits for the invitation row. When the accept goes on it
+    needs a KEY SHARE lock on the tenant for the user's foreign key: a plain FOR UPDATE would deadlock (40P01, 500)."""
+    owner_client, me = owner
+    _, token = _invite(owner_client, outbox, "p1@acme.test")
+    joiner = new_client()
+    with app.state.db.engine.connect() as side:
+        _hold_email_slot(side, me["tenant"]["id"], "p1@acme.test")
+        accepting = _in_thread(lambda: _accept(joiner, token))
+        assert _wait_for_lock_waiters(app, 1), "accept did not reach the email slot"
+        resending = _in_thread(lambda: owner_client.post("/api/team/invitations", json={"email": "p1@acme.test"}))
+        assert _wait_for_lock_waiters(app, 2), "the resend did not queue behind the accept"
+        side.rollback()
+    for thread, _ in (accepting, resending):
+        thread.join(20)
+    assert "error" not in accepting[1] and "error" not in resending[1]
+    assert accepting[1]["r"].status_code == 201
+    assert resending[1]["r"].status_code == 201
+
+
+def test_cross_tenant_double_accept_answers_409_not_500(owner, new_client, outbox, app):
+    """One person accepts links from two tenants at the same moment: Postgres can abort one transaction with a
+    deadlock (40P01). That must read as 'email taken' (409), never a 500."""
+    from .conftest import verify_email
+    owner_client, me = owner
+    other = new_client()
+    sign_up(other, email="boss@beta.test", company="Beta")
+    verify_email(other, outbox)
+    _, token_a = _invite(owner_client, outbox, "dbl@x.test")
+    assert other.post("/api/team/invitations", json={"email": "dbl@x.test"}).status_code == 201
+    token_b = link_token(outbox, "accept-invite")
+    joiners = [new_client(), new_client()]
+    with app.state.db.engine.connect() as side:
+        _hold_email_slot(side, me["tenant"]["id"], "dbl@x.test")
+        runs = [_in_thread(lambda c=c, t=t: _accept(c, t)) for c, t in zip(joiners, (token_a, token_b))]
+        assert _wait_for_lock_waiters(app, 2), "both accepts should wait for the email slot"
+        side.rollback()
+    for thread, _ in runs:
+        thread.join(20)
+    assert all("error" not in box for _, box in runs)
+    assert sorted(box["r"].status_code for _, box in runs) == [201, 409]
+    with app.state.db.engine.connect() as conn:
+        assert conn.execute(text("SELECT count(*) FROM users WHERE email = 'dbl@x.test'")).scalar() == 1
+
+
+def test_a_deadlock_during_accept_is_a_409_email_taken(owner, new_client, outbox, monkeypatch):
+    """The same answer when the database error is injected, so it does not depend on lock timing."""
+    from psycopg import errors
+    from sqlalchemy.exc import OperationalError
+    from sqlalchemy.orm import Session
+    owner_client, _ = owner
+    _, token = _invite(owner_client, outbox, "inj@acme.test")
+    real_flush = Session.flush
+
+    def flush(self, *args, **kwargs):
+        if any(isinstance(o, User) for o in self.new):
+            raise OperationalError("INSERT", {}, errors.DeadlockDetected("deadlock detected"))
+        return real_flush(self, *args, **kwargs)
+
+    monkeypatch.setattr(Session, "flush", flush)
+    response = _accept(new_client(), token)
+    assert response.status_code == 409 and response.json()["error"] == "email_taken"
 
 
 def test_invitation_email_is_indexed(database):
