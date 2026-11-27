@@ -948,7 +948,8 @@ def test_b5_active_subscription_past_its_grace_can_check_out_again(owner, app, d
     assert again.status_code == 200
     # and completing it replaces the lapsed subscription (it is not a duplicate: the old one has no access)
     done = client.post(f"/api/billing/mock/complete/{again.json()['checkout_id']}").json()
-    assert done["plan"] == "starter" and app.state.billing.cancelled == []
+    # T-174 S6: the replaced (lapsed) one is cancelled at the provider so it cannot keep billing; the new one is not
+    assert done["plan"] == "starter" and app.state.billing.cancelled == [f"mock_sub_{first[8:20]}"]
 
 
 def test_b5_mock_completion_stores_a_customer_so_the_portal_works(owner):
@@ -1086,3 +1087,158 @@ def test_s8_stripe_subscription_created_for_s2_while_s1_is_live_changes_nothing(
     _stripe_apply(database, t, "r3", "checkout.session.completed", now - 100, "sub_2", plan="pro", billing=provider)
     assert _stripe_sub(database, t) == ("active", "starter", "sub_1")
     assert provider.cancelled == ["sub_2"]
+
+
+# --- T-174: billing follow-ups (T-173 S-2, S-3; T-172 S2, S6) ---
+
+class _PeriodStripe(MockBilling):
+    """A provider whose subscription lookup is a counting fake (no network)."""
+    def __init__(self, end=None, boom=False):
+        super().__init__("x", "https://app.test")
+        self.end, self.boom, self.lookups = end, boom, []
+
+    def subscription_period_end(self, ref):
+        self.lookups.append(ref)
+        if self.boom:
+            raise AppError(503, "billing_unavailable", "down")
+        return self.end
+
+
+def _period_end(database, tenant_id):
+    from sqlalchemy import select
+    from app.models import Subscription
+    with database.sessions() as db:
+        return db.scalar(select(Subscription.current_period_end).where(Subscription.tenant_id == uuid.UUID(tenant_id)))
+
+
+def test_s2_checkout_completed_fills_the_period_end_from_the_subscription(owner, database):
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    end = datetime.fromtimestamp(now + 30 * 86400, timezone.utc)
+    provider = _PeriodStripe(end=end)
+    _stripe_apply(database, t, "pe1", "checkout.session.completed", now - 10, "sub_1", billing=provider)
+    assert provider.lookups == ["sub_1"]
+    assert _period_end(database, t) == end
+    # once known, later events do not look it up again
+    _stripe_apply(database, t, "pe2", "customer.subscription.updated", now - 5, "sub_1", billing=provider)
+    assert provider.lookups == ["sub_1"]
+
+
+def test_s2_failed_lookup_does_not_fail_the_webhook(owner, database, caplog):
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    provider = _PeriodStripe(boom=True)
+    with caplog.at_level("WARNING", logger="app.billing"):
+        assert _stripe_apply(database, t, "pf1", "checkout.session.completed", now - 10, "sub_1", billing=provider) is True
+    assert _stripe_sub(database, t) == ("active", "starter", "sub_1")
+    assert _period_end(database, t) is None
+    assert any("period end" in r.getMessage() for r in caplog.records)
+
+
+def test_s2_stripe_adapter_reads_period_end_from_the_subscription():
+    end = int(time.time()) + 86400
+    seen = []
+
+    def handler(request: httpx.Request):
+        seen.append((request.method, request.url.path))
+        return httpx.Response(200, json={"id": "sub_1", "items": {"data": [{"current_period_end": end}]}})
+
+    assert _stripe_with(handler).subscription_period_end("sub_1") == datetime.fromtimestamp(end, timezone.utc)
+    assert seen == [("GET", "/v1/subscriptions/sub_1")]
+
+
+def test_s3_failed_first_payment_does_not_end_a_trial(owner, database):
+    """A never-paid subscription (Bacs failed, incomplete_expired) must not cancel the trial before it ends."""
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    _stripe_apply(database, t, "f1", "customer.subscription.updated", now - 50, "sub_1", "past_due")
+    assert _stripe_sub(database, t)[0] == "trialing"
+    _stripe_apply(database, t, "f2", "customer.subscription.updated", now - 40, "sub_1", "incomplete_expired")
+    _stripe_apply(database, t, "f3", "customer.subscription.deleted", now - 30, "sub_1", "canceled")
+    assert _stripe_sub(database, t) == ("trialing", "trial", None)
+    # a paid checkout later still starts the subscription
+    _stripe_apply(database, t, "f4", "checkout.session.completed", now - 20, "sub_2", plan="pro")
+    assert _stripe_sub(database, t) == ("active", "pro", "sub_2")
+
+
+def test_s2_cancel_call_has_a_bounded_timeout_and_retries_an_outage_once(monkeypatch):
+    monkeypatch.setattr("app.billing.time.sleep", lambda _s: None)
+    calls = []
+
+    def handler(request: httpx.Request):
+        calls.append((request.method, request.extensions["timeout"]["read"]))
+        return httpx.Response(503) if len(calls) == 1 else httpx.Response(200, json={"status": "canceled"})
+
+    _stripe_with(handler).cancel_subscription("sub_2")
+    assert [c[0] for c in calls] == ["DELETE", "DELETE"]
+    assert all(c[1] is not None and c[1] <= 10 for c in calls)
+
+
+def test_s2_cancel_gives_up_after_two_attempts_and_never_retries_a_4xx(monkeypatch):
+    monkeypatch.setattr("app.billing.time.sleep", lambda _s: None)
+    calls = []
+
+    def down(request: httpx.Request):
+        calls.append(request.method)
+        raise httpx.ConnectTimeout("slow")
+
+    with pytest.raises(AppError) as err:
+        _stripe_with(down).cancel_subscription("sub_2")
+    assert err.value.code == "billing_unavailable" and calls == ["DELETE", "DELETE"]
+
+    calls.clear()
+
+    def rejected(request: httpx.Request):
+        calls.append(request.method)
+        if request.method == "DELETE":
+            return httpx.Response(403, json={"error": {"message": "no"}})
+        return httpx.Response(200, json={"status": "active"})
+
+    with pytest.raises(AppError) as err:
+        _stripe_with(rejected).cancel_subscription("sub_2")
+    assert err.value.code == "billing_rejected" and calls == ["DELETE", "GET"]  # one try each, no retry
+
+
+def test_s6_takeover_of_a_past_due_subscription_cancels_the_old_ref(owner, database):
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    provider = MockBilling("x", "https://app.test")
+    _stripe_apply(database, t, "t1", "checkout.session.completed", now - 300, "sub_1")
+    _stripe_apply(database, t, "t2", "customer.subscription.updated", now - 250, "sub_1", "past_due")
+    _stripe_apply(database, t, "t3", "checkout.session.completed", now - 200, "sub_2", plan="pro", billing=provider)
+    assert _stripe_sub(database, t) == ("active", "pro", "sub_2")
+    assert provider.cancelled == ["sub_1"]
+
+
+def test_s6_failed_cancel_on_takeover_logs_a_todo_and_keeps_the_new_subscription(owner, database, caplog):
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    provider = MockBilling("x", "https://app.test")
+
+    def boom(ref):
+        raise AppError(503, "billing_unavailable", "down")
+
+    provider.cancel_subscription = boom
+    _stripe_apply(database, t, "u1", "checkout.session.completed", now - 300, "sub_1")
+    _stripe_apply(database, t, "u2", "customer.subscription.updated", now - 250, "sub_1", "past_due")
+    with caplog.at_level("ERROR", logger="app.billing"):
+        assert _stripe_apply(database, t, "u3", "checkout.session.completed", now - 200, "sub_2", plan="pro",
+                             billing=provider) is True
+    assert _stripe_sub(database, t) == ("active", "pro", "sub_2")
+    assert any("cancel it by hand" in r.getMessage() for r in caplog.records)
+
+
+def test_s6_takeover_from_another_provider_logs_a_todo_instead_of_cancelling(owner, app, database, caplog):
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    _sub_event(client, app, "v1", "checkout.completed", now - 100, "mock_s1")  # mock subscription
+    from app.routes.billing import apply_update
+    payload = json.dumps({"id": "v2", "type": "checkout.session.completed", "created": now, "livemode": False,
+                          "data": {"object": _session_obj(t)}}).encode()
+    update = stripe_provider().parse_webhook(payload, sign(payload, SECRET))
+    stripe_side = MockBilling("x", "https://app.test")
+    with caplog.at_level("WARNING", logger="app.billing"):
+        with database.sessions() as db:
+            apply_update(db, update, "stripe", stripe_side)
+    assert stripe_side.cancelled == []  # the Stripe adapter must not be asked to cancel a mock subscription
+    assert any("cancel it by hand" in r.getMessage() for r in caplog.records)

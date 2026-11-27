@@ -33,7 +33,7 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 
 | What | Command | Where it runs |
 |---|---|---|
-| Backend unit and API tests (771 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
+| Backend unit and API tests (780 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
 | Migrations match the models | `alembic upgrade head && alembic check` | every push |
 | Frontend unit tests (vitest, 203 passed in 7 files) | `cd frontend && npx vitest run` | every push (CI `frontend`) |
 | Frontend type check and build | `cd frontend && npm run build` | every push (CI `frontend`) |
@@ -131,6 +131,17 @@ because delayed payment methods can report `active` before the money arrives).
   let customers type promotion codes the app never validated or recorded. Only app-validated offers exist. If you ever want
   promotion codes, add them as a deliberate feature.
 
+- **Duplicate and replaced subscriptions (which one is kept).** The first working subscription wins, not the one the
+  customer paid for last. If a tenant already has an active, in-date subscription and a second paid one starts (two
+  checkout tabs), the second is cancelled at the provider and the first is kept, even if the second was a different plan.
+  When the old subscription is past_due or lapsed (active but past its period end plus 3 days), a new paid checkout
+  takes over instead: the new one is kept and the old one is cancelled at the provider (T-174). If that cancel fails, or
+  the old one belongs to another provider (for example a mock one), the app logs "cancel it by hand" with the
+  subscription id: an operator must cancel it in the provider dashboard. Failed cancels of a true duplicate answer 503, so
+  Stripe redelivers and the cancel is retried. Cancel calls use an 8 s timeout and one retry.
+- **Trial and period end.** A failed first payment (a never-activated subscription going past_due, expired or deleted) does
+  not end the free trial early. After a paid checkout the app reads the subscription from Stripe to store its period end;
+  if that read fails, the next renewal event sets it.
 - **Billing portal:** `POST /api/billing/portal` (owner only) returns a Stripe Customer Portal URL for the tenant's customer
   (409 `no_billing_customer` if there is none for the current provider). The return URL comes from `APP_BASE_URL`, never
   from request headers. A past_due tenant is refused a new checkout and pointed at the portal.

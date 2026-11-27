@@ -127,6 +127,12 @@ def apply_update(db: Session, update: BillingUpdate, provider: str, billing=None
         db.commit()
         log.info("unconfirmed active subscription event ignored until the payment is confirmed")
         return True
+    if update.provider_ref and update.status != "active" and sub.status == "trialing" and not sub.provider_ref:
+        # T-174 (T-173 S-3): a failed first payment (past_due, incomplete_expired, deleted) for a subscription we never
+        # activated must not end the free trial early. The trial runs to its end; only a paid checkout changes it.
+        db.commit()
+        log.info("event for a never-activated subscription ignored: the trial keeps running")
+        return True
     if other_sub and not update.starts_subscription:
         # Only an event that starts a subscription may replace the current one. Anything else about another id
         # (cancel, past_due, or an old subscription becoming active again) must not touch the current subscription.
@@ -162,6 +168,8 @@ def apply_update(db: Session, update: BillingUpdate, provider: str, billing=None
         db.commit()  # stale (arrived out of order): keep the event id, ignore its content
         log.info("stale billing event ignored")
         return True
+    old_ref, old_provider = (sub.provider_ref, sub.provider) if (
+        other_sub and update.starts_subscription and update.status == "active" and sub.status != "canceled") else (None, None)
     sub.status = update.status
     if update.plan in PLANS:
         sub.plan = update.plan
@@ -178,7 +186,46 @@ def apply_update(db: Session, update: BillingUpdate, provider: str, billing=None
     sub.provider = provider
     db.commit()
     log.info("subscription updated", extra={"status": update.status, "plan": sub.plan})
+    if old_ref:
+        _cancel_replaced(update, old_ref, old_provider, provider, billing)
+    _fill_period_end(db, update, billing)
     return True
+
+
+def _cancel_replaced(update: BillingUpdate, old_ref: str, old_provider: str | None, provider: str, billing) -> None:
+    """T-174 (T-172 S6): a new paid subscription replaced a lapsed or past_due one. If that one is still billing at the
+    provider the customer pays twice, so cancel it. The replacement is already committed, so a failure cannot undo it:
+    log a to-do for the operator instead of failing the webhook."""
+    todo = {"tenant_id": str(update.tenant_id), "old_subscription": old_ref, "old_provider": old_provider}
+    if billing is None or old_provider != provider:
+        log.warning("replaced subscription belongs to another provider: cancel it by hand there", extra=todo)
+        return
+    try:
+        billing.cancel_subscription(old_ref)
+    except Exception:
+        log.error("could not cancel the replaced subscription: cancel it by hand at the provider", extra=todo,
+                  exc_info=True)
+
+
+def _fill_period_end(db: Session, update: BillingUpdate, billing) -> None:
+    """T-174 (T-173 S-2): a checkout event has no period end, so an active subscription would have no end date (open
+    access) until its first renewal. Read it from the provider, outside any lock, and store it if still empty."""
+    lookup = getattr(billing, "subscription_period_end", None)
+    sub = db.scalar(select(Subscription).where(Subscription.tenant_id == update.tenant_id))
+    if lookup is None or sub is None or sub.status != "active" or sub.current_period_end or not sub.provider_ref:
+        return
+    ref = sub.provider_ref
+    db.commit()  # end the read transaction before the network call
+    try:
+        end = lookup(ref)
+    except Exception:
+        log.warning("could not read the subscription period end; the next renewal event will set it", exc_info=True)
+        return
+    if end:
+        sub = db.scalar(select(Subscription).where(Subscription.tenant_id == update.tenant_id).with_for_update())
+        if sub is not None and sub.provider_ref == ref and sub.current_period_end is None:
+            sub.current_period_end = end
+        db.commit()
 
 
 MAX_WEBHOOK_BYTES = 256_000
