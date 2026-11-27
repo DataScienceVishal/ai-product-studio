@@ -38,11 +38,11 @@ function VerifyBanner({ me }: { me: Me }) {
 
 function TrialBanner({ me }: { me: Me }) {
   const { status, trial_ends_at: ends } = me.subscription;
-  if (status !== "trialing" || !ends) return null;
+  if (status !== "trialing" || !ends || !isBillingEnabled()) return null;  // billing off: the trial does not lapse
   const days = Math.max(0, Math.ceil((new Date(ends).getTime() - Date.now()) / 86_400_000));
   return (
     <Alert kind="info">
-      Free trial: {days} day{days === 1 ? "" : "s"} left.{isBillingEnabled() && <> <Link to="/billing">Choose a plan</Link> any time.</>}
+      Free trial: {days} day{days === 1 ? "" : "s"} left. <Link to="/billing">Choose a plan</Link> any time.
     </Alert>
   );
 }

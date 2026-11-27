@@ -130,7 +130,8 @@ def summarize(item_id: uuid.UUID, request: Request, me: Current = Depends(curren
     request.app.state.limiter.check(f"ai:{tenant_id}", settings.ai_rate_limit_per_minute)
     item = _get(db, me, item_id)
     sub = subscription_of(db, me.tenant.id)
-    if not has_access(sub.status, sub.trial_ends_at, current_period_end=sub.current_period_end):
+    if not has_access(sub.status, sub.trial_ends_at, current_period_end=sub.current_period_end,
+                      billing_enabled=settings.billing_enabled):
         raise AppError(402, "plan_required", "Your trial or plan has ended. Choose a plan to keep using AI features.")
     if sub.status == "trialing" and settings.require_email_verification and me.user.email_verified_at is None:
         raise AppError(403, "email_not_verified", "Confirm your email address to use the AI during your free trial.")
