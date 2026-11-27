@@ -153,6 +153,7 @@ def accept(data: AcceptIn, request: Request, response: Response, db: Session = D
                 role=invitation.role, email_verified_at=now, last_sign_in_at=now)  # the link proved the inbox
     db.add(user)
     invitation.accepted_at = now
+    tenant_id, invitation_id = str(invitation.tenant_id), str(invitation.id)  # for the log; unreadable once a flush fails
     try:
         db.flush()  # the user insert; a duplicate email fails here
         # The address is now an account: other tenants' pending invites for it can never be accepted, so revoke them
@@ -170,6 +171,10 @@ def accept(data: AcceptIn, request: Request, response: Response, db: Session = D
         db.rollback()
         if getattr(exc.orig, "sqlstate", None) != "40P01":
             raise
+        # Reads as email_taken to the caller, so say it here: a deadlock that is not the known double accept
+        # (for example a new lock-order bug between invite and accept) must not hide behind that answer.
+        log.warning("accept deadlock (40P01), answered as email_taken",
+                    extra={"tenant_id": tenant_id, "invitation_id": invitation_id})
         raise AppError(409, "email_taken", "That email already has an account. Try signing in.")
     _start_session(request, response, db, user)
     db.commit()
