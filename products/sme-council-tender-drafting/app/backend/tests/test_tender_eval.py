@@ -3,6 +3,7 @@ worst-case charging, LedgerBudget never touching ai_usage, the sampler, the seed
 No model is called anywhere: every provider here is ScriptedFakeAI."""
 import ast
 import json
+import re
 from dataclasses import replace as dc_replace
 import sys
 import uuid
@@ -511,6 +512,19 @@ def test_sample_takes_all_when_fewer_and_writes_a_sheet(tmp_path):
     assert lines[0].startswith("claim_id,") and len(lines) == 101 and S.A5_SEED == 20261127
 
 
+def test_a5_population_includes_gap_exempt_sentences(tmp_path):
+    drafts = [{"id": "d1", "text": "We hold [NEEDS FIRM INPUT: x]. We hold ISO 9001 [E-1]."},
+              {"id": "d2", "text": "Our insurance cover is [NEEDS FIRM INPUT: y]."}]
+    gap = S.gap_exempt_rows(drafts)
+    assert [g["id"] for g in gap] == ["gap-d1-000", "gap-d2-000"] and all(g["cited"] == [] for g in gap)
+    assert S.gap_exempt_rows([{"id": "d", "text": "We are incident-free [NEEDS FIRM INPUT: x]."}]) == []      # now a claim
+    assert len(S.sample_claims(_claims(37), gap_exempt=gap)) == 39
+    big = S.sample_claims(_claims(500), gap_exempt=gap)
+    assert len(big) == 100 and big == S.sample_claims(_claims(500), gap_exempt=list(reversed(gap)))
+    path = tmp_path / "s.csv"
+    assert S.write_sheet(_claims(3), path, gap_exempt=gap) == 5 and "gap-d1-000" in path.read_text()
+
+
 # ---------- seed ----------
 
 def test_seed_fails_clearly_with_no_packs(tmp_path):
@@ -633,11 +647,27 @@ def test_phase_without_inputs_says_what_is_missing(ctx):
         R.run_phase("E9", ctx)
 
 
-def test_check_phase_needs_a_claimcheck(ctx):
+def test_e4_uses_a_passed_claimcheck(ctx):
     ctx.keys_dir.mkdir()
     (ctx.keys_dir / "fixture_drafts.json").write_text(json.dumps([{"id": "f1", "text": "We hold ISO 9001 [E-1]."}]))
     ctx.claimcheck = lambda budget, text, hits: [{"span": "We hold ISO 9001", "verdict": "supported"}]
     assert R.run_phase("E4", ctx)["ran"] == 1
+
+
+def test_check_without_a_claimcheck_says_phase_not_ready(ctx):
+    ctx.claimcheck = None                                    # cleared after construction
+    with pytest.raises(R.PhaseNotReady, match="claimcheck"):
+        R._check(ctx, "E4", "f1", "We hold ISO 9001 [E-1].", [])
+
+
+def test_replaced_context_rebuilds_the_default_claimcheck_for_the_new_provider(ctx):
+    import dataclasses
+    assert ctx.claimcheck.is_default_claimcheck
+    other = ScriptedFakeAI()
+    c2 = dataclasses.replace(ctx, provider=other)
+    assert c2.claimcheck is not ctx.claimcheck and c2.claimcheck.is_default_claimcheck
+    custom = lambda budget, text, hits: []
+    assert dataclasses.replace(ctx, claimcheck=custom).claimcheck is custom      # a passed callable is kept
 
 
 def test_draft_phase_runs_through_the_ledger_on_the_fake(ctx):
@@ -846,7 +876,19 @@ def test_a4_gap_sentence_with_other_factual_content_still_counts():
                                   "We have never had a breach [NEEDS FIRM INPUT: x].",
                                   "We have had no incidents [NEEDS FIRM INPUT: x].",
                                   "We do not subcontract [NEEDS FIRM INPUT: x].",
-                                  "Nil claims [NEEDS FIRM INPUT: x]."])
+                                  "Nil claims [NEEDS FIRM INPUT: x].",
+                                  "We are incident-free [NEEDS FIRM INPUT: x].",
+                                  "We are compliant [NEEDS FIRM INPUT: x].",
+                                  "We are accredited [NEEDS FIRM INPUT: x].",
+                                  "Staff are vetted [NEEDS FIRM INPUT: x].",
+                                  "We are certified [NEEDS FIRM INPUT: x].",
+                                  "We are award-winning [NEEDS FIRM INPUT: x].",
+                                  "We cannot recall incidents [NEEDS FIRM INPUT: x].",
+                                  "We cannot [NEEDS FIRM INPUT: x].",
+                                  "We haven't [NEEDS FIRM INPUT: x].",
+                                  "We didn\u2019t [NEEDS FIRM INPUT: x].",
+                                  "Section S1 [NEEDS FIRM INPUT: x].",
+                                  "We meet H2 [NEEDS FIRM INPUT: x]."])
 def test_a4_short_uncited_claims_with_gap_marker_still_count(text):
     """T-202 review must-fix: a gap marker must not hide a short factual claim."""
     claims, exempt = SC.split_claims(text)
@@ -861,6 +903,26 @@ def test_a4_marker_only_gap_sentences_are_exempt_and_reported(text):
     assert claims == [] and len(exempt) == 1
     r = SC.score_traceability([{"id": "d", "text": text + ". We hold ISO 9001 [E-1].", "retrieved_ids": [1], "live_ids": [1]}])
     assert r["gap_exempt"] == 1 and r["claims"] == 1 and r["gap_exempt_share"] == 0.5 and len(r["gap_exempt_sentences"]) == 1
+
+
+def test_a4_each_new_trigger_matters_mutation_style(monkeypatch):
+    """Each trigger alone must keep its sentence a claim: blank the others and it still counts; blank it and it is exempt."""
+    cases = {"claim words": ("CLAIM_WORDS", "We are compliant [NEEDS FIRM INPUT: x]."),
+             "negation raw": ("_NEG_RAW", "We cannot [NEEDS FIRM INPUT: x]."),
+             "hyphen": ("_HYPHEN", "We are incident-proof [NEEDS FIRM INPUT: x].")}
+    # letter+digit codes (S1) are triple-covered (digit check, _CODE, app fact_triggers), so only the parametrized test pins them
+    never = re.compile(r"(?!x)x")
+    for name, (attr, text) in cases.items():
+        assert SC.claims_of(text), name
+        with monkeypatch.context() as m:
+            m.setattr(SC, attr, frozenset() if attr == "CLAIM_WORDS" else never)
+            exempt_without = SC.claims_of(text) == []
+        assert exempt_without, f"{name}: no other rule covers it, so removing the trigger would let it through"
+
+
+def test_a4_stubs_stay_exempt_after_the_new_triggers():
+    for t in ["We hold [NEEDS FIRM INPUT: x].", "Our insurance cover is [NEEDS FIRM INPUT: x].", "We will provide [NEEDS FIRM INPUT: x]."]:
+        assert SC.claims_of(t) == [], t
 
 
 def test_a4_cited_gap_sentence_is_always_scored():
