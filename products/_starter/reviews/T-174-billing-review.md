@@ -147,3 +147,54 @@ Why this matters more than the bug it fixes:
 
 Optional hardening, carried over from suggestion 5 in the first review: when a paid `starts_subscription` event for a new
 ref is dropped as stale, log at ERROR with the ref, or cancel it, instead of an INFO line.
+
+---
+
+# Re-review 2: 9c6de7b (B2 fix)
+
+Reviewer: reviewer agent, 2026-11-27.
+
+## Verdict: PASS
+
+## Tests
+
+Full suite in a clean worktree: exit 0, 783 collected, 1 skipped (`tests/test_spa.py:152`, frontend not built), so
+782 passed. The new test `test_s3_a_dead_subscription_does_not_block_a_different_paid_one` checks that sub_2 ends
+`("active","pro","sub_2")` and that a redelivered cancel returns False. The B1 test still passes.
+
+## B2 is resolved
+
+- The S-3 ignore path no longer writes `last_event_at`, so the stale check is back to what it was on main. A different
+  ref is not blocked.
+- A dead marker is written only for a `canceled` event while the tenant is trialing with no tracked ref. Only a
+  starts-subscription event for that exact `{provider, ref}` checks the marker.
+
+### Could the marker block a legitimate event?
+
+No.
+
+- Stripe subscription ids are never reused, and `canceled` and `incomplete_expired` are terminal states at Stripe. A
+  start event for a marked ref therefore always describes a dead subscription.
+- A tracked ref is never marked, because the S-3 branch requires `not sub.provider_ref`.
+- Cancels for tracked refs never reach this path, so they still apply as before.
+- The marker check sits before the duplicate check. A late start event for a dead ref on a tenant that already has a
+  subscription is ignored without trying to cancel it, which is correct because it is already gone.
+
+### Does the marker collide with or pollute event-id dedup?
+
+No.
+
+- Real event ids look like `evt_...` (Stripe) or `mock_evt_<hex>` (mock), so they cannot match `dead:{provider}:{sha256}`.
+- The id is at most about 80 characters, well within String(255).
+- `maintenance.py` prunes `billing_events` rows older than a year. That also removes markers, but Stripe redelivers for
+  only about 3 days, so pruning is harmless.
+
+## Suggestions (non-blocking)
+
+1. **`routes/billing.py` lines 143-148.** On an IntegrityError (a second, distinct cancel event for a ref that is already
+   marked, for example `incomplete_expired` followed by `deleted`), `db.rollback()` also rolls back that event's own
+   `BillingEvent` row. The event id is then not recorded, and a redelivery re-runs as a harmless no-op. That is fine for
+   correctness. To keep dedup exact, call `db.get(BillingEvent, tombstone)` before inserting, or use `db.begin_nested()`
+   for the marker insert.
+2. The first-review suggestions still stand: a durable to-do for a failed takeover cancel, and an ERROR log or a cancel
+   when a paid new ref is dropped as stale.
