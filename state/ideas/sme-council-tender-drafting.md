@@ -1,7 +1,7 @@
 # Council tender drafting for service SMEs
 
 - slug: sme-council-tender-drafting
-- stage: G0
+- stage: G0 (REVISE, 60) — portfolio demo build under Q-18 C (2026-11-27), not a G1 pass; spec in products/sme-council-tender-drafting/SPEC.md (T-183)
 - market and segment: UK service SMEs with roughly 10 to 150 staff and no in-house bid team (for example commercial cleaning, security, grounds maintenance, facilities and training providers) bidding for local-authority and NHS-estate contracts under the Procurement Act 2023.
 - one-line pitch: Read the tender pack, pull out every question, word limit and scoring criterion, and draft compliant answers (method statements, social value, case studies) from the firm's own past bids and policies, so a manager edits instead of starting from a blank page.
 
