@@ -114,7 +114,8 @@ class AIUsage(Base):
 class AIGuardTrip(Base):
     """The reported-model guard (T-100 M1, T-163) tripped for this AI config. `fingerprint` is a SHA-256 of the
     endpoint, deployment and checked price (no secrets), so changing any of them clears the trip by itself. Holds
-    no tenant, prompt or answer data: only the cleaned model name Azure reported. Delete the row to clear by hand."""
+    no tenant, prompt or answer data: only the cleaned model name Azure reported. Delete the row to clear by hand
+    and restart the app: a process that already latched the trip stays off until it restarts."""
     __tablename__ = "ai_guard_trips"
     fingerprint: Mapped[str] = mapped_column(String(64), primary_key=True)
     tripped_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow,

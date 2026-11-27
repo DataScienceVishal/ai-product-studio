@@ -100,6 +100,9 @@ def ensure_ai_enabled(provider, db=None) -> None:
     if check is not None and not getattr(provider, "disabled", False):
         check(db) if db is not None else check()
     if getattr(provider, "disabled", False):
+        retry = getattr(provider, "retry_unsaved_trip", None)
+        if retry is not None:  # T-167: a trip whose save failed is retried; this never re-enables the AI
+            retry(db)
         raise AppError(503, "ai_budget_reached", getattr(provider, "disabled_message", None)
                        or "The AI is resting until tomorrow. Everything else still works.")
 
@@ -118,11 +121,18 @@ class TripStore:
         with self.sessions() as own:
             return own.get(AIGuardTrip, fingerprint) is not None
 
-    def record(self, fingerprint: str, model: str) -> None:
-        with self.sessions() as db:
-            db.execute(pg_insert(AIGuardTrip).values(fingerprint=fingerprint, model=model)
-                       .on_conflict_do_nothing(index_elements=["fingerprint"]))
+    def record(self, fingerprint: str, model: str, db=None) -> None:
+        """With `db` (T-167) the row is written on that session and committed, so no second pooled connection is
+        needed; only pass a session with no pending writes of its own, because the commit includes them."""
+        stmt = (pg_insert(AIGuardTrip).values(fingerprint=fingerprint, model=model)
+                .on_conflict_do_nothing(index_elements=["fingerprint"]))
+        if db is not None:
+            db.execute(stmt)
             db.commit()
+            return
+        with self.sessions() as own:
+            own.execute(stmt)
+            own.commit()
 
 
 class AIProvider(Protocol):
@@ -313,7 +323,8 @@ class AzureOpenAI:
                  retries: int = 1, client: httpx.Client | None = None, sleep=time.sleep, clock=time.monotonic,
                  token_provider: ManagedIdentityToken | None = None, api: str = "auto",
                  reasoning_headroom: int = 0, reasoning_effort: str = "",
-                 checked_price: float | None = None, price_explicit: bool = False):
+                 checked_price: float | None = None, price_explicit: bool = False,
+                 trip_retry_interval: float = 30.0, trip_retry_clock=time.monotonic):
         if not endpoint:
             raise ValueError("AZURE_OPENAI_ENDPOINT is not set")
         if api not in ("auto", "chat", "responses"):
@@ -343,6 +354,13 @@ class AzureOpenAI:
         self.checked_price = checked_price
         self.price_explicit = price_explicit and not deployment_in_table(deployment)
         self.disabled = False
+        # T-167: the trip row could not be saved. Process-level state: set when a save fails, cleared by the first
+        # save that works. While set, ensure_ai_enabled retries at most once per `trip_retry_interval` seconds.
+        self.trip_unsaved = False
+        self.trip_model = ""
+        self.trip_retry_interval, self.trip_retry_clock = trip_retry_interval, trip_retry_clock
+        self._trip_retry_at = 0.0
+        self._trip_retry_lock = threading.Lock()
         self.trip_store = None
         self.trip_fingerprint = ""
         self.disabled_message = ("The AI is switched off until the team fixes its configuration. "
@@ -374,7 +392,7 @@ class AzureOpenAI:
         if tripped:
             self.disabled = True
             log.error("AI stays off: the model guard tripped earlier for this configuration. Fix AZURE_OPENAI_DEPLOYMENT "
-                      "or the price settings (a changed config clears it), or delete the row in ai_guard_trips.")
+                      "or the price settings (a changed config clears it), or delete the row in ai_guard_trips and restart the app.")
 
     def _check_reported_model(self, reported: object) -> None:
         """Compare the model Azure says it ran with the price the startup check assumed. Dearer, or unknown with no
@@ -397,11 +415,42 @@ class AzureOpenAI:
         log.error("AI switched off: the model Azure reported (%s) %s. Fix AZURE_OPENAI_DEPLOYMENT or the price "
                   "settings and restart.", shown, reason)
         if self.trip_store is not None:  # survive restarts and scale-to-zero (T-161 M1); this process is off regardless
-            try:
-                self.trip_store.record(self.trip_fingerprint, "unknown" if shown == "(missing)" else shown)
-            except Exception as exc:
-                log.error("AI guard trip could not be saved, so other replicas and restarts will not see it (%s)",
-                          type(exc).__name__)
+            self.trip_model = "unknown" if shown == "(missing)" else shown
+            self._save_trip()
+
+    def _save_trip(self, db=None) -> None:
+        """Write the trip row. On failure keep `trip_unsaved` set and start the retry wait (T-167); on success clear
+        it. Logs the exception type only. Never touches `disabled`."""
+        try:
+            if db is not None:
+                self.trip_store.record(self.trip_fingerprint, self.trip_model, db)
+            else:
+                self.trip_store.record(self.trip_fingerprint, self.trip_model)
+        except Exception as exc:
+            self.trip_unsaved = True
+            self._trip_retry_at = self.trip_retry_clock() + self.trip_retry_interval
+            log.error("AI guard trip could not be saved, so other replicas and restarts will not see it; "
+                      "will retry (%s)", type(exc).__name__)
+            return
+        self.trip_unsaved = False
+
+    def retry_unsaved_trip(self, db=None) -> None:
+        """Called on every AI call while this process is off (T-167). If the trip row is still unsaved and the retry
+        wait is over, try once more. Pool safe: with the caller's `db` the write reuses its connection, otherwise one
+        short own session; a session with pending changes is left alone (its commit would include them). Only one
+        thread retries at a time. Never raises and never re-enables the AI."""
+        if not self.trip_unsaved or self.trip_store is None or not self.disabled:
+            return
+        if db is not None and (db.new or db.dirty or db.deleted):
+            return
+        if not self._trip_retry_lock.acquire(blocking=False):
+            return
+        try:
+            if not self.trip_unsaved or self.trip_retry_clock() < self._trip_retry_at:
+                return
+            self._save_trip(db)
+        finally:
+            self._trip_retry_lock.release()
 
     def complete(self, system: str, user: str, max_output_tokens: int = 1200) -> AIResult:
         ensure_ai_enabled(self)
