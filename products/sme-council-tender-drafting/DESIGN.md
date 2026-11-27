@@ -71,7 +71,7 @@ The rules are the same as the starter's:
 | `signoffs` | tenant_id, id, pack_id, reviewer_user_id, reviewer_name, statement_version, drafts_digest (sha256 over the sorted (requirement_id, text_sha256) pairs), signed_at | A sign-off is valid only while its digest equals the pack's current digest. Any edit voids it |
 | `exports` | tenant_id, id, pack_id, signoff_id, docx_sha256, created_by, created_at | The file is generated on request and not stored. The row is an audit trail |
 | `ai_tasks` | tenant_id, id, pack_id, kind (`extract`, `draft`, `claimcheck`), target_id, status (`queued`, `running`, `done`, `failed`), lease_until, attempts, error_code, input_tokens, output_tokens, created_at, updated_at | The job queue. `SELECT ... FOR UPDATE SKIP LOCKED` |
-| `ai_cache` | tenant_id, key (sha256 of task kind, prompt version, model, system text, user text, schema), output_json, input_tokens, output_tokens, created_at | **Per tenant**, so one tenant's output is never served to another. The demo seed writes the demo tenant's cache from the recording run (R1) |
+| `ai_cache` | tenant_id, key (sha256 of the canonical payload **before nonce wrapping**: task kind, prompt version, model, effort, system template, sorted-key JSON of the inputs with their E-n numbers, schema; R1), output_json, input_tokens, output_tokens, created_at | **Per tenant**, so one tenant's output is never served to another. The demo seed writes the demo tenant's cache from the recording run (R1) |
 
 Retention (to add to the product's `DATA.md`): all of these tables are customer content. They are deleted by account deletion (cascade) or by the user deleting a pack or a document. `ai_cache` rows go with the tenant, and the purge job also drops rows older than 90 days. No new personal data: the only names are `reviewer_name`, which is typed at sign-off, and the users' emails that the starter already holds.
 
@@ -81,7 +81,7 @@ Retention (to add to the product's `DATA.md`): all of these tables are customer 
 - **Routes:** `POST /api/packs` (create), `POST /api/packs/{id}/documents` and `POST /api/evidence/documents`, multipart, one file per request.
 - **Body limit:** the starter's `BodyLimit` caps every request at 1 MB (`config.py` `max_body_bytes`). Add a per-path limit of 15 MB for these two upload routes only, using the same middleware with a path table and the same 413 shape.
 - **Caps:** at most 60 pages per file and 40 MB per pack in total. A pack over about 40 pages of text works, but its extraction cost grows linearly. The demo packs are chosen under 40 pages (SPEC section 3).
-- **Sniffing:** by magic bytes, not by extension. `%PDF-` means PDF. A ZIP containing `word/document.xml` and no `vbaProject.bin` means DOCX. Anything else is refused, and so are `.docm` files, encrypted PDFs and password-protected DOCX files.
+- **Sniffing:** by magic bytes, not by extension. `%PDF-` means PDF. A ZIP containing `word/document.xml` and no `vbaProject.bin` means DOCX. For **evidence uploads only**, UTF-8 plain text is also accepted (`.txt`, strict decode, no NUL bytes, the same size caps, "pages" = blocks of paragraphs; SPEC section 4 Must; R5). Anything else is refused, and so are `.docm` files, encrypted PDFs and password-protected DOCX files.
 - **Sandbox:** the parser runs in a child process started as a standalone script by absolute path (`python -I /app/app/tender/parse_worker.py`; it imports only the standard library, pypdf and python-docx, never `app`, because `-I` drops the working directory from `sys.path` and `-I -m app...` fails with ModuleNotFoundError), with an empty environment (no `DATABASE_URL`, no AI settings), `RLIMIT_AS` 512 MiB, `RLIMIT_CPU` 30 s and a 45 s wall timeout. The child sets its own limits with `resource.setrlimit` before importing the parsers (no `preexec_fn`, which is unsafe in a threaded server). (Reviewer fix, T-184.) The input is a temporary file, and the output is JSON with one entry per page. A crash, timeout or limit hit is reported as `parse_failed`, never as a 500.
 - **DOCX zip-bomb check, before parsing:** at most 2,000 entries, at most 50 MB uncompressed in total, and a compression ratio of at most 100 per entry.
 - **Libraries:** pypdf (BSD) for PDF text and python-docx (MIT) for DOCX. python-docx's XML parser is built with `resolve_entities=False`; slice S2 adds a test that an external entity is not expanded. PyMuPDF is avoided because of its AGPL licence.
@@ -99,20 +99,38 @@ Retention (to add to the product's `DATA.md`): all of these tables are customer 
 
 ### 4.3 AI provider interface (reuses the starter's switch)
 - **Starter contract, kept:** `AIProvider.complete(system, user, max_output_tokens) -> AIResult`. `AI_PROVIDER=fake|azure` selects the provider. Spend goes through the starter's `reserve()`/`settle()`, with `feature` set to `extract`, `draft` or `claimcheck`. The cost guard, the reported-model check and `ai_guard_trips` are unchanged.
-- **One additive change in the product's copy:** an optional `json_schema: dict | None` argument. On the Responses path it is sent as `text.format = {type: "json_schema", name, schema, strict: true}`. gpt-5-mini 2025-08-07 is listed as supporting structured outputs on both APIs, and Azure requires every field to be required, `additionalProperties: false`, at most 100 properties and at most 5 levels of nesting ([structured outputs](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/structured-outputs), updated 2026-08-24). Fakes ignore the argument. This flows back to the starter later as a reviewed change.
-- **Product layer `app/tender/llm.py`:** `run_task(spec, payload, tenant)`. A `TaskSpec` holds the name, prompt version, system template, Pydantic output model, output cap and reasoning effort. The function:
-  1. builds the user text inside nonce-delimited blocks;
+- **Three declared adapter changes in the product's copy** (R2; each flows back to the starter later as a reviewed change):
+  1. `complete(..., json_schema: dict | None = None)`. On the Responses path it is sent as `text.format = {type: "json_schema", name, schema, strict: true}`. gpt-5-mini 2025-08-07 is listed as supporting structured outputs on both APIs, and Azure requires every field to be required, `additionalProperties: false`, at most 100 properties and at most 5 levels of nesting ([structured outputs](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/structured-outputs), updated 2026-08-24).
+  2. `complete(..., effort: str | None = None)`, a per-call reasoning effort. Today it is fixed per instance (`ai.py:340,470`). It is validated against the same `REASONING_EFFORTS` list, and `None` keeps the instance default.
+  3. **Per-instance timeouts for workers.** The job runner and the harness build their own `AzureOpenAI` instance through `build_provider(settings, timeout=WORKER_AI_TIMEOUT_SECONDS, deadline=WORKER_AI_DEADLINE_SECONDS)`. Both default to 180 and are validated finite, above 0 and at most 600, like `config.py:76-78`. Without this, each attempt still uses the 20 s `AI_TIMEOUT_SECONDS` (`ai.py:494`), and a 60 to 80 s call becomes a `ReadTimeout`, billed at the full cap and never retried (`ai.py:499-503`). Request handlers keep the starter's 20 s and 25 s values.
+  - `FakeAI.complete` and `ScriptedFakeAI.complete` accept and ignore `json_schema` and `effort` (a test calls both with them).
+  - **Worst-case billing stays bounded.** A call that may have run (transport error after send, 5xx) is charged at its reservation, which is the input estimate plus the output cap plus the headroom. It is retried at most once, so one task can cost at most 2 worst cases per call step. The longer worker timeout makes such errors rarer. It does not make them cheaper.
+- **Budget port (R3).** `run_task(spec, payload, tenant, budget)` takes a `budget` object with `hold(estimate) -> handle` and `settle(handle, in, out)`.
+  - **`AppBudget`** wraps the starter's `reserve()`/`settle()`: per-tenant, trial and global caps, the `ai_usage` rows.
+  - **`LedgerBudget`** (eval harness only) wraps the T-80-style JSONL ledger with USD caps. It **never calls `reserve()` and never writes `ai_usage`**, so the harness is bound by the ledger and not by the app's tenant caps. That is exactly why its spend needs Vishal's one-off approval (section 8.4). The harness runs against a local database and a local eval tenant, never the deployed app's database.
+- **App-path sizing against the trial caps (R3).** While selling is locked, every tenant is limited: 30k tokens a day and 100k a month per tenant, and a 49k daily pool for all trials (`billing.py:53,61`, `AI_TRIAL_SHARE` 0.5). The starter's estimate counts bytes, so a reservation is input bytes + output cap + `AI_REASONING_HEADROOM` (1,500) (`ai.py:161-169`). So:
+  - **Live in-app extraction is not possible.** One 6k-token chunk (about 24k bytes, plus a 5k-byte prompt) reserves about 36.5k, over the 30k daily cap, and a pack needs 5 chunks. In the app, extraction comes only from `ai_cache` (seeded by the recording run R1) or from `ScriptedFakeAI`. A new pack uploaded with `AI_PROVIDER=azure` stops at "AI budget for today reached". Live extraction runs only in the harness (`LedgerBudget`). The A9 stopwatch run (R2) also uses the harness, on a local instance.
+  - **In-app live AI = one redraft plus its re-check per tenant per day.**
+    - Draft reservation: 4k bytes of prompt, 1.2k of question, 8 passages of about 1.4k each (about 16k bytes), plus a 4,000 cap and 1,500 headroom, about 21.5k. It settles at about 6k.
+    - Check: app path sends only the **cited** passages (about 4, 5.6k bytes) and the draft (3k), plus a 4k prompt, a 6,000 cap and 1,500 headroom, about 20k.
+    - 6k settled plus 20k reserved is 26k, which fits under 30k. The next redraft that day is refused with the starter's message.
+    - The double-cap truncation retry is **harness-only**. In the app, a truncated answer is `failed` ("could not finish; retry tomorrow or edit by hand").
+  - **R3 live demo moments:** 10 such pairs spread over days or across up to 3 demo tenants (the 49k trial pool allows about 3 a day). That costs about $0.12 inside the existing $6.10 line.
+  - **Not taken:** a product-local "demo" plan with a higher daily cap is a reversible option. It would still be under the 49k trial pool and the 98k global cap. It is logged as an alternative, not built.
+- **Product layer `app/tender/llm.py`:** `run_task(spec, payload, tenant, budget)`. A `TaskSpec` holds the name, prompt version, system template, Pydantic output model, output cap and reasoning effort. The function:
+  1. computes the cache key from the canonical payload, before any nonce (R1);
   2. looks up `ai_cache`;
-  3. reserves the tokens;
-  4. calls the provider;
-  5. validates against the Pydantic model, with one repair retry on invalid JSON;
-  6. settles the tokens;
-  7. writes the cache.
+  3. builds the user text inside nonce-delimited blocks;
+  4. holds the budget through `budget.hold()`;
+  5. calls the provider with `json_schema` and `effort`;
+  6. validates against the Pydantic model, with one repair retry on invalid JSON;
+  7. settles through `budget.settle()`;
+  8. writes the cache.
 - **Truncation rule (SPEC section 3):** an `incomplete` answer gets one retry at twice the output cap, then the task is `failed` and shown to the user as "could not finish; retry or edit by hand".
 - **Fakes, all free:**
   - `FakeAI` (starter): echo.
   - `ScriptedFakeAI` (new) answers in two ways:
-    - **Recorded:** `fixtures/recorded/<task>/<sha256(user)>.json`, written by the recording run R1. This makes the offline demo show real model output.
+    - **Recorded:** `fixtures/recorded/<task>/<canonical payload key>.json` (the same key as `ai_cache`, computed before the nonce is added; R1), written by the recording run R1. This makes the offline demo show real model output.
     - **Heuristic,** deterministic, for tests and e2e:
       - extract: regex for numbered questions and "maximum N words";
       - draft: the first sentence of each retrieved passage plus its `[E-n]`, or a gap marker when there are none;
@@ -151,8 +169,10 @@ All tender and evidence text goes inside `<<<DATA-{nonce}>>> ... <<<END-{nonce}>
 ### 4.5 Coverage, sign-off and the export gate
 - **Coverage table** (`GET /api/packs/{id}/coverage`). One row per confirmed requirement: answered (yes or no), words against the limit, mandatory covered, open gaps, claims by verdict. A banner says it is a checklist, not a statement that the bid is compliant.
 - **Sign-off** (`POST /api/packs/{id}/signoff`, owner or member). It needs `reviewer_name` and an explicit tick on the firm-responsibility statement, whose text and `statement_version` are fixed in code. It stores `drafts_digest`.
-- **`export_allowed(pack, drafts, claims, signoff) -> (bool, reasons[])`** is a **pure function** (no database, no AI), so A6b can be tested exhaustively. True only if all of these hold:
-  - every confirmed question has a latest draft;
+- **`export_allowed(pack, requirements, drafts, claims, signoff, live_evidence_ids, statement_version) -> (bool, reasons[])`** is a **pure function** (no database, no AI), so A6b can be tested exhaustively. True only if all of these hold:
+  - every confirmed question has a latest draft, checked against the current confirmed `requirements.word_limit` (not the snapshot);
+  - **every cited E-id of every claim is in `live_evidence_ids`** (not soft-deleted). A deleted passage blocks with "evidence removed; re-check" (R4);
+  - the sign-off's `statement_version` is the current one, and no requirement was added or removed after sign-off (both feed the digest);
   - each latest draft has a check recorded on its current `text_sha256`;
   - zero claims are `unsupported`, `contradicted` or `unchecked`;
   - every draft is at or under its limit;
@@ -189,7 +209,9 @@ All tender and evidence text goes inside `<<<DATA-{nonce}>>> ... <<<END-{nonce}>
 | `GET /packs/{id}/coverage`, `POST /packs/{id}/signoff` | coverage and sign-off |
 | `GET /packs/{id}/export.docx` | gated export |
 
-New frontend routes go into `CLIENT_ROUTES` in `backend/app/spa.py`; the starter's test fails if they differ.
+New frontend routes go into `CLIENT_ROUTES` in `backend/app/spa.py`; the starter's test fails if they differ. `CLIENT_ROUTES` is an exact-match set (`spa.py:74`), so **all client routes are static and carry ids in the query string** (R7): `/packs`, `/pack?id=`, `/pack/checklist?id=`, `/pack/drafts?id=`, `/pack/coverage?id=`, `/evidence`. That keeps `spa.py` unchanged. A prefix-pattern change to `spa.py` was the alternative, but it would need its own review.
+
+**Account export (R7).** `routes/account.py` imports and exports `Note` (lines 15, 31, 37-38). S1 replaces it with an export of every customer-content table in section 3: packs, requirements, documents' page text, evidence items, drafts, claims, sign-offs and export records. `ai_tasks` and `ai_cache` are left out as operational data. A test covers the export and checks that it holds no other tenant's rows.
 
 ## 6. Azure resources and monthly cost
 
@@ -204,7 +226,7 @@ New frontend routes go into `CLIENT_ROUTES` in `backend/app/spa.py`; the starter
 | Azure OpenAI tokens, app path | deployed or local demo | 0 with `fake`; at most $6.10 with `azure` and the 98,000-token daily cap | starter cost guard. **The guard is per app:** if `ca-starter` and `ca-tender` both ran with `azure`, the ceiling would be $12.20. Keep `ca-starter` on `fake` so this product uses the existing $6.10 line |
 | Azure OpenAI tokens, eval harness | once, after Vishal's answer | about $3.66 expected, under a hard $6.00 ledger cap | section 8.3; **not approved yet** |
 
-There is no Bicep change beyond the starter copy's `appName = 'tender'` and three new app settings: `WORKER_AI_DEADLINE_SECONDS`, the upload size, and `AZURE_OPENAI_DEPLOYMENT` taken from the mini variable. The deploy workflow is the starter's, copied to `.github/workflows/sme-council-tender-drafting-deploy.yml`, with its `STUDIO_AZURE_APPROVED` guard unchanged.
+There is no Bicep change beyond the starter copy's `appName = 'tender'` and four new app settings: `WORKER_AI_TIMEOUT_SECONDS`, `WORKER_AI_DEADLINE_SECONDS`, the upload size, and `AZURE_OPENAI_DEPLOYMENT` taken from the mini variable. The deploy workflow is the starter's, copied to `.github/workflows/sme-council-tender-drafting-deploy.yml`, with its `STUDIO_AZURE_APPROVED` guard unchanged.
 
 ## 7. Security and privacy
 
@@ -277,7 +299,7 @@ Personal data: the demo data plan (SPEC section 5) removes names, emails and pho
 | R1 recording: 3 demo packs end to end, frozen configuration (feeds the offline demo and the demo tenant's cache) | 758k | 0.65 | 1.20 |
 | R2 A9 stopwatch: 1 demo pack, cache cleared | 253k | 0.22 | 0.40 |
 | **One-off harness total** | **4,326k** | **3.66** | **6.83** |
-| R3 live demo moments, 10 redrafts and re-checks, through the app's own caps | 136k | 0.12 | 0.22 |
+| R3 live demo moments, 10 redraft and re-check pairs through the app's caps (at most 1 pair per tenant per day, section 4.3) | 136k | 0.12 | 0.22 |
 
 ### 8.4 Does it fit the cap? No, and cutting does not fix it
 - **Dollars fit. Tokens per day do not.** $3.66 expected is inside the $6.10 a month. But the one-off work is 4.3M tokens, which is **44 days** of the full 98,000-token daily cap. The scored subtotal alone is 1.6M tokens, or 16.4 days, which is already more than the two-week window before any tuning.
@@ -292,13 +314,13 @@ Personal data: the demo data plan (SPEC section 5) removes names, emails and pho
 > - **A (recommended).** A one-off hard cap of $6.00 real dollars on gpt-5-mini only, enforced by a ledger with worst-case pre-checks (the T-80 pattern), with sub-caps: tuning $2.00, a scored-run reserve of $2.60 (held back until the scored run), recording and A9 $1.40. Expected spend is about $3.66. The app's 98,000 tokens a day and $6.10 a month stay unchanged. The demo can be measured within the two weeks.
 > - **B.** No new budget: everything goes through the app's cap. That is about 44 days at the full daily cap, which blocks all other studio AI use meanwhile; the demo would be measured around mid-January.
 > - **C.** No live eval: a FakeAI-only demo. The bars stay unmeasured, so under SPEC section 6 (A6 is the headline) the demo cannot be shown.
-> - **Without an answer:** nothing is spent. Slices S1 to S6 and the data tasks D1 to D3 need no model calls, so about 9 runs of work go ahead on the fake provider; the live phases (T1 onward) wait.
+> - **Without an answer:** nothing is spent. Slices S1 to S9 and the data tasks D1 to D3 need no model calls, so about 12 runs of work go ahead on the fake provider; the live phases (T1 onward) wait.
 
 Credit context: recorded model spend so far is about $15.07, or up to $20.26 if both T-12 HTTP 502s were billed (`state/BUDGET.md`). Option A adds at most $6.00.
 
 ### 8.5 Ledger rules (port of T-80 `benchmark/budget.py`)
 - A JSONL ledger records every call: phase, task, input and output tokens, and the model.
-- Before each call, the spend so far plus the call's worst case (estimated input plus the output cap) must stay inside the phase sub-cap and the total cap, or the call is refused.
+- The harness sets `AI_REASONING_HEADROOM=0`, so the cap sent is the table's cap and the worst case in section 8.3 is the real one. Before each call, the spend so far plus the call's worst case (estimated input plus the output cap) must stay inside the phase sub-cap and the total cap, or the call is refused.
 - Before E1, a preflight checks that the remaining reserve covers the scored worst case ($2.54).
 - A 5xx or reset after the request was sent is charged at the worst case.
 - The model must report `gpt-5-mini*`, or the run stops.
@@ -307,21 +329,24 @@ Credit context: recorded model spend so far is about $15.07, or up to $20.26 if 
 ## 9. Build plan (board-ready; each about 45 minutes, branch `p/sme-council-tender-drafting/<task>`, reviewer PASS before merge)
 
 Builder slices (no model spend):
-- **S1** | sme-council-tender-drafting | Copy products/_starter (git worktree), appName tender, prices off and no price in the UI, remove Note, add the 12 tables of DESIGN section 3 (11 listed plus evidence_counters) with composite tenant foreign keys and an Alembic migration, `_scoped` helpers. Tests: starter suite green, alembic check, a cross-tenant 404 for every new object, the composite foreign key refuses a cross-tenant child. Done: CI green and reviewer PASS.
-- **S2** | sme-council-tender-drafting | Ingest and retrieval: per-route 15 MB upload limit, magic-byte sniffing, sandboxed pypdf and python-docx subprocess with page references, the zip-bomb, XXE, encrypted and image-only refusals, evidence chunking with per-tenant E-n numbering, a tsvector GIN index, the FTS OR query with must-have token boost (top 8, at most 3 per document). Tests: generated fixture files for each refusal, page numbers right, retrieval ranks the ISO 14001 passage over the ISO 9001 one, no cross-tenant retrieval. Done: green and reviewer PASS.
-- **S3** | sme-council-tender-drafting | AI layer and extraction: `json_schema` argument on the provider, `run_task` with nonce blocks, per-tenant `ai_cache`, the repair and truncation rules, `ScriptedFakeAI` (recorded and heuristic), the `ai_tasks` job runner (SKIP LOCKED, lease, resume, worker deadline), extraction chunking, merge, quote-on-page and limit regex cross-check, checklist confirm and edit API. Tests: the reservation per chunk fits the 30k trial daily cap, a bad quote gives amber, a lease takeover after a killed worker, a cache hit costs 0 tokens, the fake never reads `eval/keys`. Done: green and reviewer PASS.
-- **S4** | sme-council-tender-drafting | Drafting, claim check and export gate: retrieval-to-draft with an empty-retrieval gap path (no model call), citations checked against the retrieved set, word-limit retry then sentence drop, claimcheck with the substring, numeric and outside-set downgrades and the unchecked-sentence detector, the pure `export_allowed()`. Tests: an A6b property test (Hypothesis) over verdict, version, digest and limit states, an injected tender line still blocked, a fabricated quote downgraded, an uncovered numeric sentence made unchecked. Done: green, reviewer PASS, security spot-check of section 7 rows 2 and 3.
-- **S5** | sme-council-tender-drafting | Review screens and export: React pages for packs, checklist, evidence library, drafts with the source passage side by side and the claims table, coverage plus sign-off with the responsibility statement, and export; CLIENT_ROUTES; python-docx export with header, footer and claim appendix; sign-off voided by an edit; Playwright e2e of the 7 SPEC steps on ScriptedFakeAI. Tests: vitest, e2e green, the docx opens and its text matches the database, export refused without a valid sign-off. Done: green, reviewer PASS, qa PASS on the e2e.
-- **S6** | sme-council-tender-drafting | Eval harness and demo seed, no live calls: `eval/run.py` phases E1 to E4, T1 to T3, R1 and R2 behind a ported T-80 ledger (caps from Vishal's answer; refuses to run without `TENDER_EVAL_SPEND_APPROVED=1`), `eval/score.py` for A1 to A4, A6a, A7 and A8, `eval/sample.py` for the A5 and A6c sheet with a fixed seed, the EVAL.md template with the Run configuration, and the seed script for the fictional firm and 3 packs. Tests: the scorers on hand-built fixtures with known answers, ledger refusal and worst-case charging, mutation checks on the scorers. Done: green and reviewer PASS.
+- **S1** | sme-council-tender-drafting | Starter copy and data model: copy products/_starter (git worktree), appName tender, prices off and no price in the UI, remove Note; replace the account export with all customer-content tables (R7); add the 12 tables of DESIGN section 3 (11 listed plus evidence_counters) with composite tenant foreign keys and an Alembic migration; `_scoped(model, tenant_id)` helpers usable by workers. Tests: starter suite green, alembic check, a cross-tenant 404 for every new object, the composite foreign key refuses a cross-tenant child, the account export covers the new tables and holds no other tenant's rows. Done: CI green and reviewer PASS.
+- **S2** | sme-council-tender-drafting | Ingest and retrieval: per-route 15 MB upload limit, magic-byte sniffing plus evidence-only UTF-8 text (R5), the standalone sandboxed parse_worker (pypdf, python-docx, python-multipart pinned with hashes), the zip-bomb, XXE, encrypted and image-only refusals, evidence chunking with per-tenant E-n numbering, a tsvector GIN index, the FTS OR query with must-have token boost (top 8, at most 3 per document). Tests: generated fixture files for each refusal, a .txt evidence upload, page numbers right, the ISO 14001 passage ranks over the ISO 9001 one, no cross-tenant retrieval. Done: green and reviewer PASS.
+- **S3** | sme-council-tender-drafting | AI layer and job runner: the three adapter changes (`json_schema`, per-call `effort`, worker timeout and deadline; fakes accept the new keyword arguments), `run_task` with the canonical cache key before the nonce (R1) and the budget port (AppBudget; R3), per-tenant `ai_cache`, the repair and truncation rules, `ScriptedFakeAI` (recorded and heuristic), the `ai_tasks` runner (SKIP LOCKED, a lease extended per call, resume; threads off in tests). Tests: the same payload twice gives a cache hit at 0 tokens despite different nonces; recorded fixtures found by key; the worker provider uses 180 s and not 20 s; a lease takeover after a killed worker; the fake never reads `eval/keys`. Done: green and reviewer PASS.
+- **S4** | sme-council-tender-drafting | Extraction and checklist API: page chunking with overlap, the extract task, merge and dedupe, the quote-on-page check (amber), the limit regex cross-check, the checklist confirm, edit and add API keeping the model's original JSON; app-path extraction from cache only, a clear refusal at the daily cap (R3). Tests: on ScriptedFakeAI, a bad quote gives amber; a regex disagreement is flagged; a duplicate across the chunk overlap is merged; with azure settings the app-path reservation is refused, not sent. Done: green and reviewer PASS.
+- **S5** | sme-council-tender-drafting | Drafting: retrieval to draft, the empty-retrieval gap path (no model call), citations checked against the retrieved set, the word-limit retry then sentence drop, versioning on user edit, redraft rate limits; app-path draft and re-check sizing under 30k (R3). Tests: gap marker with no model call; a citation outside the set is flagged; an over-limit answer ends at or under the limit; the reservation estimate for a typical draft plus check pair is at most 30k. Done: green and reviewer PASS.
+- **S6** | sme-council-tender-drafting | Claim check and export gate: the claimcheck task (draft inside a DATA block; cited passages only on the app path), the substring, numeric and outside-set downgrades, uncited factual claims as unsupported, the unchecked-sentence detector, the pure `export_allowed()` with live evidence ids (R4). Tests: a Hypothesis property test over verdict, version, check hash, digest, limit, deleted-evidence, requirement-added and statement-version states; an injected tender line still blocked; a fabricated quote downgraded. Done: green, reviewer PASS, security spot-check of section 7 rows 2 and 3.
+- **S7** | sme-council-tender-drafting | Review screens: React pages on static routes with query ids (R7) for packs, checklist, evidence library, drafts with the source passage side by side and the claims table, and coverage plus sign-off with the responsibility statement; CLIENT_ROUTES updated; status polling. Tests: vitest for each page, the routes test green, refreshing a deep link with `?id=` returns 200. Done: green and reviewer PASS.
+- **S8** | sme-council-tender-drafting | Word export and e2e: python-docx export built from the same rows passed to `export_allowed`, with header, footer, answers, [E-n] markers and the claim appendix; sign-off voided by an edit; a Playwright e2e of the 7 SPEC steps on ScriptedFakeAI. Tests: the docx opens and its text matches the database; export refused without a valid sign-off or after evidence deletion; e2e green. Done: green, reviewer PASS, qa PASS on the e2e.
+- **S9** | sme-council-tender-drafting | Eval harness and demo seed, no live calls: `eval/run.py` phases E1 to E4, T1 to T3, R1 and R2 through LedgerBudget (a port of the T-80 ledger, headroom 0, caps read from a committed `eval/budget.json` naming the approving question, which must exist), `eval/score.py` for A1 to A4, A6a, A7 and A8, `eval/sample.py` for the A5 and A6c sheet with a fixed seed, the EVAL.md template with the Run configuration, and the seed script for the fictional firm, the 3 packs and the cache. Tests: the scorers on hand-built fixtures with known answers, ledger refusal and worst-case charging, LedgerBudget never writes `ai_usage`, mutation checks on the scorers. Can start after S3. Done: green and reviewer PASS.
 
 Data tasks (parallel, no code; D3 by qa, not the builder):
 - **D1** | sme-council-tender-drafting | Pick 12 public packs (4 cleaning, 4 security, 4 grounds or FM) from Contracts Finder or Find a Tender by hand download, each under 40 pages with no image-only pages; record the URL, access date and licence line in demo-data/SOURCES.md; screen for and remove personal data; assign 3 demo and 9 held-out by the SPEC rule.
 - **D2** | sme-council-tender-drafting | Write the fictional firm's evidence library (20 to 40 documents) after a Companies House name check logged in SOURCES.md; footer "fictional" on every document; no real clients or accreditation numbers.
 - **D3** | sme-council-tender-drafting | qa writes the held-out answer keys (9 packs), the 30-question trap set, the 10-question dev trap set, the 20 fixture drafts with 40 seeded false claims, and the demo-pack retrieval labels; commit to main before any live call.
 
-Live phases (after Vishal's answer and S1 to S6 plus D1 to D3 PASS): **L1** T1 calibration (rewrite section 8.3 and the BUDGET.md line with measured figures), then T2 and T3 tuning and the configuration freeze in EVAL.md. **L2** E1 to E4 scored run (one run). **L3** R1 recording, R2 A9 stopwatch, the human A5 and A6c review, the EVAL.md results. If any part of A6 fails, the demo is not shown (SPEC section 6).
+Live phases (after Vishal's answer and S1 to S9 plus D1 to D3 PASS): **L1** T1 calibration (rewrite section 8.3 and the BUDGET.md line with measured figures), then T2 and T3 tuning and the configuration freeze in EVAL.md. **L2** E1 to E4 scored run (one run). **L3** R1 recording, R2 A9 stopwatch, the human A5 and A6c review, the EVAL.md results. If any part of A6 fails, the demo is not shown (SPEC section 6).
 
-Expect slices S3 to S5 each to need a second run. Every slice ends with a `NEXT.md` checkpoint, so a cut-off run loses nothing.
+Order: S1 → S2 → S3 → S4 → S5 → S6 → S7 → S8, with S9 able to run in parallel after S3. Every slice ends with a `NEXT.md` checkpoint, so a cut-off run loses nothing.
 
 ## 10. Failure modes
 
@@ -352,3 +377,19 @@ Deploying the demo to Azure would create the shared resources that Q-5 A approve
 - $23.20 a month without it.
 
 This demo is G3-equivalent, but the idea is at G0, so whether it triggers Q-5 is Vishal's reading, not ours. The build and eval need no deployment. When L3 passes, the Lead asks one question: deploy the private demo (recommended only if a live URL is needed for the handover), or keep it as a local demo with a recorded walkthrough at $0. Until then, nothing is created in Azure.
+
+## 13. Changes after T-184 review (`reviews/T-184-review.md`)
+
+| # | Finding | Fix (where) |
+|---|---|---|
+| R1 | The per-call nonce made every cache and recording key unique | Both keys are now the hash of the canonical payload (task, prompt version, model, effort, system template, sorted input JSON, schema), computed **before** nonce wrapping (sections 3, 4.3). An S3 test: same payload, different nonces, one cache hit |
+| R2 | The worker deadline had no effect (20 s per attempt); effort was fixed per instance; the fakes would reject the new keyword arguments | Three declared adapter changes: `json_schema`, per-call `effort`, and per-instance `WORKER_AI_TIMEOUT_SECONDS` and `WORKER_AI_DEADLINE_SECONDS` (at most 600); the fakes accept the new arguments; a possibly billed call is charged at its reservation and retried at most once (section 4.3). The ADR states three changes, not one |
+| R3 | Reservations over the 30k trial daily cap; the harness's budget path was undefined | A budget port: `AppBudget` (reserve and settle) for the app, `LedgerBudget` for the harness, which never touches `ai_usage`. App path: live extraction is not possible (36.5k > 30k), so cache or fake only; at most one redraft plus re-check per tenant per day (21.5k, then 6k + 20k = 26k); the double-cap retry is harness-only; the harness uses headroom 0 (sections 4.3, 8.3, 8.5). The S4 and S5 tests are rewritten to match |
+| R4 | The gate ignored deleted evidence | `export_allowed` takes `live_evidence_ids`, the current requirements and the statement version, and blocks on any deleted cited passage (section 4.5). Covered by the S6 property test and an S8 export test |
+| R5 | Evidence text uploads were refused, against the SPEC Must | UTF-8 `.txt` is accepted for evidence only (section 4.1, S2) |
+| R6 | S3 to S5 were too big | Nine slices S1 to S9, each about 45 minutes with its own tests and Done line (section 9). The board tasks T-187 onward need the same split (for the Lead) |
+| R7 | The account export imported `Note`; deep links to `/packs/<id>` returned 404 | S1 replaces the account export with the new tables; client routes are static with query ids, and `spa.py` is unchanged (section 5) |
+| R8 | The parser command failed under `-I -m` | Reviewer's fix accepted: a standalone script by absolute path with an empty environment (section 4.1) |
+| ADR | 36 days | Corrected to 37 in ADR 0001 decision 7 |
+
+The reviewer's suggestions S1 to S9 are partly folded into the slices: `_scoped(model, tenant_id)`, the lease extended per call, threads off in tests, the draft inside a DATA block, uncited claims treated as unsupported, a committed `eval/budget.json` instead of an environment variable, the docx built from the gated rows, and the new dependencies pinned with hashes. The rest are left for the slice reviews.

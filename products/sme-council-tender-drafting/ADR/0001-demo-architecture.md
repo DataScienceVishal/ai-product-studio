@@ -20,7 +20,7 @@
 - **Chosen:** (a). Sign-in, tenancy, CSRF, rate limits, AI caps, the cost guard, logs and deploy have all passed review and security there. (b) would rebuild them, and (c) can't show the review and sign-off flow.
 - **Trade-offs:**
   - It inherits the starter's billing and cancels code, which sits idle while prices are off.
-  - One additive change is needed in the AI adapter: an optional `json_schema` argument. It is kept in the product copy and offered back to the starter as a separate reviewed change.
+  - Three declared changes are needed in the AI adapter's product copy: an optional `json_schema` argument, a per-call `effort`, and per-instance worker timeouts (`WORKER_AI_TIMEOUT_SECONDS` and `WORKER_AI_DEADLINE_SECONDS`, at most 600). Without the last one, each attempt still times out at 20 s and is billed at its full cap. The fakes accept the new arguments. All three are offered back to the starter as reviewed changes (T-184 review R2).
   - Child tables add composite `(tenant_id, parent_id)` foreign keys, a step beyond the starter's application-only scoping.
 
 ### 2. Zero new Azure resources; keep page text, not files
@@ -61,6 +61,7 @@
   - (b) structured output plus deterministic validators;
   - (c) a second model as a judge of the first.
 - **Chosen:** (b).
+  - Prompt blocks use a random nonce, but cache and recording keys are hashed from the canonical payload before the nonce is added, so caching still works (T-184 review R1).
   - Strict JSON schemas are supported for gpt-5-mini on the Responses API ([structured outputs](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/structured-outputs), updated 2026-08-24).
   - The code checks:
     - quotes must be substrings of the cited page or passage;
@@ -97,6 +98,7 @@
 - **Chosen:** (c).
   - A6b requires 100% blocking, and a pure function can be property-tested over every state.
   - The digest means any edit after sign-off voids it without extra bookkeeping.
+- **Also:** the function takes the live evidence ids, so a claim whose cited passage was deleted blocks the export (T-184 review R4).
 - **Trade-off:** editing one word after sign-off means signing off again. That is intended.
 
 ### 7. Live evaluation runs through its own spend ledger, under a one-off budget that Vishal must approve
@@ -108,7 +110,8 @@
   - The full eval, tuning, recording and the A9 run come to about 4.3M tokens, $3.66 expected (DESIGN section 8).
   - The dollars fit the $6.10 a month. The tokens are 44 days of the 98,000 daily cap.
   - The app's per-tenant trial caps (100k a month, 30k a day) can't run even one pack (about 252k).
-  - The cuts SPEC section 3 allows, 2 held-out drafting packs and fewer tuning passes, still leave about 36 days.
+  - The cuts SPEC section 3 allows, 2 held-out drafting packs and fewer tuning passes, still leave about 37 days (3,632k / 98k).
+- **How the harness relates to `reserve()`:** `run_task` takes a budget port. The app uses `AppBudget`, which is `reserve()`/`settle()` and the tenant caps. The harness uses `LedgerBudget`, which never calls `reserve()` and never writes `ai_usage`. On the app path, live extraction can't fit the 30k trial daily cap, so it comes from the cache or the fake only. At most one redraft plus its re-check fits per tenant per day (T-184 review R3).
 - **Recommended:** (b), with a $6.00 hard cap and sub-caps (tuning $2.00, scored reserve $2.60, recording and A9 $1.40).
   - Money is ask-first, so this is queued as a question, not assumed.
   - Without an answer, the slices that need no spend continue on the fake provider.
