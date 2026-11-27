@@ -263,6 +263,8 @@ def add_requirement(pack_id: uuid.UUID, body: RequirementIn, me: Current = Depen
     pack = get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
     if pack.status in ("signed", "exported"):
         raise AppError(409, "pack_locked", "This pack is already signed off.")
+    # Lock the pack row so a concurrent add or an extraction write waits; the unique (tenant, pack, seq) is the backstop.
+    db.execute(select(TenderPack.id).where(TenderPack.tenant_id == me.tenant.id, TenderPack.id == pack_id).with_for_update())
     seq = (db.scalar(select(func.coalesce(func.max(Requirement.seq), 0)).where(
         Requirement.tenant_id == me.tenant.id, Requirement.pack_id == pack_id)) or 0) + 1
     r = Requirement(tenant_id=me.tenant.id, pack_id=pack_id, seq=seq, origin="user", status="proposed", edited_by=me.user.id,

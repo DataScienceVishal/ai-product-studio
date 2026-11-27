@@ -32,6 +32,8 @@ class LeaseLost(Exception):
 Handler = Callable[[sessionmaker, AITask, Callable[[], None], object], tuple[int, int]]
 
 HANDLERS: dict[str, Handler] = {}
+# kind -> hook(sessions, task), run when a task is failed as attempts_exhausted (the handler never got to clean up).
+FAILURE_HOOKS: dict[str, Callable[[sessionmaker, AITask], None]] = {}
 
 
 def _now() -> datetime:
@@ -52,12 +54,24 @@ def claim_next(sessions: sessionmaker, lease: timedelta, now: datetime | None = 
             if task.attempts >= MAX_ATTEMPTS:  # a possibly-billed task is retried once, then stops
                 task.status, task.error_code, task.lease_until = "failed", "attempts_exhausted", None
                 db.commit()
+                db.expunge(task)
+                _run_failure_hook(sessions, task)
                 continue
             task.status, task.lease_until, task.attempts = "running", now + lease, task.attempts + 1
             db.commit()
             db.refresh(task)
             db.expunge(task)
             return task
+
+
+def _run_failure_hook(sessions: sessionmaker, task: AITask) -> None:
+    hook = FAILURE_HOOKS.get(task.kind)
+    if hook is None:
+        return
+    try:
+        hook(sessions, task)
+    except Exception:
+        log.error("ai task failure hook crashed", extra={"task": str(task.id), "kind": task.kind}, exc_info=True)
 
 
 def _owned(task: AITask):

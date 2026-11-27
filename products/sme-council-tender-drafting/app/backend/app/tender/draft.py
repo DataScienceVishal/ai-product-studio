@@ -14,7 +14,7 @@ import uuid
 from dataclasses import dataclass, field
 
 from pydantic import BaseModel
-from sqlalchemy import func, select, text
+from sqlalchemy import func, select, text, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from ..ai import AIUnavailable, reservation_estimate
@@ -272,4 +272,13 @@ def draft_handler(sessions: sessionmaker, task: AITask, heartbeat, provider) -> 
     return tin, tout
 
 
+def reset_pack_after_exhausted(sessions: sessionmaker, task: AITask) -> None:
+    """Failure hook: a pack left in a transient state ('checking') by a dead draft task goes back to 'drafting'."""
+    with sessions() as db:
+        db.execute(update(TenderPack).where(TenderPack.tenant_id == task.tenant_id, TenderPack.id == task.pack_id,
+                                            TenderPack.status == "checking").values(status="drafting"))
+        db.commit()
+
+
 runner.HANDLERS["draft"] = draft_handler
+runner.FAILURE_HOOKS["draft"] = reset_pack_after_exhausted
