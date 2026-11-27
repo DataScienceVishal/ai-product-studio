@@ -15,9 +15,9 @@ from .db import Base
 from .models import _created, _id, _tenant, utcnow
 
 
-def _child(name: str, col: str, parent: str) -> ForeignKeyConstraint:
-    """(tenant_id, col) -> parent(tenant_id, id), cascading with the parent."""
-    return ForeignKeyConstraint(["tenant_id", col], [f"{parent}.tenant_id", f"{parent}.id"], ondelete="CASCADE",
+def _child(name: str, col: str, parent: str, ondelete: str = "CASCADE") -> ForeignKeyConstraint:
+    """(tenant_id, col) -> parent(tenant_id, id), cascading with the parent unless told otherwise."""
+    return ForeignKeyConstraint(["tenant_id", col], [f"{parent}.tenant_id", f"{parent}.id"], ondelete=ondelete,
                                 name=name)
 
 
@@ -74,7 +74,10 @@ class Requirement(Base):
     __tablename__ = "requirements"
     __table_args__ = (UniqueConstraint("tenant_id", "id", name="uq_requirements_tenant_id"),
                       _child("fk_requirements_pack", "pack_id", "tender_packs"),
-                      _child("fk_requirements_document", "source_document_id", "source_documents"))
+                      # NO ACTION, not CASCADE: deleting a source document that requirements still cite is refused, so it cannot
+                      # silently wipe drafts and claims. (Not RESTRICT: see migration 0014.)
+                      _child("fk_requirements_document", "source_document_id", "source_documents", "NO ACTION"),
+                      Index("ix_requirements_tenant_source_document", "tenant_id", "source_document_id"))
     id: Mapped[uuid.UUID] = _id()
     tenant_id: Mapped[uuid.UUID] = _tenant()
     pack_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)

@@ -110,6 +110,28 @@ def test_export_signoff_fk_alone(two):
     assert "fk_exports_signoff" in str(err.value)
 
 
+def test_deleting_a_document_that_requirements_cite_is_refused(two):
+    db, a, b, rows_a, rows_b = two
+    db.delete(rows_a["doc"])
+    with pytest.raises(IntegrityError) as err:
+        db.commit()
+    db.rollback()
+    assert "fk_requirements_document" in str(err.value)
+    assert db.get(Requirement, rows_a["req"].id) is not None and db.get(Draft, rows_a["draft"].id) is not None
+    # once the requirements are gone the document can go
+    db.delete(rows_a["req"]); db.commit()
+    db.delete(db.get(SourceDocument, rows_a["doc"].id)); db.commit()
+    assert db.get(SourceDocument, rows_a["doc"].id) is None
+
+
+def test_deleting_the_pack_still_cascades_through_documents_and_requirements(two):
+    db, a, b, rows_a, rows_b = two
+    db.delete(db.get(TenderPack, rows_a["pack"].id)); db.commit()
+    for model in (SourceDocument, Requirement, Draft, Claim):
+        assert db.scalars(scoped(model, a.id)).all() == [], model.__name__
+    assert db.scalars(scoped(Requirement, b.id)).all()
+
+
 def test_composite_fk_accepts_the_same_tenant_child(two):
     db, a, _, rows_a, _ = two
     db.add(DocumentPage(tenant_id=a.id, document_id=rows_a["doc"].id, page_no=2))
