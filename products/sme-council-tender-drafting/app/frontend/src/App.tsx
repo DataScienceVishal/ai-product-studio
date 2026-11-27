@@ -4,6 +4,7 @@ import { Billing, BillingDone, Dashboard, Help, MockCheckout, MockPortal, Settin
 import { Privacy, Terms } from "./pages/legal";
 import { ForgotPassword, ResetPassword, safeNext, SignIn, SignUp, VerifyEmail } from "./pages/auth";
 import { AcceptInvite, Team } from "./pages/team";
+import { ChecklistPage, CoveragePage, DraftPage, EvidencePage, PackPage, PacksPage } from "./pages/tender";
 import { Alert, Link, navigate, usePath } from "./ui";
 
 const PUBLIC = new Set(["/login", "/signup", "/forgot-password", "/reset-password", "/accept-invite", "/verify-email", "/help", "/privacy", "/terms"]);
@@ -73,6 +74,12 @@ export default function App() {
         : billing && path === "/billing/mock-portal" ? <MockPortal />
         : path === "/settings" ? <Settings me={me} onDeleted={() => setMe(null)} />
         : path === "/team" ? <Team me={me} />
+        : path === "/packs" ? <PacksPage />
+        : path === "/pack" ? <PackPage />
+        : path === "/checklist" ? <ChecklistPage />
+        : path === "/evidence" ? <EvidencePage />
+        : path === "/draft" ? <DraftPage />
+        : path === "/coverage" ? <CoveragePage />
         : path === "/help" ? <Help />
         : path === "/" ? <Dashboard me={me} />
         : <NotFound />}
@@ -97,7 +104,8 @@ function Shell({ me, onSignOut, children }: { me?: Me; onSignOut?: () => void; c
         <nav className="mx-auto flex max-w-4xl flex-wrap items-center gap-4 px-4 py-3" aria-label="Main">
           <Link to="/" className="font-bold text-slate-900">Tender drafting</Link>
           {me && <>
-            <Link to="/">Tender packs</Link>
+            <Link to="/packs">Tender packs</Link>
+            <Link to="/evidence">Evidence</Link>
             <Link to="/team">Team</Link>
             {isBillingEnabled() && <Link to="/billing">Billing</Link>}
             <Link to="/settings">Settings</Link>
