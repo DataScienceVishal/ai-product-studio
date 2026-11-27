@@ -3,6 +3,7 @@ worst-case charging, LedgerBudget never touching ai_usage, the sampler, the seed
 No model is called anywhere: every provider here is ScriptedFakeAI."""
 import ast
 import json
+from dataclasses import replace as dc_replace
 import sys
 import uuid
 from pathlib import Path
@@ -286,7 +287,7 @@ KEY = [q("1.1", "Describe your approach to mobilisation of the cleaning service"
 GOT = [q("1.1", "Describe your approach to mobilisation of the cleaning service", word_limit=500, marks=10),   # exact
        q("Q2", "Give two examples of similar contracts that you have delivered", word_limit=350),           # text match, wrong limit
        q("2.1", "How do you manage staff training and development", marks=5),                                # exact
-       q("3.1", "Safeguarding"),                                                                             # matched by ref only
+       q("3.1", "Provide your safeguarding arrangements"),                                                                                # matched by ref only
        q("9.9", "Please state your registered company number"),                                              # extra (precision)
        m("M1", "Bidders must hold public liability insurance of at least five million pounds", pass_fail=True),
        q("M2", "Bidders must confirm they pay the real living wage")]                                        # mandatory shown optional
@@ -463,7 +464,7 @@ def _mutants():
         "word count keeps markers": ("count_words", lambda t: len(t.split())),
         "word count drops gap markers": ("count_words", lambda t: orig_count(SC._GAP.sub("", t))),
         "similarity always 1": ("similarity", lambda a, b: 1.0),
-        "claims_of keeps gap markers": ("claims_of", lambda t: SC.split_sentences(t)),
+        "claims_of keeps gap markers": ("split_claims", lambda t: (SC.split_sentences(t), [])),
         "overlap always true": ("_overlaps", lambda *a, **k: True),
         "overlap never": ("_overlaps", lambda *a, **k: False),
         "overlap raw substring": ("_overlaps", lambda a, b, sents=(): bool(SC._norm(a)) and bool(SC._norm(b)) and (
@@ -635,8 +636,6 @@ def test_phase_without_inputs_says_what_is_missing(ctx):
 def test_check_phase_needs_a_claimcheck(ctx):
     ctx.keys_dir.mkdir()
     (ctx.keys_dir / "fixture_drafts.json").write_text(json.dumps([{"id": "f1", "text": "We hold ISO 9001 [E-1]."}]))
-    with pytest.raises(R.PhaseNotReady, match="claim check"):
-        R.run_phase("E4", ctx)
     ctx.claimcheck = lambda budget, text, hits: [{"span": "We hold ISO 9001", "verdict": "supported"}]
     assert R.run_phase("E4", ctx)["ran"] == 1
 
@@ -692,19 +691,11 @@ def test_results_are_committed_and_only_dry_results_ignored():
     assert R.DRY_RESULTS_DIR == R.RESULTS_DIR / "dry"
 
 
-def test_phases_that_need_the_claim_check_refuse_before_the_first_item(ctx, cfg, tmp_path):
-    """M7: no draft is recorded as finished without its claims."""
-    ctx.keys_dir.mkdir()
-    (ctx.keys_dir / "dev_trap_set.json").write_text(json.dumps([{"id": "t1", "question": "Do you hold ISO 14001?"}]))
-    (ctx.keys_dir / "trap_set.json").write_text(json.dumps([{"id": "t1", "question": "Do you hold ISO 14001?"}]))
-    (ctx.keys_dir / "h1.json").write_text(json.dumps({"items": [{"ref": "1", "kind": "question", "text": "Q one"}]}))
-    for n in ("h2", "h3"):
-        (ctx.keys_dir / f"{n}.json").write_text(json.dumps({"items": []}))
-    ctx.retrieve = lambda question: []
-    for phase in ("E2", "E3", "T3"):
-        with pytest.raises(R.PhaseNotReady, match="claim check"):
-            R.run_phase(phase, ctx)
-        assert not (ctx.results_dir / f"{phase}.jsonl").exists() and ctx.ledger.rows() == []
+def test_every_context_has_a_claimcheck_so_no_draft_is_recorded_without_claims(ctx):
+    """M7 (T-202): with none passed, the real claim check is wired in, so E2, E3, E4 and T3 always record claims."""
+    assert callable(ctx.claimcheck)
+    custom = lambda budget, text, hits: []
+    assert dc_replace(ctx, claimcheck=custom).claimcheck is custom
 
 
 def test_drafting_heldout_must_be_named_in_the_manifest(ctx):
@@ -790,3 +781,112 @@ def test_run_configuration_has_prompt_hashes():
     cfg = R.run_configuration()
     assert cfg["model"] == "gpt-5-mini" and cfg["reasoning_headroom"] == 0
     assert all(len(v["sha256"]) == 64 for v in cfg["prompts"].values())
+
+
+# ---------- T-202 ----------
+
+def test_run_configuration_prints_the_claimcheck_prompt_hash():
+    import hashlib
+    from app.tender import claimcheck as cc
+    c = R.run_configuration()["claimcheck_prompt"]
+    (key, v), = c.items()
+    assert key.startswith("claimcheck:") and v["sha256"] == hashlib.sha256(cc.CLAIMCHECK_SPEC.system.encode()).hexdigest()
+    assert v["output_cap"] == cc.CLAIMCHECK_SPEC.max_output_tokens
+
+
+def test_e2_drafts_and_records_claims_end_to_end_with_the_real_claimcheck(ctx):
+    """T-202: no claimcheck passed, so the default (app.tender.claimcheck.check_draft on ScriptedFakeAI) runs."""
+    assert ctx.claimcheck is not None
+    ctx.keys_dir.mkdir()
+    items = [{"ref": "1", "kind": "question", "text": "Describe mobilisation", "word_limit": 100}]
+    for n in ("h1", "h2", "h3"):
+        (ctx.keys_dir / f"{n}.json").write_text(json.dumps({"items": items if n == "h1" else []}))
+    seen = []
+    ctx.retrieve = lambda question: []                       # gap path: no model call in draft or check
+    orig = ctx.claimcheck
+    ctx.claimcheck = lambda budget, text, hits, **kw: seen.append(budget.output_cap) or orig(budget, text, hits, **kw)
+    r = R.run_phase("E2", ctx)
+    assert r["ran"] == 1 and r["failed"] == 0 and ctx.ledger.spent() == 0.0
+    row = json.loads((ctx.results_dir / "E2.jsonl").read_text().splitlines()[0])["result"]
+    assert "NEEDS FIRM INPUT" in row["text"] and isinstance(row["claims"], list) and seen
+
+
+def test_default_claimcheck_calls_the_model_through_the_ledger(ctx, monkeypatch):
+    from app.tender.draft import CHECK_CAP
+    from app.tender.llm import run_task as real_run
+    calls = []
+    import app.tender.claimcheck as cc
+    monkeypatch.setattr(cc, "run_task", lambda *a, **k: calls.append(a[3].output_cap) or real_run(*a, **k))
+    b = L.LedgerBudget(ctx.ledger, "E4", "claimcheck", CHECK_CAP, label="f1")
+    claims = ctx.claimcheck(b, "We hold ISO 9001 [E-1].", [])
+    assert calls == [CHECK_CAP] and isinstance(claims, list) and claims and claims[0]["verdict"] != "supported"
+    assert {"span", "verdict", "cited_ids"} <= set(claims[0])      # dicts for the scorers; E-1 is not retrieved: unsupported
+
+
+def test_a4_gap_sentence_with_other_factual_content_still_counts():
+    mixed = "We have delivered 40 contracts for 12 councils since 2015 and hold [NEEDS FIRM INPUT: insurer] cover."
+    claims, exempt = SC.split_claims(mixed)
+    assert claims == [mixed] and exempt == []
+    r = SC.score_traceability([{"id": "d", "text": mixed, "retrieved_ids": [], "live_ids": []}])
+    assert (r["claims"], r["resolved"], r["gap_exempt"]) == (1, 0, 0) and r["failures"][0]["reason"] == "no citation"
+    # a digit alone counts; so do four content words; three or fewer without a digit stay exempt
+    assert SC.claims_of("We [NEEDS FIRM INPUT: x] 40.")
+    assert SC.claims_of("Our experienced directors manage large cleaning contracts and [NEEDS FIRM INPUT: x].")
+    assert SC.claims_of("We hold [NEEDS FIRM INPUT: x].") == [] and SC.claims_of("We hold ISO [NEEDS FIRM INPUT: x].") == []
+
+
+@pytest.mark.parametrize("text", ["We hold [NEEDS FIRM INPUT: ISO 14001 cert. Provide copy]",
+                                  "[NEEDS FIRM INPUT: no such case study]",
+                                  "Our [NEEDS FIRM INPUT: a] and the [NEEDS FIRM INPUT: b] will be provided."])
+def test_a4_marker_only_gap_sentences_are_exempt_and_reported(text):
+    claims, exempt = SC.split_claims(text)
+    assert claims == [] and len(exempt) == 1
+    r = SC.score_traceability([{"id": "d", "text": text + ". We hold ISO 9001 [E-1].", "retrieved_ids": [1], "live_ids": [1]}])
+    assert r["gap_exempt"] == 1 and r["claims"] == 1 and r["gap_exempt_share"] == 0.5 and len(r["gap_exempt_sentences"]) == 1
+
+
+def test_a4_cited_gap_sentence_is_always_scored():
+    assert len(SC.claims_of("We hold [NEEDS FIRM INPUT: x] [E-1].")) == 1
+
+
+def test_a1_ref_match_needs_minimum_text_similarity():
+    key = [{"ref": "3", "kind": "question", "text": "Describe your safeguarding policy"}]
+    wrong = [{"ref": "3", "kind": "question", "text": "Provide three years of audited accounts"}]
+    right = [{"ref": "3", "kind": "question", "text": "Describe your safeguarding policies"}]
+    assert SC.match_items(key, wrong) == [] and SC.match_items(key, right) == [(0, 0)]
+    assert SC.REF_SIM_MIN == 0.5
+
+
+def test_reading_rows_takes_the_shared_file_lock(cfg, tmp_path, monkeypatch):
+    lg = led(tmp_path, cfg, dry=True)
+    lg.append({"phase": "E1", "task": "x", "model": "fake", "input_tokens": 1, "output_tokens": 1})
+    ops = []
+    real = L.fcntl.flock
+    monkeypatch.setattr(L.fcntl, "flock", lambda f, op: ops.append(op) or real(f, op))
+    assert len(lg.rows()) == 1
+    assert ops[0] == L.fcntl.LOCK_SH and ops[-1] == L.fcntl.LOCK_UN
+
+
+def test_only_task_failed_is_recorded_other_app_errors_are_fatal(ctx, monkeypatch):
+    from app.errors import AppError
+    from app.tender.llm import TaskFailed
+    boom = {"n": 0}
+
+    def fail(c, phase, item):
+        boom["n"] += 1
+        raise TaskFailed("ai_invalid_output", "bad") if boom["n"] == 1 else AppError(404, "tenant_missing", "no tenant")
+    monkeypatch.setattr(R, "_run_item", fail)
+    with pytest.raises(AppError, match="no tenant"):
+        R.run_phase("E1", ctx)
+    rows = [json.loads(l) for l in (ctx.results_dir / "E1.jsonl").read_text().splitlines()]
+    assert len(rows) == 1 and rows[0]["result"] == {"error": "ai_invalid_output"}
+
+
+def test_cache_clearing_phases_say_the_demo_seed_must_be_rerun(ctx, capsys):
+    ctx.provider = type("Cacheable", (ScriptedFakeAI,), {"cacheable": True})()
+    r = R.run_phase("T1", ctx)
+    assert "reseed_required" not in r                       # T1 does not clear the cache
+    r = R.run_phase("T2", ctx)
+    assert "eval.seed" in r["reseed_required"] and "eval.seed" in capsys.readouterr().err
+    ctx.provider = ScriptedFakeAI()                          # not cacheable: nothing cleared, no note
+    assert "reseed_required" not in R.run_phase("T2", ctx)

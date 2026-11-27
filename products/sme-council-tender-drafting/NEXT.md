@@ -1,3 +1,23 @@
+# STATUS (T-202, T-193 follow-ups) - code done, awaiting reviewer
+
+Branch `p/sme-council-tender-drafting/T-202`. Only `eval/`, `EVAL.md`, tests. No `app/tender/` edits, no live calls.
+
+## Done
+- Real claim check wired: `Context.claimcheck=None` now defaults to `eval.run.default_claimcheck(ctx)` (`app.tender.claimcheck.check_draft`, the cited
+  live passages from the DB, `LedgerBudget` with `CHECK_CAP`, claims returned as dicts). E4 fixtures may carry `retrieved_ids`. Dry runs use the
+  ScriptedFakeAI `ClaimcheckOutput` heuristic. `config` prints the claimcheck prompt SHA-256. `eval/ledger.py` still imports nothing from `app`.
+- R1: A4 `split_claims` / `carries_other_content`: a gap sentence stays exempt only if no digit and at most 3 non-connective words remain after
+  stripping the marker. A4 reports `gap_exempt`, `gap_exempt_share`, `gap_exempt_sentences`. Rule in EVAL.md (A4 row).
+- R2: T2, T3, R2 return `reseed_required` and print to stderr. AFTER ANY T2, T3 OR R2 RUN, RE-RUN `python -m eval.seed` BEFORE A DEMO (the clear wipes the recorded demo cache).
+- R3: `Ledger.rows()` reads under `LOCK_SH`. R4: only `TaskFailed` is recorded as an item failure; other `AppError` is fatal for the phase.
+- Should-fix 11: `REF_SIM_MIN = 0.5` on ref matches, in EVAL.md. One fixture item changed ("Safeguarding" -> "Provide your safeguarding arrangements").
+
+## Left
+- Inputs still absent (keys, trap sets, fixtures, packs); live provider path (L1); `--live` still refused.
+
+## Verify
+`cd app/backend && TEST_DATABASE_URL=... python3.13 -m pytest -q -o addopts="" tests/test_tender_eval.py`; `python -m eval.run config`.
+
 # STATUS (T-193, slice S9: eval harness and demo seed) - reviewer CHANGES addressed, awaiting re-review
 
 Branch `p/sme-council-tender-drafting/T-193`. Not merged. No migrations, no edits under `app/tender/`. No live model calls: the only

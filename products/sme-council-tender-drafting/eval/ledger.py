@@ -148,7 +148,12 @@ class Ledger:
     def rows(self) -> list[dict]:
         if not self.path.exists():
             return []
-        return [json.loads(line) for line in self.path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        with self._lock, open(self.path, "r", encoding="utf-8") as f:
+            fcntl.flock(f, fcntl.LOCK_SH)             # never see a half-written line from a concurrent writer
+            try:
+                return [json.loads(line) for line in f.read().splitlines() if line.strip()]
+            finally:
+                fcntl.flock(f, fcntl.LOCK_UN)
 
     @staticmethod
     def _spent_in(rows: list[dict], cfg: BudgetConfig, dry_run: bool, group: str | None, phase: str | None) -> float:

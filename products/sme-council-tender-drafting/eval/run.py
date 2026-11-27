@@ -28,8 +28,11 @@ DRY_RESULTS_DIR = RESULTS_DIR / "dry"
 DRY_LEDGER = HERE / "ledger.dry.jsonl"
 LIVE_LEDGER = HERE / "ledger.jsonl"
 DEMO_PACKS = 3
-NEEDS_CLAIMCHECK = {"E2", "E3", "E4", "T3"}      # phases whose scored inputs come from the claim check
 CACHE_CLEAR_PHASES = {"T2", "T3", "R2"}          # repeat passes and the A9 stopwatch must not be answered from ai_cache
+
+
+RESEED_NOTE = ("the demo tenant's ai_cache was cleared (it held the recorded demo cache): re-run `python -m eval.seed` "
+               "before any demo")
 
 
 class PhaseNotReady(RuntimeError):
@@ -72,7 +75,7 @@ class Context:
     sessions: object
     tenant_id: object
     retrieve: Callable[[str], list] | None = None          # question -> list[Hit]
-    claimcheck: Callable[..., list] | None = None          # (budget, draft_text, hits) -> [claim dicts]
+    claimcheck: Callable[..., list] | None = None          # (budget, draft_text, hits[, retrieved_ids]) -> [claim dicts]; None = the real one
     load_pack: Callable[[str], list[tuple[int, str]]] | None = None   # pack name -> [(page, text)]
     keys_dir: Path = KEYS_DIR
     results_dir: Path = RESULTS_DIR
@@ -80,6 +83,8 @@ class Context:
     dry: bool = True
 
     def __post_init__(self):
+        if self.claimcheck is None:
+            self.claimcheck = default_claimcheck(self)
         headroom = getattr(self.provider, "output_headroom", None)
         if headroom != self.ledger.cfg.headroom:
             raise PhaseNotReady(f"provider output_headroom is {headroom!r}, the ledger assumes {self.ledger.cfg.headroom}: "
@@ -189,17 +194,32 @@ def _draft(ctx: Context, phase: str, item: Item) -> dict:
                         provider=ctx.provider, sessions=ctx.sessions)
     out = {"id": q["id"], "text": d.text, "retrieved_ids": d.retrieved_ids, "cited_ids": d.cited_ids,
            "word_limit": q.get("word_limit"), "flags": d.flags}
-    if ctx.claimcheck is not None:
-        out["claims"] = _check(ctx, phase, q["id"], d.text, hits)
+    out["claims"] = _check(ctx, phase, q["id"], d.text, hits)
     return out
 
 
-def _check(ctx: Context, phase: str, draft_id: str, text: str, hits: list) -> list[dict]:
-    if ctx.claimcheck is None:
-        raise PhaseNotReady("the claim check (T-190, app/tender/claimcheck) is not available: pass a claimcheck callable")
+def default_claimcheck(ctx: Context) -> Callable[..., list]:
+    """The real claim check (app.tender.claimcheck.check_draft) on the harness's provider and LedgerBudget. Same inputs as the
+    app: the draft and its cited live passages. Returns claim dicts (span, kind, cited_ids, verdict, ...) for the scorers."""
+    def run(budget, text: str, hits: list, retrieved_ids: list[int] | None = None) -> list[dict]:
+        from dataclasses import asdict
+        from app.tender import claimcheck as cc
+        from app.tender.draft import Limits
+        ids = {int(n) for n in cc._CITE.findall(text)}
+        with ctx.sessions() as db:
+            passages = cc.live_passages(db, ctx.tenant_id, ids, Limits())
+            db.rollback()
+        retrieved = retrieved_ids if retrieved_ids is not None else [h.display_no for h in hits]
+        claims, _, _ = cc.check_draft(text, retrieved, ctx.tenant_id, budget, passages, provider=ctx.provider, sessions=ctx.sessions)
+        return [asdict(c) for c in claims]
+    return run
+
+
+def _check(ctx: Context, phase: str, draft_id: str, text: str, hits: list, retrieved_ids: list[int] | None = None) -> list[dict]:
     from app.tender.draft import CHECK_CAP       # the claimcheck output cap (DESIGN 4.4), not a copy of it
     budget = LedgerBudget(ctx.ledger, phase, "claimcheck", CHECK_CAP, label=draft_id)
-    return ctx.claimcheck(budget, text, hits)
+    kw = {} if retrieved_ids is None else {"retrieved_ids": retrieved_ids}
+    return ctx.claimcheck(budget, text, hits, **kw)
 
 
 def _run_item(ctx: Context, phase: str, item: Item) -> dict:
@@ -207,7 +227,8 @@ def _run_item(ctx: Context, phase: str, item: Item) -> dict:
         return _extract(ctx, phase, item)
     if item.kind == "draft":
         return _draft(ctx, phase, item)
-    return {"id": item.data["id"], "claims": _check(ctx, phase, item.data["id"], item.data["text"], [])}
+    return {"id": item.data["id"], "claims": _check(ctx, phase, item.data["id"], item.data["text"], [],
+                                                    item.data.get("retrieved_ids"))}
 
 
 def clear_ai_cache(ctx: Context) -> None:
@@ -226,14 +247,11 @@ def _phase_rows(ctx: Context, phase: str) -> bool:
 def run_phase(phase: str, ctx: Context) -> dict:
     """Run a phase's plan. Finished items (in results/<phase>.jsonl) are skipped. A refused hold stops the phase cleanly.
     A failed item (the model's answer was invalid or truncated) is recorded with its error code and counts against the bar."""
-    from app.errors import AppError
+    from app.tender.llm import TaskFailed
     from app.ai import AIUnavailable
     if phase not in PHASES:
         raise PhaseNotReady(f"unknown phase {phase!r}; known: {', '.join(PHASES)}")
     plan = build_plan(phase, ctx)
-    if phase in NEEDS_CLAIMCHECK and ctx.claimcheck is None:
-        raise PhaseNotReady(f"{phase} needs the claim check (T-190, app/tender/claimcheck): pass a claimcheck callable. "
-                            f"Nothing was run, so no item is recorded without its claims.")
     if PHASES[phase].group == "scored":
         preflight_scored(ctx.ledger, phase, [(n, p.worst_usd) for n, p in PHASES.items() if p.group == "scored"])
     path = ctx.results_dir / f"{phase}.jsonl"
@@ -245,12 +263,14 @@ def run_phase(phase: str, ctx: Context) -> dict:
     done = {json.loads(l)["item"] for l in path.read_text(encoding="utf-8").splitlines() if l.strip()}
     ran = skipped = failed = 0
     stopped = None
+    cache_cleared = False
     for item in plan:
         if item.id in done:
             skipped += 1
             continue
         if phase in CACHE_CLEAR_PHASES and getattr(ctx.provider, "cacheable", True):
             clear_ai_cache(ctx)
+            cache_cleared = True
         try:
             result = _run_item(ctx, phase, item)
         except BudgetExceeded as e:
@@ -259,26 +279,33 @@ def run_phase(phase: str, ctx: Context) -> dict:
         except AIUnavailable as e:                  # infrastructure: stop for a resume, do not record the item
             stopped = f"AI unavailable: {type(e).__name__}; resume later"
             break
-        except AppError as e:                       # TaskFailed: invalid or truncated output; a result, not a crash
+        except TaskFailed as e:                     # invalid or truncated output: a result, not a crash. Any other AppError
+            #                                         (tenant or DB lookup, plan) is infrastructure and propagates: the phase is fatal.
             result = {"error": getattr(e, "code", type(e).__name__)}
             failed += 1
         with open(path, "a", encoding="utf-8") as f:
             f.write(json.dumps({"item": item.id, "result": result}, sort_keys=True, default=str) + "\n")
         ran += 1
-    return {"phase": phase, "planned": len(plan), "ran": ran, "failed": failed, "skipped": skipped, "stopped": stopped,
-            "dry_run": ctx.dry}
+    res = {"phase": phase, "planned": len(plan), "ran": ran, "failed": failed, "skipped": skipped, "stopped": stopped,
+           "dry_run": ctx.dry}
+    if cache_cleared:
+        res["reseed_required"] = RESEED_NOTE
+        print(f"eval.run: {RESEED_NOTE}", file=sys.stderr)
+    return res
 
 
 # ---------- run configuration (EVAL.md) ----------
 
 def run_configuration() -> dict:
-    from app.tender import draft as dr, extract as ex
+    from app.tender import claimcheck as cc, draft as dr, extract as ex
     specs = [ex.EXTRACT_SPEC, dr.DRAFT_SPEC, dr.SHORTEN_SPEC]
     prompts = {f"{s.name}:{s.prompt_version}": {"sha256": hashlib.sha256(s.system.encode()).hexdigest(), "effort": s.effort,
                                                "output_cap": s.max_output_tokens} for s in specs}
     cfg = load_budget_config()
     return {"model": cfg.model, "approved_by": cfg.approved_by, "total_cap_usd": cfg.total_cap, "group_caps_usd": cfg.group_caps,
-            "reasoning_headroom": cfg.headroom, "prompts": prompts, "claimcheck_prompt": "not built yet (T-190)"}
+            "reasoning_headroom": cfg.headroom, "prompts": prompts, "claimcheck_prompt": {f"{cc.CLAIMCHECK_SPEC.name}:{cc.CLAIMCHECK_SPEC.prompt_version}": {
+                "sha256": hashlib.sha256(cc.CLAIMCHECK_SPEC.system.encode()).hexdigest(), "effort": cc.CLAIMCHECK_SPEC.effort,
+                "output_cap": cc.CLAIMCHECK_SPEC.max_output_tokens}}}
 
 
 def local_database(url: str) -> bool:

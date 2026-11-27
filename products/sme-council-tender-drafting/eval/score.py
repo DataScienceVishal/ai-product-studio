@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app" / "backend"))
 from app.tender.draft import _CITE, _GAP, count_words, split_sentences  # noqa: E402,F401
 
 SIM_THRESHOLD = 0.8
+REF_SIM_MIN = 0.5      # an equal ref also needs this much text similarity, so a wrong item with a reused number is not a match
 BARS = {"A1_recall": 0.90, "A1_precision": 0.90, "A2": 0.90, "A3": 0.85, "A4": 0.95, "A6a": 0.95, "A7": 1.0, "A8": 0.90}
 LIMIT_FIELDS = ("word_limit", "page_limit", "marks", "weight_pct")
 
@@ -36,14 +37,15 @@ def similarity(a: str, b: str) -> float:
 
 def match_items(key: list[dict], got: list[dict], threshold: float = SIM_THRESHOLD, ref_ok=None) -> list[tuple[int, int]]:
     """One-to-one pairs (key index, got index): equal refs first (only with extracted items `ref_ok` accepts, default all),
-    then the highest text similarity >= threshold."""
+    then the highest text similarity >= threshold. A ref match also needs similarity >= REF_SIM_MIN."""
     pairs, used_k, used_g = [], set(), set()
     for i, k in enumerate(key):
         ref = _norm(k.get("ref"))
         if not ref:
             continue
         for j, g in enumerate(got):
-            if j not in used_g and _norm(g.get("ref")) == ref and (ref_ok is None or ref_ok(g)):
+            if j not in used_g and _norm(g.get("ref")) == ref and (ref_ok is None or ref_ok(g)) \
+                    and similarity(k.get("text", ""), g.get("text", "")) >= REF_SIM_MIN:
                 pairs.append((i, j)); used_k.add(i); used_g.add(j)
                 break
     cands = sorted(((similarity(k.get("text", ""), g.get("text", "")), i, j)
@@ -113,28 +115,65 @@ def score_extraction(packs: list[dict]) -> dict:
     }
 
 
-def claims_of(text: str) -> list[str]:
-    """A4 claims: the app's sentences (a citation after the full stop stays with its sentence, a gap marker stays whole),
-    except a sentence that holds a [NEEDS FIRM INPUT: ...] marker and no [E-n] citation. Such a sentence is the draft saying
-    it does not know, which A8 rewards; it is not an unsupported claim. A gap sentence that also cites is still scored."""
-    out = []
+# Words that carry no factual content once the gap marker is stripped from a gap sentence.
+CONNECTIVES = frozenset("a an and are as at be but by for from has have had if in is it its of on or our so that the their "
+                        "then there these this those to we was were which while will with would you your also not no".split())
+
+
+RESIDUAL_MAX_WORDS = 3     # a gap stub like "We hold [NEEDS FIRM INPUT: x]" leaves 1 word ("hold"); a real extra claim leaves more
+
+
+def gap_residual(sentence: str) -> str:
+    """The non-connective words left of a gap sentence once the [NEEDS FIRM INPUT: ...] markers and [E-n] are removed."""
+    rest = _norm(_CITE.sub(" ", _GAP.sub(" ", sentence)))
+    return " ".join(w for w in rest.split() if w not in CONNECTIVES)
+
+
+def carries_other_content(sentence: str) -> bool:
+    """True if a gap sentence says more than that it does not know: any digit left after stripping the marker (a figure,
+    a year, a code number), or more than RESIDUAL_MAX_WORDS non-connective words. Rule chosen so a stub such as "We hold
+    [gap]" or "Our insurance cover is [gap]" stays exempt while "We delivered 40 contracts and hold [gap] cover" or a
+    long sentence with a marker tacked on does not."""
+    rest = gap_residual(sentence)
+    return any(ch.isdigit() for ch in rest) or len(rest.split()) > RESIDUAL_MAX_WORDS
+
+
+def split_claims(text: str) -> tuple[list[str], list[str]]:
+    """(claims, exempt gap sentences). A4 claims are the app's sentences (a citation after the full stop stays with its
+    sentence, a gap marker stays whole). A sentence with a [NEEDS FIRM INPUT: ...] marker and no [E-n] is exempt (the draft
+    is saying it does not know, which A8 rewards) only if, with the marker stripped, no digit is left and at most RESIDUAL_MAX_WORDS
+    non-connective words are (carries_other_content is false). A gap sentence with more content, such as "We hold 40 contracts and [NEEDS FIRM
+    INPUT: insurer] cover.", stays a claim and fails A4 without a citation. A gap sentence that cites is always scored."""
+    claims, exempt = [], []
     for s in split_sentences(text):
         if _GAP.search(s) and not _CITE.search(s):
+            if carries_other_content(s):
+                claims.append(s)
+            else:
+                exempt.append(s)
             continue
         if not _norm(_CITE.sub(" ", _GAP.sub(" ", s))):
             continue
-        out.append(s)
-    return out
+        claims.append(s)
+    return claims, exempt
+
+
+def claims_of(text: str) -> list[str]:
+    return split_claims(text)[0]
 
 
 def score_traceability(drafts: list[dict]) -> dict:
     """A4. drafts: [{"id", "text", "retrieved_ids", "live_ids"}]. A claim passes if it carries at least one [E-n] and every
     [E-n] in it is both a live passage of the tenant and in that draft's retrieved set."""
-    total = ok = 0
+    total = ok = n_sentences = 0
+    exempt_all = []
     failures = []
     for d in drafts:
         live, retrieved = set(d.get("live_ids", [])), set(d.get("retrieved_ids", []))
-        for claim in claims_of(d["text"]):
+        claims, exempt = split_claims(d["text"])
+        exempt_all += exempt
+        n_sentences += len(claims) + len(exempt)
+        for claim in claims:
             total += 1
             ids = [int(n) for n in _CITE.findall(claim)]
             if ids and all(n in live and n in retrieved for n in ids):
@@ -142,7 +181,8 @@ def score_traceability(drafts: list[dict]) -> dict:
             else:
                 failures.append({"draft": d["id"], "claim": claim, "reason": "no citation" if not ids else "does not resolve"})
     s = _ratio(ok, total)
-    return {"score": s, "claims": total, "resolved": ok, "pass": s is not None and s >= BARS["A4"], "failures": failures}
+    return {"score": s, "claims": total, "resolved": ok, "pass": s is not None and s >= BARS["A4"], "failures": failures,
+            "gap_exempt": len(exempt_all), "gap_exempt_share": _ratio(len(exempt_all), n_sentences), "gap_exempt_sentences": exempt_all}
 
 
 def score_word_limits(drafts: list[dict]) -> dict:
