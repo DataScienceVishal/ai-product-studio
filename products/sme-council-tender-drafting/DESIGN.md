@@ -61,7 +61,7 @@ The rules are the same as the starter's:
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `source_documents` | tenant_id, id, kind (`tender`\|`evidence`), pack_id (null for evidence), filename (sanitised), category (evidence only: policy, case_study, accreditation, social_value, company_facts, past_bid), sha256, mime, page_count, page_mode (`pdf_page`\|`docx_break`\|`docx_block`), size_bytes, status (`parsed`\|`rejected`), reject_reason (fixed code), created_by, created_at | Original bytes are **not stored** (section 7). A duplicate sha256 in the same tenant is refused |
+| `source_documents` | tenant_id, id, kind (`tender`\|`evidence`), pack_id (null for evidence), filename (sanitised), category (evidence only: policy, case_study, accreditation, social_value, company_facts, past_bid), sha256, mime, page_count, page_mode (`pdf_page`\|`docx_break`\|`docx_block`\|`text_block` for evidence .txt), size_bytes, status (`parsed`\|`rejected`), reject_reason (fixed code), created_by, created_at | Original bytes are **not stored** (section 7). A duplicate sha256 in the same tenant is refused |
 | `document_pages` | tenant_id, document_id, page_no, text, char_count, image_only (bool) | DOCX has no real pages: sections split at page breaks, otherwise "page" means the paragraph block, recorded in `source_documents.page_mode` |
 | `tender_packs` | tenant_id, id, title, buyer (free text), deadline (nullable), status (`uploaded`, `extracting`, `review`, `drafting`, `checking`, `ready`, `signed`, `exported`), confirmed_by, confirmed_at, created_at | One pack = several `source_documents` |
 | `requirements` | tenant_id, id, pack_id, seq, ref (for example "Q3.2"), kind (`question`\|`mandatory`\|`deadline`\|`other`), text, word_limit, page_limit, marks, weight_pct, pass_fail (bool), source_document_id, source_page, source_quote, quote_verified (bool), origin (`model`\|`user`), status (`proposed`\|`confirmed`\|`removed`) | User edits keep `origin=model` plus `edited_by`. The eval compares the model's output **before** any edit |
@@ -202,7 +202,7 @@ All tender and evidence text goes inside `<<<DATA-{nonce}>>> ... <<<END-{nonce}>
 | `POST /packs/{id}/extract` | queue extraction (idempotent) |
 | `GET /packs/{id}/status` | job progress (polled) |
 | `GET /packs/{id}/requirements`, `PATCH /requirements/{id}`, `POST /packs/{id}/requirements`, `POST /packs/{id}/confirm` | checklist review |
-| `POST /evidence/documents`, `GET /evidence`, `DELETE /evidence/documents/{id}` | evidence library |
+| `POST /evidence/documents`, `GET /evidence`, `DELETE /documents/{id}` (tender and evidence documents; any tenant member; 409 `document_in_use` while requirements cite it; evidence becomes a soft delete in S6) | evidence library |
 | `GET /requirements/{id}/evidence` | what retrieval found |
 | `POST /packs/{id}/draft`, `POST /requirements/{id}/redraft`, `PUT /requirements/{id}/draft` (user edit) | drafting |
 | `GET /requirements/{id}/claims` | the claims table |

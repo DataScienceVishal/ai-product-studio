@@ -5,9 +5,9 @@ Revises: 0013
 
 The composite FK was ON DELETE CASCADE, so deleting one tender PDF silently wiped its requirements, drafts and
 claims. It is now NO ACTION: the delete is refused while requirements cite the document. NO ACTION rather than
-RESTRICT because RESTRICT is checked immediately, before the other cascade paths have run, so deleting a pack or a
-tenant (which cascades to both source_documents and requirements) could fail on ordering. NO ACTION is checked at the
-end of the statement, when the requirements are already gone, so pack and tenant deletes still work.
+RESTRICT so the refusal does not depend on the order in which cascade triggers fire: NO ACTION is checked at the end
+of the statement, when a pack or tenant delete has already removed the requirements through their own cascade paths.
+(RESTRICT was tried in review and did not fail on ordering in Postgres 16, so this is robustness, not a workaround.)
 """
 from typing import Sequence, Union
 

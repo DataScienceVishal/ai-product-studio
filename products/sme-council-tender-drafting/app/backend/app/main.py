@@ -19,7 +19,8 @@ from .db import Database
 from .email import EmailSender, OutboxEmail
 from .logs import end_request_fields, request_id_var, setup_logging, start_request_fields
 from .ratelimit import RateLimiter, build_redis_client
-from .routes import account, auth, billing, health, team
+from .tender import ingest
+from .routes import account, auth, billing, health, team, tender
 
 log = logging.getLogger("app.http")
 REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{8,64}$")
@@ -33,6 +34,8 @@ SECURITY_HEADERS = [
 HSTS = (b"strict-transport-security", b"max-age=31536000; includeSubDomains")
 API_CSP = (b"content-security-policy", b"default-src 'none'; frame-ancestors 'none'")  # JSON only; docs are off in prod
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+UPLOAD_PATHS = re.compile(r"/api/(?:evidence/documents|packs/[0-9a-fA-F-]{36}/documents)")  # per-route 15 MB limit
+UPLOAD_OVERHEAD_BYTES = 64 * 1024
 CSRF_EXEMPT = {"/api/billing/webhook"}  # called by the payment provider; protected by its signature
 
 
@@ -69,15 +72,23 @@ class BodyLimit:
 
     BODY = b'{"error":"too_large","message":"That request is too large."}'
 
-    def __init__(self, app: ASGIApp, limit: int):
-        self.app, self.limit = app, limit
+    def __init__(self, app: ASGIApp, limit: int, path_limits: tuple[tuple[re.Pattern, int], ...] = ()):
+        self.app, self.limit, self.path_limits = app, limit, path_limits
+
+    def limit_for(self, path: str) -> int:
+        """The default limit, or the larger one a route opted into (the tender upload routes)."""
+        for pattern, limit in self.path_limits:
+            if pattern.fullmatch(path):
+                return limit
+        return self.limit
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
+        limit = self.limit_for(scope.get("path", ""))
         declared = dict(scope.get("headers") or []).get(b"content-length", b"")
-        if declared.isdigit() and int(declared) > self.limit:
+        if declared.isdigit() and int(declared) > limit:
             await self._refuse(send)
             return
         received, exceeded, refused = 0, False, False
@@ -87,7 +98,7 @@ class BodyLimit:
             message = await receive()
             if message["type"] == "http.request":
                 received += len(message.get("body", b""))
-                if received > self.limit:
+                if received > limit:
                     exceeded = True
                     raise BodyTooLarge()
             return message
@@ -191,14 +202,16 @@ def create_app(settings: Settings | None = None, *, ai: AIProvider | None = None
         log.warning("email goes to the in-memory outbox: password reset, verification and invitation emails "
                     "are not delivered. Fine for demos; a real email adapter needs approval")
 
+    ingest.configure(settings.parse_workers)
     errors.install(app)
-    app.add_middleware(BodyLimit, limit=settings.max_body_bytes)
+    upload_limit = settings.upload_max_bytes + UPLOAD_OVERHEAD_BYTES  # file plus multipart framing
+    app.add_middleware(BodyLimit, limit=settings.max_body_bytes, path_limits=((UPLOAD_PATHS, upload_limit),))
     app.add_middleware(CsrfGuard)
     app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_credentials=True,
                        allow_methods=["GET", "POST", "PUT", "DELETE"],
                        allow_headers=["content-type", "x-requested-with", "x-request-id"])
     app.add_middleware(RequestContext, hsts=settings.cookie_secure, strict_csp=settings.env == "prod")  # outermost
-    routers = [health.router, auth.router, account.router, team.router, team.public, *extra_routers]
+    routers = [health.router, auth.router, account.router, team.router, team.public, tender.router, *extra_routers]
     if settings.billing_enabled:
         routers.append(billing.router)
     for router in routers:  # extra_routers: test-only routes (tests/vehicle.py), mounted before the SPA catch-all
