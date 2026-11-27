@@ -80,3 +80,35 @@ Headcount raised to **102** at 31 October 2026: 70 cleaning (60 operatives, 10 s
 - 26:15 and 28:5-6: 25 leavers on average headcount 100 = 25%; 33 hires (19 hires could not replace 25 leavers and grow the firm); 28:10 six mental health first aiders; 28:12 survey 69 of 97 replied (71%), using the March 2026 headcount per the advisory.
 - README near-miss line updated (30 of 32; 3 of 8). The gaps list G1 to G14 is unchanged and still true: none of the edits touched an absent item.
 - Not changed: the advisories on herbicide baseline year, "ISO 9001-style" wording for the D3 keys, and logging the three council-name searches in SOURCES.md.
+
+## Re-check (validator, 2026-11-27): PASS
+
+I re-checked the numbers against the files themselves, not against the Revision 1 summary.
+
+| Check | Arithmetic | Files |
+|---|---|---|
+| Headcount split | 70 + 16 + 8 + 8 = 102; cleaning is 60 operatives + 10 supervisors | 01:9, 08:5, README:5, SPEC (1 match for "102 staff") |
+| Contract staffing fits | Cleaning: 25 (20:8) + 12 (23:7) = 37 ≤ 70, with 5 contract supervisors ≤ 10 (08:12). Security: 6 (21:8) + 4 (24:8) = 10 ≤ 16. Grounds: 6 (22:8) + 2 = 8 (19:10) | 01, 08, 19, 20-24 |
+| Training groups | Cleaning plus grounds 70 + 8 = 78 (08:10-11; COSHH 76/78 = 97%). Security plus grounds 16 + 8 = 24 (08:18). Safeguarding 30/32 = 93.75% → 94% (08:15 = 11:7). Pesticide 3/8 = 37.5% → 38% (08:20 = 19:12). GDPR 97/102 = 95.1% (08:22). Training spend £37,800 / 102 = £371 (08:25) | 08, 11, 19 |
+| Supervision ratio | 60 / 10 = 6 operatives per supervisor, within the 1:7 rule (17:12) | 01, 17 |
+| Averages and turnover | Average employees 82, 91, 100 (02:7-9); £3.82m / 100 = £38k a head. Leavers 25 / 100 = 25% (26:15 = 28:6 = README:61). 33 hires − 25 leavers = net +8, consistent with 97 in March 2026 (28:12) and 102 in October 2026 | 02, 26, 28 |
+| LTI rate | 1 lost-time injury (06:12) / 100 average headcount = 1.0 per 100 (06:13) | 06 |
+| Social value | Local hires 28/33 = 84.8% → 85% (14:6). Zero-hours 12/102 = 11.8% → 12%, and the 88% on 16+ hours is 90/102 (14:9). Volunteering 82 / 100 = 0.82 days a head (14:10) | 14 |
+| Survey and EDI | 69/97 = 71.1% (28:12); 97 responses from 102 staff (10:7); 6 mental health first aiders (08:23 = 28:10) | 10, 28 |
+| Unchanged figures | Contract values sum to £881k; Eastvale 11% (£412k); complaints 37; audit mean 90.9% | 02, 04, 26 |
+
+- **Gaps still true.** A grep for the G1 to G14 terms (14001, 45001, 27001, Living Wage Foundation, NHS, door supervision, control room, tree surgery, Welsh, parent company, 22301, Investors in People, EV and net-zero, £500,000, transfer over 20) returns only the "not held" or "not provided" lines already listed in the first check. No revised line asserts any of them.
+- **Footers.** The grep still finds 33 of 33 files ending with the footer line.
+
+**Fix applied by the checker (F11).**
+
+| File:line | Was | Now | Why |
+|---|---|---|---|
+| 09:8 | "All 102 employees are recruited directly" | "All 102 employees are employed directly (recruited by us or transferred in under TUPE, HF-TUPE-15)" | The old wording contradicted the 22 TUPE transferees (15:17-18) |
+
+**Remaining advisories (non-blocking):**
+- the herbicide baseline year (05:11, 22:17);
+- how the D3 keys should treat "ISO 9001-style";
+- logging the council-name searches in SOURCES.md.
+
+Verdict: **PASS.** D2 meets the SPEC section 5 and DESIGN section 9 bar. The changes are not committed.

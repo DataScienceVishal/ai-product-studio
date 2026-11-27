@@ -5,7 +5,7 @@
 Harrowmere Facilities Ltd (fictional) has a turnover below the £36m threshold that triggers a statutory statement under section 54 of the Modern Slavery Act 2015. We publish this voluntarily.
 
 ## Our approach
-- All 102 employees are recruited directly; we do not use labour agencies for cleaning or security. Right-to-work checks are done on day one by the Finance and HR Manager.
+- All 102 employees are employed directly (recruited by us or transferred in under TUPE, HF-TUPE-15); we do not use labour agencies for cleaning or security. Right-to-work checks are done on day one by the Finance and HR Manager.
 - We pay all employees through payroll at or above the National Living Wage; no employee pays a recruitment fee.
 - Supplier risk: our 23 active suppliers were screened by questionnaire in 2025/26; 21 replied. The 2 that did not reply (both small tool suppliers) have been moved to a watch list.
 - Training: modern slavery awareness was added to induction in April 2025; 100% of staff joining since then have completed it.
