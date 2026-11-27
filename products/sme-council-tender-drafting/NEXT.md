@@ -43,5 +43,11 @@ Branch `p/sme-council-tender-drafting/T-185`. Not merged; reviewer PASS needed.
 3. `infra/test-deploy-workflow.sh` needs the starter's `_starter-deploy.yml`, which is not in the product copy (exit 2 here); the
    `_starter-ci.yml` bicep/docker/playwright jobs were not run (no az, docker or browsers here).
 
+## Test results (final tree)
+- Backend: `cd products/sme-council-tender-drafting/app/backend && TEST_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/starter_test python -m pytest -q` (Python 3.12 venv from requirements-dev.txt, local Postgres 16, per-run DB). Exit 0, 852 passed, 0 failed (counted from the progress dots; the starter's addopts hide the summary line).
+- Migrations: `alembic upgrade head && alembic check` ("No new upgrade operations detected"); `downgrade 0012` then `upgrade head`; `downgrade base` then `upgrade head`: all OK.
+- Frontend: `cd app/frontend && npm ci && npx tsc -b && npx vitest run` 202 passed (6 files); `npm run build` OK; `python3 scripts/check_built_html.py frontend/dist/index.html` OK.
+- Infra: `bash infra/test-db-setup.sh` (REQUIRE_PG=1) 33 passed; `bash infra/test-deploy-role.sh` 67 passed. Not run: see Left item 3.
+
 ## Run
 See `app/README.md`; backend needs `DATABASE_URL`, then `alembic upgrade head`.
