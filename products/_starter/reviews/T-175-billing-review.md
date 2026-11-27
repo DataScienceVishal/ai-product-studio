@@ -120,3 +120,50 @@ cancels`. This is a one-line documentation fix, but the definition of done needs
   escalate once `attempts` passes N, so the operator sees one clear alert and not constant ERROR lines.
 - **S7.** The table has no `updated_at` or `last_attempt_at` column, so an operator cannot tell how long a to-do has
   been failing.
+
+## Re-review (21d9eb3)
+
+### Verdict: PASS
+
+B1 and B2 are fixed. S2 and S4 are done as well.
+
+**Tests:** the full backend suite gave **804 passed, 1 skipped** (`test_spa.py:152`), 100 s.
+
+**B1, my event sequence:** the new test `test_b1_a_pending_cancel_never_cancels_the_tenants_current_subscription`
+replays it. Only sub_2 is cancelled, and sub_1 stays active and current. Two layers protect the current ref:
+- the takeover deletes any `PendingCancel` for the ref that becomes current, in the same transaction (billing.py:219-223);
+- `attempt_pending_cancel` re-reads the row `FOR UPDATE SKIP LOCKED` with `populate_existing`, drops it without calling
+  the provider when its ref is the tenant's current one, and keeps the row lock until the commit after the cancel.
+
+**B1, the sweep race:** a takeover that commits before the sweep locks the row is caught by the current-ref check. A
+takeover during an in-flight cancel waits on the row lock (its `DELETE` blocks). The sweep only reads `subscriptions`
+and never locks them, so the two cannot deadlock. A temporary probe, since deleted, confirmed that a row locked by
+another session returns `None` and the provider is not called. That leaves one narrow window: a cancel already in
+flight when the old ref is reactivated. The cancel was correct when it started, and nothing in our database can stop a
+call that is already at the provider. I accept that.
+
+**Sweep:** it now takes ids and locks each row in turn, and each row has its own try/except with rollback. That fixes
+S2. `test_b1_one_bad_row_does_not_stop_the_sweep` covers it.
+
+**B2:** the `DATA.md` row is accurate: the fields, the reason, the retention, and what deletes the rows.
+
+**Mutation checks** (each change made to `app/routes/billing.py`, then put back with `git checkout`; the tree was clean
+afterwards):
+
+| Mutation | Result |
+|---|---|
+| Savepoint removed (M5 from the first review) | **now fails** `test_s4_a_concurrent_dead_marker_insert_keeps_the_events_dedup_row` |
+| Current-ref check removed | fails `test_b1_the_retry_and_the_sweep_skip_and_drop_a_row_for_the_current_ref` |
+| Current-ref check and takeover delete both removed | both B1 tests fail |
+| Takeover delete alone removed | nothing fails: the current-ref check still covers the sequence (see note 1) |
+| `skip_locked` removed | nothing fails: no committed test holds the row lock (see note 2) |
+
+**Notes (non-blocking):**
+1. The takeover delete is never tested on its own. A test that applies the takeover with `billing=None`, so no retry
+   runs, and then asserts the row is gone would pin it down.
+2. Add a committed version of my lock probe: hold the row `FOR UPDATE` in a second session and assert
+   `attempt_pending_cancel` returns `None` without calling the provider.
+3. While a cancel is in flight, a takeover webhook for that tenant waits up to about 17 s with the subscription row
+   locked. That is acceptable at this volume.
+4. S1 (the Container Apps job for `maintenance cancels`), S3 (test the wrapper's except), S5, S6 and S7 are still open.
+   S1 needs a board task before G4.
