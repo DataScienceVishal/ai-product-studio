@@ -147,3 +147,25 @@ Fixed and verified (re-run probe against `apply_rules`):
 - A claim with no figure, code or name ("We hold a framework contract [E-3]") is still `supported` on any 3-word substring of the
   cited passage ("of the county"). No rule can check that meaning; it is the model's judgement plus the human sign-off, and A6a
   measures it. Record it in the EVAL.md threat notes.
+
+## Final re-review at 79ff0ca (must-fix 1b)
+
+**Verdict: PASS. Security verdict: PASS** (DESIGN section 7 rows 2 and 7 spot-check).
+
+Evidence: `tests/test_tender_claimcheck.py` + `tests/test_tender_gate.py` on 79ff0ca: **45 passed** (13 s). The builder reports a full suite
+of 1025 passed, 1 skipped; my full run on 6be175a was 1022 passed, 1 skipped, and this change only touches `names_in` and its tests.
+
+Probes re-run against `apply_rules` with a checker that obeys an injection:
+- "We clean every store for Tesco [E-3]." with the quote "serve the schools" is now `unsupported`;
+- "We are a supplier to the University of Bristol [E-3]." with the quote "under a contract with" is now `unsupported`;
+- every earlier probe still holds (multi-word names, NHS Trust, injected line, cross-sentence citation, repeated sentence);
+- honest claims stay `supported`: "Leeds City Council" and a single-word "Leeds" whose quote holds the name, and a
+  mid-sentence capitalised "Our" after a comma.
+
+Residual, accepted (should-fix, not blocking):
+- A one-word name that opens its sentence and is the claim's only fact ("Tesco relies on our cleaning teams [E-3]." with the
+  quote "Our cleaning teams serve") is still `supported`. A sentence-initial capitalised word cannot be told apart from an
+  ordinary sentence start without entity recognition. Treating every sentence-initial word outside `_COMMON_FIRST` as a name
+  would close it, at the cost of more false blocks (safe direction). Decide during L1 tuning, and list it with the "no figure,
+  code or name" residual in the EVAL.md threat notes.
+- Should-fix 5, 7 and 8 stay open for S7/S8, as NEXT.md says.
