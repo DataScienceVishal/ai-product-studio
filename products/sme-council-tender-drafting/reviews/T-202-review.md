@@ -111,3 +111,14 @@ The A4 row describes all five triggers (digit, number word, acronym, `fact_trigg
 ### Accepted residual risk (not blocking)
 
 Two-word positive claims such as "We are accredited [gap]", "Staff are vetted [gap]", "We guarantee compliance [gap]", "We are award-winning [gap]" and "certified to iso [gap]" (lowercase) are still exempt. That follows from the 2-word threshold and is a fair trade-off against keeping stubs exempt. S1 (put the exempt sentences in the A5 human sample) is now the backstop for these, so I'd do it before the freeze.
+
+## Re-review (final, 3a0e7ec)
+
+**Verdict: PASS**
+
+- `tests/test_tender_eval.py`: **96 passed** in 9.53s (python3.13, db `m5bb5`). I did not run the full suite. The caller is running it.
+- `no` and `not` are no longer on the `CONNECTIVES` list, and `NEGATIONS` (no, not, never, nil, nothing, nobody, neither, nor, without) is checked the same way as `NUMBER_WORDS` (`eval/score.py`). The EVAL.md A4 row lists it.
+- Every M1 example and every negation I flagged in the previous re-review now counts as a claim. That includes "We have never had a breach [gap]", "We have had no incidents [gap]" and "We do not subcontract [gap]".
+- The stubs are still exempt: "We hold [gap]", "Our insurance cover is [gap]", two markers on one stub, and a bare marker whose own text contains "no" and "not" ("[NEEDS FIRM INPUT: no ISO cert held, not sure]"). The marker text is blanked before any check runs.
+- Further probes: "nil complaints", "No incidents" (capital N), "Nobody was injured", "We cannot recall incidents" and "We haven't had breaches" are all claims. The last two count only because they reach 3 content words: `cannot` and `haven't` are not on the negation list.
+- Residual risk, accepted: a hyphenated or two-word positive claim such as "We are incident-free [gap]" or "We are accredited [gap]" is still exempt. This is the 2-word trade-off. S1 (exempt sentences in the A5 human sample) is still the recommended backstop. Adding `cannot` and the `n't` forms to `NEGATIONS` would be a cheap hardening.
