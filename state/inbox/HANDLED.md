@@ -24,3 +24,5 @@
 271771354 | "1A" = Q-16 answered A ($2 cap for part B AI test); QUESTIONS, DECISIONS, BOARD updated; T-113 claimed | 20261126T211938Z-run-0abb
 271771355 | "2A" = Q-17 answered A (conditional G1, two-week demo build on made-up data); QUESTIONS, DECISIONS, BOARD updated; T-158 opened | 20261126T211938Z-run-0abb
 271771356 | "1C" = Q-18 answered C (build best parked idea as portfolio demo); picked sme-council-tender-drafting; QUESTIONS, DECISIONS, BOARD updated; T-183 claimed, T-184 queued | 20261127T152002Z-run-cb8f
+271771357 | "1A" = Q-19 answered A ($6 one-off gpt-5-mini cap for tender eval); QUESTIONS, DECISIONS updated | 20261127T202011Z-run-d958
+271771358 | duplicate "1A" (3s after 271771357): no extra action | 20261127T202011Z-run-d958
