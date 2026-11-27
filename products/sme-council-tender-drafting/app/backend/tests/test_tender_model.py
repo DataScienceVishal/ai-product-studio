@@ -88,6 +88,28 @@ def test_composite_fk_refuses_a_cross_tenant_child(two, make):
     db.rollback()
 
 
+def test_requirement_document_fk_alone(two):
+    """Valid pack (tenant B's own), source document from tenant A: only fk_requirements_document can refuse it."""
+    db, a, b, rows_a, rows_b = two
+    db.add(Requirement(tenant_id=b.id, pack_id=rows_b["pack"].id, seq=5, kind="question", text="x",
+                       source_document_id=rows_a["doc"].id))
+    with pytest.raises(IntegrityError) as err:
+        db.commit()
+    db.rollback()
+    assert "fk_requirements_document" in str(err.value)
+
+
+def test_export_signoff_fk_alone(two):
+    """Valid pack (tenant B's own), sign-off from tenant A: only fk_exports_signoff can refuse it."""
+    db, a, b, rows_a, rows_b = two
+    db.add(ExportRecord(tenant_id=b.id, pack_id=rows_b["pack"].id, signoff_id=rows_a["signoff"].id,
+                        docx_sha256="3" * 64))
+    with pytest.raises(IntegrityError) as err:
+        db.commit()
+    db.rollback()
+    assert "fk_exports_signoff" in str(err.value)
+
+
 def test_composite_fk_accepts_the_same_tenant_child(two):
     db, a, _, rows_a, _ = two
     db.add(DocumentPage(tenant_id=a.id, document_id=rows_a["doc"].id, page_no=2))
@@ -101,6 +123,11 @@ def test_duplicate_document_hash_is_refused_per_tenant_only(two):
     with pytest.raises(IntegrityError):
         db.commit()
     db.rollback()
+    # another tenant may store the same file: the hash is unique per tenant, not globally
+    db.add(SourceDocument(tenant_id=b.id, kind="evidence", filename="same", sha256="a" * 64, mime="m",
+                          page_mode="pdf_page", size_bytes=1))
+    db.commit()
+    assert db.scalars(scoped(SourceDocument, b.id).where(SourceDocument.sha256 == "a" * 64)).all()
 
 
 def test_evidence_tsv_is_generated_and_deleting_the_tenant_cascades(two):
