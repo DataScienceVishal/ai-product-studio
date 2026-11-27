@@ -829,10 +829,24 @@ def test_a4_gap_sentence_with_other_factual_content_still_counts():
     assert claims == [mixed] and exempt == []
     r = SC.score_traceability([{"id": "d", "text": mixed, "retrieved_ids": [], "live_ids": []}])
     assert (r["claims"], r["resolved"], r["gap_exempt"]) == (1, 0, 0) and r["failures"][0]["reason"] == "no citation"
-    # a digit alone counts; so do four content words; three or fewer without a digit stay exempt
+    # a digit alone counts; so do three content words, a number word, an acronym or an app fact trigger
     assert SC.claims_of("We [NEEDS FIRM INPUT: x] 40.")
     assert SC.claims_of("Our experienced directors manage large cleaning contracts and [NEEDS FIRM INPUT: x].")
-    assert SC.claims_of("We hold [NEEDS FIRM INPUT: x].") == [] and SC.claims_of("We hold ISO [NEEDS FIRM INPUT: x].") == []
+    assert SC.claims_of("We hold [NEEDS FIRM INPUT: x].") == [] and SC.claims_of("Our insurance cover is [NEEDS FIRM INPUT: x].") == []
+
+
+@pytest.mark.parametrize("text", ["Our team cleaned schools [NEEDS FIRM INPUT: x].",
+                                  "We are ISO certified [NEEDS FIRM INPUT: x].",
+                                  "We hold Cyber Essentials [NEEDS FIRM INPUT: x].",
+                                  "We have had zero RIDDOR incidents [NEEDS FIRM INPUT: x].",
+                                  "We clean forty schools [NEEDS FIRM INPUT: x].",
+                                  "We hold ISO 9001 [NEEDS FIRM INPUT: x].",
+                                  "We hold ISO [NEEDS FIRM INPUT: x].",
+                                  "Zero incidents [NEEDS FIRM INPUT: x]."])
+def test_a4_short_uncited_claims_with_gap_marker_still_count(text):
+    """T-202 review must-fix: a gap marker must not hide a short factual claim."""
+    claims, exempt = SC.split_claims(text)
+    assert claims == [text] and exempt == []
 
 
 @pytest.mark.parametrize("text", ["We hold [NEEDS FIRM INPUT: ISO 14001 cert. Provide copy]",

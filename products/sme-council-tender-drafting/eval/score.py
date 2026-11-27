@@ -120,7 +120,13 @@ CONNECTIVES = frozenset("a an and are as at be but by for from has have had if i
                         "then there these this those to we was were which while will with would you your also not no".split())
 
 
-RESIDUAL_MAX_WORDS = 3     # a gap stub like "We hold [NEEDS FIRM INPUT: x]" leaves 1 word ("hold"); a real extra claim leaves more
+RESIDUAL_MAX_WORDS = 2     # a gap stub like "We hold [NEEDS FIRM INPUT: x]" leaves 1 word ("hold"); a real extra claim leaves more
+
+# Number words count as figures: "We clean forty schools [gap]" is a claim, as "40 schools" would be.
+NUMBER_WORDS = frozenset("zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen "
+                         "seventeen eighteen nineteen twenty thirty forty fifty sixty seventy eighty ninety hundred thousand "
+                         "million billion dozen dozens hundreds thousands millions none single double twice once half".split())
+_ACRONYM = re.compile(r"\b[A-Z][A-Z0-9]{1,}\b")
 
 
 def gap_residual(sentence: str) -> str:
@@ -130,19 +136,25 @@ def gap_residual(sentence: str) -> str:
 
 
 def carries_other_content(sentence: str) -> bool:
-    """True if a gap sentence says more than that it does not know: any digit left after stripping the marker (a figure,
-    a year, a code number), or more than RESIDUAL_MAX_WORDS non-connective words. Rule chosen so a stub such as "We hold
-    [gap]" or "Our insurance cover is [gap]" stays exempt while "We delivered 40 contracts and hold [gap] cover" or a
-    long sentence with a marker tacked on does not."""
+    """True if a gap sentence says more than that it does not know. With the marker(s) and [E-n] stripped, any of these
+    keeps it a claim: a digit; a number word (forty, zero, ...); an acronym (ISO, RIDDOR); the app's own claimcheck
+    fact_triggers firing (codes, pound, percent, a run of capitalised words such as "Cyber Essentials"); or more than
+    RESIDUAL_MAX_WORDS non-connective words. So "We hold [gap]" stays exempt, while "Our team cleaned schools [gap]",
+    "We are ISO certified [gap]" and "zero RIDDOR incidents [gap]" are claims (T-202 review must-fix)."""
+    from app.tender.claimcheck import fact_triggers
     rest = gap_residual(sentence)
-    return any(ch.isdigit() for ch in rest) or len(rest.split()) > RESIDUAL_MAX_WORDS
+    words = rest.split()
+    stripped = _CITE.sub(" ", _GAP.sub(" ", sentence))
+    return (any(ch.isdigit() for ch in rest) or any(w in NUMBER_WORDS for w in words)
+            or bool(_ACRONYM.search(stripped)) or bool(fact_triggers(sentence, 0, len(sentence)))
+            or len(words) > RESIDUAL_MAX_WORDS)
 
 
 def split_claims(text: str) -> tuple[list[str], list[str]]:
     """(claims, exempt gap sentences). A4 claims are the app's sentences (a citation after the full stop stays with its
     sentence, a gap marker stays whole). A sentence with a [NEEDS FIRM INPUT: ...] marker and no [E-n] is exempt (the draft
-    is saying it does not know, which A8 rewards) only if, with the marker stripped, no digit is left and at most RESIDUAL_MAX_WORDS
-    non-connective words are (carries_other_content is false). A gap sentence with more content, such as "We hold 40 contracts and [NEEDS FIRM
+    is saying it does not know, which A8 rewards) only if, with the marker stripped, no digit is left and at most RESIDUAL_MAX_WORDS (2)
+    non-connective words are, with no number word, acronym or app fact trigger (carries_other_content is false). A gap sentence with more content, such as "We hold 40 contracts and [NEEDS FIRM
     INPUT: insurer] cover.", stays a claim and fails A4 without a citation. A gap sentence that cites is always scored."""
     claims, exempt = [], []
     for s in split_sentences(text):
