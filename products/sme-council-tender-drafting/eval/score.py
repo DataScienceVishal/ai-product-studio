@@ -117,7 +117,7 @@ def score_extraction(packs: list[dict]) -> dict:
 
 # Words that carry no factual content once the gap marker is stripped from a gap sentence.
 CONNECTIVES = frozenset("a an and are as at be but by for from has have had if in is it its of on or our so that the their "
-                        "then there these this those to we was were which while will with would you your also not no".split())
+                        "then there these this those to we was were which while will with would you your also".split())
 
 
 RESIDUAL_MAX_WORDS = 2     # a gap stub like "We hold [NEEDS FIRM INPUT: x]" leaves 1 word ("hold"); a real extra claim leaves more
@@ -126,6 +126,8 @@ RESIDUAL_MAX_WORDS = 2     # a gap stub like "We hold [NEEDS FIRM INPUT: x]" lea
 NUMBER_WORDS = frozenset("zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen "
                          "seventeen eighteen nineteen twenty thirty forty fifty sixty seventy eighty ninety hundred thousand "
                          "million billion dozen dozens hundreds thousands millions none single double twice once half".split())
+# Negations state a fact ("no incidents", "never had a breach"), so they also keep a gap sentence a claim.
+NEGATIONS = frozenset("no not never nil nothing nobody neither nor without".split())
 _ACRONYM = re.compile(r"\b[A-Z][A-Z0-9]{1,}\b")
 
 
@@ -137,7 +139,7 @@ def gap_residual(sentence: str) -> str:
 
 def carries_other_content(sentence: str) -> bool:
     """True if a gap sentence says more than that it does not know. With the marker(s) and [E-n] stripped, any of these
-    keeps it a claim: a digit; a number word (forty, zero, ...); an acronym (ISO, RIDDOR); the app's own claimcheck
+    keeps it a claim: a digit; a number word (forty, zero, ...); a negation (no, not, never, nil, ...); an acronym (ISO, RIDDOR); the app's own claimcheck
     fact_triggers firing (codes, pound, percent, a run of capitalised words such as "Cyber Essentials"); or more than
     RESIDUAL_MAX_WORDS non-connective words. So "We hold [gap]" stays exempt, while "Our team cleaned schools [gap]",
     "We are ISO certified [gap]" and "zero RIDDOR incidents [gap]" are claims (T-202 review must-fix)."""
@@ -145,7 +147,7 @@ def carries_other_content(sentence: str) -> bool:
     rest = gap_residual(sentence)
     words = rest.split()
     stripped = _CITE.sub(" ", _GAP.sub(" ", sentence))
-    return (any(ch.isdigit() for ch in rest) or any(w in NUMBER_WORDS for w in words)
+    return (any(ch.isdigit() for ch in rest) or any(w in NUMBER_WORDS or w in NEGATIONS for w in words)
             or bool(_ACRONYM.search(stripped)) or bool(fact_triggers(sentence, 0, len(sentence)))
             or len(words) > RESIDUAL_MAX_WORDS)
 

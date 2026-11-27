@@ -842,7 +842,11 @@ def test_a4_gap_sentence_with_other_factual_content_still_counts():
                                   "We clean forty schools [NEEDS FIRM INPUT: x].",
                                   "We hold ISO 9001 [NEEDS FIRM INPUT: x].",
                                   "We hold ISO [NEEDS FIRM INPUT: x].",
-                                  "Zero incidents [NEEDS FIRM INPUT: x]."])
+                                  "Zero incidents [NEEDS FIRM INPUT: x].",
+                                  "We have never had a breach [NEEDS FIRM INPUT: x].",
+                                  "We have had no incidents [NEEDS FIRM INPUT: x].",
+                                  "We do not subcontract [NEEDS FIRM INPUT: x].",
+                                  "Nil claims [NEEDS FIRM INPUT: x]."])
 def test_a4_short_uncited_claims_with_gap_marker_still_count(text):
     """T-202 review must-fix: a gap marker must not hide a short factual claim."""
     claims, exempt = SC.split_claims(text)
