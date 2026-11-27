@@ -5,21 +5,23 @@ Why it looks like this, with costs and sources: `../ADR/0002-azure-deploy.md`. T
 ```
    you ──► GitHub Actions: _starter-deploy (manual)
               1 build image ─► 2 scan (Trivy) ─► 3 sign in to Azure ─► 4 read the live release (stop on errors)
-              5 push by digest ─► 6 deploy main.bicep: new revision at 0% traffic, purge job unchanged
+              5 push by digest ─► 6 deploy main.bicep: new revision at 0% traffic, purge and cancels jobs unchanged
               6b database step: psql as the Entra admin (the deploy principal, token as password) runs
                  db-setup.sql: roles, identity mapping, grants (every release, no secret)
               7 migration job (alembic upgrade head)
               8 smoke-test the new revision ─► 9 move 100% traffic ─► 10 smoke-test the public URL
-              11 only now: the purge job gets the new image
-                    └── fails after step 9? traffic AND the purge job go back to the old revision
+              11 only now: the purge and cancels jobs get the new image
+                    └── fails after step 9? traffic AND both jobs go back to the old revision
 
    rg-ai-studio (group metadata in uksouth; resources in francecentral)
      shared.bicep (once)                          main.bicep (every release, per product)
      ├─ cae-studio          Container Apps env    ├─ ca-<slug>             web app, scales 0 to 1
      ├─ acrstudioznp96r     registry (Basic)      ├─ caj-<slug>-migrate    migrations, run by the workflow
-     ├─ id-studio-acrpull   pulls images          └─ caj-<slug>-purge      retention purge, daily 03:17 UTC,
+     ├─ id-studio-acrpull   pulls images          ├─ caj-<slug>-purge      retention purge, daily 03:17 UTC,
      ├─ log-studio          logs, 30 days                                  on the live revision's image
-     └─ psql-studio-znp96r  Postgres B1ms ── database <db>, roles <db>_migrator and <db>_app
+     │                                              └─ caj-<slug>-cancels    retries failed subscription cancels,
+     └─ psql-studio-znp96r  Postgres B1ms ──                                 every 30 min (T-176), same image
+                        database <db>, roles <db>_migrator and <db>_app
 ```
 
 ## Files
@@ -28,13 +30,13 @@ Why it looks like this, with costs and sources: `../ADR/0002-azure-deploy.md`. T
 |---|---|
 | `shared.bicep`, `shared.bicepparam` | the shared studio resources. Deployed once, with `deploy_shared` ticked |
 | `modules/postgres.bicep` | the shared Postgres server, used by `shared.bicep` |
-| `main.bicep`, `main.bicepparam` | one product: web app, migration job, purge job. Deployed on every release |
+| `main.bicep`, `main.bicepparam` | one product: web app, migration job, purge job, cancels job. Deployed on every release |
 | `db-setup.sql`, `db-grants.sql` | create a product's database and its two passwordless roles, mapped to the product's identities (run by the workflow; keep the two files side by side) |
 | `jwt-oid.sh` | prints the object id inside an Entra token (stdin), so the workflow can find its own Entra admin entry |
 | `deploy-role.bicep`, `test-deploy-role.sh` | the least-privilege custom role for the deploy identity (T-65, not applied yet) and its static check |
 | `test-db-setup.sh`, `test-deploy-workflow.sh`, `test-bicep-identities.sh` | checks that run without Azure (CI) |
 | `live-release.sh` | reads what a release starts from; any Azure read error stops the release |
-| `purge-job.sh` | keeps the purge job on the image and email settings of the revision that serves traffic |
+| `purge-job.sh` | keeps the purge job and the cancels job on the image and email settings of the revision that serves traffic |
 | `cost-guard.sh` | refuses compiled templates with features that have a fixed charge |
 | `smoke.sh` | the release smoke test; also runs against a local server with `--local` |
 | `../../../.github/workflows/_starter-deploy.yml` | the only way anything here reaches Azure |
@@ -108,10 +110,10 @@ Nothing here costs money until step 4. Do the steps only after approving the cos
   - `deploy_shared`: only when `shared.bicep` changes, and only from the starter's workflow. Shared changes
     can cost money, so ask first.
 - The run summary shows the public address, the new revision, the image digest, the previous revision and
-  whether the purge job moved to the new image.
+  whether the purge and cancels jobs moved to the new image.
 
 **Rule for migrations:** each migration must work with the code of the release before it. Add columns
-first and drop them in a later release. A rollback moves traffic and the purge job; it never changes the
+first and drop them in a later release. A rollback moves traffic and the purge and cancels jobs; it never changes the
 database. If a migration fails, Alembic rolls back all of that release's migrations together, so the schema
 stays as it was.
 
@@ -162,7 +164,19 @@ Postgres firewall rule. `bash infra/test-deploy-role.sh` checks all this without
 - Once the spend identity is live, both `Microsoft.CostManagement/query/action` and `Microsoft.CostManagement/query/read`
   in `deploy-role.bicep` can be dropped (the deploy identity no longer runs the cost query). Not changed yet.
 
-### Rolling back
+### The cancels job (T-176)
+
+`caj-<slug>-cancels` runs `python -m app.maintenance cancels` every 30 minutes (`cancelsSchedule`, UTC cron). It
+retries subscription cancels that failed after a new checkout replaced a lapsed subscription, so they finish even
+when the tenant has no more billing events, or was deleted. It is the purge job's twin: same image (the `purge*`
+parameters), same app identity and database URL (rows only), same follow-the-live-revision rule (`purge-job.sh`).
+It differs in three ways: it gets this release's `BILLING_PROVIDER` and, for Stripe, the two Stripe secrets (it calls
+the payment provider; the purge job does not); the replica timeout is 15 minutes (each cancel can take about 17 s),
+shorter than the schedule so runs never overlap; and it never calls the AI. Cost: job execution seconds only
+(`state/BUDGET.md`). The deploy role's `jobs/write` already covers it. To see failures, search the logs for
+`pending cancel could not be processed` (ERROR).
+
+## Rolling back
 
 ```bash
 az role assignment create --assignee-object-id "$PRINCIPAL" --assignee-principal-type ServicePrincipal \
@@ -200,11 +214,11 @@ A new resource type in the templates fails `test-deploy-role.sh` until its actio
 ## Rolling back
 
 - Automatic: if anything fails after traffic moved (the public smoke test, the traffic move itself, or moving
-  the purge job), traffic and the purge job go back to the previous revision in the same run. If anything
-  fails before that, traffic never moved and the purge job was never changed.
+  the purge and cancels jobs), traffic and both jobs go back to the previous revision in the same run. If anything
+  fails before that, traffic never moved and the jobs were never changed.
 - By hand: run the workflow with `rollback_to` set to a revision name from an earlier run summary, such as
   `ca-starter--r12a1-1a2b3c4`. It re-activates that revision, smoke-tests it, moves all traffic to it, then
-  points the purge job at its image.
+  points the purge and cancels jobs at its image.
 - The database stays on the newest migration either way (the rule above).
 - The previous revision stays active with 0% traffic, which costs nothing while it has no replicas. Until the
   next release it is reachable at its own revision address, and it keeps its own in-process rate-limit
@@ -250,7 +264,7 @@ mapped to the object ids of `id-<slug>-app` and `id-<slug>-migrate`, so only a t
    19 characters.
 3. Copy the workflow to `.github/workflows/<slug>-deploy.yml` and change the env block: `PRODUCT`,
    `PRODUCT_DIR`, `DB_NAME` (letters, digits and underscores), and the `STARTER_*` Stripe secret names.
-4. Add rows for `ca-<slug>`, `caj-<slug>-migrate` and `caj-<slug>-purge` to `state/BUDGET.md` before the first
+4. Add rows for `ca-<slug>`, `caj-<slug>-migrate`, `caj-<slug>-purge` and `caj-<slug>-cancels` to `state/BUDGET.md` before the first
    release. The database step runs on every release, so there is nothing to tick.
 
 ## Costs

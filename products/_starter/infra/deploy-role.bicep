@@ -107,7 +107,7 @@ resource deployerRole 'Microsoft.Authorization/roleDefinitions@2022-04-01' = {
           'Microsoft.App/containerApps/revisions/activate/action'
           'Microsoft.App/containerApps/revisions/deactivate/action'
 
-          // ---- Container Apps jobs: main.bicep (migrate, purge), "Run the migration job": `az containerapp job start` ----
+          // ---- Container Apps jobs: main.bicep (migrate, purge, cancels), "Run the migration job": `az containerapp job start` ----
           // and `job execution show`.
           'Microsoft.App/jobs/read'
           'Microsoft.App/jobs/write'
