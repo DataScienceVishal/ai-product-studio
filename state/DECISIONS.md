@@ -432,3 +432,4 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 
 ## 2026-11-27T08:50Z, run f9ce: T-173 team lock choice
 - Invite takes the tenant row FOR NO KEY UPDATE, not FOR UPDATE: plain FOR UPDATE deadlocks against an in-flight accept (reviewer reproduced 40P01). Merged after reviewer PASS. Non-blocking reviewer items (vacuous resend smoke test, cross-tenant double-accept deadlock 500, sleep-based race tests) queued as a board task.
+- 2026-11-27, run f9ce: T-173 billing S5: access starts only from a paid checkout.session.completed / async_payment_succeeded (or an active event for the already-tracked subscription), because Stripe documents that delayed-payment subscriptions can be active while payment is processing. Operators must subscribe the webhook to checkout.session.* (documented). Reviewer noted a builder commit deleted a review file (restored); briefs should say never delete review files.
