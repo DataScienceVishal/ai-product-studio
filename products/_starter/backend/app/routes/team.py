@@ -153,7 +153,7 @@ def accept(data: AcceptIn, request: Request, response: Response, db: Session = D
                 role=invitation.role, email_verified_at=now, last_sign_in_at=now)  # the link proved the inbox
     db.add(user)
     invitation.accepted_at = now
-    tenant_id, invitation_id = str(invitation.tenant_id), str(invitation.id)  # for the log; unreadable once a flush fails
+    tenant_id, invitation_id = str(invitation.tenant_id), str(invitation.id)  # for the log; read before the flush so the except needs no reload
     try:
         db.flush()  # the user insert; a duplicate email fails here
         # The address is now an account: other tenants' pending invites for it can never be accepted, so revoke them

@@ -399,6 +399,20 @@ def _inject_on_accept(monkeypatch, where, error):
     monkeypatch.setattr(Session, "execute", execute)
 
 
+def _spy_rollback(monkeypatch):
+    """Count explicit Session.rollback() calls. `get_db`'s close() rolls back without calling it, so a deleted
+    `db.rollback()` in the accept's except branch shows up here (the injected error never aborts a real transaction)."""
+    from sqlalchemy.orm import Session
+    real, calls = Session.rollback, []
+
+    def rollback(self):
+        calls.append(1)
+        return real(self)
+
+    monkeypatch.setattr(Session, "rollback", rollback)
+    return calls
+
+
 def _users_with(app, email):
     with app.state.db.engine.connect() as conn:
         return conn.execute(text("SELECT count(*) FROM users WHERE email = :e"), {"e": email}).scalar()
@@ -411,8 +425,10 @@ def test_a_deadlock_on_the_revoke_update_is_a_409_email_taken(app, owner, new_cl
     owner_client, _ = owner
     invitation, token = _invite(owner_client, outbox, "rev@acme.test")
     _inject_on_accept(monkeypatch, "revoke", errors.DeadlockDetected("deadlock detected"))
+    rollbacks = _spy_rollback(monkeypatch)
     response = _accept(new_client(), token)
     assert response.status_code == 409 and response.json()["error"] == "email_taken"
+    assert rollbacks, "the deadlock branch must roll the session back itself"
     assert _users_with(app, "rev@acme.test") == 0
     with app.state.db.engine.connect() as conn:
         accepted = conn.execute(text("SELECT accepted_at FROM invitations WHERE email = 'rev@acme.test'")).scalar()
@@ -435,10 +451,12 @@ def test_a_deadlock_in_accept_is_logged_without_personal_data(app, owner, new_cl
     logger.addHandler(handler)
     try:
         _inject_on_accept(monkeypatch, "revoke", errors.DeadlockDetected("deadlock detected"))
+        rollbacks = _spy_rollback(monkeypatch)
         response = _accept(new_client(), token)
     finally:
         logger.removeHandler(handler)
     assert response.status_code == 409
+    assert rollbacks, "the deadlock branch must roll the session back before it logs"
     warnings = [r for r in records if r.levelno == logging.WARNING and "deadlock" in r.getMessage()]
     assert len(warnings) == 1
     record = warnings[0]
@@ -456,10 +474,12 @@ def test_a_non_deadlock_operational_error_is_not_swallowed_as_409(app, owner, ne
     owner_client, _ = owner
     _, token = _invite(owner_client, outbox, "cancel@acme.test")
     _inject_on_accept(monkeypatch, where, errors.QueryCanceled("canceling statement due to statement timeout"))
+    rollbacks = _spy_rollback(monkeypatch)
     client = TestClient(app, base_url="https://testserver", headers={"X-Requested-With": "test"},
                         raise_server_exceptions=False)
     response = _accept(client, token)
     assert response.status_code == 500
+    assert rollbacks, "the branch must roll back before it re-raises"
     assert response.json().get("error") != "email_taken"
     assert _users_with(app, "cancel@acme.test") == 0
 
