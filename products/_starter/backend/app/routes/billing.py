@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import uuid
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
@@ -15,7 +16,7 @@ from ..billing import LIMITED_PROVIDERS, OFFERS, PLANS, BillingUpdate, MockBilli
 from ..db import get_db
 from ..deps import Current, owner, subscription_of, verified_owner
 from ..errors import AppError
-from ..models import BillingEvent, Subscription
+from ..models import BillingEvent, PendingCancel, Subscription
 
 log = logging.getLogger("app.billing")
 router = APIRouter(prefix="/api/billing", tags=["billing"])
@@ -95,6 +96,18 @@ def _check_fields(update: BillingUpdate) -> None:
 
 
 def apply_update(db: Session, update: BillingUpdate, provider: str, billing=None) -> bool:
+    """Apply one provider event (see `_apply_update`), then retry this tenant's pending provider cancels (T-175)."""
+    applied = _apply_update(db, update, provider, billing)
+    if billing is not None and isinstance(update.tenant_id, uuid.UUID):
+        try:
+            retry_pending_cancels(db, update.tenant_id, provider, billing)
+        except Exception:  # the event is already applied; a retry problem must not fail the webhook
+            db.rollback()
+            log.error("could not retry pending cancels", extra={"tenant_id": str(update.tenant_id)}, exc_info=True)
+    return applied
+
+
+def _apply_update(db: Session, update: BillingUpdate, provider: str, billing=None) -> bool:
     """Apply a provider event once, in order. Returns False if this event id was already applied.
     An event older than the last one applied is recorded as seen but changes nothing.
     `billing` is the provider, used to cancel a duplicate subscription (see below)."""
@@ -140,12 +153,15 @@ def apply_update(db: Session, update: BillingUpdate, provider: str, billing=None
         # T-174 (T-173 S-3): a failed first payment (past_due, incomplete_expired, deleted) for a subscription we never
         # activated must not end the free trial early. The trial runs to its end; only a paid checkout changes it.
         if update.status == "canceled" and tombstone:
-            db.add(BillingEvent(id=tombstone))  # remember this ref is dead (no migration: reuses the events table)
-            try:
-                db.flush()
-            except IntegrityError:
-                db.rollback()
-                return True
+            # remember this ref is dead (no migration: reuses the events table). A second cancel event for the same
+            # ref finds the marker already there; never roll back the session for that, or this event's own dedup
+            # row (flushed above) would go with it. The savepoint covers a concurrent insert of the marker.
+            if db.get(BillingEvent, tombstone) is None:
+                try:
+                    with db.begin_nested():
+                        db.add(BillingEvent(id=tombstone))
+                except IntegrityError:
+                    pass
         db.commit()
         log.info("event for a never-activated subscription ignored: the trial keeps running")
         return True
@@ -200,10 +216,21 @@ def apply_update(db: Session, update: BillingUpdate, provider: str, billing=None
     if update.current_period_end:
         sub.current_period_end = update.current_period_end
     sub.provider = provider
+    if update.provider_ref and update.starts_subscription:
+        # A ref that becomes current is no longer a to-do (it may have a row from an earlier takeover): cancelling it
+        # would cancel what the customer just paid for.
+        db.execute(delete(PendingCancel).where(PendingCancel.provider == provider,
+                                               PendingCancel.ref == update.provider_ref))
+    if old_ref and old_provider == provider:
+        # T-175: write the to-do in the same transaction as the takeover, so a crash after the commit cannot lose it.
+        # apply_update retries it right after this event (and again on the tenant's next event, or by the sweep).
+        _record_pending_cancel(db, update.tenant_id, provider, old_ref)
     db.commit()
     log.info("subscription updated", extra={"status": update.status, "plan": sub.plan})
-    if old_ref:
-        _cancel_replaced(update, old_ref, old_provider, provider, billing)
+    if old_ref and old_provider != provider:
+        log.warning("replaced subscription belongs to another provider: cancel it by hand there",
+                    extra={"tenant_id": str(update.tenant_id), "old_subscription": old_ref,
+                           "old_provider": old_provider})
     _fill_period_end(db, update, billing)
     return True
 
@@ -213,19 +240,54 @@ def _dead_marker(provider: str, ref: str | None) -> str | None:
     return f"dead:{provider}:{hashlib.sha256(ref.encode()).hexdigest()}" if ref else None
 
 
-def _cancel_replaced(update: BillingUpdate, old_ref: str, old_provider: str | None, provider: str, billing) -> None:
-    """T-174 (T-172 S6): a new paid subscription replaced a lapsed or past_due one. If that one is still billing at the
-    provider the customer pays twice, so cancel it. The replacement is already committed, so a failure cannot undo it:
-    log a to-do for the operator instead of failing the webhook."""
-    todo = {"tenant_id": str(update.tenant_id), "old_subscription": old_ref, "old_provider": old_provider}
-    if billing is None or old_provider != provider:
-        log.warning("replaced subscription belongs to another provider: cancel it by hand there", extra=todo)
-        return
+def _record_pending_cancel(db: Session, tenant_id: uuid.UUID, provider: str, ref: str) -> None:
+    """Remember that `ref` must be cancelled at the provider. One row per (provider, ref)."""
+    if db.scalar(select(PendingCancel.id).where(PendingCancel.provider == provider, PendingCancel.ref == ref)) is None:
+        db.add(PendingCancel(tenant_id=tenant_id, provider=provider, ref=ref))
+
+
+def attempt_pending_cancel(db: Session, row_id: uuid.UUID, billing) -> bool | None:
+    """Cancel one pending subscription at the provider. True: cancelled (row deleted). False: failed (attempt counted,
+    error kept, ERROR logged: an unpaid-for duplicate may still be billing the customer). None: skipped, because the row
+    is gone or locked by another worker, or its ref is the tenant's current subscription (the row is then dropped).
+    The row is re-read FOR UPDATE SKIP LOCKED and stays locked until the commit after the cancel, so a takeover that
+    makes this ref current waits for an in-flight cancel instead of racing it.
+    A subscription the provider reports as already cancelled or gone counts as success (the adapter handles that)."""
+    row = db.scalar(select(PendingCancel).where(PendingCancel.id == row_id).with_for_update(skip_locked=True)
+                    .execution_options(populate_existing=True))
+    if row is None:
+        db.rollback()
+        return None
+    todo = {"tenant_id": str(row.tenant_id), "old_subscription": row.ref, "old_provider": row.provider}
+    sub = db.scalar(select(Subscription).where(Subscription.tenant_id == row.tenant_id)
+                    .execution_options(populate_existing=True)) if row.tenant_id else None
+    if sub is not None and sub.provider == row.provider and sub.provider_ref == row.ref:
+        db.delete(row)
+        db.commit()
+        log.warning("pending cancel dropped: that subscription is the tenant's current one", extra=todo)
+        return None
     try:
-        billing.cancel_subscription(old_ref)
-    except Exception:
-        log.error("could not cancel the replaced subscription: cancel it by hand at the provider", extra=todo,
-                  exc_info=True)
+        billing.cancel_subscription(row.ref)
+    except Exception as error:
+        row.attempts = (row.attempts or 0) + 1
+        row.last_error = f"{type(error).__name__}: {error}"[:500]
+        db.commit()
+        log.error("could not cancel the replaced subscription: it is kept as a to-do and retried; cancel it by hand "
+                  "at the provider if this repeats", extra={**todo, "attempts": row.attempts}, exc_info=True)
+        return False
+    db.delete(row)
+    db.commit()
+    log.info("replaced subscription cancelled", extra=todo)
+    return True
+
+
+def retry_pending_cancels(db: Session, tenant_id: uuid.UUID, provider: str, billing) -> None:
+    """T-175: try this tenant's pending cancels for `provider`. Runs after every billing event for the tenant."""
+    ids = db.scalars(select(PendingCancel.id).where(PendingCancel.tenant_id == tenant_id,
+                                                    PendingCancel.provider == provider)
+                     .order_by(PendingCancel.created_at)).all()
+    for row_id in ids:
+        attempt_pending_cancel(db, row_id, billing)
 
 
 def _fill_period_end(db: Session, update: BillingUpdate, billing) -> None:

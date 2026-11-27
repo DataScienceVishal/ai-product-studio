@@ -2,6 +2,11 @@
 
     python -m app.maintenance purge
 
+and, every few minutes or hourly (T-175, retries subscription cancels that failed after a checkout replaced a
+lapsed subscription; prints the counts, exits 0 even when some still fail, they are logged at ERROR):
+
+    python -m app.maintenance cancels
+
 Rules (also in DATA.md):
   - sessions: when expired
   - password-reset and email-verification links: 7 days after they were used or expired
@@ -18,16 +23,21 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
 
 from .ai import release_stale_reservations
+from .billing import build_billing
 from .config import Settings
 from .db import Database
-from .models import (AIUsage, AuthSession, BillingEvent, EmailVerification, Invitation, PasswordReset, Subscription,
+from .models import (AIUsage, AuthSession, BillingEvent, EmailVerification, Invitation, PasswordReset, PendingCancel, Subscription,
                      Tenant, User)
+
+
+log = logging.getLogger("app.billing")
 
 
 def purge(db: Session, now: datetime | None = None, unverified_after_days: int | None = None) -> dict[str, int]:
@@ -58,15 +68,44 @@ def purge(db: Session, now: datetime | None = None, unverified_after_days: int |
     return counts
 
 
+def sweep_pending_cancels(db: Session, clients: dict) -> dict[str, int]:
+    """T-175: retry every pending subscription cancel (see routes/billing.py). `clients` maps provider name to its
+    client; a row for a provider with no client is left alone. Safe to run often: a cancel is idempotent."""
+    from .routes.billing import attempt_pending_cancel
+    done = failed = 0
+    todo = db.execute(select(PendingCancel.id, PendingCancel.provider, PendingCancel.ref)
+                      .order_by(PendingCancel.created_at)).all()
+    for row_id, row_provider, ref in todo:
+        client = clients.get(row_provider)
+        if client is None:
+            continue
+        try:
+            result = attempt_pending_cancel(db, row_id, client)
+        except Exception:  # one bad row (a stale or deleted one, a database error) must not stop the run
+            db.rollback()
+            log.error("pending cancel could not be processed", extra={"old_subscription": ref}, exc_info=True)
+            failed += 1
+            continue
+        if result is True:
+            done += 1
+        elif result is False:
+            failed += 1
+    return {"cancelled": done, "failed": failed}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=["purge"])
-    parser.parse_args()
+    parser.add_argument("command", choices=["purge", "cancels"])
+    args = parser.parse_args()
     settings = Settings()
     database = Database(settings.database_url, settings.db_statement_timeout_ms, db_auth=settings.db_auth,
                         client_id=settings.azure_client_id)
     try:
         with database.sessions() as db:
+            if args.command == "cancels":
+                provider = build_billing(settings)
+                print(json.dumps({"pending_cancels": sweep_pending_cancels(db, {provider.name: provider})}))
+                return
             # Only when people can actually verify: verification required AND real email (not the outbox).
             days = 30 if settings.require_email_verification and settings.email_provider != "outbox" else None
             print(json.dumps({"purged": purge(db, unverified_after_days=days)}))

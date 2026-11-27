@@ -75,3 +75,20 @@ def test_scratch_database_carries_the_cleanup_marker(scratch_url):
                                (name,)).fetchone()[0]
     assert comment == "starter-pytest-ephemeral"
     assert name.startswith(f"{_BASE_NAME}_t")
+
+
+def test_pending_cancels_migration_upgrades_and_downgrades(scratch_url):
+    config = _config(scratch_url)
+    command.upgrade(config, "0009")
+    engine = create_engine(scratch_url)
+    try:
+        assert "pending_cancels" not in inspect(engine).get_table_names()
+        command.upgrade(config, "head")
+        assert "pending_cancels" in inspect(engine).get_table_names()
+        uniques = inspect(engine).get_unique_constraints("pending_cancels")
+        assert any(u["column_names"] == ["provider", "ref"] for u in uniques)
+        command.check(config)
+        command.downgrade(config, "0009")
+        assert "pending_cancels" not in inspect(engine).get_table_names()
+    finally:
+        engine.dispose()

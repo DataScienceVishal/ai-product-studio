@@ -375,3 +375,10 @@ Skipped: S5 (looser text checks, actionlint/shellcheck in CI), ADR 0002 (slice 5
 ## T-173 team (branch p/_starter/T-173-team)
 
 Fixes from `reviews/T-172-team-review.md`: `invite` takes a per-tenant `FOR NO KEY UPDATE` lock on the tenant row (concurrent resends can no longer leave two live links or cap+1 pending; NO KEY so it cannot deadlock with `accept`, which takes a KEY SHARE on the tenant). `accept` reads the invitation `FOR UPDATE`, so a just-revoked or replaced link cannot create an account. B7 revoke uses plain `email =` (emails are only written by `invite`, lower-cased by the `Email` type) and migration 0009 adds `ix_invitations_email`. Race tests in `backend/tests/test_team.py` hold a row lock in a second connection (deterministic, real Postgres).
+
+## T-175 billing half (branch p/_starter/T-175-billing)
+Done: `pending_cancels` table (migration 0010, model `PendingCancel`, unique provider+ref) written in the takeover transaction;
+`apply_update` retries the tenant's pending cancels after every event; `python -m app.maintenance cancels` sweeps all;
+dead-marker collision no longer rolls back the event's own dedup row. Tests: tests/test_pending_cancels.py, test_migrations.py.
+Left: add a Container Apps job for `app.maintenance cancels` in infra/main.bicep (not done, outside this task); DATA.md row for pending_cancels.
+Verify: `cd backend && python -m pytest` (804 passed, 1 skipped; needs Postgres).
