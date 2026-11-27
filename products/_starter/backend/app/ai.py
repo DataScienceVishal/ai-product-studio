@@ -60,6 +60,13 @@ def _clean_model(value) -> str:
     return "unknown" if not name or name.lower() in ("pending", "abandoned") else name
 
 
+def _clean_reason(value) -> str:
+    """A finish reason made safe to log: printable characters only (no line breaks or escape codes), at most 40."""
+    if not isinstance(value, str):
+        return "none" if value is None else "unknown"
+    return "".join(c for c in value if c.isprintable()).strip()[:40] or "unknown"
+
+
 def _dicts(value) -> list[dict]:
     """The dict items of a provider list; anything malformed counts as no items."""
     return [v for v in value if isinstance(v, dict)] if isinstance(value, list) else []
@@ -468,7 +475,7 @@ class AzureOpenAI:
                 raise fail() from None
             billed_in, billed_out = billed_in + used_in, billed_out + used_out
             if why is not None or not text:
-                log.warning("ai returned no usable answer", extra={"finish_reason": why})
+                log.warning("ai returned no usable answer", extra={"finish_reason": _clean_reason(why)})
                 raise fail(_NO_ANSWER.get(why, _NO_ANSWER[None]))
             return AIResult(text=text, input_tokens=billed_in, output_tokens=billed_out,
                             model=_clean_model(reported))
