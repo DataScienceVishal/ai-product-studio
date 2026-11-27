@@ -161,3 +161,10 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Options: A) One-off $6.00 hard cap, gpt-5-mini only, own spend ledger (tuning $2.00, scored run $2.60, recording $1.40); app caps unchanged (recommended) B) No new budget: run through the app's cap, about 44 days, blocks other AI use; measured around mid-January C) No live eval: fake-AI demo only, so the demo can't be shown
 - Recommended: A, because it fits the two-week demo window for under $6 and leaves the app's safety caps untouched.
 - If no answer: nothing is spent. The six build slices and three data tasks need no model calls and go ahead on the fake provider; the live eval waits for an explicit yes.
+
+## Q-20 (status: open; queued by run 8a57 2026-11-27T18:45Z; reversible, default B 12h after send)
+- Decision: How do we get the 12 public tender packs for the tender demo, now that Contracts Finder blocks downloads from the studio's cloud sessions?
+- Context: Notice pages and attachments return 403 to the studio (HURDLES 2026-11-27 run 8a57). 12 candidates (4 cleaning, 4 security, 4 grounds) are listed with links in products/sme-council-tender-drafting/demo-data/SOURCES.md. Building the app goes on regardless; only the answer keys and the scored eval wait.
+- Options: A) You download the attachments for P01-P12 in a browser (about 20 minutes) and commit them to demo-data/packs/ or send them via Telegram (recommended) B) Studio writes 12 realistic made-up tender packs in the style of real council ones, clearly labelled synthetic; weaker demo, but no wait C) Wait and let a later run retry the downloads
+- Recommended: A, because real council packs are what make the demo credible to a buyer.
+- If no answer: B after 12 hours; real packs can replace the synthetic ones later.

@@ -68,3 +68,9 @@ Two builders working in the same clone switch branches under each other, so comm
 - 2026-11-27T15:01Z desk-5ad0: the 15:00 Desk prompt still lacks the line. Committed straight to main again (session branch kept level).
 
 - 2026-11-27T12:40Z run e288 (studio process): a builder subagent left the main checkout on its product branch, so two state commits landed on `p/_starter/T-177` and one cherry-pick carried an unreviewed `main.bicep` edit to main (c0e4655). Fixed without rewriting history: reverted that file on main in the next commit, main's product tree is identical to before. Fix going forward: brief builders and reviewers to use a separate `git worktree` and never switch branches in the main checkout; Studio Lead checks `git branch --show-current` before committing state.
+
+## 2026-11-27T18:45Z run 8a57: tender pack downloads blocked (T-194 / D1)
+- What: Contracts Finder and Find a Tender return HTTP 403 (site load balancer, `awselb/2.0`) on every notice page and attachment download from the cloud session; search pages and the OCDS search API work. A retry with a browser user-agent was blocked by the permission classifier as evasion, so the studio stops trying. 12 candidate packs (P01-P12) are recorded in demo-data/SOURCES.md from API metadata, unverified (no page counts, hashes or personal-data screening).
+- Impact: D1 and D3 (answer keys) cannot finish; builder slices S4-S9 are unaffected (they run on ScriptedFakeAI and generated fixtures).
+- Recommended fix: Vishal downloads the attachments for P01-P12 in a normal browser (about 20 minutes, list in SOURCES.md) and drops them in a private place the studio can read, or a later run tries the documented API attachment route if one exists. Logged as Q-20.
+- Needs Vishal: yes for the browser download. Status: open.
