@@ -142,3 +142,7 @@ the method. Add a test that the Runner's provider has a trip store when `ai_prov
 - `runner.py:29-31`: `class LeaseLost` sits between the Handler comment and `HANDLERS`. Move it above the comment.
 - `main.py:184`: `ai or build_worker_provider(...)` makes an injected test provider serve as the worker provider. That
   is fine for tests, but add a comment saying so.
+
+**N1 re-check at 4e3cd80: PASS.** `lifespan` now attaches `TripStore(db.sessions)` to the worker provider. The worker
+and the request-path provider have the same trip fingerprint, so a trip saved by either one is honoured by both. The
+new test confirms the provider has a 180 s timeout, its own trip store and the shared fingerprint. Both nits are fixed.
