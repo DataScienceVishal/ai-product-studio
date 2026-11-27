@@ -105,6 +105,9 @@ def test_filename_is_sanitised(client):
     (lambda: tf.zip_bomb_bytes(), "zip_bomb", 422),
     (lambda: tf.many_entries_bytes(), "zip_bomb", 422),
     (lambda: tf.xxe_docx(), "xml_entities", 422),
+    (lambda: tf.xxe_utf16_docx(), "xml_entities", 422),
+    (lambda: tf.xxe_odd_part_docx(), "xml_entities", 422),
+    (lambda: tf.renamed_macro_docx(), "macro_file", 422),
     (lambda: tf.image_only_pdf(), "image_only", 422),
     (lambda: b"%PDF-1.4\nthis is not a real pdf", "parse_failed", 422),
     (lambda: b"PK\x03\x04 not really a zip", "unsupported_type", 415),
@@ -385,3 +388,64 @@ def test_requirement_must_cite_a_document_of_its_own_pack(client, db):
         with pytest.raises(AppError) as e:
             ensure_requirement_document(db, tid, uuid.UUID(pack), doc)
         assert e.value.status == 422 and e.value.code == "document_not_in_pack"
+
+
+# ---------- T-186 review fixes: concurrency cap, transaction release, caps race ----------
+
+def test_busy_refusal_when_parse_slots_are_full(app, new_client, monkeypatch):
+    import threading
+    ingest.configure(1)
+    entered, release = threading.Event(), threading.Event()
+    real = ingest.run_worker
+
+    def slow(kind, data, max_pages):
+        entered.set()
+        assert release.wait(20)
+        return real(kind, data, max_pages)
+    monkeypatch.setattr(ingest, "run_worker", slow)
+    a, b = new_client(), new_client()
+    sign_up(a, email="a@a.test", company="A"); sign_up(b, email="b@b.test", company="B")
+    result = {}
+    doc = ("Policy text here. " * 20).encode()
+    t = threading.Thread(target=lambda: result.update(r=up(a, "/api/evidence/documents", doc, "a.txt")))
+    t.start()
+    assert entered.wait(20)
+    r = up(b, "/api/evidence/documents", doc + b"2", "b.txt")  # a different tenant is refused too: the cap is process-wide
+    assert r.status_code == 503 and r.json()["error"] == "busy"
+    release.set(); t.join(30)
+    assert result["r"].status_code == 201
+    assert up(b, "/api/evidence/documents", doc + b"2", "b.txt").status_code == 201  # slot free again
+
+
+def test_no_connection_idle_in_transaction_while_parsing(client, db, monkeypatch):
+    seen = {}
+    real = ingest.run_worker
+
+    def spy(kind, data, max_pages):
+        db.rollback()
+        seen["n"] = db.execute(text("SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() "
+                                    "AND state LIKE 'idle in transaction%' AND pid <> pg_backend_pid()")).scalar()
+        db.rollback()
+        return real(kind, data, max_pages)
+    monkeypatch.setattr(ingest, "run_worker", spy)
+    assert up(client, "/api/evidence/documents", ("Policy text here. " * 20).encode(), "a.txt").status_code == 201
+    assert seen["n"] == 0
+
+
+def test_caps_are_rechecked_under_the_tenant_lock(client, app, monkeypatch):
+    """A parallel upload that lands between the early check and the write is still counted."""
+    app.state.settings.upload_pages_per_day = 3
+    real = ingest.run_worker
+    sneaked = {}
+
+    def sneak(kind, data, max_pages):
+        if not sneaked:
+            sneaked["r"] = None
+            ingest._slots.release()  # the nested request needs the slot this one holds
+            sneaked["r"] = up(client, "/api/evidence/documents", ("Other policy words. " * 20).encode(), "o.txt")
+            ingest._slots.acquire()
+        return real(kind, data, max_pages)
+    monkeypatch.setattr(ingest, "run_worker", sneak)
+    pages = lambda n: tf.pdf([[f"Page {i} " + "words here " * 8] for i in range(n)])
+    r = up(client, "/api/evidence/documents", pages(3), "p.pdf")  # sneaked upload used 1 page, so 1 + 3 > 3
+    assert sneaked["r"].status_code == 201 and r.status_code == 429 and r.json()["error"] == "page_limit"

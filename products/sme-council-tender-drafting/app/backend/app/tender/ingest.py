@@ -8,6 +8,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import threading
 from dataclasses import dataclass
 
 log = logging.getLogger("app.tender.ingest")
@@ -27,6 +28,7 @@ REFUSALS: dict[str, tuple[int, str]] = {
     "xml_entities": (422, "That file contains XML entity or DTD definitions, so it was refused."),
     "too_many_pages": (422, "That file has too many pages (the limit is 60 per file)."),
     "image_only": (422, "Scanned pages are not supported in this demo. Upload a file with selectable text."),
+    "busy": (503, "Another file is being read right now. Please try again in a minute."),
     "parse_failed": (422, "We couldn't read that file. Check it opens normally and try again."),
 }
 
@@ -75,6 +77,14 @@ def sniff(data: bytes, *, allow_text: bool) -> str:
     raise Refused("unsupported_type")
 
 
+_slots = threading.BoundedSemaphore(1)  # process-wide: parse workers running at once (each may use 512 MiB)
+
+
+def configure(parse_workers: int) -> None:
+    global _slots
+    _slots = threading.BoundedSemaphore(max(1, parse_workers))
+
+
 def run_worker(kind: str, data: bytes, max_pages: int) -> dict:
     """Write the bytes to a temp file, parse in a child process, delete the file. Never raises for a bad document."""
     with tempfile.TemporaryDirectory(prefix="tender-parse-") as tmp:
@@ -102,7 +112,12 @@ def run_worker(kind: str, data: bytes, max_pages: int) -> dict:
 
 def parse_upload(data: bytes, *, allow_text: bool, max_pages: int) -> Parsed:
     kind = sniff(data, allow_text=allow_text)
-    result = run_worker(kind, data, max_pages)
+    if not _slots.acquire(blocking=False):  # refuse at once rather than queue a thread and a worker behind another
+        raise Refused("busy")
+    try:
+        result = run_worker(kind, data, max_pages)
+    finally:
+        _slots.release()
     if not result.get("ok"):
         code = result.get("code")
         raise Refused(code if code in REFUSALS else "parse_failed")
@@ -117,7 +132,7 @@ def is_image_only_page(kind: str, text: str) -> bool:
     return kind == "pdf" and len(text.strip()) < IMAGE_ONLY_CHARS
 
 
-_SAFE = re.compile(r"[\x00-\x1f\x7f/\\]")
+_SAFE = re.compile(r"[\x00-\x1f\x7f/\\\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]")  # controls and bidi marks
 
 
 def clean_filename(name: str | None) -> str:

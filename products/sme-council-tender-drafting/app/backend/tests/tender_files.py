@@ -105,3 +105,21 @@ def xxe_docx() -> bytes:
 
 
 OLE_BYTES = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"\x00" * 600  # password-protected DOCX / legacy .doc container
+
+
+def xxe_utf16_docx() -> bytes:
+    return _rewrite(docx_bytes([(words(60), None)]), replace={"word/document.xml": XXE.decode().encode("utf-16")})
+
+
+def renamed_macro_docx() -> bytes:
+    """The VBA part under an innocent name, declared by the content types."""
+    base = docx_bytes([(words(60), None)])
+    with zipfile.ZipFile(io.BytesIO(base)) as z:
+        ct = z.read("[Content_Types].xml").replace(
+            b"</Types>", b'<Override PartName="/word/x.dat" ContentType="application/vnd.ms-office.vbaProject"/></Types>')
+    return _rewrite(base, replace={"[Content_Types].xml": ct}, add={"word/x.dat": b"macro"})
+
+
+def xxe_odd_part_docx() -> bytes:
+    """A DOCTYPE in a part with an upper-case extension."""
+    return _rewrite(docx_bytes([(words(60), None)]), add={"word/odd.XML": b"<!DOCTYPE a [<!ENTITY e 'x'>]><a/>"})

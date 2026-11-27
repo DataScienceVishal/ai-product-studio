@@ -42,6 +42,9 @@ def set_limits() -> None:
     import resource
     resource.setrlimit(resource.RLIMIT_AS, (MAX_AS_BYTES, MAX_AS_BYTES))
     resource.setrlimit(resource.RLIMIT_CPU, (MAX_CPU_SECONDS, MAX_CPU_SECONDS))
+    resource.setrlimit(resource.RLIMIT_FSIZE, (0, 0))  # the parser writes nothing
+    resource.setrlimit(resource.RLIMIT_NPROC, (0, 0))  # and starts nothing (best effort: counted per user)
+    resource.setrlimit(resource.RLIMIT_NOFILE, (64, 64))
 
 
 def blocks(paragraphs: list[tuple[str, bool]]) -> list[dict]:
@@ -104,11 +107,29 @@ def check_zip(path: str) -> None:
             raise Refuse("macro_file")
         if "word/document.xml" not in names:
             raise Refuse("unsupported_type")
-        for info in infos:  # no DTDs or entities anywhere in the XML (XXE, billion laughs): refuse outright
-            if info.filename.endswith((".xml", ".rels")):
-                head = zf.read(info.filename)
-                if b"<!DOCTYPE" in head.upper() or b"<!ENTITY" in head.upper():
-                    raise Refuse("xml_entities")
+        for info in infos:  # every entry, any name or encoding: no DTDs, entities or macro content types (XXE, billion laughs)
+            body = zf.read(info.filename)
+            if info.filename == "[Content_Types].xml" and _has(body, "macroenabled", "vbaproject"):
+                raise Refuse("macro_file")
+            if _has(body, "<!doctype", "<!entity"):
+                raise Refuse("xml_entities")
+
+
+def _has(body: bytes, *needles: str) -> bool:
+    """Case-insensitive search that also sees UTF-16 (BOM or not) and UTF-32 encodings of the text."""
+    low = body.lower()
+    for encoding in ("utf-8", "utf-16-le", "utf-16-be", "utf-32-le", "utf-32-be"):
+        for needle in needles:
+            if needle.encode(encoding) in low or needle.encode(encoding) in body:
+                return True
+    for encoding in ("utf-16", "utf-32"):  # decode by BOM, then compare
+        try:
+            text = body.decode(encoding).lower()
+        except (UnicodeDecodeError, ValueError):
+            continue
+        if any(n in text for n in needles):
+            return True
+    return False
 
 
 def parse_docx(path: str) -> tuple[str, list[dict]]:

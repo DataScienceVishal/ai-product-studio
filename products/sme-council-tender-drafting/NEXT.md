@@ -1,3 +1,15 @@
+# T-186 review fixes (reviewer CHANGES at 1cceaba)
+
+Tests after fixes: backend 898 passed, 1 skipped.
+Fixed: F1 process-wide `BoundedSemaphore` (`parse_workers`, default 1, max 2) around the worker, non-blocking, 503 `busy`; the read
+transaction is rolled back before parsing (no connection idle in transaction); F2 every zip entry is scanned for DOCTYPE/ENTITY
+in UTF-8, UTF-16 and UTF-32 (any case, any name); F3 macro refusal also by `[Content_Types].xml` (macroEnabled, vbaProject); F4 caps
+(pack size, pages per day, duplicate sha) are rechecked after a per-tenant advisory lock; F5 RLIMIT_FSIZE, NPROC, NOFILE; F11 bidi and
+zero-width characters stripped from filenames.
+Left: F6 (image-only page rule is DESIGN 4.1; Lead decision), F7 candidate cap 100 (tuning slice), F8 (harmless), F9 DESIGN section 5
+delete path wording and member-may-delete decision (Lead), F10 soft vs hard evidence delete (decide before S6). Deleting a document still
+refunds its pages for the day (rolling window counts live rows only).
+
 # STATUS (T-186, slice S2: ingest and retrieval) - code done, awaiting reviewer PASS
 
 Branch `p/sme-council-tender-drafting/T-186`. Not merged.

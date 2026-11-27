@@ -40,6 +40,7 @@ class Settings(BaseSettings):
 
     # tender uploads (DESIGN 4.1): the two upload routes get their own, larger body limit
     upload_max_bytes: int = 15 * 1024 * 1024  # per file; also the per-route body limit (plus multipart overhead)
+    parse_workers: int = Field(default=1, ge=1, le=2)  # concurrent parse subprocesses per process (1 GiB container)
     upload_max_pages: int = 60  # per file
     upload_max_pack_bytes: int = 40 * 1024 * 1024  # per pack, all its documents
     uploads_per_hour: int = Field(default=10, ge=1)  # per tenant
