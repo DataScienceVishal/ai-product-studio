@@ -1,3 +1,33 @@
+# STATUS (T-191, slice S7: review screens, coverage and sign-off) - code done, awaiting reviewer
+
+Branch `p/sme-council-tender-drafting/T-191` (off main at 39daebf). Not merged. No migrations. No live model calls (ScriptedFakeAI / Judge fakes).
+
+## Done
+- Frontend `app/frontend/src/pages/tender.tsx`: `/packs` (list + create + optional upload), `/pack?id=` (documents, upload, extract / draft / check
+  buttons, question list), `/checklist?id=` (confirm, edit, remove, add, amber flags and unverified quotes), `/evidence` (upload with category, list,
+  soft delete with confirm), `/draft?id=<requirement>` (answer with [E-n] chips and non-supported spans marked, the cited passages side by side,
+  claims table with unsupported/contradicted red and unchecked amber, edit, redraft, re-check), `/coverage?id=` (coverage table, checklist-not-compliance
+  banner, gate blockers, responsibility statement, name + tick sign-off). `"/"` stays the dashboard with links. No price text anywhere on these pages.
+- Polling (`usePoll`, `usePackStatus`): a timeout chain (one request in flight), 3 s pause, doubling to 15 s after a failure, hard stop at 200 ticks,
+  active only while the pack is `extracting`/`checking` or a task is queued/running; stops on terminal states and on unmount.
+- `api()` takes `form` (multipart, no JSON Content-Type). `CLIENT_ROUTES` + `App.tsx` mirror: /packs /pack /checklist /evidence /draft /coverage.
+- Backend (`routes/tender.py`): `GET /packs/{id}`, `GET /evidence/passages?ids=` (tenant scoped, removed text hidden), `GET /packs/{id}/coverage`,
+  `POST /packs/{id}/signoff` (pack row FOR UPDATE; refuses without the tick and the current statement version, 409 unless `ready`; re-runs
+  `gate.export_allowed` on the current rows with the sign-off it would create, so a stale `ready` flag is not trusted; stores name, user id,
+  digest; pack becomes `signed`). `GET /requirements/{id}/draft` now also returns `requirement`. `gate.STATEMENT_TEXT` fixed in code.
+- T-201: item 8 (`queue_check` and sign-off take the pack row FOR UPDATE), item 5 (`pack_checked` also runs the gate and refuses `ready` on
+  evidence_removed / claims_blocked / over_limit / not_checked / missing_draft). Items 7, the purge horizon and the name-check residual are NOT done.
+
+## Left
+- S8: Word export button and e2e (the coverage page has no export button yet); sign-off voided by an edit (edits are blocked after sign-off for now).
+- Known residual: an edit that is already past its status check can commit a draft just after a sign-off; the digest then mismatches and the gate blocks
+  export (`digest_mismatch`), so nothing leaks, but the pack would read `signed`. S8's "sign-off voided by an edit" should close it.
+- No Playwright run in this slice.
+
+## Verify
+`cd app/backend && TEST_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/starter_test python -m pytest -q -o addopts=""`
+(new: `tests/test_tender_review.py`, deep links in `tests/test_spa.py`); `cd app/frontend && npx vitest run && npx tsc -b && npm run build`.
+
 # STATUS (T-202, T-193 follow-ups) - code done, awaiting reviewer
 
 Branch `p/sme-council-tender-drafting/T-202`. Only `eval/`, `EVAL.md`, tests. No `app/tender/` edits, no live calls.
