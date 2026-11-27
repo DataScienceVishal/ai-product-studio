@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, File, Form, Query, Request, Response, UploadFile
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select, text
+from sqlalchemy import func, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -22,8 +22,9 @@ from ..tender.chunking import chunk_pages
 from ..tender.evidence import next_numbers, search_evidence
 from ..tender.service import delete_row
 from ..tender import draft as _draft
+from ..tender import claimcheck as _check
 from ..tender import extract as _extract  # noqa: F401  (registers the extract and draft handlers)
-from ..tender_models import AITask, Draft, DocumentPage, EvidenceItem, Requirement, SourceDocument, TenderPack
+from ..tender_models import Claim as _Claim, AITask, Draft, DocumentPage, EvidenceItem, Requirement, SourceDocument, TenderPack
 from ..textsafe import FreeText, StrippedLine
 
 log = logging.getLogger("app.tender")
@@ -78,14 +79,34 @@ def list_pack_documents(pack_id: uuid.UUID, me: Current = Depends(current), db: 
 
 @router.get("/evidence/documents")
 def list_evidence_documents(me: Current = Depends(current), db: Session = Depends(get_db)):
-    rows = db.scalars(scoped(SourceDocument, me.tenant.id).where(SourceDocument.kind == "evidence")
+    rows = db.scalars(scoped(SourceDocument, me.tenant.id).where(SourceDocument.kind == "evidence",
+                                                                 SourceDocument.deleted_at.is_(None))
                       .order_by(SourceDocument.created_at)).all()
     return {"documents": [doc_out(d) for d in rows]}
 
 
 @router.delete("/documents/{document_id}", status_code=204)
 def delete_document(document_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
-    delete_row(db, get_scoped(db, SourceDocument, me.tenant.id, document_id, "document"))
+    doc = get_scoped(db, SourceDocument, me.tenant.id, document_id, "document")
+    if doc.deleted_at is not None:
+        raise AppError(404, "not_found", "That document doesn't exist.")
+    if doc.kind == "evidence":
+        # Soft delete (T-186 F10): the passages stay for the claim appendix and the audit trail, but nothing can retrieve or
+        # cite them, and the export gate treats them as deleted. Packs that were ready have to be checked again.
+        now = datetime.now(timezone.utc)
+        numbers = list(db.scalars(select(EvidenceItem.display_no).where(
+            EvidenceItem.tenant_id == me.tenant.id, EvidenceItem.document_id == doc.id)))
+        doc.deleted_at = now
+        db.execute(update(EvidenceItem).where(EvidenceItem.tenant_id == me.tenant.id, EvidenceItem.document_id == doc.id,
+                                              EvidenceItem.deleted_at.is_(None)).values(deleted_at=now))
+        if numbers:
+            db.execute(text(
+                "UPDATE tender_packs SET status = 'drafting' WHERE tenant_id = :t AND status = 'ready' AND id IN ("
+                "SELECT r.pack_id FROM requirements r JOIN drafts d ON d.tenant_id = r.tenant_id AND d.requirement_id = r.id "
+                "WHERE r.tenant_id = :t AND d.cited_ids && CAST(:n AS integer[]))"), {"t": me.tenant.id, "n": numbers})
+        db.commit()
+        return Response(status_code=204)
+    delete_row(db, doc)
     return Response(status_code=204)
 
 
@@ -125,7 +146,8 @@ def _ingest(request: Request, db: Session, me: Current, file: UploadFile, *, kin
     if not data:
         raise AppError(422, "empty_file", "That file is empty.")
     sha = hashlib.sha256(data).hexdigest()
-    if db.scalar(scoped(SourceDocument, tenant_id).where(SourceDocument.sha256 == sha)) is not None:
+    if db.scalar(scoped(SourceDocument, tenant_id).where(SourceDocument.sha256 == sha,
+                                                         SourceDocument.deleted_at.is_(None))) is not None:
         raise AppError(409, "duplicate_document", "You've already uploaded that file.")
     _check_pack_size(db, s, tenant_id, pack_id, len(data))
     db.rollback()  # end the read transaction: no pooled connection is held while the parser runs (up to 45 s)
@@ -139,7 +161,8 @@ def _ingest(request: Request, db: Session, me: Current, file: UploadFile, *, kin
     # Serialise this tenant's uploads for the checks and the write, so the size and page caps cannot be overshot by
     # parallel requests (the lock is released at commit or rollback).
     db.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:k, 0))"), {"k": f"upload:{tenant_id}"})
-    if db.scalar(scoped(SourceDocument, tenant_id).where(SourceDocument.sha256 == sha)) is not None:
+    if db.scalar(scoped(SourceDocument, tenant_id).where(SourceDocument.sha256 == sha,
+                                                         SourceDocument.deleted_at.is_(None))) is not None:
         raise AppError(409, "duplicate_document", "You've already uploaded that file.")
     _check_pack_size(db, s, tenant_id, pack_id, len(data))
     since = datetime.now(timezone.utc) - timedelta(days=1)
@@ -270,6 +293,7 @@ def add_requirement(pack_id: uuid.UUID, body: RequirementIn, me: Current = Depen
     r = Requirement(tenant_id=me.tenant.id, pack_id=pack_id, seq=seq, origin="user", status="proposed", edited_by=me.user.id,
                     **body.model_dump())
     db.add(r)
+    _check.reopen_pack(db, me.tenant.id, pack_id)
     db.commit()
     return req_out(r)
 
@@ -288,6 +312,7 @@ def edit_requirement(req_id: uuid.UUID, body: RequirementPatch, me: Current = De
         setattr(r, k, v)
     if set(changes) - {"status"}:
         r.edited_by = me.user.id
+    _check.reopen_pack(db, me.tenant.id, pack.id)
     db.commit()
     return req_out(r)
 
@@ -414,5 +439,46 @@ def edit_draft(req_id: uuid.UUID, body: DraftIn, me: Current = Depends(current),
     cited, outside, gaps = _draft.analyse(body.text, set(retrieved))
     d = _draft.Drafted(body.text, cited, outside, gaps, ["citation_outside_set"] if outside else [], retrieved)
     row = _draft.save_version(db, me.tenant.id, req_id, d, author="user", word_limit=r.word_limit)
+    _check.reopen_pack(db, me.tenant.id, pack.id)  # an edit does not leave a `ready` pack ready (T-199)
     db.commit()
     return draft_out(row)
+
+
+# ---------- claim check and the export gate (S6) ----------
+@router.post("/packs/{pack_id}/check", status_code=202)
+def queue_check(pack_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
+    """Check every latest draft that has no claim check for its current text. Idempotent while a check task is live."""
+    pack = get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
+    if pack.status not in _check.CHECK_PACK_STATES:
+        raise AppError(409, "not_ready", "Confirm the checklist first." if pack.status in ("uploaded", "extracting", "review")
+                       else "This pack is already signed off.")
+    db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"), {"k": f"check:{pack_id}"})
+    live = db.scalar(scoped(AITask, me.tenant.id).where(AITask.pack_id == pack_id, AITask.kind == "claimcheck",
+                                                        AITask.status.in_(("queued", "running"))))
+    if live is not None:
+        return task_out(live)
+    if not _check.to_check(db, me.tenant.id, pack_id, None):
+        raise AppError(409, "nothing_to_check", "Every answer has been checked, or nothing has been drafted yet.")
+    task = AITask(tenant_id=me.tenant.id, pack_id=pack_id, kind="claimcheck")
+    db.add(task)
+    pack.status = "checking"
+    db.commit()
+    return task_out(task)
+
+
+@router.get("/packs/{pack_id}/export-check")
+def export_check(pack_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
+    """The gate's verdict for the pack as it is now. The export route calls the same function on the server."""
+    get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
+    allowed, reasons = _check.export_check(db, me.tenant.id, pack_id)
+    return {"allowed": allowed, "reasons": reasons}
+
+
+@router.get("/requirements/{req_id}/claims")
+def get_claims(req_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
+    _question(db, me, req_id)
+    d = db.scalar(scoped(Draft, me.tenant.id).where(Draft.requirement_id == req_id).order_by(Draft.version.desc()).limit(1))
+    rows = [] if d is None else list(db.scalars(scoped(_Claim, me.tenant.id).where(_Claim.draft_id == d.id).order_by(_Claim.seq)))
+    return {"draft_version": d.version if d else None, "checked": bool(d and d.check_sha256 == d.text_sha256),
+            "claims": [{"seq": c.seq, "span": c.span, "kind": c.kind, "cited_ids": list(c.cited_ids), "verdict": c.verdict,
+                        "evidence_quote": c.evidence_quote, "reason": c.reason, "decided_by": c.decided_by} for c in rows]}
