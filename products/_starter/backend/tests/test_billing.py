@@ -110,7 +110,8 @@ def stripe_provider() -> StripeBilling:
 
 def stripe_completion(tenant: uuid.UUID, _session_id: str) -> bytes:
     return json.dumps({"id": f"evt_{uuid.uuid4().hex}", "type": "checkout.session.completed",
-                       "data": {"object": {"client_reference_id": str(tenant), "subscription": "sub_test_1"}}}).encode()
+                       "data": {"object": {"client_reference_id": str(tenant), "subscription": "sub_test_1",
+                                           "payment_status": "paid"}}}).encode()
 
 
 def mock_completion(provider: MockBilling, session_id: str) -> bytes:
@@ -487,6 +488,7 @@ def test_old_subscription_cancel_after_new_checkout_keeps_customer_active(owner,
     client, _ = owner
     now = int(time.time())
     _sub_event(client, app, "e1", "checkout.completed", now - 100, "s1")
+    _sub_event(client, app, "e1b", "subscription.past_due", now - 75, "s1")  # s1 is not working: s2 may replace it
     _sub_event(client, app, "e2", "checkout.completed", now - 50, "s2", plan="pro")
     # s1's deletion arrives late and is strictly newer than s2's checkout
     assert _sub_event(client, app, "e3", "subscription.canceled", now, "s1").status_code == 200
@@ -497,6 +499,7 @@ def test_old_subscription_past_due_does_not_downgrade_current(owner, app):
     client, _ = owner
     now = int(time.time())
     _sub_event(client, app, "e1", "checkout.completed", now - 100, "s1")
+    _sub_event(client, app, "e1b", "subscription.past_due", now - 75, "s1")
     _sub_event(client, app, "e2", "checkout.completed", now - 50, "s2")
     _sub_event(client, app, "e3", "subscription.past_due", now, "s1")
     assert _status(client) == "active"
@@ -516,6 +519,7 @@ def test_same_second_new_activation_then_old_cancel_ends_active(owner, app):
     client, _ = owner
     now = int(time.time())
     _sub_event(client, app, "e1", "checkout.completed", now - 100, "s1")
+    _sub_event(client, app, "e1b", "subscription.past_due", now - 50, "s1")
     _sub_event(client, app, "e2", "checkout.completed", now, "s2")
     _sub_event(client, app, "e3", "subscription.canceled", now, "s1")
     assert _status(client) == "active"
@@ -525,6 +529,7 @@ def test_cancel_of_the_current_subscription_still_works(owner, app):
     client, _ = owner
     now = int(time.time())
     _sub_event(client, app, "e1", "checkout.completed", now - 100, "s1")
+    _sub_event(client, app, "e1b", "subscription.past_due", now - 75, "s1")
     _sub_event(client, app, "e2", "checkout.completed", now - 50, "s2")
     _sub_event(client, app, "e3", "subscription.canceled", now, "s2")
     assert _status(client) == "canceled"
@@ -557,7 +562,7 @@ def _stripe_apply(database, tenant_id, eid, kind, created, sub_id, status="activ
     """A real-shaped Stripe event, parsed by StripeBilling and applied the way the webhook route does."""
     from app.routes.billing import apply_update
     if kind == "checkout.session.completed":
-        obj = {"client_reference_id": tenant_id, "subscription": sub_id, "customer": "cus_1",
+        obj = {"client_reference_id": tenant_id, "subscription": sub_id, "customer": "cus_1", "payment_status": "paid",
                "metadata": {"tenant_id": tenant_id, "plan": plan}}
     else:
         obj = {"id": sub_id, "status": status, "customer": "cus_1", "metadata": {"tenant_id": tenant_id, "plan": plan}}
@@ -594,6 +599,7 @@ def test_stripe_old_subscription_deleted_after_new_checkout_keeps_customer(owner
     client, _ = owner
     t, now = _tenant_id(client), int(time.time())
     _stripe_apply(database, t, "e1", "checkout.session.completed", now - 300, "sub_1")
+    _stripe_apply(database, t, "e1b", "customer.subscription.updated", now - 250, "sub_1", "past_due")
     _stripe_apply(database, t, "e2", "checkout.session.completed", now - 200, "sub_2", plan="pro")
     assert _stripe_apply(database, t, "e3", "customer.subscription.deleted", now, "sub_1", "canceled") is True
     assert _stripe_sub(database, t) == ("active", "pro", "sub_2")
@@ -608,6 +614,7 @@ def test_subscription_created_for_a_new_id_does_take_over(owner, database):
     client, _ = owner
     t, now = _tenant_id(client), int(time.time())
     _stripe_apply(database, t, "e1", "checkout.session.completed", now - 300, "sub_1")
+    _stripe_apply(database, t, "e1b", "customer.subscription.updated", now - 250, "sub_1", "past_due")
     _stripe_apply(database, t, "e2", "customer.subscription.created", now - 200, "sub_2", plan="pro")
     assert _stripe_sub(database, t) == ("active", "pro", "sub_2")
 
@@ -797,3 +804,170 @@ def test_portal_route_builds_return_url_from_settings_not_headers(owner, databas
 def test_mock_portal_url_encodes_the_customer_ref():
     url = MockBilling("secret", "https://app.test").portal_session("a b&x=1#z/é", "https://app.test/billing")
     assert url == "https://app.test/billing/mock-portal?customer=a%20b%26x%3D1%23z%2F%C3%A9"
+
+
+# --- T-172: billing bug-hunt fixes (B1-B5) ---
+
+def _stripe_event(kind, obj, created=None, eid=None):
+    payload = json.dumps({"id": eid or f"evt_{uuid.uuid4().hex}", "type": kind, "created": created or int(time.time()),
+                          "livemode": False, "data": {"object": obj}}).encode()
+    return stripe_provider().parse_webhook(payload, sign(payload, SECRET))
+
+
+def _session_obj(tenant, payment_status="paid"):
+    return {"client_reference_id": tenant, "subscription": "sub_1", "customer": "cus_1", "payment_status": payment_status,
+            "metadata": {"tenant_id": tenant, "plan": "pro"}}
+
+
+def _db_sub(database, client):
+    from sqlalchemy import select
+    from app.models import Subscription
+    with database.sessions() as db:
+        sub = db.scalar(select(Subscription).where(Subscription.tenant_id == uuid.UUID(_tenant_id(client))))
+        db.expunge(sub)
+        return sub
+
+
+def test_b1_second_active_subscription_does_not_replace_the_first_and_is_cancelled(owner, app, caplog):
+    client, _ = owner
+    first = client.post("/api/billing/checkout", json={"plan": "pro"}).json()["checkout_id"]
+    second = client.post("/api/billing/checkout", json={"plan": "starter"}).json()["checkout_id"]
+    assert client.post(f"/api/billing/mock/complete/{first}").json()["plan"] == "pro"
+    with caplog.at_level("WARNING", logger="app.billing"):
+        done = client.post(f"/api/billing/mock/complete/{second}").json()
+    assert done["plan"] == "pro" and done["status"] == "active"  # the first subscription is kept
+    first_ref = f"mock_sub_{first[8:20]}"
+    second_ref = f"mock_sub_{second[8:20]}"
+    assert app.state.billing.cancelled == [second_ref]  # the extra one is cancelled at the provider
+    assert any("duplicate subscription" in r.getMessage() for r in caplog.records)
+    # the first one is still the tracked one: its cancel applies
+    now = int(time.time()) + 5
+    assert _sub_event(client, app, "b1c", "subscription.canceled", now, first_ref).status_code == 200
+    assert _status(client) == "canceled"
+
+
+def test_b1_stripe_cancels_the_extra_subscription_at_stripe():
+    calls = []
+
+    def handler(request: httpx.Request):
+        calls.append((request.method, request.url.path))
+        return httpx.Response(200, json={"id": "sub_2", "status": "canceled"})
+
+    provider = StripeBilling("sk_test_x", SECRET, client=httpx.Client(transport=httpx.MockTransport(handler)))
+    provider.cancel_subscription("sub_2")
+    assert calls == [("DELETE", "/v1/subscriptions/sub_2")]
+
+
+def test_b1_failure_to_cancel_the_extra_subscription_is_logged_not_raised(owner, app, caplog):
+    client, _ = owner
+    now = int(time.time())
+    _sub_event(client, app, "x1", "checkout.completed", now - 100, "s1")
+
+    def boom(ref):
+        raise AppError(503, "billing_unavailable", "down")
+
+    app.state.billing.cancel_subscription = boom
+    with caplog.at_level("ERROR", logger="app.billing"):
+        assert _sub_event(client, app, "x2", "checkout.completed", now, "s2", plan="pro").status_code == 200
+    assert _plan(client) == "starter"
+    assert any("could not cancel" in r.getMessage() for r in caplog.records)
+
+
+def test_b2_stripe_unpaid_session_does_not_activate_and_async_success_does():
+    t = str(uuid.uuid4())
+    assert _stripe_event("checkout.session.completed", _session_obj(t, "unpaid")) is None
+    paid = _stripe_event("checkout.session.completed", _session_obj(t, "paid"))
+    assert paid.status == "active" and paid.starts_subscription
+    free = _stripe_event("checkout.session.completed", _session_obj(t, "no_payment_required"))
+    assert free.status == "active"
+    later = _stripe_event("checkout.session.async_payment_succeeded", _session_obj(t, "paid"))
+    assert later.status == "active" and later.provider_ref == "sub_1" and later.starts_subscription
+    assert _stripe_event("checkout.session.async_payment_succeeded", _session_obj(t, "unpaid")) is None
+    assert _stripe_event("checkout.session.async_payment_failed", _session_obj(t, "unpaid")) is None
+
+
+@pytest.mark.parametrize("data", [
+    {"plan": ["pro"]}, {"plan": 5}, {"plan": {"a": 1}}, {"offer": 7}, {"offer": "x" * 100},
+    {"subscription": ["s"]}, {"subscription": "s" * 300}, {"customer": "c" * 300}, {"customer": 3},
+])
+def test_b3_bad_typed_or_overlong_fields_are_400_and_do_not_burn_the_event_id(owner, app, data):
+    client, _ = owner
+    tid, now = _tenant_id(client), int(time.time())
+    event = {"id": "b3", "type": "checkout.completed", "created": now, "data": {"tenant_id": tid, **data}}
+    r = _hook(client, app, event)
+    assert r.status_code == 400 and r.json()["error"] in {"bad_event", "unknown_plan"}
+    assert _status(client) == "trialing"
+    ok = {"id": "b3-fresh", "type": "checkout.completed", "created": now,
+          "data": {"tenant_id": tid, "plan": "pro", "subscription": "s1"}}
+    assert _hook(client, app, ok).json()["applied"] is True
+    assert _status(client) == "active"
+
+
+def test_b3_bad_typed_plan_on_a_cancel_is_also_400(owner, app):
+    client, _ = owner
+    r = _hook(client, app, {"id": "b3c", "type": "subscription.canceled", "created": int(time.time()),
+                            "data": {"tenant_id": _tenant_id(client), "plan": ["x"]}})
+    assert r.status_code == 400
+
+
+def test_b4_mock_event_without_created_is_rejected_and_cannot_reactivate(owner, app):
+    client, _ = owner
+    tid, now = _tenant_id(client), int(time.time())
+    _sub_event(client, app, "b4a", "checkout.completed", now - 50, "s1")
+    _sub_event(client, app, "b4b", "subscription.canceled", now, "s1")
+    r = _hook(client, app, {"id": "b4c", "type": "checkout.completed",
+                            "data": {"tenant_id": tid, "plan": "starter", "subscription": "s1"}})
+    assert r.status_code == 400 and r.json()["error"] == "bad_event"
+    assert _status(client) == "canceled"
+
+
+def test_b5_active_subscription_past_its_grace_can_check_out_again(owner, app, database):
+    from sqlalchemy import select
+    from app.models import Subscription
+    client, _ = owner
+    first = client.post("/api/billing/checkout", json={"plan": "pro"}).json()["checkout_id"]
+    client.post(f"/api/billing/mock/complete/{first}")
+    assert client.post("/api/billing/checkout", json={"plan": "pro"}).json()["error"] == "already_subscribed"
+    with database.sessions() as db:
+        sub = db.scalar(select(Subscription).where(Subscription.tenant_id == uuid.UUID(_tenant_id(client))))
+        sub.current_period_end = datetime.now(timezone.utc) - timedelta(days=10)
+        db.commit()
+    again = client.post("/api/billing/checkout", json={"plan": "starter"})
+    assert again.status_code == 200
+    # and completing it replaces the lapsed subscription (it is not a duplicate: the old one has no access)
+    done = client.post(f"/api/billing/mock/complete/{again.json()['checkout_id']}").json()
+    assert done["plan"] == "starter" and app.state.billing.cancelled == []
+
+
+def test_b5_mock_completion_stores_a_customer_so_the_portal_works(owner):
+    client, _ = owner
+    sid = client.post("/api/billing/checkout", json={"plan": "pro"}).json()["checkout_id"]
+    client.post(f"/api/billing/mock/complete/{sid}")
+    r = client.post("/api/billing/portal")
+    assert r.status_code == 200 and "mock-portal" in r.json()["url"]
+
+
+def test_b1_stale_second_subscription_is_still_cancelled_and_logged(owner, app, caplog):
+    client, _ = owner
+    now = int(time.time())
+    _sub_event(client, app, "st1", "checkout.completed", now, "s1")
+    with caplog.at_level("WARNING", logger="app.billing"):
+        # s2's start event is older than s1's last event (out of order), but s2 is still a live extra subscription
+        assert _sub_event(client, app, "st2", "checkout.completed", now - 100, "s2", plan="pro").status_code == 200
+    assert app.state.billing.cancelled == ["s2"]
+    assert any("duplicate subscription" in r.getMessage() for r in caplog.records)
+    assert _plan(client) == "starter"
+
+
+def test_b1_other_provider_start_event_is_not_a_duplicate_and_not_cancelled(owner, app, database):
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    _sub_event(client, app, "pr1", "checkout.completed", now - 100, "s1")  # mock-active
+    from app.routes.billing import apply_update
+    payload = json.dumps({"id": "pr2", "type": "checkout.session.completed", "created": now, "livemode": False,
+                          "data": {"object": _session_obj(t)}}).encode()
+    update = stripe_provider().parse_webhook(payload, sign(payload, SECRET))
+    with database.sessions() as db:
+        apply_update(db, update, "stripe", app.state.billing)
+    assert app.state.billing.cancelled == []
+    assert _stripe_sub(database, t) == ("active", "pro", "sub_1")  # existing replace behaviour

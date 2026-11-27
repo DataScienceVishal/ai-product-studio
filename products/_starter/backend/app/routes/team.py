@@ -71,9 +71,13 @@ def invite(data: InviteIn, request: Request, me: Current = Depends(verified_owne
                            .where(Invitation.tenant_id == me.tenant.id, Invitation.created_at > now - timedelta(days=1)))
     if sent_today >= settings.invites_per_day:
         raise AppError(429, "invite_limit", "You've sent a lot of invitations today. Try again tomorrow.")
+    # The daily quota above deliberately counts resends too (anti-abuse: each send is an email).
+    # The pending cap does not: a resend replaces the old invite below, so the pending count does not grow.
     pending = db.scalar(select(func.count()).select_from(Invitation)
                         .where(Invitation.tenant_id == me.tenant.id, *_pending(now)))
-    if pending >= settings.max_pending_invites:
+    is_resend = db.scalar(select(Invitation.id).where(Invitation.tenant_id == me.tenant.id,
+                                                      Invitation.email == data.email, *_pending(now)).limit(1)) is not None
+    if pending >= settings.max_pending_invites and not is_resend:
         raise AppError(409, "too_many_pending", "Cancel some unanswered invitations before sending more.")
     if db.scalar(select(User.id).where(User.email == data.email)) is not None:
         raise AppError(409, "email_taken", "That email already has an account.")
@@ -140,11 +144,15 @@ def accept(data: AcceptIn, request: Request, response: Response, db: Session = D
                 role=invitation.role, email_verified_at=now, last_sign_in_at=now)  # the link proved the inbox
     db.add(user)
     invitation.accepted_at = now
+    # The address is now an account: other tenants' pending invites for it can never be accepted, so revoke them
+    # in this same transaction (they would otherwise sit in those owners' lists as dead links).
     try:
-        db.flush()
+        db.flush()  # the user insert; a duplicate email fails here
     except IntegrityError:
         db.rollback()
         raise AppError(409, "email_taken", "That email already has an account. Try signing in.")
+    db.execute(update(Invitation).where(Invitation.id != invitation.id, func.lower(Invitation.email) == invitation.email.lower(),
+                                        *_pending(now)).values(revoked_at=now))
     _start_session(request, response, db, user)
     db.commit()
     tenant = db.get(Tenant, user.tenant_id)

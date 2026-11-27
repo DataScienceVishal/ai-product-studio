@@ -110,6 +110,10 @@ class BillingProvider(Protocol):
         """Stop billing and remove the customer at the provider (account deletion). Raises on failure."""
         ...
 
+    def cancel_subscription(self, subscription_ref: str) -> None:
+        """Cancel one subscription (a duplicate the tenant bought twice). Raises on failure."""
+        ...
+
 
 def sign(payload: bytes, secret: str, timestamp: int | None = None) -> str:
     """Stripe-style signature header: t=<unix>,v1=<hex hmac-sha256 of "t.payload">."""
@@ -157,6 +161,7 @@ class MockBilling:
         self.secret, self.base_url = webhook_secret, base_url.rstrip("/")
         self.sessions: dict[str, dict] = {}
         self.closed: list[tuple[str | None, str | None]] = []
+        self.cancelled: list[str] = []
 
     def create_checkout(self, tenant_id, plan, offer, success_url, cancel_url) -> Checkout:
         session_id = f"mock_cs_{uuid.uuid4().hex}"
@@ -177,6 +182,7 @@ class MockBilling:
         period_end = datetime.now(timezone.utc) + timedelta(days=30)
         event = {"id": f"mock_evt_{uuid.uuid4().hex}", "type": "checkout.completed", "created": int(time.time()),
                  "data": {**session, "subscription": f"mock_sub_{session_id[8:20]}",
+                          "customer": f"mock_cus_{session['tenant_id'].replace('-', '')}",
                           "current_period_end": int(period_end.timestamp())}}
         return json.dumps(event).encode()
 
@@ -191,16 +197,22 @@ class MockBilling:
                   "subscription.canceled": "canceled"}.get(event.get("type"))
         if status is None:
             return None
+        occurred_at = _when(event.get("created"))
+        if occurred_at is None:  # without a timestamp the ordering check cannot protect a newer state
+            raise ValueError("billing event has no usable created timestamp")
         end = data.get("current_period_end")
         return BillingUpdate(event_id=str(event["id"]), tenant_id=tenant, status=status, plan=data.get("plan"),
                              offer=data.get("offer"), provider_ref=data.get("subscription"),
                              customer_ref=data.get("customer"),
                              current_period_end=datetime.fromtimestamp(end, timezone.utc) if end else None,
-                             occurred_at=_when(event.get("created")),
+                             occurred_at=occurred_at,
                              starts_subscription=event.get("type") == "checkout.completed")
 
     def close(self, customer_ref, subscription_ref) -> None:
         self.closed.append((customer_ref, subscription_ref))
+
+    def cancel_subscription(self, subscription_ref) -> None:
+        self.cancelled.append(subscription_ref)
 
 
 class StripeBilling:
@@ -327,6 +339,9 @@ class StripeBilling:
         elif subscription_ref:
             self._call("DELETE", f"/subscriptions/{subscription_ref}")
 
+    def cancel_subscription(self, subscription_ref) -> None:
+        self._call("DELETE", f"/subscriptions/{subscription_ref}")  # 404 (already gone) counts as done
+
     @staticmethod
     def _period_end(obj: dict) -> datetime | None:
         end = obj.get("current_period_end")
@@ -343,7 +358,12 @@ class StripeBilling:
         obj = (event.get("data") or {}).get("object") or {}
         kind = event.get("type")
         meta = obj.get("metadata") or {}
-        if kind == "checkout.session.completed":
+        if kind in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
+            # A delayed payment method (bank debit) completes the session while still unpaid: wait for
+            # async_payment_succeeded. async_payment_failed changes nothing here: Stripe's subscription events
+            # (incomplete_expired / unpaid) report the outcome.
+            if obj.get("payment_status") not in ("paid", "no_payment_required"):
+                return None
             tenant = _tenant(meta.get("tenant_id") or obj.get("client_reference_id"))
             if tenant is None:
                 return None
