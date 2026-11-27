@@ -95,7 +95,10 @@ def ensure_ai_enabled(provider, db=None) -> None:
     `disabled` is the in-memory fast path; a provider with a trip store also asks the database, so a restart or
     another replica honours a trip (T-163). A provider that has no `check_persisted_trip` is in-memory only.
     Pass the caller's `db` session when it already holds a connection: the read then reuses it instead of checking out
-    a second pooled connection (a nested checkout can starve the pool under load)."""
+    a second pooled connection (a nested checkout can starve the pool under load).
+    WARNING (T-168): with `db`, a pending trip-save retry writes on that session and COMMITS it, which includes
+    anything the session already flushed. Call this before the route writes anything. If the retry fails, the
+    session is rolled back, so it is usable but loses any uncommitted work."""
     check = getattr(provider, "check_persisted_trip", None)
     if check is not None and not getattr(provider, "disabled", False):
         check(db) if db is not None else check()
@@ -431,6 +434,11 @@ class AzureOpenAI:
             self._trip_retry_at = self.trip_retry_clock() + self.trip_retry_interval
             log.error("AI guard trip could not be saved, so other replicas and restarts will not see it; "
                       "will retry (%s)", type(exc).__name__)
+            if db is not None:  # T-168: a failed write leaves the caller's transaction aborted; make it usable again
+                try:
+                    db.rollback()
+                except Exception as rollback_exc:
+                    log.error("rollback of the caller's session failed (%s)", type(rollback_exc).__name__)
             return
         self.trip_unsaved = False
 
