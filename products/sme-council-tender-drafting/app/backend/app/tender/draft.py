@@ -73,9 +73,14 @@ def split_sentences(text_: str) -> list[str]:
     for seg in re.split(r"(?<=[.!?])\s+", text_.strip()):
         if not seg:
             continue
-        if out and (seg.startswith("[E-") or out[-1].count("[") > out[-1].count("]")):
+        if out and out[-1].count("[") > out[-1].count("]"):  # inside a [NEEDS FIRM INPUT: ...] marker
             out[-1] += " " + seg
-        else:
+            continue
+        lead = re.match(r"(?:\[E-\d+\]\s*)+", seg)
+        if out and lead:  # a citation that follows the full stop belongs to the sentence before it
+            out[-1] += " " + lead.group(0).strip()
+            seg = seg[lead.end():]
+        if seg:
             out.append(seg)
     return out
 

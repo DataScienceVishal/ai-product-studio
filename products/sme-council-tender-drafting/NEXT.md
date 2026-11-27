@@ -1,3 +1,36 @@
+# STATUS (T-189, slice S5: drafting) - code done, awaiting reviewer PASS
+
+Branch `p/sme-council-tender-drafting/T-189`. Not merged. Migration 0016 (drafts.outside_ids int[], drafts.flags text[]); alembic
+upgrade, check, downgrade -1, upgrade, check clean. No live model calls (ScriptedFakeAI / fakes only).
+
+## Done
+- `app/tender/draft.py`: `DraftOutput`, `DRAFT_SPEC` (low effort, 4000 cap), `draft_answer()` (pure of DB sessions; the harness can
+  call it with wider `Limits`), `draft_handler` registered in `runner.HANDLERS["draft"]`, `save_version`, `fit_to_limit`.
+  Empty retrieval (or below `RETRIEVAL_FLOOR`) -> gap marker draft, flag `no_evidence`, model never called, no budget hold.
+  Citations: `[E-n]` in the text split into `cited_ids` (in the retrieved set) and `outside_ids` (flag `citation_outside_set`, marker
+  kept in the text for S6 to mark unsupported). Over the word limit: one "shorten" retry (flag `shortened`), then trailing sentences
+  dropped (flag `trimmed`); a refused retry falls through to the drop. Word count excludes `[E-n]`, includes gap markers.
+- Routes (routes/tender.py): `POST /packs/{id}/draft` (202, idempotent, 409 until confirmed / when nothing is left to draft),
+  `POST /requirements/{id}/redraft` (202, 5 AI drafts per requirement per 24 h -> 429 `redraft_limit`), `PUT /requirements/{id}/draft`
+  (user edit = new version, author=user, optional `base_version` -> 409 `stale_version`), `GET /requirements/{id}/draft[?version=]`,
+  `GET /requirements/{id}/evidence`. Cross-tenant ids are 404. Signed or exported packs are 409.
+- App-path sizing (R3): passages capped at 5 x 1000 chars, question 1500 chars. `draft_reservation` + `check_reservation` for a typical
+  pair is under 30k (test); the largest draft alone reserves under 21.5k.
+- Tests: `tests/test_tender_draft.py` (16).
+
+## Design decisions
+- One task per pack drafts every confirmed `question` without a draft; each draft commits as made, so a daily-cap refusal part-way keeps
+  the finished ones and a re-run continues (cache makes repeats free).
+- Draft status stays `drafted` on edit; the check (S6) sets `checked_ok` / `blocked`. Edits to a `ready` pack do not yet reset it (S6/S8).
+- The claimcheck sizing constants (`CHECK_CAP`, `CHECK_SYSTEM_BYTES`) live in draft.py until S6 defines the real spec.
+
+## Left
+- Claim check, pack status `checking`/`ready` transitions and sign-off voiding on edit (S6, S8). No frontend. `RETRIEVAL_FLOOR` is 0 until L1 tuning.
+- Redraft limit counts drafts, so a pack-wide draft also uses one of a requirement's 5.
+
+## Verify
+`cd app/backend && TEST_DATABASE_URL=... python -m pytest -q -o addopts="" tests/test_tender_draft.py` then the full suite.
+
 # STATUS (T-188, slice S4: extraction and checklist API) - code done, awaiting reviewer PASS
 
 Branch `p/sme-council-tender-drafting/T-188`. Not merged. Migration 0015 (requirements.model_json JSONB, flags text[]); alembic
