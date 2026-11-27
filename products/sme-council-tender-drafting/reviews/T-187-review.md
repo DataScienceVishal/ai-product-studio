@@ -100,3 +100,45 @@ change behaviour.
   (rule 11). `attempts >= 2` gives `attempts_exhausted` and does not loop.
 - Adapter: strict `text.format` and chat `response_format`; the schema name is sanitised; `effort` is validated; the
   worker timeout is applied per attempt (tested at 180 s against the 20 s request path).
+
+---
+
+# Re-review at 459d453 (builder's fixes)
+
+**Verdict: PASS**, with one item (N1) that must be fixed before any slice turns the runner on.
+
+**Tests (rerun by the reviewer):** 928 passed, 1 skipped in 186 s. That is 921 plus 7 new tests.
+
+## C1 and C2: fixed
+
+- **C1 (fencing): fixed.** `runner.py` `_owned()` matches on `tenant_id`, `id`, `attempts` and `status='running'`.
+  `extend_lease` and `_finish` both use it and check `rowcount`. A superseded `heartbeat()` raises `LeaseLost`.
+  `run_one` catches `LeaseLost` and writes nothing. Its `AppError` and `Exception` paths go through the fenced
+  `_finish`, so they are safe too. Two tests cover it: the old worker's `extend_lease` and `_finish` do nothing, and
+  `run_one` drops a result after a takeover in the middle of a run.
+- **C2 (leaked reservation): fixed.** `before_call()` now runs before `budget.hold()`, so a lost lease or a database
+  error leaves no hold. The test checks `holds == []` and that the provider was never called. The heartbeat on the
+  repair and double-cap rounds also runs after the previous round settled, so no hold is pending then either.
+- **Suggestions 5, 6, 8 and 9: done and tested.** The injection rule is now in the key. Repair locations are
+  allow-listed (`d.?`). The worker provider is passed to handlers. A corrupt fixture gives `ai_invalid_output`.
+  Suggestions 3, 4 and 7 are carried in NEXT.md.
+
+## New finding
+
+**N1 (blocker for S4, or whichever slice sets `AI_WORKER_THREADS > 0`): the worker provider has no trip store.**
+At `app/main.py:183`, `build_worker_provider(settings)` is built in `lifespan`, but `attach_trip_store(TripStore(...))`
+is only applied to `app.state.ai` (`main.py:203-205`). The worker's `AzureOpenAI` therefore:
+- skips `check_persisted_trip` (`ai.py:395` returns early when there is no store), so it ignores a model-guard trip
+  that the request path or another replica has saved;
+- does not save its own trip, so every restart or scale-from-zero allows another call to the wrong, expensive model.
+
+This undoes T-163 for the job runner. It cannot happen today: threads are off and `HANDLERS` is empty. That is why it
+does not block this merge.
+*Fix:* in `lifespan`, call `attach_trip_store(TripStore(app.state.db.sessions))` on the worker provider when it has
+the method. Add a test that the Runner's provider has a trip store when `ai_provider=azure`.
+
+## Nits
+
+- `runner.py:29-31`: `class LeaseLost` sits between the Handler comment and `HANDLERS`. Move it above the comment.
+- `main.py:184`: `ai or build_worker_provider(...)` makes an injected test provider serve as the worker provider. That
+  is fine for tests, but add a comment saying so.
