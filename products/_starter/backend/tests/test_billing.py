@@ -1081,6 +1081,7 @@ def test_s8_stripe_subscription_created_for_s2_while_s1_is_live_changes_nothing(
     assert _stripe_apply(database, t, "r2", "customer.subscription.created", now - 200, "sub_2", plan="pro",
                          billing=provider) is True
     assert _stripe_sub(database, t) == ("active", "starter", "sub_1")
+    assert provider.cancelled == []  # created alone is not a duplicate yet: nothing is cancelled
     # s2's paid checkout is what marks it a duplicate and cancels it, once
     _stripe_apply(database, t, "r3", "checkout.session.completed", now - 100, "sub_2", plan="pro", billing=provider)
     assert _stripe_sub(database, t) == ("active", "starter", "sub_1")
