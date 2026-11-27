@@ -145,3 +145,33 @@ def test_invite_for_an_email_that_already_has_an_account_is_refused(owner, new_c
     owner_a, _ = owner
     sign_up(new_client(), email="b@beta.test", company="Beta")
     assert owner_a.post("/api/team/invitations", json={"email": "b@beta.test"}).status_code == 409
+
+
+# --- T-172 B6: resending an invite ---
+
+def test_resend_at_the_pending_cap_replaces_the_old_invite(app, owner, new_client, outbox):
+    owner_client, _ = owner
+    app.state.settings.max_pending_invites = 2
+    _, first = _invite(owner_client, outbox, "a@acme.test")
+    _invite(owner_client, outbox, "b@acme.test")
+    assert owner_client.post("/api/team/invitations", json={"email": "c@acme.test"}).status_code == 409
+    _, again = _invite(owner_client, outbox, "A@acme.test")  # resend, at the cap
+    assert _accept(new_client(), first).status_code == 400  # old link is dead
+    assert len(owner_client.get("/api/team").json()["invitations"]) == 2
+    assert _accept(new_client(), again).status_code == 201
+
+
+# --- T-172 B7: accepting revokes other tenants' pending invites for the address ---
+
+def test_accepting_revokes_other_tenants_pending_invites_for_that_email(owner, new_client, outbox):
+    from .conftest import verify_email
+    owner_client, _ = owner
+    other = new_client()
+    sign_up(other, email="boss@beta.test", company="Beta")
+    verify_email(other, outbox)
+    _, token_a = _invite(owner_client, outbox, "m@x.test")
+    assert other.post("/api/team/invitations", json={"email": "M@x.test"}).status_code == 201
+    token_b = link_token(outbox, "accept-invite")
+    assert _accept(new_client(), token_a).status_code == 201
+    assert other.get("/api/team").json()["invitations"] == []
+    assert _accept(new_client(), token_b).status_code == 400
