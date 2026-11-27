@@ -64,7 +64,7 @@ DRAFT_SPEC = TaskSpec(
 
 def count_words(text_: str) -> int:
     """Words as the sign-off counts them: [E-n] markers excluded, gap markers included."""
-    return len(_CITE.sub(" ", text_).split())
+    return sum(1 for w in _CITE.sub(" ", text_).split() if any(c.isalnum() for c in w))
 
 
 def split_sentences(text_: str) -> list[str]:

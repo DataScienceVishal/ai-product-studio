@@ -367,7 +367,7 @@ def redraft(req_id: uuid.UUID, me: Current = Depends(current), db: Session = Dep
     queued = db.scalar(select(func.count()).select_from(AITask).where(
         AITask.tenant_id == me.tenant.id, AITask.kind == "draft", AITask.target_id == req_id,
         AITask.status.in_(("queued", "running"))))
-    if made + queued >= _draft.REDRAFTS_PER_REQUIREMENT_PER_DAY and not queued:
+    if not queued and made >= _draft.REDRAFTS_PER_REQUIREMENT_PER_DAY:
         raise AppError(429, "redraft_limit", "You've redrafted this question 5 times today. Edit it by hand or try tomorrow.")
     return _queue_draft(db, me, pack, req_id)
 
