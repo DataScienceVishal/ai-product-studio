@@ -1,6 +1,7 @@
 """Plans, checkout and the payment provider's webhook. Test mode only (see app/billing.py)."""
 from __future__ import annotations
 
+import hashlib
 import logging
 
 from fastapi import APIRouter, Depends, Request
@@ -127,12 +128,24 @@ def apply_update(db: Session, update: BillingUpdate, provider: str, billing=None
         db.commit()
         log.info("unconfirmed active subscription event ignored until the payment is confirmed")
         return True
+    tombstone = _dead_marker(provider, update.provider_ref)
+    if update.starts_subscription and tombstone and db.get(BillingEvent, tombstone) is not None:
+        # T-174 B1/B2: this subscription was already seen cancelled before it was ever activated, so a late paid-looking
+        # start event for the same ref must not grant access. Other refs are unaffected.
+        db.commit()
+        log.warning("start event for a subscription already cancelled is ignored",
+                    extra={"tenant_id": str(update.tenant_id), "subscription": update.provider_ref})
+        return True
     if update.provider_ref and update.status != "active" and sub.status == "trialing" and not sub.provider_ref:
         # T-174 (T-173 S-3): a failed first payment (past_due, incomplete_expired, deleted) for a subscription we never
         # activated must not end the free trial early. The trial runs to its end; only a paid checkout changes it.
-        if update.occurred_at and (sub.last_event_at is None or update.occurred_at > sub.last_event_at):
-            # Remember when it died, so a checkout for it that arrives late (older timestamp) is stale, not paid access.
-            sub.last_event_at = update.occurred_at
+        if update.status == "canceled" and tombstone:
+            db.add(BillingEvent(id=tombstone))  # remember this ref is dead (no migration: reuses the events table)
+            try:
+                db.flush()
+            except IntegrityError:
+                db.rollback()
+                return True
         db.commit()
         log.info("event for a never-activated subscription ignored: the trial keeps running")
         return True
@@ -193,6 +206,11 @@ def apply_update(db: Session, update: BillingUpdate, provider: str, billing=None
         _cancel_replaced(update, old_ref, old_provider, provider, billing)
     _fill_period_end(db, update, billing)
     return True
+
+
+def _dead_marker(provider: str, ref: str | None) -> str | None:
+    """Id of the BillingEvent row that marks `ref` as cancelled. Hashed so it always fits String(255)."""
+    return f"dead:{provider}:{hashlib.sha256(ref.encode()).hexdigest()}" if ref else None
 
 
 def _cancel_replaced(update: BillingUpdate, old_ref: str, old_provider: str | None, provider: str, billing) -> None:

@@ -1251,3 +1251,14 @@ def test_s3_early_cancel_of_an_untracked_subscription_blocks_its_late_checkout(o
     _stripe_apply(database, t, "b1a", "customer.subscription.deleted", now - 10, "sub_1", "canceled")
     _stripe_apply(database, t, "b1b", "checkout.session.completed", now - 20, "sub_1")
     assert _stripe_sub(database, t) == ("trialing", "trial", None)
+
+
+def test_s3_a_dead_subscription_does_not_block_a_different_paid_one(owner, database):
+    """Reviewer B2: sub_1 cancelled at t2, then a paid sub_2 checkout stamped earlier (t1 < t2) delivered later."""
+    client, _ = owner
+    t, now = _tenant_id(client), int(time.time())
+    _stripe_apply(database, t, "c1", "customer.subscription.deleted", now - 10, "sub_1", "canceled")
+    _stripe_apply(database, t, "c2", "checkout.session.completed", now - 20, "sub_2", plan="pro")
+    assert _stripe_sub(database, t) == ("active", "pro", "sub_2")
+    # redelivery of the cancel is a plain duplicate
+    assert _stripe_apply(database, t, "c1", "customer.subscription.deleted", now - 10, "sub_1", "canceled") is False
