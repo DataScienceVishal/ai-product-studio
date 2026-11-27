@@ -260,6 +260,34 @@ def _record_pending_cancel(db: Session, tenant_id: uuid.UUID, provider: str, ref
         db.add(PendingCancel(tenant_id=tenant_id, provider=provider, ref=ref))
 
 
+def _record_failed_attempt(db: Session, row: PendingCancel, error: Exception) -> int | None:
+    """Count a failed cancel and return the new attempts value (None: the row is gone).
+    T-180 (T-179 M2): if the commit fails (Postgres ended the idle transaction while the provider hung, 25P03, or the
+    connection dropped), the lock is gone too. Roll back, open a fresh transaction, re-read the row and count the attempt
+    there, so the backoff and the CRITICAL escalation keep working. A second failure propagates (the sweep logs it)."""
+    row_id, message = row.id, f"{type(error).__name__}: {error}"[:500]
+    try:
+        row.attempts = (row.attempts or 0) + 1
+        row.last_error = message
+        row.last_attempt_at = datetime.now(timezone.utc)
+        db.commit()
+        return row.attempts
+    except Exception:
+        log.warning("could not record a failed cancel in the locked transaction; recording it in a new one",
+                    exc_info=True)
+        db.rollback()
+    fresh = db.scalar(select(PendingCancel).where(PendingCancel.id == row_id).with_for_update()
+                      .execution_options(populate_existing=True))
+    if fresh is None:
+        db.rollback()
+        return None
+    fresh.attempts = (fresh.attempts or 0) + 1
+    fresh.last_error = message
+    fresh.last_attempt_at = datetime.now(timezone.utc)
+    db.commit()
+    return fresh.attempts
+
+
 def attempt_pending_cancel(db: Session, row_id: uuid.UUID, billing, *, backoff_now: datetime | None = None) -> bool | None:
     """Cancel one pending subscription at the provider. True: cancelled (row deleted). False: failed (attempt counted,
     error kept, ERROR logged: an unpaid-for duplicate may still be billing the customer). None: skipped, because the row
@@ -290,14 +318,13 @@ def attempt_pending_cancel(db: Session, row_id: uuid.UUID, billing, *, backoff_n
     try:
         billing.cancel_subscription(row.ref)
     except Exception as error:
-        row.attempts = (row.attempts or 0) + 1
-        row.last_error = f"{type(error).__name__}: {error}"[:500]
-        row.last_attempt_at = datetime.now(timezone.utc)
-        db.commit()
-        extra = {**todo, "attempts": row.attempts}
-        if row.attempts == ESCALATE_AT:  # once, on the transition: the one line an operator should act on (ids only)
+        attempts = _record_failed_attempt(db, row, error)
+        if attempts is None:  # the row vanished meanwhile (cancelled by another worker, or dropped)
+            return False
+        extra = {**todo, "attempts": attempts}
+        if attempts == ESCALATE_AT:  # once, on the transition: the one line an operator should act on (ids only)
             log.critical("pending cancel needs operator", extra=extra)
-        elif row.attempts > ESCALATE_AT:  # already escalated: keep the log quiet, the row stays visible in the table
+        elif attempts > ESCALATE_AT:  # already escalated: keep the log quiet, the row stays visible in the table
             log.warning("could not cancel the replaced subscription (already escalated)", extra=extra, exc_info=True)
         else:
             log.error("could not cancel the replaced subscription: it is kept as a to-do and retried; cancel it by "
