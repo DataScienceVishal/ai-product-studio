@@ -282,13 +282,21 @@ def list_requirements(pack_id: uuid.UUID, me: Current = Depends(current), db: Se
     return {"requirements": [req_out(r) for r in rows]}
 
 
+def _lock_pack(db: Session, tenant_id: uuid.UUID, pack_id: uuid.UUID) -> TenderPack:
+    """Take the pack row FOR UPDATE and re-read it, so the status checked next is the committed one: a sign-off that commits
+    first is seen (pack_locked), and one that comes later waits for this write. FOR UPDATE, not FOR SHARE, because these
+    routes then update the row (reopen_pack) and two sharers upgrading at once would deadlock."""
+    return db.scalar(scoped(TenderPack, tenant_id).where(TenderPack.id == pack_id).with_for_update()
+                     .execution_options(populate_existing=True))
+
+
 @router.post("/packs/{pack_id}/requirements", status_code=201)
 def add_requirement(pack_id: uuid.UUID, body: RequirementIn, me: Current = Depends(current), db: Session = Depends(get_db)):
-    pack = get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
+    get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
+    # Lock the pack row first so a concurrent add, sign-off or extraction write waits; the unique (tenant, pack, seq) is the backstop.
+    pack = _lock_pack(db, me.tenant.id, pack_id)
     if pack.status in ("signed", "exported"):
         raise AppError(409, "pack_locked", "This pack is already signed off.")
-    # Lock the pack row so a concurrent add or an extraction write waits; the unique (tenant, pack, seq) is the backstop.
-    db.execute(select(TenderPack.id).where(TenderPack.tenant_id == me.tenant.id, TenderPack.id == pack_id).with_for_update())
     seq = (db.scalar(select(func.coalesce(func.max(Requirement.seq), 0)).where(
         Requirement.tenant_id == me.tenant.id, Requirement.pack_id == pack_id)) or 0) + 1
     r = Requirement(tenant_id=me.tenant.id, pack_id=pack_id, seq=seq, origin="user", status="proposed", edited_by=me.user.id,
@@ -303,7 +311,8 @@ def add_requirement(pack_id: uuid.UUID, body: RequirementIn, me: Current = Depen
 def edit_requirement(req_id: uuid.UUID, body: RequirementPatch, me: Current = Depends(current), db: Session = Depends(get_db)):
     """The model's original item stays in model_json; the row keeps origin=model and records who edited it."""
     r = get_scoped(db, Requirement, me.tenant.id, req_id, "requirement")
-    pack = get_scoped(db, TenderPack, me.tenant.id, r.pack_id, "tender pack")
+    get_scoped(db, TenderPack, me.tenant.id, r.pack_id, "tender pack")
+    pack = _lock_pack(db, me.tenant.id, r.pack_id)
     if pack.status in ("signed", "exported"):
         raise AppError(409, "pack_locked", "This pack is already signed off.")
     changes = body.model_dump(exclude_unset=True)
@@ -428,6 +437,7 @@ def get_draft(req_id: uuid.UUID, version: int | None = Query(default=None, ge=1)
 def edit_draft(req_id: uuid.UUID, body: DraftIn, me: Current = Depends(current), db: Session = Depends(get_db)):
     """A user edit is a new version (author=user); earlier versions are kept. The text is unchecked until re-checked."""
     r, pack = _question(db, me, req_id)
+    pack = _lock_pack(db, me.tenant.id, pack.id)  # before the status check: a concurrent sign-off is seen or waits
     if pack.status in ("signed", "exported"):
         raise AppError(409, "pack_locked", "This pack is already signed off.")
     if r.status != "confirmed" or r.kind != "question":

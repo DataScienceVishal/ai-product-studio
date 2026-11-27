@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { reply, stubFetch } from "../test-utils";
+import { ApiError } from "../api";
 import { ChecklistPage, CoveragePage, DraftPage, EvidencePage, PackPage, PacksPage, POLL_MAX_TICKS, usePoll, AnswerText } from "./tender";
 import { renderHook } from "@testing-library/react";
 
@@ -126,6 +127,13 @@ describe("usePoll", () => {
     expect(step).toHaveBeenCalledTimes(2);   // 3 s, then 6 s: doubling
     await act(async () => { await vi.advanceTimersByTimeAsync(24 * 3600_000); });
     expect(step.mock.calls.length).toBe(POLL_MAX_TICKS);
+  });
+  it("stops on a 4xx but keeps backing off on a network error", async () => {
+    vi.useFakeTimers();
+    const gone = vi.fn().mockRejectedValue(new ApiError(404, "not_found", "gone"));
+    renderHook(() => usePoll(gone, true));
+    await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+    expect(gone).toHaveBeenCalledTimes(1);
   });
   it("does nothing while inactive and stops on unmount", async () => {
     vi.useFakeTimers();

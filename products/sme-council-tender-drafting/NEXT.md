@@ -20,8 +20,8 @@ Branch `p/sme-council-tender-drafting/T-191` (off main at 39daebf). Not merged. 
 
 ## Left
 - S8: Word export button and e2e (the coverage page has no export button yet); sign-off voided by an edit (edits are blocked after sign-off for now).
-- Known residual: an edit that is already past its status check can commit a draft just after a sign-off; the digest then mismatches and the gate blocks
-  export (`digest_mismatch`), so nothing leaks, but the pack would read `signed`. S8's "sign-off voided by an edit" should close it.
+- Review fix: edit_draft, edit_requirement and add_requirement now take the pack row FOR UPDATE (re-read) before the status check, so an edit cannot
+  commit after a sign-off (FOR UPDATE not SHARE: these routes then update the row, two sharers would deadlock). Polling stops on 4xx. Tested.
 - No Playwright run in this slice.
 
 ## Verify

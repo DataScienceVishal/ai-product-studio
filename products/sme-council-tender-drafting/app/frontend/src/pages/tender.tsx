@@ -54,7 +54,10 @@ export function usePoll(step: () => Promise<boolean>, active: boolean) {
     let timer: ReturnType<typeof setTimeout>;
     const run = async () => {
       let again = true;
-      try { again = await ref.current(); delay = POLL_MS; } catch { delay = Math.min(delay * 2, POLL_MAX_MS); }
+      try { again = await ref.current(); delay = POLL_MS; } catch (err) {
+        if (err instanceof ApiError && err.status >= 400 && err.status < 500) again = false; // signed out, or the pack is gone: retrying cannot help
+        else delay = Math.min(delay * 2, POLL_MAX_MS);
+      }
       ticks += 1;
       if (!stopped && again && ticks < POLL_MAX_TICKS) timer = setTimeout(run, delay);
     };
@@ -734,7 +737,7 @@ function CoveragePageView({ id }: { id: string }) {
       {c && (
         <Card title="Sign-off">
           {signed && c.signoff ? (
-            <Alert kind="success">Signed off by {c.signoff.reviewer_name} on {new Date(c.signoff.signed_at).toLocaleDateString("en-GB")}. Any change to an answer or the checklist means signing off again.</Alert>
+            <Alert kind="success">Signed off by {c.signoff.reviewer_name} on {new Date(c.signoff.signed_at).toLocaleDateString("en-GB")}. The answers and the checklist are now locked.</Alert>
           ) : (
             <form onSubmit={sign} className="space-y-4">
               {blockers.length > 0 && (

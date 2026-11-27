@@ -169,3 +169,35 @@ def test_queue_check_still_works_with_the_pack_row_locked(client, app):
     first = client.post(f"/api/packs/{pid}/check")
     again = client.post(f"/api/packs/{pid}/check")
     assert first.status_code == 202 and again.status_code == 202 and first.json()["id"] == again.json()["id"]
+
+
+def test_an_edit_racing_a_sign_off_waits_for_it_and_is_refused(client, app, db):
+    """The reviewer's race: the edit must not commit a draft after the sign-off. The pack row is locked before the status check,
+    so an edit that starts while a sign-off is uncommitted waits, then sees `signed`."""
+    import threading
+    import time
+    pid, rid = ready_pack(client, app)
+    before = latest(client, rid)["draft"]["version"]
+    holder = app.state.db.sessions()
+    holder.execute(select(TenderPack).where(TenderPack.id == pid).with_for_update()).scalar_one()  # the sign-off's lock
+    result = {}
+
+    def edit():
+        result["r"] = client.put(f"/api/requirements/{rid}/draft", json={"text": "A racing edit."})
+    t = threading.Thread(target=edit)
+    t.start()
+    time.sleep(1.0)
+    assert t.is_alive()  # waiting on the pack row, not past the status check
+    holder.execute(TenderPack.__table__.update().where(TenderPack.id == pid).values(status="signed"))
+    holder.commit()
+    holder.close()
+    t.join(15)
+    assert result["r"].status_code == 409 and result["r"].json()["error"] == "pack_locked"
+    assert latest(client, rid)["draft"]["version"] == before
+
+
+def test_a_requirement_edit_or_add_after_sign_off_is_locked(client, app):
+    pid, rid = ready_pack(client, app)
+    assert client.post(f"/api/packs/{pid}/signoff", json=SIGN).status_code == 201
+    assert client.patch(f"/api/requirements/{rid}", json={"text": "x"}).status_code == 409
+    assert client.post(f"/api/packs/{pid}/requirements", json={"text": "x", "kind": "other"}).status_code == 409
