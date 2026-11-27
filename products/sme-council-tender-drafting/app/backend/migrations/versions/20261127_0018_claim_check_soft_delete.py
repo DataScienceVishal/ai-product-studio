@@ -27,6 +27,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # DESTRUCTIVE: hard-deletes every soft-deleted source document (and, by cascade, its passages). Not reversible:
+    # do not run this on a demo or live database expecting a reversible step.
     # Soft-deleted rows may share a hash with a live one; they were deleted, so remove them before restoring the constraint.
     op.execute("DELETE FROM source_documents WHERE deleted_at IS NOT NULL")
     op.drop_index('uq_source_documents_tenant_sha256', table_name='source_documents')

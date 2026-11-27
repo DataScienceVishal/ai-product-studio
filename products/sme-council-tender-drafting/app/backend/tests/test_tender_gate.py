@@ -135,3 +135,11 @@ def test_a_marker_in_the_text_for_removed_evidence_blocks_even_without_a_claim_f
 def test_no_questions_and_unconfirmed_packs_are_blocked():
     ok, reasons = export_allowed(GatePack("review"), [], [], [], None, set())
     assert not ok and {"not_confirmed", "no_questions", "no_signoff"} <= reason_codes(reasons)
+
+
+def test_an_unknown_pack_status_fails_closed():
+    pack, reqs, drafts, claims, signoff, live = build(good_state())
+    assert export_allowed(pack, reqs, drafts, claims, signoff, live)[0]
+    for status in ("drafting", "checking", "weird", "", "Ready"):
+        ok, reasons = export_allowed(GatePack(status), reqs, drafts, claims, signoff, live)
+        assert not ok and "pack_not_ready" in reason_codes(reasons), status

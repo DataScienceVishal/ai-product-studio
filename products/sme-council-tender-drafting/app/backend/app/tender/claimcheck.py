@@ -5,8 +5,11 @@ Rules applied by `apply_rules` (pure, no model, no database):
   1. a claim whose span is not an exact substring of the draft is discarded;
   2. `supported` needs an evidence_quote that is a normalised substring of a cited passage, else `unsupported`;
   3. every number, year, GBP or % figure and accreditation code in the span must be in the evidence_quote, else `unsupported`;
+     every proper name (a run of capitalised words) in the span must be in the quote too, and the quote must be big enough
+     (see `quote_big_enough`), else `unsupported`;
   4. a citation outside the retrieved set, or one whose passage is not available (removed), gives `unsupported`;
-  5. a factual claim with no citation is `unsupported`;
+  5. a factual claim whose own sentence carries no [E-n] marker is `unsupported` (ids the model cites from elsewhere in the
+     draft do not count, and a repeated sentence is judged on its own marker, never on another occurrence's verdict);
   6. unchecked-sentence detector: a draft sentence holding a digit, a pound sign, a percent, a year, an accreditation code
      or a run of two or more capitalised words that no claim span covers becomes an `unchecked` claim.
 Text in the draft is data: it goes inside a DATA block, and nothing the model says can raise a verdict above what rules 2 to 5 allow.
@@ -79,6 +82,44 @@ def figures_in(span: str, quote: str) -> bool:
         if not any(d == qd and (not p or p == qp) and (not pc or pc == qpc) for qp, qd, qpc in qn):
             return False
     return sc <= qc
+
+
+_COMMON_FIRST = frozenset(
+    "we our the a an in on at for with and this these those all each every they it its their as by from to of since over after "
+    "during where when while through across also but however both any some many most several per under within between among "
+    "once now then there here if so such".split())
+_STOP = _COMMON_FIRST | frozenset("is are was were be been have has had will can do does did that which who not no or than into "
+                                  "your you us them he she his her".split())
+
+
+def names_in(span: str) -> list[str]:
+    """Proper names in a span: each run of capitalised words, markers ignored. A sentence-initial common word ("We", "Our",
+    "The") is not part of a name and is dropped from the front of a run that starts the span."""
+    s = strip_marks(span)
+    out = []
+    for m in _CAPS_RUN.finditer(s):
+        words = m.group(0).split()
+        if not s[:m.start()].strip(" \t\n\"'(") or re.search(r"[.!?]\s*$", s[:m.start()]):
+            while words and words[0].casefold() in _COMMON_FIRST:
+                words.pop(0)
+        if words:
+            out.append(" ".join(words))
+    return out
+
+
+def quote_big_enough(span: str, quote: str) -> bool:
+    """A quote must hold real evidence, not a token like "the". Rule: at least max(3, ceil(c / 2)) words, where c is the
+    number of content words in the span (markers and common stop words not counted); a span shorter than that needs the
+    quote to be at least as long as the span itself."""
+    sw = [w for w in re.findall(r"[\w£%'.,-]*\w", strip_marks(span))]
+    content = [w for w in sw if w.casefold() not in _STOP]
+    need = min(max(3, -(-len(content) // 2)), len(sw))
+    return len(re.findall(r"\w+", quote)) >= need
+
+
+def names_in_quote(span: str, quote: str) -> bool:
+    q = norm(quote)
+    return all(norm(n) in q for n in names_in(span))
 
 
 def quote_in(quote: str, passage: str) -> bool:
@@ -155,16 +196,24 @@ def apply_rules(draft: str, model_claims: list[ClaimItem], passages: dict[int, s
         if not span or span not in draft:
             continue  # rule 1
         occ = _occurrences(draft, span)
-        covered += occ
-        a, b = next(((x, y) for x, y in spans if any(x <= s < y for s, _ in occ)), (occ[0][0], occ[0][1]))
-        in_sentence = {int(n) for n in _CITE.findall(draft[a:b])}
-        cited = sorted({*c.cited_ids, *in_sentence})
+
+        def sent_of(o):
+            return next(((x, y) for x, y in spans if x <= o[0] < y), o)
+
+        def marks_of(o):
+            x, y = sent_of(o)
+            return frozenset(int(n) for n in _CITE.findall(draft[x:y]))
+        # judge the first occurrence that has a marker of its own (else the first); cover only occurrences with the same markers
+        judged = next((o for o in occ if marks_of(o)), occ[0])
+        in_sentence = marks_of(judged)
+        covered += [o for o in occ if marks_of(o) == in_sentence]
+        cited = sorted(set(c.cited_ids) & in_sentence)
         verdict, quote, reason, by = c.verdict, c.evidence_quote, c.reason, "model"
         facts = fact_tokens(span) != (set(), set()) or bool(_CAPS_RUN.search(strip_marks(span)))
         factual = c.kind == "factual" or facts
         if verdict == "supported":
-            if not cited:
-                verdict, reason, by = "unsupported", "The claim cites no evidence.", "rule"                       # 5
+            if not in_sentence or not cited:
+                verdict, reason, by = "unsupported", "The claim cites no evidence in its own sentence.", "rule"       # 5
             elif any(n in outside_ids for n in cited):
                 verdict, reason, by = "unsupported", "It cites evidence that was not retrieved for this question.", "rule"  # 4
             elif any(n not in passages for n in cited):
@@ -173,6 +222,10 @@ def apply_rules(draft: str, model_claims: list[ClaimItem], passages: dict[int, s
                 verdict, reason, by = "unsupported", "The quoted evidence is not in the cited passages.", "rule"   # 2
             elif not figures_in(span, quote):
                 verdict, reason, by = "unsupported", "A figure, year or code in the claim is not in the quoted evidence.", "rule"  # 3
+            elif not names_in_quote(span, quote):
+                verdict, reason, by = "unsupported", "A name in the claim is not in the quoted evidence.", "rule"  # 3
+            elif not quote_big_enough(span, quote):
+                verdict, reason, by = "unsupported", "The quoted evidence is too short to support the claim.", "rule"  # 3
         elif not cited and factual and verdict != "contradicted":
             reason = reason or "The claim cites no evidence."
         if verdict != "supported":

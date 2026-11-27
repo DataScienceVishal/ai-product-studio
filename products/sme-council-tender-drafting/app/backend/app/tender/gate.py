@@ -13,6 +13,8 @@ from typing import Iterable, Sequence
 
 STATEMENT_VERSION = "v1"
 PACK_STATES_BEFORE_CONFIRM = frozenset({"uploaded", "extracting", "review"})
+# Allow-list (fail closed): export is legitimate only from these states. A new, misspelt or unknown status blocks.
+PACK_STATES_EXPORTABLE = frozenset({"ready", "signed", "exported"})
 
 _CITE = re.compile(r"\[E-(\d+)\]")
 
@@ -88,6 +90,8 @@ def export_allowed(pack: GatePack, requirements: Sequence[GateReq], drafts: Sequ
     live = set(live_evidence_ids)
     if pack.status in PACK_STATES_BEFORE_CONFIRM:
         reasons.append("not_confirmed: the checklist has not been confirmed")
+    elif pack.status not in PACK_STATES_EXPORTABLE:
+        reasons.append(f"pack_not_ready: the pack is in state '{pack.status}', not one export is allowed from")
     questions = [r for r in requirements if r.status == "confirmed" and r.kind == "question"]
     latest = latest_drafts(drafts)
     by_draft: dict[str, list[GateClaim]] = {}
