@@ -1,3 +1,4 @@
+import re
 import json
 import time
 from datetime import datetime, timedelta, timezone
@@ -1636,7 +1637,7 @@ def test_request_refused_by_the_trip_writes_no_budget_reservation(settings, outb
         first, second = _summaries(app, outbox, 2)  # the first call trips the guard (its own reservation is settled)
         assert (first.status_code, second.status_code) == (200, 503)
         baseline = usage_rows()
-        assert baseline >= 1
+        assert baseline == 1  # exactly the first call's settled reservation; the refused second call wrote none
         assert _summaries_again(app).status_code == 503  # in-memory flag
         assert usage_rows() == baseline
         fresh_calls = []
@@ -1756,6 +1757,26 @@ def test_finish_reason_with_newlines_cannot_forge_a_log_line():
     assert not any(c in logged for c in "\n\r\x1b") and len(logged) <= 40 and logged.startswith("stopERROR forged")
 
 
+_WRITE_SQL = re.compile(r"^\s*(INSERT|UPDATE|DELETE|MERGE)\b|^\s*WITH\b.*\b(INSERT|UPDATE|DELETE|MERGE)\b",
+                        re.IGNORECASE | re.DOTALL)
+
+
+def _is_write_sql(statement):
+    """T-170: plain writes, MERGE, and CTE writes (WITH ... INSERT/UPDATE/DELETE/MERGE). Over-matching a SELECT
+    that merely mentions those words is fine for a spy: it fails loudly rather than missing a write."""
+    return bool(_WRITE_SQL.search(statement))
+
+
+def test_write_detector_catches_cte_and_merge_writes():
+    for sql in ("INSERT INTO t VALUES (1)", "  update t set a = 1", "DELETE FROM t",
+                "MERGE INTO t USING s ON t.id = s.id WHEN MATCHED THEN DELETE",
+                "WITH x AS (SELECT 1) UPDATE t SET a = (SELECT * FROM x)",
+                "with d as (delete from t returning id)\nselect * from d"):
+        assert _is_write_sql(sql), sql
+    for sql in ("SELECT 1", "WITH x AS (SELECT 1) SELECT * FROM x", "SELECT * FROM notes WHERE id = 1"):
+        assert not _is_write_sql(sql), sql
+
+
 def test_notes_route_calls_ensure_ai_enabled_on_a_session_with_no_writes(settings, outbox, database, monkeypatch):
     """T-168 L1: the retry may commit the caller's session, so the route must call it before writing anything:
     nothing pending (new/dirty/deleted) and nothing flushed on that session by then."""
@@ -1772,7 +1793,7 @@ def test_notes_route_calls_ensure_ai_enabled_on_a_session_with_no_writes(setting
             wrote.add(session)
 
     def on_execute(conn, cursor, statement, parameters, context, executemany):
-        if statement.lstrip()[:6].upper() in ("INSERT", "UPDATE", "DELETE"):
+        if _is_write_sql(statement):
             sql_writes.add(conn)
 
     seen = []
@@ -1780,7 +1801,9 @@ def test_notes_route_calls_ensure_ai_enabled_on_a_session_with_no_writes(setting
 
     def spy(provider, db=None):
         seen.append({"has_db": db is not None, "pending": bool(db and (db.new or db.dirty or db.deleted)),
-                     "flushed": db in wrote, "sql_wrote": bool(db and db.connection() in sql_writes)})
+                     "flushed": db in wrote, # in_transaction() first: db.connection() would begin a transaction as a side effect. With none open, nothing
+                     # has run on this session yet, so there is no write to find.
+                     "sql_wrote": bool(db and db.in_transaction() and db.connection() in sql_writes)})
         return real(provider, db)
 
     monkeypatch.setattr(notes_routes, "ensure_ai_enabled", spy)
@@ -1795,6 +1818,7 @@ def test_notes_route_calls_ensure_ai_enabled_on_a_session_with_no_writes(setting
         assert seen[0]["sql_wrote"] is False  # raw db.execute(UPDATE ...) writes count too
     finally:
         event.remove(OrmSession, "before_flush", on_flush)
+        event.remove(app.state.db.engine, "before_cursor_execute", on_execute)
         app.state.db.dispose()
 
 
