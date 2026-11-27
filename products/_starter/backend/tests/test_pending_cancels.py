@@ -334,6 +334,7 @@ def test_s5_the_webhook_retries_only_rows_below_the_attempt_limit(owner, databas
 @pytest.mark.parametrize("attempts,age,tried", [
     (0, None, True),                                  # never tried
     (2, timedelta(minutes=3), False),                 # backoff 2**2 = 4 min
+    (2, timedelta(minutes=4), True),                  # exact boundary: retried once the backoff has passed
     (2, timedelta(minutes=5), True),
     (3, timedelta(minutes=5), False),                 # 8 min
     (3, timedelta(minutes=9), True),
