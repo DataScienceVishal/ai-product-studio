@@ -1,26 +1,27 @@
-# STATUS (T-193, slice S9: eval harness and demo seed) - code done, awaiting reviewer PASS
+# STATUS (T-193, slice S9: eval harness and demo seed) - reviewer CHANGES addressed, awaiting re-review
 
 Branch `p/sme-council-tender-drafting/T-193`. Not merged. No migrations, no edits under `app/tender/`. No live model calls: the only
 provider the harness builds is `ScriptedFakeAI`, and `--live` is refused (exit 3).
 
-## Done (all under `products/sme-council-tender-drafting/eval/`, plus `EVAL.md`)
-- `budget.json`: Q-19 (answered A 2026-11-27), $6.00 total, gpt-5-mini only, tuning $2.00 / scored $2.60 / recording $1.40, headroom 0.
-  `load_budget_config` refuses unless `state/QUESTIONS.md` has `## Q-19 (status: answered A ...`.
-- `ledger.py`: `LedgerBudget` (the `Budget` protocol: hold/settle) over a JSONL `Ledger`. Worst case before each call must fit the group
-  sub-cap and the total; failed call with 0 tokens is charged at worst case; non-gpt-5-mini model raises `ModelMismatch` (still recorded);
-  scored preflight $2.54. Imports nothing from `app`, so it cannot write `ai_usage` or call `reserve()`.
-- `score.py` (A1-A4, A6a, A7, A8), `sample.py` (A5/A6c sheet, seed 20261127), `seed.py` (firm evidence + packs + cache; `SeedError` when no
-  pack files), `run.py` (phases E1-E4, T1-T3, R1, R2; resume from `results/<phase>.jsonl`; `config` prints prompt SHA-256s), `EVAL.md` template.
-- Tests: `app/backend/tests/test_tender_eval.py` (scorer known answers, 8 mutants caught, ledger refusal/worst-case, LedgerBudget vs ai_usage, seed, dry run).
+## Done (under `products/sme-council-tender-drafting/eval/`, plus `EVAL.md`)
+- Original slice: `budget.json` (Q-19 A), `ledger.py`, `score.py`, `sample.py`, `seed.py`, `run.py`, `EVAL.md` template, tests.
+- Review fixes M1-M7: preflight covers only the unfinished scored phases (M1); results committed, only `results/dry/` ignored, live phase
+  with ledger rows and no results file refused (M2); A4 uses the app's `split_sentences`, gap-only sentences excluded, defined in EVAL.md (M3);
+  A7 uses the app's `count_words` (M4); A6a word-token overlap rule pre-registered, with mutants (M5); durable `hold` rows under
+  `fcntl.flock`, unsettled holds counted at worst (M6); E2/E3/E4/T3 raise `PhaseNotReady` before the first item without a claimcheck (M7).
+- Should-fix 1-10, 12, 13: claimcheck cap from `app.tender.draft.CHECK_CAP` (the T-190 claimcheck spec uses the same constant); budget pinned
+  in code and prices/caps checked finite and above 0; `ceil` on the worst-case charge; fake rows dropped only on dry ledgers; failed items
+  recorded with their error code, infrastructure errors stop the phase; provider headroom asserted; `drafting_heldout` in manifest;
+  `ai_cache` cleared before every item of T2, T3, R2 with a cacheable provider; seed refuses empty/escaping manifests, checks login, skips
+  existing packs; A3 ref matching skips question items; A6a false-flag rate reported; unreadable test split.
+- Security: path containment in `seed.py`; `run.py` refuses a non-local `DATABASE_URL` unless `--allow-remote-db`.
 
 ## Left
-- Claim check: `run.py` takes a `claimcheck(budget, text, hits)` callable; the real one is T-190's `app/tender/claimcheck`. Until it is wired, E2/E3/E4
-  raise `PhaseNotReady` (E2/E3 draft but record no claims). Its prompt hash and effort go in EVAL.md at the freeze.
-- Inputs not yet present (qa, D3 and Q-20): `eval/keys/<pack>.json` ({"items": [...]}), `trap_set.json`, `dev_trap_set.json`,
-  `fixture_drafts.json`, `demo-data/packs/` (+ optional `manifest.json` {"demo": [...], "heldout": [...]}). Phases say which file is missing.
-- A scorer wrapper that loads results + keys and prints the bar table; the live provider path (L1). `ledger.jsonl` is created on the first live call.
-- T2's "extraction plus 5 questions" and the R1/R2 end-to-end draft+check steps: the plans currently cover the extraction part; drafting for
-  demo packs needs the confirmed checklist, to be added with the live path.
+- Should-fix 11 (minimum text similarity on ref-only A1 matches): skipped, optional; ref-first matching is pre-registered in EVAL.md.
+- Claim check: `run.py` takes a `claimcheck(budget, text, hits)` callable; wire T-190's `app/tender/claimcheck` when it merges.
+- Inputs not yet present (qa, D3 and Q-20): `eval/keys/<pack>.json`, `trap_set.json`, `dev_trap_set.json`, `fixture_drafts.json`,
+  `demo-data/packs/` + `manifest.json` {"demo", "heldout", "drafting_heldout"}.
+- A scorer wrapper that prints the bar table; the live provider path (L1); R1/R2/T2 drafting steps (plans cover extraction only).
 
 ## Verify
 `cd app/backend && TEST_DATABASE_URL=... python -m pytest -q -o addopts="" tests/test_tender_eval.py`; `python -m eval.run config` from the product dir.

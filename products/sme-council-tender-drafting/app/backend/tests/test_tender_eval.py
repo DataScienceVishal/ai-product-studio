@@ -60,6 +60,25 @@ def test_config_refused_unless_question_answered_a(tmp_path, text):
         L.load_budget_config(L.DEFAULT_CONFIG, q)
 
 
+def test_config_pins_the_approved_values(tmp_path):
+    q = tmp_path / "Q.md"
+    q.write_text(QUESTIONS)
+    base = json.loads(L.DEFAULT_CONFIG.read_text())
+    mutations = [lambda c: c.update(model="gpt-5.4-pro", prices_usd_per_million={"gpt-5.4-pro": {"input": 1, "output": 2}}),
+                 lambda c: c["groups"]["scored"].update(cap_usd=float("nan")),
+                 lambda c: c["groups"]["tuning"].update(cap_usd=1.0),
+                 lambda c: c["prices_usd_per_million"]["gpt-5-mini"].update(input=0),
+                 lambda c: c["prices_usd_per_million"]["gpt-5-mini"].update(output=float("nan")),
+                 lambda c: c.update(total_cap_usd=7.0)]
+    for mutate in mutations:
+        c = json.loads(json.dumps(base))
+        mutate(c)
+        p = tmp_path / "b.json"
+        p.write_text(json.dumps(c))
+        with pytest.raises(L.BudgetConfigError):
+            L.load_budget_config(p, q)
+
+
 def test_config_refuses_bad_caps_and_headroom(tmp_path):
     q = tmp_path / "Q.md"
     q.write_text(QUESTIONS)
@@ -110,12 +129,12 @@ def test_failed_call_with_no_tokens_is_charged_the_worst_case(cfg, tmp_path):
     h = b.hold(10_000)
     worst = b.worst_usd(10_000)
     b.settle(h, 0, 0, "unknown", failed=True)          # a 5xx or reset after send
-    (row,) = ledger.rows()
+    (row,) = [r for r in ledger.rows() if r.get("kind") != "hold"]
     assert row["charged_worst"] and row["failed"]
     assert abs(ledger.spent() - worst) < 1e-6
     h = b.hold(10_000)
     b.settle(h, 700, 300, "gpt-5-mini")                 # a normal call is charged what it used
-    assert not ledger.rows()[1]["charged_worst"]
+    assert not [r for r in ledger.rows() if r.get("kind") != "hold"][1]["charged_worst"]
 
 
 def test_spend_is_recomputed_from_tokens_not_the_stored_usd(cfg, tmp_path):
@@ -136,13 +155,80 @@ def test_other_model_stops_the_run_but_is_still_recorded(cfg, tmp_path):
     b.settle(b.hold(8000), 10, 10, "gpt-5-mini-2025-08-07")    # a dated gpt-5-mini name is fine
 
 
-def test_scored_preflight(cfg, tmp_path):
+SCORED = [(n, p.worst_usd) for n, p in R.PHASES.items() if p.group == "scored"]
+
+
+def test_scored_preflight_before_e1(cfg, tmp_path):
     ledger = led(tmp_path, cfg)
-    L.preflight_scored(ledger)                                   # $2.60 free >= $2.54
+    L.preflight_scored(ledger, "E1", SCORED)                     # $2.60 free >= $2.54
     ledger.append({"phase": "E1", "task": "x", "model": "gpt-5-mini", "input_tokens": 0, "output_tokens": 40_000})   # $0.08
-    with pytest.raises(L.BudgetExceeded):
-        L.preflight_scored(ledger)                               # $2.52 left < $2.54
-    L.preflight_scored(led(tmp_path / "dry", cfg, dry=True))     # a dry run spends nothing
+    L.preflight_scored(ledger, "E1", SCORED)                     # resuming E1: its own spend is credited ($2.46 needed, $2.52 left)
+    L.preflight_scored(led(tmp_path / "dry", cfg, dry=True), "E1", SCORED)    # a dry run spends nothing
+
+
+def test_live_ledger_e1_spends_then_e2_preflight_passes(cfg, tmp_path):
+    """M1: after E1 has spent $0.25 the old preflight demanded $2.54 free and refused E2 to E4 and an E1 resume."""
+    ledger = led(tmp_path, cfg)
+    ledger.append({"phase": "E1", "task": "x", "model": "gpt-5-mini", "input_tokens": 0, "output_tokens": 125_000})   # $0.25
+    for phase in ("E1", "E2", "E3", "E4"):
+        L.preflight_scored(ledger, phase, SCORED)
+    ledger.append({"phase": "E2", "task": "x", "model": "gpt-5-mini", "input_tokens": 0, "output_tokens": 800_000})   # $1.60
+    with pytest.raises(L.BudgetExceeded, match="E3"):            # $0.75 left, E3+E4 worst case is $0.92
+        L.preflight_scored(ledger, "E3", SCORED)
+
+
+def test_hold_is_durable_and_counts_at_worst_until_settled(cfg, tmp_path):
+    """M6: a hold with no settle (a killed process) is spent at its worst case for a fresh Ledger on the same file."""
+    ledger = led(tmp_path, cfg)
+    b = L.LedgerBudget(ledger, "E2", "draft", 4000)
+    h = b.hold(10_000)
+    worst = b.worst_usd(10_000)
+    fresh = led(tmp_path, cfg)                                   # a new process reading the same file
+    assert abs(fresh.spent("scored") - worst) < 1e-9 and abs(fresh.spent() - worst) < 1e-9
+    assert [r["kind"] for r in fresh.rows()] == ["hold"]
+    b.settle(h, 700, 300, "gpt-5-mini")                          # settled: the real tokens replace the hold
+    assert abs(fresh.spent() - (700 * 0.25 + 300 * 2.0) / 1e6) < 1e-9
+    assert fresh.rows()[1]["hold_id"] == fresh.rows()[0]["hold_id"]
+
+
+def test_open_hold_blocks_a_second_call_that_would_pass_the_cap(cfg, tmp_path):
+    ledger = led(tmp_path, cfg)
+    b = L.LedgerBudget(ledger, "T1", "draft", 450_000)
+    b.hold(900_000)                                              # worst $1.80 of the $2.00 tuning cap, never settled
+    with pytest.raises(L.BudgetExceeded, match="tuning sub-cap"):
+        L.LedgerBudget(led(tmp_path, cfg), "T1", "draft", 150_000).hold(300_000)   # a second process: +$0.60
+
+
+def test_ledger_holds_are_taken_under_a_file_lock(cfg, tmp_path):
+    import threading
+    ledger = led(tmp_path, cfg)
+    results = []
+
+    def go():
+        try:
+            results.append(L.LedgerBudget(L.Ledger(ledger.path, cfg), "T1", "x", 300_000).hold(300_000))   # $0.60 each
+        except L.BudgetExceeded:
+            results.append(None)
+    ts = [threading.Thread(target=go) for _ in range(6)]
+    [t.start() for t in ts]; [t.join() for t in ts]
+    assert sum(r is not None for r in results) == 3             # $2.00 cap: three fit, no two racing past it
+    assert ledger.spent("tuning") <= 2.0 + 1e-9
+
+
+def test_live_ledger_does_not_hide_fake_rows(cfg, tmp_path):
+    ledger = led(tmp_path, cfg)
+    ledger.append({"phase": "E1", "task": "x", "model": "fake", "input_tokens": 1_000_000, "output_tokens": 0})
+    assert abs(ledger.spent() - 0.25) < 1e-9
+    assert led(tmp_path / "d", cfg, dry=True).spent() == 0.0
+
+
+def test_worst_case_charge_rounds_up(cfg, tmp_path):
+    ledger = led(tmp_path, cfg)
+    b = L.LedgerBudget(ledger, "E2", "draft", 4000)
+    h = b.hold(5_001)
+    worst = b.worst_usd(5_001)
+    b.settle(h, 0, 0, "unknown", failed=True)
+    assert ledger.spent() >= worst - 1e-12
 
 
 def test_unknown_phase_is_a_config_error(cfg, tmp_path):
@@ -263,6 +349,73 @@ def known_answer_failures() -> list[str]:
     return f
 
 
+PARITY_TEXTS = ["We cleaned 40 schools. [E-3] We will deliver - on time [E-3]. We hold [NEEDS FIRM INPUT: ISO 14001 cert. Provide copy]",
+                "One. Two! Three? [E-1] [E-2] Four.\nFive - six . seven", "- . \u2013 a [E-1].", ""]
+
+
+def test_scorer_uses_the_apps_sentence_splitter_and_word_counter():
+    from app.tender import draft as dr
+    assert SC.split_sentences is dr.split_sentences and SC.count_words is dr.count_words
+    for t in PARITY_TEXTS:
+        assert SC.split_sentences(t) == dr.split_sentences(t) and SC.count_words(t) == dr.count_words(t)
+    assert SC.count_words("one - two . three \u2013 [E-1].") == 3          # punctuation-only tokens are not words (M4)
+
+
+def test_a4_correct_draft_with_late_citation_and_gap_marker_scores_one():
+    """M3: the review's example. Every citation is valid; the old splitter scored it 0.25."""
+    text = PARITY_TEXTS[0]
+    r = SC.score_traceability([{"id": "d", "text": text, "retrieved_ids": [3], "live_ids": [3]}])
+    assert r["claims"] == 2 and r["resolved"] == 2 and r["score"] == 1.0, r
+    assert SC.claims_of("We hold [NEEDS FIRM INPUT: ISO 14001 cert. Provide copy]") == []
+    assert SC.claims_of("We hold ISO 9001 [E-1] [NEEDS FIRM INPUT: scope]") == ["We hold ISO 9001 [E-1] [NEEDS FIRM INPUT: scope]"]
+    assert SC.claims_of("We employ 250 staff.") == ["We employ 250 staff."]       # uncited and no marker: still a claim
+
+
+def test_a7_word_count_matches_the_app_on_the_review_example():
+    text = PARITY_TEXTS[0]
+    assert SC.count_words(text) == 19
+    assert SC.score_word_limits([{"id": "d", "text": text, "word_limit": 19}])["pass"]
+
+
+def test_a3_ref_shared_with_a_question_does_not_make_a_mandatory_item_optional():
+    key = [m("1.2", "Bidders must hold public liability insurance")]
+    got = [q("1.2", "Describe your quality management system"), m("X", "Bidders must hold public liability insurance", pass_fail=True)]
+    r = SC.score_extraction([{"pack": "P", "key": key, "got": got}])["A3"]
+    assert r["found"] == 1 and not r["shown_optional"]
+
+
+DRAFT_TEXT = {"d3": "We cleaned 400 schools in 2019. We hold ISO 9001 [E-1]. Our staff are trained.",
+              "d4": "We employ 250 staff. We served Northgate Council for six years across the north of the county. "
+              "Our turnover is high and our margins are healthy. We operate from three depots and a central office."}
+
+
+def overlap_failures() -> list[str]:
+    f = []
+    seed = [{"id": "S5", "draft": "d3", "type": "number", "span": "We cleaned 400 schools in 2019"}]
+    if SC.score_seeded_claims(seed, [{"draft": "d3", "span": "in", "verdict": "unsupported"}], DRAFT_TEXT)["caught"] != 0:
+        f.append("tiny span caught")
+    seeds4 = [{"id": "S6", "draft": "d4", "type": "number", "span": "We employ 250 staff"},
+              {"id": "S7", "draft": "d4", "type": "client", "span": "We served Northgate Council"}]
+    whole = [{"draft": "d4", "span": DRAFT_TEXT["d4"], "verdict": "unsupported"}]
+    if SC.score_seeded_claims(seeds4, whole, DRAFT_TEXT)["caught"] != 0:
+        f.append("whole-paragraph span caught")
+    exact = [{"draft": "d4", "span": "We employ 250 staff", "verdict": "unsupported"}]
+    if SC.score_seeded_claims(seeds4, exact, DRAFT_TEXT)["caught"] != 1:
+        f.append("exact span missed")
+    sentence = [{"draft": "d3", "span": "We cleaned 400 schools in 2019.", "verdict": "contradicted"}]
+    if SC.score_seeded_claims(seed, sentence, DRAFT_TEXT)["caught"] != 1:
+        f.append("whole sentence missed")
+    flags = SC.score_seeded_claims(seeds4[:1], exact + [{"draft": "d4", "span": "Our turnover is high", "verdict": "unsupported"},
+                                                         {"draft": "d4", "span": "Our staff", "verdict": "supported"}], DRAFT_TEXT)
+    if flags["false_flags"] != {"flagged": 1, "non_seeded_claims": 2, "rate": 0.5}:
+        f.append("false flag rate")
+    return f
+
+
+def test_overlap_rule_tiny_and_whole_paragraph_spans_miss():
+    assert overlap_failures() == []
+
+
 def test_scorers_known_answers():
     assert known_answer_failures() == []
 
@@ -287,8 +440,8 @@ def test_a4_and_a6a_bars_at_threshold():
     bad = [{"id": "dx", "text": "No cite.", "retrieved_ids": [1], "live_ids": [1]}]
     assert SC.score_traceability(ok + bad)["pass"]               # 19 of 20 = 95%
     assert not SC.score_traceability(ok[:18] + bad * 2)["pass"]  # 18 of 20
-    seeded = [{"id": str(i), "draft": "d", "type": "n", "span": f"seeded claim {i:03d} text"} for i in range(40)]
-    checked = [{"draft": "d", "span": f"seeded claim {i:03d} text", "verdict": "unsupported"} for i in range(38)]
+    seeded = [{"id": str(i), "draft": "d", "type": "n", "span": f"alpha{i:03d} beta{i:03d} gamma{i:03d}"} for i in range(40)]
+    checked = [{"draft": "d", "span": f"alpha{i:03d} beta{i:03d} gamma{i:03d}", "verdict": "unsupported"} for i in range(38)]
     assert SC.score_seeded_claims(seeded, checked)["pass"]       # 38 of 40
     assert not SC.score_seeded_claims(seeded, checked[:37])["pass"]
 
@@ -304,15 +457,18 @@ def test_empty_inputs_never_pass():
 def _mutants():
     orig_match, orig_count, orig_sim = SC.match_items, SC.count_words, SC.similarity
     return {
-        "refs ignored": ("match_items", lambda k, g, threshold=SC.SIM_THRESHOLD: [
+        "refs ignored": ("match_items", lambda k, g, threshold=SC.SIM_THRESHOLD, **kw: [
             p for p in orig_match([{**x, "ref": ""} for x in k], [{**x, "ref": ""} for x in g], threshold)]),
-        "threshold too loose": ("match_items", lambda k, g, threshold=SC.SIM_THRESHOLD: orig_match(k, g, 0.0)),
+        "threshold too loose": ("match_items", lambda k, g, threshold=SC.SIM_THRESHOLD, **kw: orig_match(k, g, 0.0, **kw)),
         "word count keeps markers": ("count_words", lambda t: len(t.split())),
         "word count drops gap markers": ("count_words", lambda t: orig_count(SC._GAP.sub("", t))),
         "similarity always 1": ("similarity", lambda a, b: 1.0),
         "claims_of keeps gap markers": ("claims_of", lambda t: SC.split_sentences(t)),
-        "overlap always true": ("_overlaps", lambda a, b: True),
-        "overlap never": ("_overlaps", lambda a, b: False),
+        "overlap always true": ("_overlaps", lambda *a, **k: True),
+        "overlap never": ("_overlaps", lambda *a, **k: False),
+        "overlap raw substring": ("_overlaps", lambda a, b, sents=(): bool(SC._norm(a)) and bool(SC._norm(b)) and (
+            SC._norm(a) in SC._norm(b) or SC._norm(b) in SC._norm(a))),
+        "overlap ignores the share rule": ("_overlaps", lambda a, b, sents=(): len(set(SC._tokens(a)) & set(SC._tokens(b))) >= 1),
     }
 
 
@@ -320,7 +476,7 @@ def _mutants():
 def test_mutant_scorer_is_caught(monkeypatch, name):
     attr, fn = _mutants()[name]
     monkeypatch.setattr(SC, attr, fn)
-    assert known_answer_failures(), f"mutant {name!r} was not caught by the fixtures"
+    assert known_answer_failures() or overlap_failures(), f"mutant {name!r} was not caught by the fixtures"
 
 
 def test_mutated_bars_are_caught(monkeypatch):
@@ -377,6 +533,18 @@ def test_find_packs_uses_manifest_else_first_three(tmp_path):
         SD.find_packs(tmp_path)
 
 
+def test_find_packs_refuses_empty_manifest_and_path_escape(tmp_path):
+    (tmp_path / "a.pdf").write_bytes(b"x")
+    (tmp_path.parent / "outside.pdf").write_bytes(b"x")
+    for demo in ([], ["../outside.pdf"]):
+        (tmp_path / "manifest.json").write_text(json.dumps({"demo": demo}))
+        with pytest.raises(SD.SeedError):
+            SD.find_packs(tmp_path)
+    (tmp_path / "manifest.json").write_text(json.dumps({}))
+    with pytest.raises(SD.SeedError, match="no .demo. packs"):
+        SD.find_packs(tmp_path)
+
+
 def test_category_for_real_evidence_names():
     assert SD.category_for("20-case-study-eastvale-offices-cleaning.md") == "case_study"
     assert SD.category_for("03-accreditation-summary.md") == "accreditation"
@@ -402,6 +570,8 @@ def test_seed_loads_evidence_packs_and_cache(app, new_client, tmp_path):
     assert out["cache_rows"] == 1
     again = SD.seed(c, sessions, tenant_id, evidence_dir=ev, packs_dir=packs, recorded_dir=tmp_path / "rec")
     assert again["cache_rows"] == 1     # re-seeding is safe (conflict ignored)
+    assert again["packs"] == out["packs"]        # and does not duplicate the pack
+    assert len(c.get("/api/packs").json()["packs"]) == 1
 
 
 def test_seed_changes_nothing_when_no_packs(app, new_client, tmp_path):
@@ -425,9 +595,10 @@ def ctx(app, cfg, tmp_path):
         db.add(t); db.commit()
         tid = t.id
     packs = tmp_path / "packs"; packs.mkdir()
-    for n in ("d1.txt", "d2.txt", "d3.txt", "h1.txt", "h2.txt"):
+    for n in ("d1.txt", "d2.txt", "d3.txt", "h1.txt", "h2.txt", "h3.txt"):
         (packs / n).write_text("x")
-    (packs / "manifest.json").write_text(json.dumps({"demo": ["d1.txt", "d2.txt", "d3.txt"], "heldout": ["h1.txt", "h2.txt"]}))
+    (packs / "manifest.json").write_text(json.dumps({"demo": ["d1.txt", "d2.txt", "d3.txt"], "heldout": ["h1.txt", "h2.txt", "h3.txt"],
+                                                "drafting_heldout": ["h1.txt", "h2.txt", "h3.txt"]}))
     pages = [(1, "[page 1]\n1. Describe your approach to mobilisation (maximum 400 words)\n2. Tell us about training"),
              (2, "3. Explain your environmental policy")]
     return R.Context(ScriptedFakeAI(), led(tmp_path, cfg, dry=True), sessions, tid, load_pack=lambda name: pages,
@@ -442,12 +613,12 @@ def test_phase_table_matches_the_budget_groups(cfg):
 
 def test_dry_run_extraction_records_to_the_ledger_and_resumes(ctx):
     r = R.run_phase("E1", ctx)
-    assert (r["planned"], r["ran"], r["skipped"], r["dry_run"]) == (2, 2, 0, True)
+    assert (r["planned"], r["ran"], r["skipped"], r["dry_run"]) == (3, 3, 0, True)
     rows = [json.loads(l) for l in (ctx.results_dir / "E1.jsonl").read_text().splitlines()]
-    assert len(rows) == 2 and len(rows[0]["result"]["items"]) == 3
+    assert len(rows) == 3 and len(rows[0]["result"]["items"]) == 3
     assert {x["model"] for x in ctx.ledger.rows()} == {"fake"} and ctx.ledger.spent() == 0.0
     r2 = R.run_phase("E1", ctx)
-    assert (r2["ran"], r2["skipped"]) == (0, 2)
+    assert (r2["ran"], r2["skipped"]) == (0, 3)
 
 
 def test_phase_without_inputs_says_what_is_missing(ctx):
@@ -474,10 +645,17 @@ def test_draft_phase_runs_through_the_ledger_on_the_fake(ctx):
     ctx.keys_dir.mkdir()
     (ctx.keys_dir / "dev_trap_set.json").write_text(json.dumps([{"id": "t1", "question": "Do you hold ISO 14001?", "word_limit": 50}]))
     ctx.retrieve = lambda question: []                       # nothing found: the gap path, no model call
+    ctx.claimcheck = lambda budget, text, hits: []
     r = R.run_phase("T3", ctx)
     assert r["planned"] == 3 and r["ran"] == 3
     row = json.loads((ctx.results_dir / "T3.jsonl").read_text().splitlines()[0])["result"]
     assert "NEEDS FIRM INPUT" in row["text"] and ctx.ledger.rows() == []
+
+
+def live_ctx(ctx, cfg, tmp_path, name="live.jsonl"):
+    ctx.ledger = L.Ledger(tmp_path / name, cfg, dry_run=False)
+    ctx.dry = False
+    return ctx
 
 
 def test_a_refused_hold_stops_the_phase_cleanly(ctx, cfg, tmp_path):
@@ -486,12 +664,119 @@ def test_a_refused_hold_stops_the_phase_cleanly(ctx, cfg, tmp_path):
     ctx.ledger = live
     r = R.run_phase("T1", ctx)
     assert r["stopped"] and "tuning sub-cap" in r["stopped"] and r["ran"] == 0
-    with pytest.raises(L.BudgetExceeded):                    # the scored preflight refuses before E1 starts
-        R.run_phase("E1", R.Context(ctx.provider, L.Ledger(tmp_path / "l2.jsonl", cfg), ctx.sessions, ctx.tenant_id,
-                                    load_pack=ctx.load_pack, packs_dir=ctx.packs_dir, results_dir=ctx.results_dir)
-                    if (live.path.with_name("l2.jsonl").write_text(json.dumps(
-                        {"phase": "E1", "task": "x", "model": "gpt-5-mini", "input_tokens": 0, "output_tokens": 50_000}) + "\n") or True)
-                    else None)
+
+
+def test_scored_preflight_refuses_when_the_reserve_is_short(ctx, cfg, tmp_path):
+    live = L.Ledger(tmp_path / "l2.jsonl", cfg)
+    live.append({"phase": "E1", "task": "x", "model": "gpt-5-mini", "input_tokens": 0, "output_tokens": 1_000_000})   # $2.00
+    ctx.ledger = live
+    (tmp_path / "results").mkdir(); (tmp_path / "results" / "E1.jsonl").write_text("")
+    with pytest.raises(L.BudgetExceeded):
+        R.run_phase("E1", ctx)
+
+
+def test_live_phase_with_ledger_rows_but_no_results_file_is_refused(ctx, cfg, tmp_path):
+    """M2: a fresh clone without the committed results must not re-run (and re-pay for) finished scored items."""
+    live_ctx(ctx, cfg, tmp_path)
+    ctx.ledger.append({"phase": "E1", "task": "x", "model": "gpt-5-mini", "input_tokens": 100, "output_tokens": 100})
+    with pytest.raises(R.PhaseNotReady, match="results are committed"):
+        R.run_phase("E1", ctx)
+    (ctx.results_dir).mkdir(parents=True, exist_ok=True)
+    (ctx.results_dir / "E1.jsonl").write_text("")            # restored (empty): the operator has checked
+    ctx.provider = ScriptedFakeAI()
+
+
+def test_results_are_committed_and_only_dry_results_ignored():
+    ignore = (PRODUCT / "eval" / ".gitignore").read_text().split()
+    assert "results/dry/" in ignore and not any(x in ("results/", "results/*.jsonl", "results/*") for x in ignore)
+    assert R.DRY_RESULTS_DIR == R.RESULTS_DIR / "dry"
+
+
+def test_phases_that_need_the_claim_check_refuse_before_the_first_item(ctx, cfg, tmp_path):
+    """M7: no draft is recorded as finished without its claims."""
+    ctx.keys_dir.mkdir()
+    (ctx.keys_dir / "dev_trap_set.json").write_text(json.dumps([{"id": "t1", "question": "Do you hold ISO 14001?"}]))
+    (ctx.keys_dir / "trap_set.json").write_text(json.dumps([{"id": "t1", "question": "Do you hold ISO 14001?"}]))
+    (ctx.keys_dir / "h1.json").write_text(json.dumps({"items": [{"ref": "1", "kind": "question", "text": "Q one"}]}))
+    for n in ("h2", "h3"):
+        (ctx.keys_dir / f"{n}.json").write_text(json.dumps({"items": []}))
+    ctx.retrieve = lambda question: []
+    for phase in ("E2", "E3", "T3"):
+        with pytest.raises(R.PhaseNotReady, match="claim check"):
+            R.run_phase(phase, ctx)
+        assert not (ctx.results_dir / f"{phase}.jsonl").exists() and ctx.ledger.rows() == []
+
+
+def test_drafting_heldout_must_be_named_in_the_manifest(ctx):
+    assert R.drafting_heldout(ctx) == ["h1.txt", "h2.txt", "h3.txt"]
+    m = ctx.packs_dir / "manifest.json"
+    base = json.loads(m.read_text())
+    for bad in ({"drafting_heldout": ["h1.txt", "h2.txt"]}, {"drafting_heldout": ["h1.txt", "h1.txt", "h2.txt"]},
+                {"drafting_heldout": ["h1.txt", "h2.txt", "d1.txt"]}, {"drafting_heldout": None}):
+        m.write_text(json.dumps({**base, **bad}))
+        with pytest.raises(R.PhaseNotReady):
+            R.drafting_heldout(ctx)
+
+
+def test_context_refuses_a_provider_with_reasoning_headroom(ctx):
+    class Reasoning(ScriptedFakeAI):
+        output_headroom = 1500
+    with pytest.raises(R.PhaseNotReady, match="output_headroom"):
+        R.Context(Reasoning(), ctx.ledger, ctx.sessions, ctx.tenant_id)
+
+
+def test_a_failed_item_is_recorded_and_the_phase_goes_on(ctx, monkeypatch):
+    from app.tender.llm import TaskFailed
+    calls = []
+
+    def fake_run(c, phase, item):
+        calls.append(item.id)
+        if len(calls) == 1:
+            raise TaskFailed("ai_truncated", "x")
+        return {"pack": item.data["pack"], "items": []}
+    monkeypatch.setattr(R, "_run_item", fake_run)
+    r = R.run_phase("E1", ctx)
+    assert (r["ran"], r["failed"], r["stopped"]) == (3, 1, None)
+    rows = [json.loads(l)["result"] for l in (ctx.results_dir / "E1.jsonl").read_text().splitlines()]
+    assert rows[0] == {"error": "ai_truncated"}
+
+
+def test_infrastructure_failure_stops_the_phase_without_recording_the_item(ctx, monkeypatch):
+    from app.ai import AIUnavailable
+    monkeypatch.setattr(R, "_run_item", lambda c, p, i: (_ for _ in ()).throw(AIUnavailable("down")))
+    r = R.run_phase("E1", ctx)
+    assert r["ran"] == 0 and "AI unavailable" in r["stopped"]
+    assert (ctx.results_dir / "E1.jsonl").read_text() == ""
+
+
+def test_claimcheck_cap_comes_from_the_app_not_a_literal(ctx, monkeypatch):
+    from app.tender import draft as dr
+    seen = []
+    ctx.claimcheck = lambda budget, text, hits: seen.append(budget.output_cap) or []
+    R._check(ctx, "E4", "f1", "text", [])
+    assert seen == [dr.CHECK_CAP]
+    assert "6000" not in (PRODUCT / "eval" / "run.py").read_text()
+
+
+def test_cache_is_cleared_before_repeat_passes_of_a_cacheable_provider(ctx, monkeypatch):
+    from app.tender_models import AICache
+    cleared = []
+    monkeypatch.setattr(R, "clear_ai_cache", lambda c: cleared.append(1))
+    monkeypatch.setattr(R, "_run_item", lambda c, p, i: {})
+    R.run_phase("T2", ctx)
+    assert not cleared                                       # the fake is not cacheable: nothing to clear
+    ctx.provider = type("Live", (ScriptedFakeAI,), {"cacheable": True})()
+    (ctx.results_dir / "T2.jsonl").unlink()
+    R.run_phase("T2", ctx)
+    assert len(cleared) == 9                                 # 3 packs x 3 passes, cleared before every item
+    with ctx.sessions() as db:
+        R.clear_ai_cache(ctx)
+        assert db.scalar(select(func.count()).select_from(AICache).where(AICache.tenant_id == ctx.tenant_id)) == 0
+
+
+def test_run_refuses_a_non_local_database():
+    assert R.local_database("postgresql+psycopg://u:p@localhost:5432/x") and R.local_database("postgresql+psycopg://u:p@127.0.0.1/x")
+    assert not R.local_database("postgresql+psycopg://u:p@db.example.azure.com:5432/x")
 
 
 def test_live_is_refused_and_nothing_defaults_to_live(capsys):

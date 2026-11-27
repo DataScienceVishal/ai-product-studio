@@ -100,7 +100,7 @@ def drafting_heldout(ctx: Context) -> list[str]:
     if not manifest.is_file():
         raise PhaseNotReady(f"{manifest} is required: it must name the 3 \"drafting_heldout\" packs")
     m = json.loads(manifest.read_text(encoding="utf-8"))
-    names = list(m.get("drafting_heldout", []))
+    names = list(m.get("drafting_heldout") or [])
     if len(names) != DEMO_PACKS or len(set(names)) != DEMO_PACKS or not set(names) <= set(m.get("heldout", [])):
         raise PhaseNotReady(f"manifest.json drafting_heldout must list exactly {DEMO_PACKS} distinct packs from heldout")
     return names

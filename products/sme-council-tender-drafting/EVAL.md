@@ -16,16 +16,16 @@ record that commit hash below. After that, any change is a dated amendment, neve
 | Prompt SHA-256 | from `python -m eval.run config` at the freeze: TBD |
 | Retrieval | k=8, at most 3 passages per document, score floor TBD (`RETRIEVAL_FLOOR`, 0 until L1 tuning) |
 | Chunk size and overlap | `CHUNK_PAGES` and `OVERLAP_PAGES` in `app/tender/extract.py`: TBD at freeze |
-| Word-count rule | `[E-n]` markers excluded, gap markers included (DESIGN 4.5; `eval/score.py count_words`) |
+| Word-count rule | the app's own `count_words` (`app.tender.draft`), imported: `[E-n]` markers excluded, gap markers included, a token counts only if it holds a letter or digit (DESIGN 4.5) |
 | A1 and A2 matching | a question matches by `ref`, else by text similarity of at least 0.8 (difflib ratio on normalised text), one-to-one greedy; word limits, page limits, marks and weights must match exactly |
-| A3 | a key mandatory item must match an extracted item that is kind mandatory or pass/fail; matched but optional counts as "shown optional" and fails the bar |
-| A4 | a claim is a sentence other than a bare gap marker; it passes with at least one `[E-n]` and every `[E-n]` live in the tenant and in the draft's retrieved set |
+| A3 | a key mandatory item must match an extracted item that is kind mandatory or pass/fail; matched but optional counts as "shown optional" and fails the bar. Refs are matched only against non-question extracted items (a question sharing a ref cannot pair up); text similarity can still match any item |
+| A4 | claims are the app's own sentences (`app.tender.draft.split_sentences`: a citation after the full stop stays with its sentence, a `[NEEDS FIRM INPUT: ...]` marker stays whole). A sentence holding a gap marker and no `[E-n]` is not a claim (the draft is saying it does not know; A8 rewards that); a gap sentence that also cites is scored. A claim passes with at least one `[E-n]` and every `[E-n]` live in the tenant and in the draft's retrieved set |
 | A5 and A6c random seed | 20261127 (`eval/sample.py A5_SEED`); 100 claims from the E2 exports, all if fewer |
-| A6a | a seeded claim is caught when a checker claim on the same draft overlaps its span and is `unsupported` or `contradicted`; at least 38 of 40; misses listed by type |
-| Held-out drafting pack rule | the first of each sector in `demo-data/SOURCES.md` order (3 packs) |
+| A6a | a seeded claim is caught when a checker claim on the same draft is `unsupported` or `contradicted` and overlaps it on word tokens (never raw characters): the checker span covers at least 50% of the seeded span's distinct tokens AND either the seeded span is at least 30% of the checker span's tokens, or both lie in one app sentence of the draft. A tiny span or a whole-paragraph span therefore misses. At least 38 of 40; misses listed by type; the checker's false-flag rate (flagged claims overlapping no seeded claim) is reported beside it |
+| Held-out drafting pack rule | the first of each sector in `demo-data/SOURCES.md` order (3 packs), named explicitly as `drafting_heldout` in `demo-data/packs/manifest.json` (exactly 3, all in `heldout`) |
 | Budget | one-off hard cap $6.00, gpt-5-mini only, approved by Q-19 (answered A, 2026-11-27); sub-caps tuning $2.00, scored $2.60, recording $1.40; ledger `eval/ledger.jsonl`; app caps unchanged |
-| Ledger rules | worst case (estimate plus output cap) must fit the phase sub-cap and the total before each call; a call that may have been billed and left nothing is charged at worst case; scored preflight needs $2.54 free |
-| Scored run | one run; an infrastructure failure resumes from the first unfinished item |
+| Ledger rules | before each call a `hold` row (worst case) is appended to the ledger under a file lock after the cap check; an unsettled hold counts at worst case until its `settle` row, so a killed process cannot pass a cap; a call that may have been billed and left nothing is charged at worst case; the scored preflight needs the worst case of the unfinished scored phases free ($2.54 before E1) |
+| Scored run | one run; `eval/results/<phase>.jsonl` and the ledger are committed after every phase; an infrastructure failure resumes from the first unfinished item; a live phase whose ledger has rows but whose results file is missing is refused |
 | Tuning data | the 3 demo packs and the 10-question dev trap set only; never the held-out packs |
 
 ## Results
