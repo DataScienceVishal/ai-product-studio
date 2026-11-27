@@ -51,3 +51,29 @@
 
 ## Top issue
 F1: there is no process-wide limit on concurrent parse workers. Ten parallel uploads from one tenant, each allowed 512 MiB, can OOM the 1 GiB container and starve the threadpool and DB pool. Add a bounded semaphore (1 to 2) with a busy refusal, and release the DB transaction before parsing.
+
+## Re-review (fix commit 83a5440)
+
+**Verdict: PASS.**
+
+### Evidence (run by the reviewer on 83a5440)
+
+| Check | Result |
+|---|---|
+| Full backend suite, fresh Postgres 16 DB, `-o addopts=""` | **898 passed, 1 skipped**, 175.14 s (+6 new tests) |
+| requirements.txt / requirements-dev.txt | unchanged since 1cceaba (hash install already verified); no migration change |
+| My UTF-16 XXE probe from the first review | now refused `xml_entities` (UTF-8 case still refused) |
+
+### Findings verified
+
+- **F1, fixed.** There is now a process-wide `BoundedSemaphore`, `parse_workers` (default 1, at most 2), acquired without blocking around `run_worker`. When no slot is free, the upload gets 503 `busy` (`ingest.py`, `parse_upload`). `db.rollback()` before the parse ends the read transaction. The plain ids are captured before it, and nothing that has expired is touched afterwards. The tests cover a second upload getting `busy` while the first is parsing (`test_busy_refusal_when_parse_slots_are_full`) and no connection being idle in a transaction during the parse (`test_no_connection_idle_in_transaction_while_parsing`).
+- **F2, fixed.** Every entry in the zip is scanned, whatever its name, as ASCII-lowercased bytes plus UTF-16/32 in both byte orders and BOM decoding. There are fixtures for UTF-16 and for an oddly named part.
+- **F3, fixed.** The `[Content_Types].xml` check for `macroEnabled` and `vbaProject` is in, with a renamed-macro fixture.
+- **F4, fixed.** After the parse, a tenant `upload:` advisory transaction lock is taken, and then the duplicate sha, pack size and pages per day are checked again. The lock order is always `upload:` and then `evidence:`, so the two locks can't deadlock. `test_caps_are_rechecked_under_the_tenant_lock` covers it.
+- **F5 and F11, fixed.** The worker now sets `RLIMIT_FSIZE` 0 (stdout is a pipe, so it isn't affected), `RLIMIT_NPROC` 0 and `RLIMIT_NOFILE` 64. Bidi and zero-width characters are stripped from filenames.
+- **F6 to F10:** the Lead's decisions are noted (F9 is a DESIGN section 5 update, F10 is soft delete in T-190).
+
+### New nits (not blocking)
+
+- **R1.** The DTD scan now covers media too. A DOCX with an embedded SVG image that carries `<!DOCTYPE svg ...>` (common in Illustrator exports) will be refused as `xml_entities`. That's acceptable for the demo. If it bites, skip `word/media/*.svg`, or only reject `<!ENTITY`.
+- **R2.** A `busy` 503 still uses up one of the tenant's 10 uploads per hour, because the limiter check runs first. Consider refunding it, or checking the slot before the limiter.
