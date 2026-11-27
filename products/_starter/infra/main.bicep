@@ -83,7 +83,9 @@ param emailProvider string = 'outbox'
 param purgeImage string = ''
 param purgeRequireEmailVerification string = ''
 param purgeEmailProvider string = ''
-// The cancels job's billing provider, taken from the same revision (empty: this release's).
+// The cancels job's billing provider, taken from the same revision (empty: this release's). A bad value fails the
+// deploy instead of silently meaning mock (T-178 R1).
+@allowed(['', 'mock', 'stripe'])
 param purgeBillingProvider string = ''
 
 @description('Daily retention purge, as a cron expression in UTC.')

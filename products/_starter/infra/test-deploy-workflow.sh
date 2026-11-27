@@ -380,6 +380,12 @@ else bad "purge-job.sh follow: stripe adds both secretRefs to cancels, none to p
 if SEED_CANCELS_ENV="BILLING_PROVIDER=stripe $SR" follow '[]' && grep -q -- '--remove-env-vars BILLING_WEBHOOK_SECRET STRIPE_SECRET_KEY' "$stub/log" \
    && ! grep -q secretref "$stub/env-cancels" && grep -q '^BILLING_PROVIDER=mock$' "$stub/env-cancels"; then ok "purge-job.sh follow: a rollback to mock removes both secretRefs from cancels"
 else bad "purge-job.sh follow: a rollback to mock removes both secretRefs from cancels"; cat "$stub/out"; fi
+# T-178 R2: the switch to mock is one update (set BILLING_PROVIDER=mock and remove the references together), so a
+# scheduled run never starts between them and sees stripe without its references
+if SEED_CANCELS_ENV="BILLING_PROVIDER=stripe $SR" follow '[]' \
+   && [ "$(grep -c '^containerapp job update .*--name caj-starter-cancels ' "$stub/log")" = 1 ] \
+   && grep -q 'job update .*--name caj-starter-cancels .*BILLING_PROVIDER=mock .*--remove-env-vars BILLING_WEBHOOK_SECRET STRIPE_SECRET_KEY' "$stub/log"; then ok "purge-job.sh follow: a switch to mock sets the provider and removes the references in one job update"
+else bad "purge-job.sh follow: a switch to mock sets the provider and removes the references in one job update"; cat "$stub/out"; fi
 if SEED_CANCELS_ENV="BILLING_PROVIDER=mock" follow '[]' && ! grep -q -- '--remove-env-vars' "$stub/log"; then ok "purge-job.sh follow: mock with no references on cancels removes nothing (the CLI may refuse an absent variable)"
 else bad "purge-job.sh follow: mock with no references on cancels removes nothing (the CLI may refuse an absent variable)"; cat "$stub/out"; fi
 if SEED_CANCELS_ENV="STRIPE_SECRET_KEY=secretref:stripe-secret-key" follow '[]' && grep -q -- '--remove-env-vars STRIPE_SECRET_KEY --only' "$stub/log"; then ok "purge-job.sh follow: only the references that exist are removed"

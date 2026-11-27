@@ -178,7 +178,8 @@ placeholder webhook secret. The provider comes from the revision that serves tra
 the email settings), and `purge-job.sh follow` adds or removes the two references with it. Cost: job execution seconds only
 (`state/BUDGET.md`). The deploy role's `jobs/write` already covers it. To see failures, search the logs for
 `pending cancel could not be processed` (ERROR). A rollback restores the cancels job's billing provider too: `purge-job.sh follow`
-copies `BILLING_PROVIDER` from the revision that serves traffic (the purge job stays on `mock`).
+copies `BILLING_PROVIDER` from the revision that serves traffic and adds or removes the two Stripe references in the
+same update (the purge job stays on `mock`).
 
 The 10th failed attempt on a row logs one `pending cancel needs operator` line (CRITICAL). The log line is at most once, so the
 table is the source of truth. Rows that need an operator:
