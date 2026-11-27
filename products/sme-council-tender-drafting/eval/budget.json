@@ -1,0 +1,17 @@
+{
+  "approved_by": "Q-19",
+  "answer": "A",
+  "answered_at": "2026-11-27",
+  "scope": "one-off evaluation run of the tender demo, outside the app's daily token cap",
+  "model": "gpt-5-mini",
+  "prices_usd_per_million": {"gpt-5-mini": {"input": 0.25, "output": 2.00}},
+  "reasoning_headroom": 0,
+  "total_cap_usd": 6.00,
+  "groups": {
+    "tuning": {"cap_usd": 2.00, "phases": ["T1", "T2", "T3"]},
+    "scored": {"cap_usd": 2.60, "phases": ["E1", "E2", "E3", "E4"]},
+    "recording": {"cap_usd": 1.40, "phases": ["R1", "R2"]}
+  },
+  "scored_preflight_worst_usd": 2.54,
+  "notes": "App caps (98,000 tokens a day, $6.10 a month, per-tenant trial caps) are unchanged. The ledger is eval/ledger.jsonl, never ai_usage."
+}
