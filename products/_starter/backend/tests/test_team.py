@@ -161,6 +161,28 @@ def test_resend_at_the_pending_cap_replaces_the_old_invite(app, owner, new_clien
     assert _accept(new_client(), again).status_code == 201
 
 
+def test_daily_invite_quota_counts_resends(app, owner, outbox):
+    owner_client, _ = owner
+    app.state.settings.invites_per_day = 3
+    for _ in range(3):
+        _invite(owner_client, outbox, "same@acme.test")  # each resend revokes the previous row
+    assert owner_client.post("/api/team/invitations", json={"email": "same@acme.test"}).status_code == 429
+
+
+def test_resend_exemption_is_tenant_scoped(app, owner, new_client, outbox):
+    from .conftest import verify_email
+    owner_client, _ = owner
+    other = new_client()
+    sign_up(other, email="boss@beta.test", company="Beta")
+    verify_email(other, outbox)
+    _, token_b = _invite(other, outbox, "x@x.test")  # tenant B's pending invite
+    app.state.settings.max_pending_invites = 1
+    _invite(owner_client, outbox, "fill@acme.test")  # tenant A is at its cap
+    response = owner_client.post("/api/team/invitations", json={"email": "x@x.test"})
+    assert response.status_code == 409 and response.json()["error"] == "too_many_pending"
+    assert _accept(new_client(), token_b).status_code == 201  # B's invite is untouched
+
+
 # --- T-172 B7: accepting revokes other tenants' pending invites for the address ---
 
 def test_accepting_revokes_other_tenants_pending_invites_for_that_email(owner, new_client, outbox):
