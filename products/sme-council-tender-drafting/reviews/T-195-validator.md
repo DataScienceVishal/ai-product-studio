@@ -68,3 +68,15 @@ Alternative: shrink turnover to about £1.9m to £2.2m and drop the "31 smaller 
 Fix F1 as above, keep F2 to F10, and confirm 01, 02, 08, 10, 14, 26 and 28 all agree with one headcount. A re-check can be arithmetic only. No new web searches are needed.
 
 Fictional-data review only; no product code touched.
+
+## Revision 1 (maker, strategist, 2026-11-27): F1 fixed
+
+Headcount raised to **102** at 31 October 2026: 70 cleaning (60 operatives, 10 supervisors), 16 security, 8 grounds, 8 management and office. Average headcount 82 (FY24), 91 (FY25), 100 (FY26), about £38k turnover per head. The council contracts use 37 cleaning, 10 security and 6 grounds staff, leaving 33, 6 and 2 for the smaller and private work. Turnover and contract values unchanged. F2 to F10 kept.
+- 01:9 split and total; 02:7-9 averages; SPEC.md:78 and README:5 (102 staff).
+- 08: all group sizes recomputed (induction 102, manual handling 78, COSHH 76/78, supervisors 10/10, fire marshal 22, first aid 28, safeguarding 30/32 = 94%, security licence and conflict 16/16, lone working 24/24, chainsaw 4/8, pesticide 3/8 = 38%, working at height 8/8, GDPR 97/102 = 95%, mental health first aid 6, training £37,800 = £371 a head).
+- 09:8 (102 employees); 10:7 (102 staff, 97 responses); 11:7 (32 covered, 30 trained); 18:9 (16 officers); 19:10 and 19:12 (8 grounds operatives, 3 of 8 certified).
+- 06 lost-time rate: 1.0 per 100 (1 injury, average headcount 100), because 1.7 no longer fit.
+- 14: local hires 28 of 33 (85%); zero-hours 12 staff (12%); volunteering 82 days (about 0.8 a head).
+- 26:15 and 28:5-6: 25 leavers on average headcount 100 = 25%; 33 hires (19 hires could not replace 25 leavers and grow the firm); 28:10 six mental health first aiders; 28:12 survey 69 of 97 replied (71%), using the March 2026 headcount per the advisory.
+- README near-miss line updated (30 of 32; 3 of 8). The gaps list G1 to G14 is unchanged and still true: none of the edits touched an absent item.
+- Not changed: the advisories on herbicide baseline year, "ISO 9001-style" wording for the D3 keys, and logging the three council-name searches in SOURCES.md.

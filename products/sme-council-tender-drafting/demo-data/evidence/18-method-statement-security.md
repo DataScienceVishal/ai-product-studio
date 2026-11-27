@@ -6,7 +6,7 @@
 Static guarding of council buildings, depots and leisure sites, mobile key-holding and alarm response (via a partner alarm receiving centre).
 
 ## Method
-- **Staffing:** 14 officers hold front-line licences (HF-TRN-08). Posts are covered with 12-hour shifts, maximum 48 hours per week average, 11 hours rest between shifts.
+- **Staffing:** 16 officers hold front-line licences (HF-TRN-08). Posts are covered with 12-hour shifts, maximum 48 hours per week average, 11 hours rest between shifts.
 - **Assignment instructions:** a site-specific document written at mobilisation, signed off by the client, reviewed every 6 months.
 - **Patrols:** electronic checkpoint tags; patrol logs available to the client in 24 hours; missed checkpoints reported the same shift.
 - **Lone working:** hourly welfare checks by phone to the duty manager.

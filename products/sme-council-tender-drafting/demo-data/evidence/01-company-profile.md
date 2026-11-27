@@ -6,7 +6,7 @@
 Harrowmere Facilities Ltd (fictional) is an owner-managed facilities services company founded on 14 March 2011. Company no. DEMO-0000. Registered office: Unit 4, Kestrel Works, Fenborough (fictional town). We provide three services: commercial cleaning, static security guarding and key-holding, and grounds maintenance.
 
 ## Size
-- 58 employees at 31 October 2026: 31 cleaning operatives and supervisors, 14 security officers, 6 grounds operatives, 7 management and office staff.
+- 102 employees at 31 October 2026: 70 cleaning operatives and supervisors (60 operatives, 10 supervisors), 16 security officers, 8 grounds operatives, 8 management and office staff. Most cleaners work part-time.
 - 71% of turnover in the 2025/26 financial year came from public-sector clients (see HF-FIN-02).
 - Five live council contracts with three councils (see case studies HF-CS-20 to HF-CS-24; HF-CS-25 is a one-off order under HF-CS-20).
 

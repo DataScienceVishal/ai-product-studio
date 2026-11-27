@@ -2,7 +2,7 @@
 
 Task T-195 (D2). 32 documents (files 01 to 32) for the private demo of sme-council-tender-drafting. Everything is invented: firm, clients (Eastvale Borough Council, Marlowe Fen District Council, Tarn Valley Council, all fictional), identifiers (CERT-DEMO-nnnn, POL-DEMO-nnnn, company no. DEMO-0000) and figures. Staff appear as roles only. Name check: see `../SOURCES.md` (D2 section).
 
-Firm in one line: 58 staff, turnover £3.82m (2025/26), cleaning, security guarding and grounds, five council contracts worth £881,000 a year.
+Firm in one line: 102 staff (70 cleaning, 16 security, 8 grounds, 8 management and office), turnover £3.82m (2025/26), cleaning, security guarding and grounds, five council contracts worth £881,000 a year.
 
 ## Index
 | File | Ref | Topic |
@@ -58,6 +58,6 @@ Firm in one line: 58 staff, turnover £3.82m (2025/26), cleaning, security guard
 | G13 | Verbatim client testimonials (none held in the library) | 20, 23 | feedback "held on file" |
 | G14 | ISO 22301, Investors in People, parent company guarantee, supplier audits | 03, 13, 02, 09 | continuity plan, modern slavery statement |
 
-Cross-checks to seed (conflicting or near-miss facts): ISO 9001 certificate expiry (renewed to 11 June 2029 after an earlier 2026 date); public liability £5m against employers' £10m; 25% company staff turnover against 16% on Eastvale; 22 of 24 safeguarding trained (92%), not 100%; 2 of 6 grounds staff hold the pesticide certificate.
+Cross-checks to seed (conflicting or near-miss facts): ISO 9001 certificate expiry (renewed to 11 June 2029 after an earlier 2026 date); public liability £5m against employers' £10m; 25% company staff turnover against 16% on Eastvale; 30 of 32 safeguarding trained (94%), not 100%; 3 of 8 grounds staff hold the pesticide certificate.
 
 Fictional document for a software demo. Not a real company.
