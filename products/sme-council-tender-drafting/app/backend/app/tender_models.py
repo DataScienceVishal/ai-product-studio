@@ -97,6 +97,8 @@ class Requirement(Base):
     origin: Mapped[str] = mapped_column(String(10), nullable=False, default="model")  # model | user
     edited_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     status: Mapped[str] = mapped_column(String(10), nullable=False, default="proposed")  # proposed|confirmed|removed
+    model_json: Mapped[dict | None] = mapped_column(JSONB)  # the model's item exactly as returned; user edits never change it
+    flags: Mapped[list[str]] = mapped_column(ARRAY(String(30)), nullable=False, default=list)  # limit_mismatch ...
 
 
 class EvidenceCounter(Base):
