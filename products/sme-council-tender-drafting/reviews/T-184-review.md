@@ -164,3 +164,30 @@ Weak point: see S7.
 
 ## Next
 The architect addresses R1 to R7, plus ADR line 111, and updates the board tasks T-187 to T-189 for the split. Then re-review. I expect the re-review to be quick if the fixes follow the ones given above.
+
+## Re-review (2026-11-27, after commit e213623; board re-cut in 90eb49c)
+
+### Verdict: PASS
+
+I reviewed only the changes (`git diff 62552c3 e213623`, DESIGN section 13) and how they interact with the starter code.
+
+| Finding | Status | Evidence |
+|---|---|---|
+| R1 nonce vs cache | fixed | Both the cache key and the recording key come from the canonical payload before wrapping (DESIGN section 3 `ai_cache` row; 4.3 `run_task` step 1; the `ScriptedFakeAI` recorded path). An S3 test asserts a hit across different nonces |
+| R2 worker timeout and effort | fixed | All three adapter changes are declared (DESIGN 4.3 items 1-3; ADR decision 1). The worker instance gets both `timeout` and `deadline`, which addresses `ai.py:494`. Per-call `effort` replaces the per-instance setting at `ai.py:340,470`. The fakes accept the new keyword arguments. An S3 test checks that the worker uses 180 s |
+| R3 caps and harness budget | fixed | The budget port (`AppBudget` around `reserve`/`settle`; `LedgerBudget` never writes `ai_usage`), plus an S9 test. App-path extraction is cache or fake only. The double-cap retry runs in the harness only. Headroom is 0 in the harness (8.5). Arithmetic checked: check reservation 5.6k + 3k + 4k + 6,000 + 1,500 = 20.1k; draft about 16.4k + 5.5k = 21.9k; one pair fits 30k (`billing.py:53`) |
+| R4 deleted evidence | fixed | `export_allowed(..., live_evidence_ids, statement_version)` (DESIGN 4.5). The S6 property test and an S8 export test cover it |
+| R5 text evidence | fixed | DESIGN 4.1 sniffing; an S2 test |
+| R6 slices | fixed | Nine slices with their own tests and Done lines, in order, with S9 parallel after S3. The board has T-185 to T-196 to match (`state/BOARD.md:12-23`) |
+| R7 account export, SPA routes | fixed | S1 replaces `routes/account.py`'s `Note` export. Static routes with query ids work with the exact-match `spa.py:74`, so `spa.py` stays unchanged |
+| ADR "36 days" | fixed | ADR decision 7 now says 37 days (3,632k / 98k) |
+
+### Small fixes I applied to DESIGN.md in this pass
+1. **4.3, R3 demo moments.** "the 49k trial pool allows about 3 a day" now says 2 to 3 pairs, with the arithmetic. After two settled pairs of about 13.6k each, a third draft reservation of about 22k reaches the 49k pool (`ai.py:701`).
+2. **4.3, draft reservation.** "(about 16k bytes)" now says "of input in all", so it no longer reads as 8 × 1.4k.
+3. **S6.** "cited passages only on the app path" now says the input is the same in the app and in the harness. The old wording suggested the A6a eval might measure a different checker input than the product uses.
+
+### Notes for slice reviews (not blocking)
+- **Draft-and-check pair near the cap.** At the maximum passage size (400 words, about 2.4k bytes), a draft reserves about 29.9k. A pair then lands at about 30.1k, just over the 30k cap. This fails closed with the starter's refusal message. The S5 test should use maximum-size passages, or the app path should cap k so that the worst case fits.
+- **Signature changes.** `build_provider(settings, timeout=, deadline=)` changes the starter's signature (`ai.py:589`). Keep the defaults so that `main.py` and the existing tests still pass.
+- **Open suggestions.** My earlier suggestions S2 (page limits, open gap markers at export), S3 (the detector's blind spot for commitment sentences), S4 (parser rlimits, image-only rule) and S8 (splitting the BUDGET row at deploy time) remain open for the slice reviews, as the architect noted.
