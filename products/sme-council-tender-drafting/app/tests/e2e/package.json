@@ -1,0 +1,8 @@
+{
+  "name": "starter-e2e",
+  "private": true,
+  "description": "Browser end-to-end test for the product starter. Run through ../../scripts/e2e.sh.",
+  "dependencies": {
+    "playwright": "1.63.0"
+  }
+}
