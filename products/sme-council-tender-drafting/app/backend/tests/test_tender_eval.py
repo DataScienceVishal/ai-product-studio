@@ -626,8 +626,13 @@ def ctx(app, cfg, tmp_path):
                                                 "drafting_heldout": ["h1.txt", "h2.txt", "h3.txt"]}))
     pages = [(1, "[page 1]\n1. Describe your approach to mobilisation (maximum 400 words)\n2. Tell us about training"),
              (2, "3. Explain your environmental policy")]
+    keys = tmp_path / "keys"; keys.mkdir()
+    labels = {"packs": {f"d{n}": [{"ref": f"{n}.{k}", "text": f"Demo question {n}.{k}?", "relevant": [1], "primary": [1]}
+                                  for k in range(1, 8)] for n in (1, 2, 3)}}      # 7 labelled questions per demo pack
+    (keys / "retrieval_labels.json").write_text(json.dumps(labels))
     return R.Context(ScriptedFakeAI(), led(tmp_path, cfg, dry=True), sessions, tid, load_pack=lambda name: pages,
-                     keys_dir=tmp_path / "keys", results_dir=tmp_path / "results", packs_dir=packs)
+                     retrieve=lambda question: [],          # nothing found: the draft takes the gap path, no model call
+                     keys_dir=keys, results_dir=tmp_path / "results", packs_dir=packs)
 
 
 def test_phase_table_matches_the_budget_groups(cfg):
@@ -658,7 +663,7 @@ def test_phase_without_inputs_says_what_is_missing(ctx):
 
 
 def test_e4_uses_a_passed_claimcheck(ctx):
-    ctx.keys_dir.mkdir()
+    ctx.keys_dir.mkdir(exist_ok=True)
     (ctx.keys_dir / "fixture_drafts.json").write_text(json.dumps([{"id": "f1", "text": "We hold ISO 9001 [E-1]."}]))
     ctx.claimcheck = lambda budget, text, hits: [{"span": "We hold ISO 9001", "verdict": "supported"}]
     assert R.run_phase("E4", ctx)["ran"] == 1
@@ -683,7 +688,7 @@ def test_replaced_context_rebuilds_the_default_claimcheck_for_the_new_provider(c
 
 
 def test_draft_phase_runs_through_the_ledger_on_the_fake(ctx):
-    ctx.keys_dir.mkdir()
+    ctx.keys_dir.mkdir(exist_ok=True)
     (ctx.keys_dir / "dev_trap_set.json").write_text(json.dumps([{"id": "t1", "question": "Do you hold ISO 14001?", "word_limit": 50}]))
     ctx.retrieve = lambda question: []                       # nothing found: the gap path, no model call
     ctx.claimcheck = lambda budget, text, hits: []
@@ -719,12 +724,11 @@ def test_scored_preflight_refuses_when_the_reserve_is_short(ctx, cfg, tmp_path):
 def test_live_phase_with_ledger_rows_but_no_results_file_is_refused(ctx, cfg, tmp_path):
     """M2: a fresh clone without the committed results must not re-run (and re-pay for) finished scored items."""
     live_ctx(ctx, cfg, tmp_path)
-    ctx.ledger.append({"phase": "E1", "task": "x", "model": "gpt-5-mini", "input_tokens": 100, "output_tokens": 100})
+    ctx.ledger.append({"phase": "T1", "task": "x", "model": "gpt-5-mini", "input_tokens": 100, "output_tokens": 100})
     with pytest.raises(R.PhaseNotReady, match="results are committed"):
-        R.run_phase("E1", ctx)
+        R.run_phase("T1", ctx)
     (ctx.results_dir).mkdir(parents=True, exist_ok=True)
-    (ctx.results_dir / "E1.jsonl").write_text("")            # restored (empty): the operator has checked
-    ctx.provider = ScriptedFakeAI()
+    (ctx.results_dir / "T1.jsonl").write_text("")            # restored (empty): the operator has checked
 
 
 def test_results_are_committed_and_only_dry_results_ignored():
@@ -801,7 +805,7 @@ def test_cache_is_cleared_before_repeat_passes_of_a_cacheable_provider(ctx, monk
     ctx.provider = type("Live", (ScriptedFakeAI,), {"cacheable": True})()
     (ctx.results_dir / "T2.jsonl").unlink()
     R.run_phase("T2", ctx)
-    assert len(cleared) == 9                                 # 3 packs x 3 passes, cleared before every item
+    assert len(cleared) == 27                                # 3 packs x 3 passes x (1 extract + 2 drafts), cleared before every item
     with ctx.sessions() as db:
         R.clear_ai_cache(ctx)
         assert db.scalar(select(func.count()).select_from(AICache).where(AICache.tenant_id == ctx.tenant_id)) == 0
@@ -880,7 +884,7 @@ def test_live_t1_path_writes_holds_and_settles_to_the_ledger(ctx, cfg, tmp_path)
     live = live_ctx(ctx, cfg, tmp_path)
     live.provider = LiveFake()
     r = R.run_phase("T1", live)
-    assert r["dry_run"] is False and r["ran"] == 1 and r["stopped"] is None
+    assert r["dry_run"] is False and r["ran"] == 6 and r["stopped"] is None
     rows = live.ledger.rows()
     holds = [x for x in rows if x["kind"] == "hold"]
     settles = [x for x in rows if x["kind"] == "settle"]
@@ -958,7 +962,7 @@ def test_run_configuration_prints_the_claimcheck_prompt_hash():
 def test_e2_drafts_and_records_claims_end_to_end_with_the_real_claimcheck(ctx):
     """T-202: no claimcheck passed, so the default (app.tender.claimcheck.check_draft on ScriptedFakeAI) runs."""
     assert ctx.claimcheck is not None
-    ctx.keys_dir.mkdir()
+    ctx.keys_dir.mkdir(exist_ok=True)
     items = [{"ref": "1", "kind": "question", "text": "Describe mobilisation", "word_limit": 100}]
     for n in ("h1", "h2", "h3"):
         (ctx.keys_dir / f"{n}.json").write_text(json.dumps({"items": items if n == "h1" else []}))
@@ -1193,3 +1197,218 @@ def test_no_deadline_item_means_not_found_and_never_affects_pass():
     assert d["found"] == 0 and d["total"] == 1 and d["packs"][0]["found"] is False and d["packs"][0]["got"] == []
     assert "deadline" not in SC.BARS
     assert extraction()["deadline"] == {"packs": [], "found": 0, "total": 0}     # no key deadline: nothing reported
+
+
+# ---------- T-221: end-to-end plans, no live cache, clean provider stops, main(--live) ----------
+
+def test_t1_plan_is_extract_plus_five_labelled_questions_of_the_first_demo_pack(ctx):
+    plan = R.build_plan("T1", ctx)
+    assert [i.kind for i in plan] == ["extract"] + ["draft"] * 5 == [i.kind for i in plan]
+    assert plan[0].data["pack"] == "d1.txt"
+    assert [i.data["id"] for i in plan[1:]] == [f"d1:1.{k}" for k in range(1, 6)]        # the first 5 labelled, in order
+    assert [i.data["question"] for i in plan[1:]] == [f"Demo question 1.{k}?" for k in range(1, 6)]
+    assert R.DEMO_QUESTIONS_PER_PACK == 5 and R.DEMO_QUESTIONS_FILE == "retrieval_labels.json"
+
+
+@pytest.mark.parametrize("phase,size,drafts", [("T2", 3 * 3 * 3, 18), ("R1", 3 * 6, 15), ("R2", 6, 5)])
+def test_demo_plans_size_and_unique_ids(ctx, phase, size, drafts):
+    plan = R.build_plan(phase, ctx)           # T2: 3 packs x 3 passes x (1 extract + 3 drafts); R1: 3 x (1 + 5); R2 = T1
+    assert len(plan) == size and len({i.id for i in plan}) == size
+    assert sum(i.kind == "draft" for i in plan) == drafts
+
+
+def test_demo_plan_needs_the_labels_and_never_invents_questions(ctx):
+    (ctx.keys_dir / "retrieval_labels.json").write_text(json.dumps({"packs": {"d2": []}}))
+    with pytest.raises(R.PhaseNotReady, match="no labelled questions for demo pack d1.txt"):
+        R.build_plan("T1", ctx)
+    (ctx.keys_dir / "retrieval_labels.json").unlink()
+    with pytest.raises(R.PhaseNotReady, match="labelled questions not found"):
+        R.build_plan("T1", ctx)
+
+
+def test_the_committed_demo_packs_have_five_labelled_questions_each():
+    class C:
+        keys_dir = R.KEYS_DIR
+    for pack in json.loads((R.PRODUCT / "demo-data" / "packs" / "manifest.json").read_text())["demo"]:
+        qs = R.demo_questions(C, pack)
+        assert len(qs) == 5 and all(q["question"] and q["id"].startswith(pack[:3]) for q in qs)
+
+
+class CountingLive(LiveFake):
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.n = 0
+
+    def complete(self, *a, **kw):
+        self.n += 1
+        return super().complete(*a, **kw)
+
+
+def test_a_live_phase_never_serves_an_item_from_ai_cache(ctx, cfg, tmp_path):
+    from app.tender_models import AICache
+    live = live_ctx(ctx, cfg, tmp_path)
+    live.provider = CountingLive()
+    live.provider.cacheable = True                           # as the real client is
+    R.run_phase("T1", live)
+    first = live.provider.n
+    assert first > 0 and live.provider.cacheable is True     # restored after the phase
+    (live.results_dir / "T1.jsonl").unlink()
+    live.ledger = L.Ledger(tmp_path / "second.jsonl", cfg, dry_run=False)
+    with live.sessions() as db:                              # something the model could be answered with from the cache
+        db.add(AICache(tenant_id=live.tenant_id, key="stale", output_json={}, input_tokens=1, output_tokens=1)); db.commit()
+    R.run_phase("T1", live)
+    assert live.provider.n == 2 * first                      # the second run called the model for every item again
+    with live.sessions() as db:
+        assert db.scalar(select(func.count()).select_from(AICache).where(AICache.tenant_id == live.tenant_id)) == 0
+
+
+def test_live_phase_clears_a_preseeded_cache_before_every_item(ctx, cfg, tmp_path, monkeypatch):
+    from app.tender_models import AICache
+    live = live_ctx(ctx, cfg, tmp_path)
+    live.provider = CountingLive()
+    seen = []
+
+    def spy(c, phase, item):
+        with c.sessions() as db:
+            seen.append(db.scalar(select(func.count()).select_from(AICache).where(AICache.tenant_id == c.tenant_id)))
+        return {}
+    with live.sessions() as db:
+        db.add(AICache(tenant_id=live.tenant_id, key="x", output_json={}, input_tokens=1, output_tokens=1)); db.commit()
+    monkeypatch.setattr(R, "_run_item", spy)
+    r = R.run_phase("T1", live)
+    assert seen == [0] * 6 and r["reseed_required"] == R.RESEED_NOTE
+
+
+def test_a_provider_ai_rejected_stops_the_run_cleanly_and_settles_the_ledger(ctx, cfg, tmp_path):
+    from app.errors import AppError
+
+    class Rejecting(LiveFake):
+        def complete(self, *a, **kw):
+            raise AppError(502, "ai_rejected", "The AI service couldn't handle that request.")
+    live = live_ctx(ctx, cfg, tmp_path)
+    live.provider = Rejecting()
+    r = R.run_phase("T1", live)
+    assert r["ran"] == 0 and "ai_rejected" in r["stopped"] and not r.get("model_mismatch")
+    rows = live.ledger.rows()
+    assert [x["kind"] for x in rows] == ["hold", "settle"] and rows[1]["charged_worst"] and rows[1]["usd"] > 0
+    assert (live.results_dir / "T1.jsonl").read_text() == ""
+
+
+def test_other_app_errors_stay_fatal(ctx, monkeypatch):
+    from app.errors import AppError
+    monkeypatch.setattr(R, "_run_item", lambda c, p, i: (_ for _ in ()).throw(AppError(404, "tenant_missing", "no tenant")))
+    with pytest.raises(AppError):
+        R.run_phase("T1", ctx)
+
+
+@pytest.mark.parametrize("phase", ["E1", "E2", "E3", "E4", "R1", "R2"])
+def test_a_non_tuning_phase_is_refused_when_not_dry_even_with_the_fake(ctx, cfg, tmp_path, phase):
+    live_ctx(ctx, cfg, tmp_path)                             # ledger live, ctx.dry False, provider still the fake
+    with pytest.raises(R.PhaseNotReady, match="L1 configuration freeze"):
+        R.run_phase(phase, ctx)
+
+
+# main(["T1", "--live"]) with temp ledger and results
+
+@pytest.fixture
+def live_main(app, cfg, tmp_path, monkeypatch):
+    sessions = app.state.db.sessions
+    with sessions() as db:
+        db.add(Tenant(name=SD.FIRM)); db.commit()
+    from .conftest import TEST_DB
+    monkeypatch.setenv("DATABASE_URL", TEST_DB)
+    for k, v in (("AZURE_OPENAI_ENDPOINT", "https://x.invalid"), ("AZURE_OPENAI_API_KEY", "k"), ("AZURE_OPENAI_DEPLOYMENT_MINI", "d")):
+        monkeypatch.setenv(k, v)
+    monkeypatch.setattr(R, "LIVE_LEDGER", tmp_path / "live-ledger.jsonl")
+    monkeypatch.setattr(R, "RESULTS_DIR", tmp_path / "live-results")
+    monkeypatch.setattr(R, "load_budget_config", lambda *a, **k: cfg)
+    holder = {}
+    monkeypatch.setattr(R, "build_live_provider", lambda env=None: holder["p"])
+    return holder
+
+
+def test_main_live_writes_a_non_dry_ledger_and_results_and_exits_0(live_main, tmp_path):
+    live_main["p"] = LiveFake()
+    assert R.main(["T1", "--live"]) == 0
+    rows = [json.loads(l) for l in (tmp_path / "live-ledger.jsonl").read_text().splitlines()]
+    assert rows and {"hold", "settle"} <= {r["kind"] for r in rows} and not any(r.get("dry_run") for r in rows)
+    assert all(r["usd"] > 0 for r in rows if r["kind"] == "settle")
+    out = [json.loads(l) for l in (tmp_path / "live-results" / "T1.jsonl").read_text().splitlines()]
+    assert len(out) == 6 and out[0]["item"].startswith("extract:S04")
+
+
+def test_main_live_wrong_model_exits_7(live_main, tmp_path, capsys):
+    live_main["p"] = LiveFake(model="gpt-5.4-pro")
+    assert R.main(["T1", "--live"]) == 7
+    assert "MODEL MISMATCH" in capsys.readouterr().err
+
+
+def test_main_live_cap_exits_8(live_main, tmp_path, capsys):
+    live_main["p"] = LiveFake()
+    from eval.ledger import Ledger
+    Ledger(tmp_path / "live-ledger.jsonl", R.load_budget_config(), dry_run=False).append(
+        {"phase": "T2", "task": "x", "model": "gpt-5-mini", "input_tokens": 0, "output_tokens": 999_000})
+    (tmp_path / "live-results").mkdir(); (tmp_path / "live-results" / "T2.jsonl").write_text("")
+    assert R.main(["T1", "--live"]) == 8
+    assert "tuning sub-cap" in capsys.readouterr().err
+
+
+def test_main_live_ai_unavailable_and_ai_rejected_exit_8_without_a_traceback(live_main, tmp_path, capsys):
+    from app.ai import AIUnavailable
+    from app.errors import AppError
+    for exc in (AIUnavailable("down"), AppError(502, "ai_rejected", "The AI service couldn't handle that request.")):
+        class Boom(LiveFake):
+            def complete(self, *a, **kw):
+                raise exc
+        live_main["p"] = Boom()
+        for f in ("live-ledger.jsonl",):
+            (tmp_path / f).unlink(missing_ok=True)
+        (tmp_path / "live-results" / "T1.jsonl").unlink(missing_ok=True)
+        assert R.main(["T1", "--live"]) == 8
+        err = capsys.readouterr().err
+        assert "live phase stopped early" in err and "Traceback" not in err
+
+
+def _source_rows(stem):
+    src = next((R.PRODUCT / "demo-data" / "pack-sources").glob(f"{stem}-*.md")).read_text(encoding="utf-8")
+    rows = {}
+    for line in src.splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if line.startswith("|") and len(cells) >= 4:
+            rows[cells[0]] = cells
+    return rows
+
+
+@pytest.mark.parametrize("stem", ["S04", "S08", "S12"])
+def test_demo_word_limits_match_the_pack_source_tables(stem):
+    data = json.loads((R.HERE / "demo_word_limits.json").read_text())["packs"][stem]
+    rows = _source_rows(stem)
+    labels = json.loads((R.KEYS_DIR / "retrieval_labels.json").read_text())["packs"]
+    refs = [i["ref"] for p, items in labels.items() if p.startswith(stem) for i in items[:R.DEMO_QUESTIONS_PER_PACK]]
+    assert sorted(data) == sorted(refs)                       # exactly the questions the T1/R plans draft
+    for ref, v in data.items():
+        printed = rows[ref][-1]
+        assert v["printed"] == printed                        # the limit text is copied from the table, verbatim
+        nums = [int(x.replace(",", "")) for x in re.findall(r"\d[\d,]*(?=\s*words)|(?<=Words: )\d+", printed)]
+        if v["word_limit"] is None:
+            assert printed.startswith("Shared") or "page" in printed or printed.startswith("No limit")
+        else:
+            assert nums and v["word_limit"] == nums[0]
+
+
+def test_demo_questions_carry_the_printed_word_limits():
+    class C:
+        keys_dir = R.KEYS_DIR
+    assert [q["word_limit"] for q in R.demo_questions(C, "S08-security-trust-cctv-keyholding.docx")] == [750, 750, 500, 400, 1000]
+    assert [q["word_limit"] for q in R.demo_questions(C, "S04-cleaning-halls-and-toilets.docx")] == [None, None, None, None, 400]
+    assert [q["word_limit"] for q in R.demo_questions(C, "S12-grounds-hallowby-town.docx")] == [None, None, None, None, 400]
+
+
+def test_tuning_phase_turns_the_cache_off_during_the_run_and_restores_it(ctx, cfg, tmp_path, monkeypatch):
+    live = live_ctx(ctx, cfg, tmp_path)
+    live.provider = CountingLive()
+    live.provider.cacheable = True
+    seen = []
+    monkeypatch.setattr(R, "_run_item", lambda c, p, i: seen.append(c.provider.cacheable) or {})
+    R.run_phase("T1", live)
+    assert seen == [False] * 6 and live.provider.cacheable is True
