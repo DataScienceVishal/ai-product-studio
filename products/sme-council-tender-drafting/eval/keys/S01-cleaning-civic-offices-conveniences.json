@@ -1,0 +1,276 @@
+{
+ "pack": "S01-cleaning-civic-offices-conveniences.docx",
+ "items": [
+  {
+   "ref": "1.1",
+   "kind": "question",
+   "text": "Describe your method statement for cleaning the Civic Centre, Register Office wing, Library and Depot, including how you will organise shifts, the day porter service, periodic work, and how you will protect the standard before ceremonies and committee meetings.",
+   "word_limit": 600,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 6
+  },
+  {
+   "ref": "1.2",
+   "kind": "question",
+   "text": "Describe how you will deliver the public conveniences service, including routes, rotas, use of technology to evidence visits, handling of hazards and vandalism, and reactive attendance out of hours.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 5
+  },
+  {
+   "ref": "1.3",
+   "kind": "question",
+   "text": "Provide your mobilisation and transition plan for the 10-week period, including a timeline, key risks and how you will ensure service continuity on 1 October 2027.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 5
+  },
+  {
+   "ref": "2.1",
+   "kind": "question",
+   "text": "Explain your proposed staffing and supervision structure, including ratios of supervisors to operatives, management of sickness and holiday cover, and the role of the Contract Manager.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 5
+  },
+  {
+   "ref": "2.2(a)",
+   "kind": "question",
+   "text": "Training: describe your induction and training programme for operatives and supervisors, including BICSc or equivalent qualifications, manual handling, COSHH and the use of machinery.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "2.2(b)",
+   "kind": "question",
+   "text": "Retention: describe how you will recruit, motivate and retain staff, and how you will keep staff turnover below 20 percent.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "2.3",
+   "kind": "question",
+   "text": "Explain how you will manage the TUPE transfer, including consultation, communication, treatment of terms and conditions and pension arrangements.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "3.1",
+   "kind": "question",
+   "text": "Describe how you will monitor quality and report performance against the KPIs in Section 2.13, including your audit method, frequency, sampling, use of customer feedback and corrective action.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 5
+  },
+  {
+   "ref": "3.2",
+   "kind": "question",
+   "text": "Describe how you will handle complaints and requests for rectification, including response times, root cause analysis and escalation.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "3.3",
+   "kind": "question",
+   "text": "Describe how you will manage the contract with the Council, including meetings, reporting, open-book review of consumables, change control and the handling of variations.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "4.1",
+   "kind": "question",
+   "text": "Describe your approach to health and safety on this contract, including risk assessment, lone working, working at height, accident reporting and your accident statistics for the last three years.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "4.2",
+   "kind": "question",
+   "text": "Describe the equipment, chemicals and consumables you will use, how you will comply with COSHH, and how you will manage safety data sheets and dosing.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "4.3",
+   "kind": "question",
+   "text": "Describe how you will minimise the environmental impact of the service, including waste, water, chemical choice, vehicles and carbon reporting.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "5.1",
+   "kind": "question",
+   "text": "Explain how you will maintain public conveniences and critical Civic Centre areas during a major disruption such as severe winter weather, a pandemic wave or a sudden loss of 30 percent of your workforce.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "5.2",
+   "kind": "question",
+   "text": "Provide two case studies of similar contracts (public sector or comparable) delivered in the last 5 years. For each, state the client type, size, term, challenges, outcomes and a reference contact role (no personal names).",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4,
+   "case_studies": 2
+  },
+  {
+   "ref": "5.3",
+   "kind": "question",
+   "text": "Describe one innovation that you will introduce to improve quality, reduce cost or reduce environmental impact during the first 2 years, with how its benefits will be measured.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 2
+  },
+  {
+   "ref": "6.1",
+   "kind": "question",
+   "text": "Local employment and skills: describe how the contract will create employment and training opportunities for residents of the Fennickstead district, including apprenticeships, people furthest from the labour market and local supply chains. State measurable commitments.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 6
+  },
+  {
+   "ref": "6.2",
+   "kind": "question",
+   "text": "Tackling climate change: describe your commitments to cut carbon emissions in delivery of the contract, with measures, timescales and how you will report.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "M1",
+   "kind": "mandatory",
+   "text": "Employer's Liability insurance of at least £5 million per occurrence",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M2",
+   "kind": "mandatory",
+   "text": "Public Liability insurance of at least £10 million per occurrence",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M3",
+   "kind": "mandatory",
+   "text": "Professional Indemnity insurance of at least £2 million per claim",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M4",
+   "kind": "mandatory",
+   "text": "Health and safety accreditation: current SSIP-recognised scheme (for example CHAS, SafeContractor or Constructionline Gold)",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M5",
+   "kind": "mandatory",
+   "text": "Minimum average annual turnover of £800,000 in each of the last 2 financial years",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M6",
+   "kind": "mandatory",
+   "text": "No grounds for mandatory exclusion under the Procurement Act 2023 (convictions, tax, insolvency, labour market and other mandatory grounds)",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M7",
+   "kind": "mandatory",
+   "text": "Compliance with the Modern Slavery Act 2015, including a published modern slavery statement where the organisation's turnover requires it",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M8",
+   "kind": "mandatory",
+   "text": "Compliance with UK GDPR and the Data Protection Act 2018, with registration with the Information Commissioner",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M9",
+   "kind": "mandatory",
+   "text": "A Disclosure and Barring Service policy and confirmation that all staff on the contract will hold a basic DBS check before starting",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M10",
+   "kind": "mandatory",
+   "text": "Confirmation of acceptance of the draft contract terms without material amendment",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "2.4",
+   "kind": "mandatory",
+   "text": "PASS/FAIL: Confirm that you will pay every operative engaged on this contract at least the Real Living Wage, and uprate it within the period required by the Living Wage Foundation each year, throughout the contract.",
+   "word_limit": 100,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "",
+   "kind": "deadline",
+   "text": "Tender submission deadline: Friday 30 April 2027, 12:00 noon",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  }
+ ]
+}

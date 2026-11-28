@@ -1,0 +1,299 @@
+{
+ "pack": "S09-grounds-brackenholt-town.docx",
+ "items": [
+  {
+   "ref": "1.1",
+   "kind": "question",
+   "text": "Describe how you will mobilise the contract between award and the start date of 1 June 2027, including TUPE consultation, the purchase of equipment, recruitment, site surveys and the communication plan. Provide a timeline showing key dates and responsible roles.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "1.2",
+   "kind": "question",
+   "text": "Provide a method statement and annual programme for the cutting regime and seasonal tasks, including how you will allocate crews to sites, respond to growth peaks and avoid clashes with events at Millbank Recreation Ground. Explain how you will schedule hedge cutting around the bird nesting season.",
+   "word_limit": 600,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "1.3",
+   "kind": "question",
+   "text": "Describe the team you will assign to the contract, including numbers, skill mix, any apprentices, how absence and holidays will be covered and how you will retain staff. Provide an organisation chart.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "1.4",
+   "kind": "question",
+   "text": "Explain how the work will be supervised on a daily basis and how the contract manager will check quality and be available to the Council. Maximum two A4 pages.",
+   "word_limit": null,
+   "page_limit": 2,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "2.1",
+   "kind": "question",
+   "text": "List the principal machinery and vehicles you will use, their age, fuel type, how they will be maintained and how you will keep downtime from affecting the programme. State how many battery-electric items you propose to use.",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4,
+   "shared_group": "2.1-2.3",
+   "shared_words": 800
+  },
+  {
+   "ref": "2.2",
+   "kind": "question",
+   "text": "Describe the qualifications held by operatives on this contract, including PA1 and PA6, chainsaw, strimmer and brush-cutter competence, first aid and the Level 2 qualification in horticulture. Explain your induction and refresher training and how you will keep certificates up to date.",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4,
+   "shared_group": "2.1-2.3",
+   "shared_words": 800
+  },
+  {
+   "ref": "2.3",
+   "kind": "question",
+   "text": "Describe how you will inspect your own work, record the results and report performance against the KPIs in Appendix 1.",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4,
+   "shared_group": "2.1-2.3",
+   "shared_words": 800
+  },
+  {
+   "ref": "2.4(a)",
+   "kind": "question",
+   "text": "Describe your complaints procedure and how you will respond to a complaint from a resident or Councillor.",
+   "word_limit": 200,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 2
+  },
+  {
+   "ref": "2.4(b)",
+   "kind": "question",
+   "text": "Explain how you will rectify defects and show evidence that they have been rectified.",
+   "word_limit": 150,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 1
+  },
+  {
+   "ref": "3.1",
+   "kind": "question",
+   "text": "Describe your health and safety management system, risk assessments for working near the public, the control of noise and vibration, and how you will deal with accidents and near misses.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "3.2",
+   "kind": "question",
+   "text": "Explain how you will keep lone workers safe, particularly in the cemetery and in the Community Wood.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "4.1",
+   "kind": "question",
+   "text": "Describe how you will meet the herbicide rules in the specification, what non-chemical methods you will use, and how you will record and report herbicide applications.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "4.2",
+   "kind": "question",
+   "text": "Explain how you will manage the biodiversity areas, protect nesting birds and pollinators, use only peat-free compost and mulches, and reduce carbon from the work.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "5.1",
+   "kind": "question",
+   "text": "Explain how you will carry out weekly, quarterly and annual play inspections, who will carry them out, and how you will close a piece of equipment when it is unsafe. Include safeguarding arrangements for working near children and the infant school at Wheatsheaf.",
+   "word_limit": 450,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "5.2",
+   "kind": "question",
+   "text": "Describe how your staff will behave and how you will plan work around funerals and visitors in the cemetery and the closed churchyard.",
+   "word_limit": 250,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "5.3",
+   "kind": "question",
+   "text": "Describe your arrangements for forecasting, pre-treating and out-of-hours response, including salt storage and spreader equipment.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "5.4",
+   "kind": "question",
+   "text": "Explain how you will keep the service going during staff shortages, machinery failure, flooding, drought and extreme heat.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "6.1",
+   "kind": "question",
+   "text": "Describe how you will manage the contract with the Council, including meetings, reporting, and any innovation you propose, such as software, drones, or robotic mowers, that will improve value.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 2
+  },
+  {
+   "ref": "7.1",
+   "kind": "question",
+   "text": "Describe the commitments you will make to create jobs, apprenticeships or work placements for local people, and how you will measure them.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 5
+  },
+  {
+   "ref": "7.2",
+   "kind": "question",
+   "text": "Describe the community benefits you will provide, such as volunteer days, support for local groups, local supply chain spend or carbon reduction. Commitments should be specific, measurable and costed, and you may refer to the Social Value Model themes.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 5
+  },
+  {
+   "ref": "M1",
+   "kind": "mandatory",
+   "text": "Public liability insurance of at least £10,000,000 per claim",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M2",
+   "kind": "mandatory",
+   "text": "Employer's liability insurance of at least £10,000,000",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M3",
+   "kind": "mandatory",
+   "text": "Professional indemnity insurance of at least £2,000,000 (for play inspection advice)",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M4",
+   "kind": "mandatory",
+   "text": "Minimum annual turnover of £400,000 in the most recent financial year",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M5",
+   "kind": "mandatory",
+   "text": "Membership of CHAS, SafeContractor, Constructionline or another SSIP-recognised scheme",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M6",
+   "kind": "mandatory",
+   "text": "At least one operative holding PA1 and PA6 (NPTC) certificates for pesticide application, on site whenever herbicide is applied",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M7",
+   "kind": "mandatory",
+   "text": "An RPII-registered routine or operational play inspector (or equivalent) available to the contract",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M8",
+   "kind": "mandatory",
+   "text": "Compliance with the Modern Slavery Act 2015, including a published statement where the bidder is required to produce one",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M9",
+   "kind": "mandatory",
+   "text": "Compliance with UK GDPR and the Data Protection Act 2018",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M10",
+   "kind": "mandatory",
+   "text": "Waste carrier registration (upper tier) with the Environment Agency",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M11",
+   "kind": "mandatory",
+   "text": "Completion of the Selection Questionnaire with no mandatory exclusion grounds",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "",
+   "kind": "deadline",
+   "text": "Tender submission deadline: 12:00 noon on Friday 19 March 2027",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  }
+ ]
+}
