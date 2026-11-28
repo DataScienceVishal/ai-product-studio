@@ -5,8 +5,9 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[3]
-KEYS = sorted((ROOT / "eval" / "keys").glob("S*.json"))
-MANIFEST = json.loads((ROOT / "demo-data" / "packs" / "manifest.json").read_text())
+MANIFEST = json.loads((ROOT / "demo-data" / "packs" / "manifest.json").read_text(encoding="utf-8"))
+# Keys are the held-out packs named in the manifest, so a missing key fails and demo-pack files never count.
+KEYS = [ROOT / "eval" / "keys" / f"{Path(n).stem}.json" for n in MANIFEST["heldout"]]
 
 # Quality + social value total for the questions in each pack (percent of tender score).
 QUALITY_TOTAL = {
@@ -28,11 +29,17 @@ EXTRA = {"case_studies", "shared_group", "shared_words"}
 
 
 def _load(p):
-    return json.loads(p.read_text())
+    return json.loads(p.read_text(encoding="utf-8"))
 
 
 def test_keys_present():
-    assert KEYS, "no pack keys"
+    missing = [p.name for p in KEYS if not p.is_file()]
+    assert len(KEYS) == 9 and not missing, f"held-out packs without a key: {missing}"
+
+
+@pytest.mark.parametrize("path", KEYS, ids=lambda p: p.stem[:3])
+def test_key_names_its_own_pack(path):
+    assert Path(_load(path)["pack"]).stem == path.stem
 
 
 @pytest.mark.parametrize("path", KEYS, ids=lambda p: p.stem[:3])
