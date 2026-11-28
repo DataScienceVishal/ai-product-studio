@@ -110,6 +110,16 @@ def _is_heading(line: str) -> bool:
     return not (_QUESTION_LEAD.match(line) and re.search(r"\byou(?:r|rs)?\b|\bus\b", line, re.I))
 
 
+# A short line that ends with a bracketed word limit and is followed by a separate body paragraph is the question's own heading,
+# even when it addresses the bidder ("How you will deliver social value (max 300 words)", T-207). Only used where the quote opens
+# its own block, so the heading is always followed by a separate body paragraph.
+_BRACKET_LIMIT_END = re.compile(r"\([^()]*\b\d[\d,]*\s*words?\b[^()]*\)$", re.I)
+
+
+def _is_bracketed_limit_heading(line: str) -> bool:
+    return bool(line) and "\n" not in line and len(line) <= 150 and bool(_BRACKET_LIMIT_END.search(line))
+
+
 def _heading_start(page_text: str, qstart: int) -> int:
     """Where the question's own block starts, so a limit stated in its heading before the quote is found (T-200). The block
     starts after the last blank line or numbered-question line before the quote; when the quote opens its block and the
@@ -123,7 +133,7 @@ def _heading_start(page_text: str, qstart: int) -> int:
         prev_blocks = list(re.finditer(r"\n[ \t]*\n", prev))
         pbs = prev_blocks[-1].end() if prev_blocks else 0
         line = prev[pbs:].strip()
-        if _is_heading(line):
+        if _is_heading(line) or _is_bracketed_limit_heading(line):
             start = pbs
     elif before[start:].count("\n"):  # the quote is inside a block: its own line, plus the line above if that is a heading
         block = before[start:]

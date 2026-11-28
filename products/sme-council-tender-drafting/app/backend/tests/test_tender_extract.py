@@ -403,3 +403,32 @@ def test_extraction_write_takes_the_pack_lock_first_so_a_concurrent_user_row_is_
     db.expire_all()
     rows = list(db.scalars(select(Requirement).where(Requirement.pack_id == pid)))
     assert len(rows) == 1 and rows[0].origin == "user"  # no duplicate proposal beside the user's row
+
+
+def test_a_bidder_addressed_heading_with_a_bracketed_limit_and_a_body_paragraph_is_a_heading():
+    """T-207 (a): "How you will deliver ..." says you, so the question-verb rule used to refuse it."""
+    q = "Describe the social value you will deliver."
+    assert ex.stated_word_limit("How you will deliver social value (max 300 words)\n\n" + q, q) == 300
+    assert ex.stated_word_limit("What we need from you (max 300 words)\n\nDescribe your mobilisation plan.",
+                                "Describe your mobilisation plan.") == 300
+    # still not borrowed: the previous question's limit not in brackets, or a sentence ending in a full stop
+    assert ex.stated_word_limit("Describe your approach in no more than 200 words\n\nDescribe your staffing plan.",
+                                "Describe your staffing plan.") is None
+    assert ex.stated_word_limit("Tell us about you (max 300 words).\n\nDescribe your staffing plan.",
+                                "Describe your staffing plan.") is None
+    # a bracket with no word limit is not a heading
+    assert ex.stated_word_limit("How you will deliver (see appendix 3)\n\nDescribe your staffing plan.",
+                                "Describe your staffing plan.") is None
+
+
+def test_known_limit_cases_hold():
+    """The cases in eval/extraction_known_limits.json (EVAL.md "Known limits") say what the rule does today."""
+    import json
+    from pathlib import Path
+    f = Path(__file__).resolve().parents[3] / "eval" / "extraction_known_limits.json"
+    cases = json.loads(f.read_text())["cases"]
+    assert len(cases) >= 4
+    for c in cases:
+        assert ex.stated_word_limit(c["page"], c["quote"]) == c["expected_today"], c["id"]
+        if c["status"] == "fixed":
+            assert c["expected_today"] == c["ideal"], c["id"]

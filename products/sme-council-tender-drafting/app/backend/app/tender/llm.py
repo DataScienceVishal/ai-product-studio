@@ -201,36 +201,40 @@ def run_task(spec: TaskSpec, payload: dict, tenant_id: uuid.UUID, budget: Budget
     user = build_user(payload, _fresh_nonce(payload))                  # 3.
     cap, repaired, doubled = spec.max_output_tokens, False, False
     total_in = total_out = 0
-    while True:
-        if before_call is not None:  # before the hold: a lost lease must not leave a reservation behind
-            before_call()
-        handle = budget.hold(reservation_estimate(provider, system, user, cap))   # 4.
-        try:
-            result = provider.complete(system, user, cap, json_schema=schema, effort=spec.effort)   # 5.
-        except AIUnavailable as error:
-            budget.settle(handle, error.input_tokens, error.output_tokens, "unknown", failed=True)
-            total_in, total_out = total_in + error.input_tokens, total_out + error.output_tokens
-            if error.truncated and allow_double_cap and not doubled:   # harness-only retry at twice the cap
-                cap, doubled = cap * 2, True
+    try:
+        while True:
+            if before_call is not None:  # before the hold: a lost lease must not leave a reservation behind
+                before_call()
+            handle = budget.hold(reservation_estimate(provider, system, user, cap))   # 4.
+            try:
+                result = provider.complete(system, user, cap, json_schema=schema, effort=spec.effort)   # 5.
+            except AIUnavailable as error:
+                budget.settle(handle, error.input_tokens, error.output_tokens, "unknown", failed=True)
+                total_in, total_out = total_in + error.input_tokens, total_out + error.output_tokens
+                if error.truncated and allow_double_cap and not doubled:   # harness-only retry at twice the cap
+                    cap, doubled = cap * 2, True
+                    continue
+                if error.truncated:
+                    raise TaskFailed("ai_truncated", "The AI could not finish this one. Retry later or edit by hand.") from None
+                raise
+            except Exception:
+                budget.settle(handle, 0, 0, "unknown", failed=True)
+                raise
+            budget.settle(handle, result.input_tokens, result.output_tokens, result.model)   # 7.
+            total_in, total_out = total_in + result.input_tokens, total_out + result.output_tokens
+            try:                                                           # 6.
+                output = spec.output_model.model_validate_json(result.text)
+            except ValidationError as error:
+                if repaired:
+                    raise TaskFailed("ai_invalid_output", "The AI answer was not in the expected form. Retry or edit by hand.") from None
+                repaired = True
+                problems = "; ".join(f"{_safe_loc(e['loc'])}: {e['type']}" for e in error.errors()[:5])
+                user = (user + "\n\nYour previous answer was not valid for the schema (" + problems +
+                        "). Reply again with only the corrected JSON.")
                 continue
-            if error.truncated:
-                raise TaskFailed("ai_truncated", "The AI could not finish this one. Retry later or edit by hand.") from None
-            raise
-        except Exception:
-            budget.settle(handle, 0, 0, "unknown", failed=True)
-            raise
-        budget.settle(handle, result.input_tokens, result.output_tokens, result.model)   # 7.
-        total_in, total_out = total_in + result.input_tokens, total_out + result.output_tokens
-        try:                                                           # 6.
-            output = spec.output_model.model_validate_json(result.text)
-        except ValidationError as error:
-            if repaired:
-                raise TaskFailed("ai_invalid_output", "The AI answer was not in the expected form. Retry or edit by hand.") from None
-            repaired = True
-            problems = "; ".join(f"{_safe_loc(e['loc'])}: {e['type']}" for e in error.errors()[:5])
-            user = (user + "\n\nYour previous answer was not valid for the schema (" + problems +
-                    "). Reply again with only the corrected JSON.")
-            continue
-        if getattr(provider, "cacheable", True):                       # 8.
-            _cache_put(sessions, tenant_id, key, output, total_in, total_out)
-        return TaskResult(output, False, total_in, total_out, result.model)
+            if getattr(provider, "cacheable", True):                       # 8.
+                _cache_put(sessions, tenant_id, key, output, total_in, total_out)
+            return TaskResult(output, False, total_in, total_out, result.model)
+    except AppError as error:  # tokens spent by the calls that did return, for the task total (T-207)
+        error.task_tokens = (total_in, total_out)
+        raise
