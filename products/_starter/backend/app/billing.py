@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import logging
 import re
 import time
 import uuid
@@ -21,6 +22,8 @@ from typing import Protocol
 import httpx
 
 from .errors import AppError
+
+log = logging.getLogger("app.billing")
 
 
 @dataclass(frozen=True)
@@ -247,6 +250,13 @@ CANCEL_WORST_CASE_SECONDS = _cancel_worst_case()
 assert CANCEL_WORST_CASE_SECONDS <= 10, "the cancel call runs inside a row lock: keep it under the idle-in-transaction timeout"
 
 
+# T-208 (T-181 S3): account deletion closes every recorded customer one after another, so each call gets a short budget:
+# 2 tries of 6 s with 1 s between (13 s worst case per customer instead of 3 x 20 s + backoff). A failure answers 503 and the
+# owner (or Stripe, for a webhook) retries; closing is idempotent (404 counts as done).
+CLOSE_REQUEST_TIMEOUT = 6.0
+CLOSE_ATTEMPTS = 2
+
+
 class StripeBilling:
     """Stripe test mode via its REST API. Not exercised against Stripe until test keys exist."""
     name = "stripe"
@@ -349,7 +359,17 @@ class StripeBilling:
             form[f"metadata[{key}]"] = value
             form[f"subscription_data[metadata][{key}]"] = value
         try:
-            body = self._call("POST", "/checkout/sessions", form, idempotency_key=f"checkout-{uuid.uuid4().hex}")
+            body = self._call("POST", "/checkout/sessions", form, idempotency_key=f"checkout-{uuid.uuid4().hex}",
+                              accept_error_codes=frozenset({"resource_missing"}) if customer_ref else frozenset())
+            if "error" in body:
+                # T-208 (T-181 S4): Stripe says something we sent does not exist. If it is the stored customer (an operator
+                # deleted it in the dashboard), retry once without it: Checkout makes a new customer, and the webhook then
+                # records it. Anything else (a coupon) is a rejection, as before.
+                if body["error"].get("param") != "customer":
+                    raise AppError(502, "billing_rejected", "The payment provider rejected the request.")
+                log.warning("stored customer is missing at the provider: checking out without it")
+                del form["customer"]
+                body = self._call("POST", "/checkout/sessions", form, idempotency_key=f"checkout-{uuid.uuid4().hex}")
         except AppError as error:
             # billing_rejected (any non-429 4xx, or a 2xx whose body _call could not parse) may mean the cached coupon was deleted or archived:
             # re-check it next time.
@@ -376,9 +396,11 @@ class StripeBilling:
 
     def close(self, customer_ref, subscription_ref) -> None:
         if customer_ref:  # deleting the customer cancels their subscriptions and removes their details
-            self._call("DELETE", f"/customers/{customer_ref}")
+            self._call("DELETE", f"/customers/{quote(str(customer_ref), safe='')}",
+                       timeout=CLOSE_REQUEST_TIMEOUT, attempts=CLOSE_ATTEMPTS)
         elif subscription_ref:
-            self._call("DELETE", f"/subscriptions/{subscription_ref}")
+            self._call("DELETE", f"/subscriptions/{quote(str(subscription_ref), safe='')}",
+                       timeout=CLOSE_REQUEST_TIMEOUT, attempts=CLOSE_ATTEMPTS)
 
     def cancel_subscription(self, subscription_ref) -> None:
         """404 (already gone) counts as done. Stripe's docs do not say what DELETE answers for a subscription that is

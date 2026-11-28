@@ -146,7 +146,10 @@ because delayed payment methods can report `active` before the money arrives).
   billing event reveals is recorded in `billing_customers`. Account deletion deletes all of them at the provider first
   (the stored one with its subscription, then the others); a failure answers 503 `billing_unavailable`, nothing is
   deleted, and the list stays, so a retry finishes the job. A customer already recorded for another tenant is never
-  stored for this one.
+  stored for this one. (T-208) Deletion re-reads the list under a lock on the subscription row before it deletes, so a
+  customer recorded meanwhile is closed too. A paid checkout that arrives after the account is gone has its customer
+  and subscription closed by the webhook (503 and redelivery if that fails). Closing uses a 6 s timeout and 2 tries per
+  customer. If a stored customer no longer exists at Stripe (deleted in the dashboard), checkout retries once without it.
 - **Trial and period end.** A failed first payment (a never-activated subscription going past_due, expired or deleted) does
   not end the free trial early. After a paid checkout the app reads the subscription from Stripe to store its period end;
   if that read fails, the next renewal event sets it.

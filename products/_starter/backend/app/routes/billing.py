@@ -144,8 +144,9 @@ def _apply_update(db: Session, update: BillingUpdate, provider: str, billing=Non
         return False
     # Lock the row, so two webhooks delivered at once apply one after the other and the order check holds.
     sub = db.scalar(select(Subscription).where(Subscription.tenant_id == update.tenant_id).with_for_update())
-    if sub is None:  # the tenant deleted their account; keep the event id, change nothing
+    if sub is None:  # the tenant deleted their account; keep the event id, change nothing in our tables
         db.commit()
+        _close_orphan(db, update, provider, billing)
         return True
     if update.customer_ref:  # T-181 (T-179 M1): remember every customer, so account deletion can remove them all
         if not _record_customer(db, update.tenant_id, provider, update.customer_ref):
@@ -259,13 +260,44 @@ def _apply_update(db: Session, update: BillingUpdate, provider: str, billing=Non
     return True
 
 
+def _close_orphan(db: Session, update: BillingUpdate, provider: str, billing) -> None:
+    """T-208 (T-181 S1): an event for a tenant that no longer exists (a checkout opened before the account was deleted and
+    paid after). Its customer and subscription were never in our tables, so deletion could not remove them and they would
+    bill for ever. Close them at the provider, unless a live tenant has recorded that customer (then it is theirs).
+    On failure forget the event id and answer 503, so the provider redelivers and the close is tried again."""
+    customer = update.customer_ref
+    if customer and db.scalar(select(BillingCustomer.id).where(BillingCustomer.provider == provider,
+                                                               BillingCustomer.customer_ref == customer)) is not None:
+        return  # a live tenant owns this customer: never delete it
+    subscription = update.provider_ref if update.starts_subscription else None
+    if billing is None or not (customer or subscription):
+        return
+    try:
+        billing.close(customer, subscription)
+    except Exception as error:
+        log.error("could not close the customer of a deleted tenant (will be retried on redelivery)",
+                  extra={"tenant_id": str(update.tenant_id)}, exc_info=True)
+        db.execute(delete(BillingEvent).where(BillingEvent.id == update.event_id))
+        db.commit()
+        raise AppError(503, "billing_unavailable", "Could not close the customer yet. Try again.") from error
+    log.warning("closed the payment-provider customer of a deleted tenant", extra={"tenant_id": str(update.tenant_id)})
+
+
 def _record_customer(db: Session, tenant_id: uuid.UUID, provider: str, ref: str) -> bool:
     """Remember a provider customer of this tenant (once per (provider, ref)); committed with the caller's next commit.
-    False if that customer is already recorded for a different tenant (it is never re-assigned)."""
+    False if that customer is already recorded for a different tenant (it is never re-assigned).
+    The insert is flushed inside a savepoint, so a concurrent insert of the same (provider, ref) by another tenant fails
+    here (and is answered False) instead of at some later flush, where a savepoint's `except IntegrityError` could hide it.
+    Customers recorded under another provider name than the current one are never closed by account deletion (it only
+    looks at the current provider); they go with the tenant by cascade. Fine for `mock`; revisit if the provider changes."""
     owner_id = db.scalar(select(BillingCustomer.tenant_id).where(BillingCustomer.provider == provider,
                                                                  BillingCustomer.customer_ref == ref))
     if owner_id is None:
-        db.add(BillingCustomer(tenant_id=tenant_id, provider=provider, customer_ref=ref))
+        try:
+            with db.begin_nested():
+                db.add(BillingCustomer(tenant_id=tenant_id, provider=provider, customer_ref=ref))
+        except IntegrityError:
+            return False
         return True
     return owner_id == tenant_id
 
