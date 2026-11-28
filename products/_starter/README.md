@@ -59,6 +59,14 @@ and in-order webhooks, account deletion at the provider, log redaction and the r
 Run the retention purge daily: `python -m app.maintenance purge`.
 
 Run `python -m app.maintenance cancels` every few minutes or hourly (T-175): it retries subscription cancels that failed after a new checkout replaced a lapsed subscription (table `pending_cancels`, written in the takeover transaction; also retried on the tenant's next billing event). It prints counts. A failing row is retried with backoff (2^attempts minutes, at most 24 h; the webhook retries only rows with fewer than 3 failures), logged at ERROR, and at its 10th failure once at CRITICAL (`pending cancel needs operator`: cancel it by hand at the provider), then at WARNING. In Azure it runs as the Container Apps job `caj-<slug>-cancels` every 30 minutes (`infra/main.bicep`, `cancelsSchedule`), next to the purge job. What is stored and for how long is in `DATA.md`.
+**A stuck pending cancel blocks account deletion (T-210, T-182 S5).** `DELETE /api/account` first tries the tenant's pending cancels and answers 503 (account kept) while one is still live. That is on purpose: deleting the account would leave a subscription billing with nobody to tell. If the provider keeps rejecting one (the CRITICAL log `pending cancel needs operator`), an operator unblocks the owner like this:
+1. Find the row: `SELECT id, ref, attempts, last_error FROM pending_cancels WHERE tenant_id = '<tenant id>';` (`ref` is the Stripe subscription id).
+2. Cancel it by hand at Stripe (Dashboard, Subscriptions, the `ref`, Cancel subscription; or `DELETE /v1/subscriptions/<ref>`). Check its status is `canceled`.
+3. Delete the row: `DELETE FROM pending_cancels WHERE id = '<id>';`. Do this only after step 2, or the subscription keeps billing untracked.
+4. Tell the owner to delete the account again.
+
+**Refunds owed (T-210, T-182 S2/S3).** A duplicate subscription is cancelled and its first payment refunded. The log line `refund_owed` at ERROR means a refund did not happen and may need doing by hand at Stripe: `reason=no_paid_invoice` (no paid invoice found; Stripe is asked to redeliver for 24 h, then the event is acknowledged and the error stays in the log) or `error=billing_rejected` (Stripe refused the refund for good, for example a disputed charge; acknowledged, not retried).
+
 Security findings and their status are in `SECURITY.md`; the code review is in `reviews/`.
 
 ## One image, one origin

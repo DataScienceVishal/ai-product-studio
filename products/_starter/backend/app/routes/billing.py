@@ -265,8 +265,10 @@ def _apply_update(db: Session, update: BillingUpdate, provider: str, billing=Non
         # T-210 (T-182 S1): do the provider calls FIRST and store the event id after both succeed, like the orphan path.
         # A crash in between leaves no event id, so the redelivery redoes the cancel and the refund, which are
         # idempotent (a cancelled subscription counts as done; the refund key or charge_already_refunded covers a repeat).
-        # The rollback drops the flushed id and releases the row lock, so no transaction is open during the calls.
-        db.rollback()
+        # Drop the flushed id and commit: that keeps the customer recorded above (account deletion must close it too)
+        # and releases the row lock, so no transaction is open during the provider calls.
+        db.execute(delete(BillingEvent).where(BillingEvent.id == update.event_id))
+        db.commit()
         log.warning("duplicate subscription for a tenant with an active one: cancelling the extra",
                     extra={"tenant_id": str(update.tenant_id), "extra_subscription": update.provider_ref})
         if billing is not None:
