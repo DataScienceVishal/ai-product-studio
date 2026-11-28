@@ -7,6 +7,7 @@
 | `fixture_drafts.json` | 20 hand-written drafts (F01 to F20) with `[E-n]` citations and the `retrieved_ids` the checker is given. |
 | `seeded_claims.json` | The 40 seeded false claims (2 per draft; 10 each of number, client, accreditation, date). Each `span` occurs exactly once in its draft. Used by A6a. |
 | `evidence_map.json` | How each `[E-n]` was derived (file, passage index, sha256, first 80 characters), from the app's own chunker. |
+| `retrieval_labels.json` | qa's hand labels for the 3 demo packs: per question, the relevant E-numbers (`relevant`), the ones that must be found (`primary`), and why. A diagnostic, not a bar. Run `python -m eval.run retrieval` on a freshly seeded demo tenant: Recall@8 (no model call, writes `eval/results/retrieval.json`). Below 0.8, the first fix is query expansion. |
 
 E-numbers assume a fresh demo tenant seeded by `eval/seed.py`. seed.py skips `demo-data/evidence/README.md` (it lists the deliberate gaps and would leak the traps), so E-1 to E-32 are files 01 to 32.
 
@@ -16,7 +17,6 @@ E-numbers assume a fresh demo tenant seeded by `eval/seed.py`. seed.py skips `de
 
 ## Still to come (once the tender packs exist, Q-20)
 - Answer keys for the 9 held-out packs.
-- Retrieval labels for the 3 demo packs.
 
 ## Definitions and scoring rules (pre-registered)
 - Seeded claim type `client`: an invented client (S03, S16), or a real library client credited with work it never had (the other 8). `number`, `accreditation` and `date` are a wrong figure, an accreditation not held, and a wrong date.
