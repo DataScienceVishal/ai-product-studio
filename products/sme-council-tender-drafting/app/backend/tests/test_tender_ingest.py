@@ -291,9 +291,11 @@ def test_iso_14001_ranks_over_iso_9001(client):
 
 
 def test_must_have_tokens():
-    pats = [p.pattern for p, _ in must_have_tokens("Hold ISO14001, CHAS, Cyber Essentials and a 2023 audit? GDPR")]
+    pats = [p.pattern for p, _, _ in must_have_tokens("Hold ISO14001, CHAS, Cyber Essentials and a 2023 audit? GDPR")]
     assert len(pats) >= 5
-    assert any(p.search("we hold ISO 14001") for p, _ in must_have_tokens("ISO14001"))
+    kinds = {p.pattern: k for p, _, k in must_have_tokens("ISO14001 and CCTV in 2023")}
+    assert sorted(kinds.values()) == ["code", "relative", "relative"]
+    assert any(p.search("we hold ISO 14001") for p, _, _ in must_have_tokens("ISO14001"))
 
 
 def test_top_8_with_at_most_3_per_document(client, db):
@@ -538,3 +540,47 @@ def test_the_code_boost_still_beats_any_rank_and_is_not_scaled(client, db):
     hits = search_evidence(db, tid, "gritting and salting of winter roads fleet of gritters depot ISO 14001")
     assert hits[0].document_name == "code.txt"
     assert hits[0].score - hits[0].rank == pytest.approx(1.0)
+
+
+_STRONG = "Gritting\n\nGritting and salting of winter roads with our fleet of gritters from the depot."
+
+
+def test_four_acronyms_in_a_weak_passage_do_not_overtake_a_clearly_stronger_one(client, db):
+    weak = "Other\n\nThe depot holds CCTV, GPS, RFID and CRM records. " + tf.words(30, "stores tea")
+    _seed_boost(client, {"strong.txt": _STRONG, "weak.txt": weak})
+    tid = db.scalar(select(Tenant.id))
+    hits = search_evidence(db, tid, "gritting and salting of winter roads with our fleet of gritters depot CCTV GPS RFID CRM")
+    by = {h.document_name: h for h in hits}
+    assert hits[0].document_name == "strong.txt"
+    assert by["weak.txt"].score - by["weak.txt"].rank == pytest.approx(0.25 * hits[0].rank)  # capped at one token's worth
+
+
+def test_the_boost_of_three_tokens_is_exactly_a_quarter_of_the_best_rank(client, db):
+    weak = "Other\n\nThe depot holds CCTV, GPS and RFID records. " + tf.words(30, "stores tea")
+    _seed_boost(client, {"strong.txt": _STRONG, "weak.txt": weak})
+    tid = db.scalar(select(Tenant.id))
+    hits = search_evidence(db, tid, "gritting and salting of winter roads with our fleet of gritters depot CCTV GPS RFID")
+    best = max(h.rank for h in hits)
+    weak_hit = next(h for h in hits if h.document_name == "weak.txt")
+    assert weak_hit.score - weak_hit.rank == pytest.approx(0.25 * best)
+
+
+def test_the_floor_tests_rank_so_a_relative_boost_cannot_lift_a_weak_hit_over_it(client, db):
+    weak = "Other\n\nThe depot holds CCTV records. " + tf.words(30, "stores tea")
+    _seed_boost(client, {"weak.txt": weak})
+    tid = db.scalar(select(Tenant.id))
+    q = "Describe your CCTV, vetting of drivers, subcontractor management, social value and carbon reduction plans depot"
+    h = search_evidence(db, tid, q)[0]
+    floor = (h.rank + h.score) / 2
+    assert h.rank < floor < h.score                              # the boost alone would clear this floor
+    assert search_evidence(db, tid, q, min_score=floor) == []
+
+
+def test_a_weak_hit_with_a_code_match_passes_the_floor(client, db):
+    weak = "Cert\n\nWe hold ISO 14001 for the depot. " + tf.words(30, "stores tea")
+    _seed_boost(client, {"code.txt": weak})
+    tid = db.scalar(select(Tenant.id))
+    q = "Describe your ISO 14001, vetting of drivers, subcontractor management, social value and carbon reduction plans"
+    h = search_evidence(db, tid, q)[0]
+    assert h.rank < 0.3
+    assert [x.document_name for x in search_evidence(db, tid, q, min_score=0.3)] == ["code.txt"]

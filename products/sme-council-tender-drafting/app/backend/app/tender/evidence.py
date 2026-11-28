@@ -30,20 +30,21 @@ def allocate_numbers(db: Session, tenant_id: uuid.UUID, count: int) -> int:
         "RETURNING next_no - :n"), {"t": tenant_id, "n": count}).scalar_one()
 
 
-def must_have_tokens(question: str) -> list[tuple[re.Pattern, float]]:
-    found: dict[str, float] = {}
+def must_have_tokens(question: str) -> list[tuple[re.Pattern, float, str]]:
+    """(pattern, weight, kind) per token; kind is "code" (absolute boost) or "relative" (year/acronym, a fraction of the best rank)."""
+    found: dict[str, tuple[float, str]] = {}
     for m in _CODES.finditer(question):
-        found[re.sub(r"\s+", " ", m.group(0).strip()).lower()] = CODE_BOOST
+        found[re.sub(r"\s+", " ", m.group(0).strip()).lower()] = (CODE_BOOST, "code")
     for m in _YEAR.finditer(question):
-        found.setdefault(m.group(0), TOKEN_BOOST)  # weights below CODE_BOOST are relative (see search_evidence)
+        found.setdefault(m.group(0), (TOKEN_BOOST, "relative"))
     for m in _ACRONYM.finditer(question):
         if m.group(0) not in _ACRONYM_SKIP:
-            found.setdefault(m.group(0).lower(), TOKEN_BOOST)
+            found.setdefault(m.group(0).lower(), (TOKEN_BOOST, "relative"))
     out = []
-    for tok, weight in found.items():
+    for tok, (weight, kind) in found.items():
         tok = re.sub(r"^iso\s?(?=\d)", "iso ", tok)  # ISO14001 and ISO 14001 are the same token
         pattern = r"\s*".join(re.escape(part) for part in re.split(r"\s+", tok))
-        out.append((re.compile(rf"(?<![A-Za-z0-9]){pattern}(?![A-Za-z0-9])", re.I), weight))
+        out.append((re.compile(rf"(?<![A-Za-z0-9]){pattern}(?![A-Za-z0-9])", re.I), weight, kind))
     return out
 
 
@@ -111,8 +112,11 @@ def search_evidence(db: Session, tenant_id: uuid.UUID, question: str, *, limit: 
     """Top `limit` passages for the question: OR full-text candidates (a passage must hold a word of the question), rescored by
     BM25 so rare words count more than "describe" and "arrangements", then the must-have token boost and a per-document cap.
     `rank` is absolute: the BM25 score as a fraction of the most the question's terms could score (idf times k1+1, summed),
-    so it is in (0, 1) and a weak match stays low. A code boost of 1.0 therefore always beats any rank; a year or acronym adds 0.25 times the best candidate's rank, so it reorders close candidates only, and `min_score`
-    (RETRIEVAL_FLOOR) can reject a weak top hit. Four statements per search."""
+    so it is in (0, 1) and a weak match stays low. A code boost of 1.0 therefore always beats any rank. Year and acronym
+    tokens together add at most TOKEN_BOOST x the best candidate's rank (min(sum of matching weights, 1) x TOKEN_BOOST x best),
+    so they reorder close candidates only. `min_score` (RETRIEVAL_FLOOR) tests `rank`, never the boosted score, so a relative
+    boost cannot lift a weak search over the floor; a passage holding an asked-for code passes it regardless. Sorting is by
+    score. Four statements per search."""
     question = (question or "")[:2000]
     own = list(dict.fromkeys(_lexemes(db, question) if question.strip() else []))
     if not own:
@@ -126,17 +130,21 @@ def search_evidence(db: Session, tenant_id: uuid.UUID, question: str, *, limit: 
     tokens = must_have_tokens(question)
     scored = [(r, raw / ceiling) for r in rows if (raw := _bm25(r.tv, idf, float(st.avg_len))) > 0]
     best = max((rank for _, rank in scored), default=0.0)
-    hits = []
+    hits, coded = [], set()
     for r, rank in scored:
-        # a code is absolute (+1.0 beats any rank); a year or acronym is relative to this search's best rank
-        boost = min(MAX_BOOST, sum(w if w >= CODE_BOOST else w * best
-                                   for pat, w in tokens if pat.search(r.heading + " " + r.text)))
+        hay = r.heading + " " + r.text
+        code = sum(w for pat, w, kind in tokens if kind == "code" and pat.search(hay))
+        rel = sum(w for pat, w, kind in tokens if kind == "relative" and pat.search(hay))
+        # code: absolute (+1.0 beats any rank); year/acronym: relative, summed part capped at one token's worth
+        boost = min(MAX_BOOST, code + min(rel / TOKEN_BOOST, 1.0) * TOKEN_BOOST * best)
+        if code:
+            coded.add(r.id)
         hits.append(Hit(r.id, r.display_no, r.document_id, r.filename, r.page_from, r.page_to, r.heading, r.text,
                         rank, rank + boost))
     hits.sort(key=lambda h: (-h.score, h.display_no))
     out, per = [], {}
     for h in hits:
-        if h.score < min_score or per.get(h.document_id, 0) >= per_doc:
+        if (h.rank < min_score and h.id not in coded) or per.get(h.document_id, 0) >= per_doc:
             continue
         per[h.document_id] = per.get(h.document_id, 0) + 1
         out.append(h)

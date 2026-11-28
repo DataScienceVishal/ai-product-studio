@@ -1,7 +1,8 @@
 """Seed the demo tenant: the fictional firm's evidence library, the demo tender packs and the AI cache (S9). No model calls.
 
-    DEMO_SEED_PASSWORD=... python -m eval.seed        (run from the product directory; DATABASE_URL as for the app)
+    UPLOADS_PER_HOUR=1000 UPLOAD_PAGES_PER_DAY=100000 DEMO_SEED_PASSWORD=... python -m eval.seed        (run from the product directory; DATABASE_URL as for the app)
 
+The raised upload limits are needed: the default rate limit rejects the evidence library upload.
 Packs come from whatever files exist in demo-data/packs/ (.pdf .docx .txt .md). With none it stops with SeedError: it
 never invents a pack. `demo-data/packs/manifest.json` (optional) may list {"demo": ["file", ...]}; otherwise the first 3
 files in name order are the demo packs. The cache step copies every recording under

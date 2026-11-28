@@ -563,3 +563,7 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 
 ## 2026-11-28T10:30Z, run 1639: T-214 reviewer CHANGES; drop the synonym map
 - Reviewer (reviews/T-214-review.md) found the SYNONYMS gain (0.760 to 0.817 recall@8) came from 6 entries that map labelled questions to their labelled passages' headings; general entries added 0.000; also a BM25 length-unit bug. Decision: remove the synonym map entirely and ship BM25 only with consistent length units, honest numbers (~0.75 at k=8, still below the 0.8 trigger). Restore a meaningful RETRIEVAL_FLOOR (no forced 1.0 top rank) and cut DB round trips. Closing the remaining gap (APP_PASSAGES vs tokens, rerank, label-independent vocabulary) is a separate follow-up, measured on held-out packs only after the freeze.
+
+## 2026-11-28T11:25Z, run 111d: T-216 slice 2 boost cap and floor rule
+- Several year/acronym tokens no longer add up: the relative boost is capped at one token's worth (0.25 x best rank), so it only reorders close candidates however many acronyms a question names (review finding 1).
+- RETRIEVAL_FLOOR tests `rank`, not `score`, so a relative boost cannot rescue a weak search; a passage holding an asked-for code (ISO, CHAS, Cyber Essentials...) passes the floor anyway, because holding the certificate is evidence (finding 2). Reversible; L1 tunes the floor value.

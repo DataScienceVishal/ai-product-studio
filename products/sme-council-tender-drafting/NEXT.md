@@ -1,3 +1,11 @@
+# STATUS (T-216 slice 2) - relative boost capped, floor tests rank, must_have_tokens returns a kind; recall unchanged
+
+Branch `p/sme-council-tender-drafting/T-216`. Not merged. No migrations, no model calls.
+- Done (review findings 1, 2, 5): year/acronym part = min(sum of matching weights, 1) x 0.25 x best (code +1.0 absolute, total cap 3.0); `RETRIEVAL_FLOOR` tests `rank`, except a hit with a code match passes; `must_have_tokens` returns (pattern, weight, kind) with kind "code"/"relative", all callers updated. DESIGN 4.2 updated; EVAL.md and `eval/seed.py` document `UPLOADS_PER_HOUR=1000 UPLOAD_PAGES_PER_DAY=100000` for the seed.
+- Recall (pooled, fresh DB, alembic upgrade head, seed, `python -m eval.run retrieval`): before 0.745 (k=8) / 0.626 (k=5) / primary hit k=8 0.964; after 0.745 / 0.626 / 0.964 (unchanged, so no EVAL.md number note). Still below the 0.8 trigger. `eval/results/retrieval.json` refreshed.
+- Tests: 4 new in `tests/test_tender_ingest.py` (four acronyms do not overtake, 3-token boost is exactly 0.25 x best, floor rejects weak boosted hit, floor keeps code match); `test_must_have_tokens` checks kinds.
+- Left for T-216: APP_PASSAGES 5 -> 6-8, rerank or criteria expansion, STATS cache, one held-out run after the freeze.
+
 # STATUS (T-216 slice 1) - year/acronym boost relative to the best rank; recall@8 0.745, still below the 0.8 trigger
 
 Branch `p/sme-council-tender-drafting/T-216` (off main). Not merged. No migrations, no model calls.
