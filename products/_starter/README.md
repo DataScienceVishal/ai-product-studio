@@ -179,6 +179,7 @@ See `NEXT.md`. The Azure deploy is designed in `ADR/0002-azure-deploy.md` (Bicep
 `.github/workflows/_starter-deploy.yml`); it creates nothing until Vishal approves the costs (Q-5). Also open:
 provisioning Azure Cache for Redis (costs money, ask first; the code is built and tested, see `RATE_LIMIT_REDIS_URL`)
 before running more than one replica, and a real email adapter (paid, needs approval). Frontend unit tests are done (vitest).
+Known gap: when checkout retries without a customer that is missing at Stripe, the stale `subscriptions.provider_customer` stays until the next webhook for the new customer overwrites it (the provider layer cannot reach the row).
 
 ## Azure OpenAI API
 
