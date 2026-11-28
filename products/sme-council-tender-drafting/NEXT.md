@@ -1,3 +1,11 @@
+# STATUS (T-216 slice 4) - RM3 pseudo-relevance feedback added and enabled; recall@8 0.745 -> 0.764 (below the 0.8 trigger); no model calls, no spend
+
+Branch `p/sme-council-tender-drafting/T-216-s4` (off main). Not merged. No migrations. Frozen keys, FROZEN.sha256 and packs untouched.
+- Method (label-free, parameters fixed in DESIGN 4.2 before measuring): RM3 over the first-pass candidates, `PRF_FB_DOCS` 10, `PRF_FB_TERMS` 10, `PRF_ORIG_WEIGHT` 0.5 (Anserini defaults), term weight = rank-weighted tf/length x idf. `PRF_ENABLED` in `tender/evidence.py` turns it off (old ranking exactly). `Hit.rank` and `RETRIEVAL_FLOOR` stay first-pass; code boost +1.0 and the relative year/acronym boost unchanged (added to the second-pass rank). One extra tenant-scoped statement (`_DF`) per search. No bigram/proximity method tried.
+- Measured once (fresh DB, alembic upgrade head, seed with `UPLOADS_PER_HOUR=1000 UPLOAD_PAGES_PER_DAY=100000`, `python -m eval.run retrieval`; PRF off then on, same seed): pooled recall@8 0.745 -> 0.764; primary hit 0.964 -> 1.000; all_primaries 0.821 -> 0.821. Per pack recall: S04 0.669 -> 0.646, S08 0.833 -> 0.769, S12 0.733 -> 0.867. Latency per search 7.5 -> 45 ms (30 questions, 32-passage tenant). Ship rule met, so enabled. Mixed per pack and 28 questions: treat the gain as noise-level. Still below 0.8.
+- Tests: 7 new in `tests/test_tender_ingest.py` (off = first-pass ranking, deterministic, rank unchanged, floor/code semantics, tenant isolation, weight model, a-priori parameters); the 4 boost-arithmetic tests now pin `PRF_ENABLED` False.
+- Left: embeddings (ask-first), criteria in extraction, the held-out run after the freeze. If the 45 ms matters, cache or fold the feedback-term df into the `_STATS` pass.
+
 # STATUS (T-218) - pack builder CLI safety; no pack, key or frozen file touched
 
 Branch `p/sme-council-tender-drafting/T-218` (off main). No model calls, no spend.

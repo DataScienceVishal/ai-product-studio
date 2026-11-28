@@ -4,6 +4,8 @@ import os
 import tempfile
 import uuid
 
+import re
+
 import pytest
 from sqlalchemy import select, text
 
@@ -521,7 +523,8 @@ def test_an_acronym_passage_outranks_an_otherwise_equal_passage(client, db):
     assert hits[0].score > hits[1].score
 
 
-def test_a_strong_match_is_not_overtaken_by_a_weak_acronym_passage(client, db):
+def test_a_strong_match_is_not_overtaken_by_a_weak_acronym_passage(client, db, monkeypatch):
+    monkeypatch.setattr("app.tender.evidence.PRF_ENABLED", False)  # boost arithmetic is stated against the first-pass rank
     strong = "Gritting\n\nGritting and salting of winter roads with our fleet of gritters from the depot."
     weak = "Other\n\nThe depot also holds CCTV records for the yard." + " " + tf.words(30, "stores tea")
     _seed_boost(client, {"strong.txt": strong, "weak.txt": weak})
@@ -532,7 +535,8 @@ def test_a_strong_match_is_not_overtaken_by_a_weak_acronym_passage(client, db):
     assert by["weak.txt"].score - by["weak.txt"].rank == pytest.approx(0.25 * hits[0].rank)  # relative, not +0.25
 
 
-def test_the_code_boost_still_beats_any_rank_and_is_not_scaled(client, db):
+def test_the_code_boost_still_beats_any_rank_and_is_not_scaled(client, db, monkeypatch):
+    monkeypatch.setattr("app.tender.evidence.PRF_ENABLED", False)  # boost arithmetic is stated against the first-pass rank
     strong = "Gritting\n\nGritting and salting of winter roads with our fleet of gritters from the depot."
     code = "Cert\n\nWe hold ISO 14001 for the depot. " + tf.words(30, "stores tea")
     _seed_boost(client, {"strong.txt": strong, "code.txt": code})
@@ -545,7 +549,8 @@ def test_the_code_boost_still_beats_any_rank_and_is_not_scaled(client, db):
 _STRONG = "Gritting\n\nGritting and salting of winter roads with our fleet of gritters from the depot."
 
 
-def test_four_acronyms_in_a_weak_passage_do_not_overtake_a_clearly_stronger_one(client, db):
+def test_four_acronyms_in_a_weak_passage_do_not_overtake_a_clearly_stronger_one(client, db, monkeypatch):
+    monkeypatch.setattr("app.tender.evidence.PRF_ENABLED", False)  # boost arithmetic is stated against the first-pass rank
     weak = "Other\n\nThe depot holds CCTV, GPS, RFID and CRM records. " + tf.words(30, "stores tea")
     _seed_boost(client, {"strong.txt": _STRONG, "weak.txt": weak})
     tid = db.scalar(select(Tenant.id))
@@ -555,7 +560,8 @@ def test_four_acronyms_in_a_weak_passage_do_not_overtake_a_clearly_stronger_one(
     assert by["weak.txt"].score - by["weak.txt"].rank == pytest.approx(0.25 * hits[0].rank)  # capped at one token's worth
 
 
-def test_the_boost_of_three_tokens_is_exactly_a_quarter_of_the_best_rank(client, db):
+def test_the_boost_of_three_tokens_is_exactly_a_quarter_of_the_best_rank(client, db, monkeypatch):
+    monkeypatch.setattr("app.tender.evidence.PRF_ENABLED", False)  # boost arithmetic is stated against the first-pass rank
     weak = "Other\n\nThe depot holds CCTV, GPS and RFID records. " + tf.words(30, "stores tea")
     _seed_boost(client, {"strong.txt": _STRONG, "weak.txt": weak})
     tid = db.scalar(select(Tenant.id))
@@ -584,3 +590,101 @@ def test_a_weak_hit_with_a_code_match_passes_the_floor(client, db):
     h = search_evidence(db, tid, q)[0]
     assert h.rank < 0.3
     assert [x.document_name for x in search_evidence(db, tid, q, min_score=0.3)] == ["code.txt"]
+
+
+# ---- T-216 slice 4: RM3 pseudo-relevance feedback (DESIGN 4.2) ----
+
+def _prf_library(client):
+    docs = {
+        "top1.txt": "Winter A\n\nGritting of roads uses brine and a spreader fitted to each gritter before the frost.",
+        "top2.txt": "Winter B\n\nGritting plan: brine tanks and the spreader calibration are checked before every gritting run.",
+        "plain.txt": "Plain\n\nGritting is one of our services. We also run a canteen, a library and a swimming pool for staff.",
+        "brine.txt": "Brine\n\nGritting crews fill the brine tank and test the spreader nozzles before frost.",
+    }
+    for name, body in docs.items():
+        assert up(client, "/api/evidence/documents", body.encode(), name).status_code == 201
+
+
+def _ranked(db, tid, q, **kw):
+    return [(h.document_name, round(h.rank, 9), round(h.score, 9)) for h in search_evidence(db, tid, q, **kw)]
+
+
+def test_prf_off_is_the_first_pass_ranking_exactly(client, db, monkeypatch):
+    import app.tender.evidence as ev
+    _prf_library(client)
+    tid = db.scalar(select(Tenant.id))
+    monkeypatch.setattr(ev, "PRF_ENABLED", False)
+    off = _ranked(db, tid, "gritting")
+    assert off and all(rank == score for _, rank, score in off)       # no boost, no second pass: score is the first-pass rank
+    assert [r for _, r, _ in off] == sorted((r for _, r, _ in off), reverse=True)
+
+
+def test_prf_is_deterministic_and_keeps_rank_as_first_pass(client, db, monkeypatch):
+    import app.tender.evidence as ev
+    _prf_library(client)
+    tid = db.scalar(select(Tenant.id))
+    monkeypatch.setattr(ev, "PRF_ENABLED", False)
+    off = {n: r for n, r, _ in _ranked(db, tid, "gritting")}
+    monkeypatch.setattr(ev, "PRF_ENABLED", True)
+    a = _ranked(db, tid, "gritting")
+    assert a == _ranked(db, tid, "gritting")
+    assert {n: r for n, r, _ in a} == off                              # Hit.rank (what the floor tests) is the first-pass value
+    assert all(0 < s < 1 for _, _, s in a)
+
+
+def test_prf_rewards_passages_that_share_terms_with_the_top_passages(client, db, monkeypatch):
+    import app.tender.evidence as ev
+    _prf_library(client)
+    tid = db.scalar(select(Tenant.id))
+    monkeypatch.setattr(ev, "PRF_ENABLED", True)
+    names = [n for n, _, _ in _ranked(db, tid, "gritting")]
+    assert names.index("plain.txt") == len(names) - 1                  # shares only the query word with the feedback passages
+
+
+def test_prf_floor_and_code_semantics_unchanged(client, db, monkeypatch):
+    import app.tender.evidence as ev
+    _prf_library(client)
+    seed_iso(client)
+    tid = db.scalar(select(Tenant.id))
+    for on in (False, True):
+        monkeypatch.setattr(ev, "PRF_ENABLED", on)
+        assert search_evidence(db, tid, "gritting brine", min_score=0.99) == []        # a floor above every first-pass rank
+        hits = search_evidence(db, tid, "ISO 14001 gritting", min_score=0.99)
+        assert hits and all(re.search(r"ISO\s?14001", h.heading + " " + h.text) for h in hits)  # only code matches pass the floor
+        top = search_evidence(db, tid, "ISO 14001 environmental gritting")
+        assert top and re.search(r"ISO\s?14001", top[0].heading + " " + top[0].text)    # code +1.0 still wins
+
+
+def test_prf_does_not_see_another_tenant(client, new_client, db, monkeypatch):
+    import app.tender.evidence as ev
+    monkeypatch.setattr(ev, "PRF_ENABLED", True)
+    _prf_library(client)
+    tid = db.scalar(select(Tenant.id))
+    before = _ranked(db, tid, "gritting")
+    other = new_client(); sign_up(other, email="c@c.test", company="C")
+    for i in range(6):
+        assert up(other, "/api/evidence/documents", f"Item {i}\n\nGritting with salt, scrapers, shovels and snow ploughs number {i}.".encode(), f"z{i}.txt").status_code == 201
+    assert _ranked(db, tid, "gritting") == before
+    other_tid = db.scalar(select(Tenant.id).where(Tenant.name == "C"))
+    assert all(n.startswith("z") for n, _, _ in _ranked(db, other_tid, "gritting"))
+
+
+def test_prf_weights_are_a_normalised_capped_query_model():
+    from app.tender.evidence import _prf_weights, PRF_FB_TERMS, PRF_ORIG_WEIGHT
+    tvs = [("'gritt':1 " + " ".join(f"'t{i}':2" for i in range(30)), 0.4), ("'gritt':1,3 'brine':2", 0.2)]
+    own = ["gritt", "road"]
+    idf = {"gritt": 1.0, "road": 2.0}
+    calls = []
+    def df_of(lexes):
+        calls.append(sorted(lexes)); return {t: 1.5 for t in lexes}
+    q, idf_all = _prf_weights(tvs, own, idf, df_of, 10.0)
+    assert sum(q.values()) == pytest.approx(1.0)
+    assert q["road"] >= PRF_ORIG_WEIGHT / 2 and len(q) <= len(own) + PRF_FB_TERMS
+    assert all(t in idf_all for t in q) and "gritt" not in calls[0]
+    assert (q, idf_all) == _prf_weights(tvs, own, idf, df_of, 10.0)    # deterministic (ties broken by lexeme)
+    assert _prf_weights([], own, idf, df_of, 10.0)[0] == {}
+
+
+def test_prf_parameters_are_the_a_priori_defaults():
+    import app.tender.evidence as ev
+    assert (ev.PRF_FB_DOCS, ev.PRF_FB_TERMS, ev.PRF_ORIG_WEIGHT) == (10, 10, 0.5)

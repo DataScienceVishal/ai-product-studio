@@ -4,8 +4,8 @@
     "all_primaries_hit_rate": 0.8214285714285714,
     "gap_questions": 2,
     "gap_retrieved_anything": 2,
-    "primary_hit_rate": 0.9642857142857143,
-    "recall": 0.7446428571428572,
+    "primary_hit_rate": 1.0,
+    "recall": 0.7642857142857142,
     "scored": 28
   },
   "k": 8,
@@ -33,7 +33,7 @@
       "missing": [
         13,
         20,
-        32
+        29
       ],
       "not_retrieved": false,
       "pack": "S04-cleaning-halls-and-toilets.docx",
@@ -49,7 +49,8 @@
     },
     {
       "missing": [
-        23
+        23,
+        27
       ],
       "not_retrieved": false,
       "pack": "S04-cleaning-halls-and-toilets.docx",
@@ -76,7 +77,8 @@
     {
       "missing": [
         1,
-        24
+        24,
+        27
       ],
       "not_retrieved": false,
       "pack": "S08-security-trust-cctv-keyholding.docx",
@@ -92,7 +94,9 @@
     },
     {
       "missing": [
-        16
+        6,
+        16,
+        21
       ],
       "not_retrieved": false,
       "pack": "S08-security-trust-cctv-keyholding.docx",
@@ -139,33 +143,16 @@
       "not_retrieved": false,
       "pack": "S12-grounds-hallowby-town.docx",
       "ref": "8"
-    },
-    {
-      "missing": [
-        20,
-        22
-      ],
-      "not_retrieved": false,
-      "pack": "S12-grounds-hallowby-town.docx",
-      "ref": "10"
-    },
-    {
-      "missing": [
-        28
-      ],
-      "not_retrieved": false,
-      "pack": "S12-grounds-hallowby-town.docx",
-      "ref": "11"
     }
   ],
   "per_pack": {
     "S04-cleaning-halls-and-toilets.docx": {
-      "all_primaries_hit_rate": 0.7777777777777778,
+      "all_primaries_hit_rate": 0.6666666666666666,
       "gap_questions": 0,
       "gap_retrieved_anything": 0,
       "primary_hit_rate": 1.0,
       "questions": 9,
-      "recall": 0.6685185185185185,
+      "recall": 0.6462962962962963,
       "scored": 9
     },
     "S08-security-trust-cctv-keyholding.docx": {
@@ -174,16 +161,16 @@
       "gap_retrieved_anything": 1,
       "primary_hit_rate": 1.0,
       "questions": 10,
-      "recall": 0.8333333333333334,
+      "recall": 0.7685185185185186,
       "scored": 9
     },
     "S12-grounds-hallowby-town.docx": {
-      "all_primaries_hit_rate": 0.7,
+      "all_primaries_hit_rate": 0.8,
       "gap_questions": 1,
       "gap_retrieved_anything": 1,
-      "primary_hit_rate": 0.9,
+      "primary_hit_rate": 1.0,
       "questions": 11,
-      "recall": 0.7333333333333333,
+      "recall": 0.8666666666666666,
       "scored": 10
     }
   },
@@ -191,8 +178,8 @@
     "all_primaries_hit_rate": 0.8214285714285714,
     "gap_questions": 2,
     "gap_retrieved_anything": 2,
-    "primary_hit_rate": 0.9642857142857143,
-    "recall": 0.7446428571428572,
+    "primary_hit_rate": 1.0,
+    "recall": 0.7642857142857142,
     "scored": 28
   },
   "retrieval_floor": 0.0,
@@ -201,286 +188,286 @@
       "4.1": [
         17,
         20,
-        27,
         14,
-        21,
-        1,
+        25,
+        27,
         26,
-        25
+        21,
+        13
       ],
       "4.2(a)": [
         23,
         17,
         26,
-        14,
-        1,
-        25,
+        7,
         20,
-        7
+        1,
+        11,
+        8
       ],
       "4.2(b)": [
         25,
-        16,
         14,
+        16,
+        8,
         18,
         26,
-        8,
-        6,
-        13
+        13,
+        6
       ],
       "4.3": [
         23,
         15,
-        1,
-        18,
         17,
-        6,
-        4,
-        29
+        1,
+        8,
+        11,
+        9,
+        32
       ],
       "4.4(a)": [
         15,
-        24,
         16,
         9,
+        28,
         22,
+        24,
         20,
-        32,
-        28
+        32
       ],
       "4.4(b)": [
+        9,
         27,
+        30,
         8,
         10,
-        4,
-        9,
-        30,
         11,
-        18
+        4,
+        13
       ],
       "4.5": [
-        6,
         8,
-        11,
+        6,
         5,
-        27,
-        29,
+        4,
+        32,
+        11,
         3,
-        4
+        1
       ],
       "4.6": [
-        30,
         29,
         16,
-        2,
         15,
-        6,
-        3,
-        4
+        30,
+        4,
+        21,
+        2,
+        23
       ],
       "4.8": [
         14,
         15,
-        5,
-        32,
         28,
         4,
+        5,
         25,
-        13
+        32,
+        9
       ]
     },
     "S08-security-trust-cctv-keyholding.docx": {
       "Q1": [
         4,
-        18,
         29,
+        18,
         16,
-        11,
         13,
-        27,
-        26
+        21,
+        26,
+        20
       ],
       "Q10": [
         5,
         14,
         32,
         29,
-        30,
         15,
-        24,
-        21
+        25,
+        4,
+        1
       ],
       "Q2": [
         16,
-        13,
         18,
-        26,
+        13,
         24,
         15,
-        1,
-        14
+        26,
+        29,
+        4
       ],
       "Q3": [
         18,
         8,
+        24,
+        13,
         1,
         28,
-        13,
-        24,
-        21,
-        6
+        26,
+        12
       ],
       "Q4": [
         18,
-        27,
         24,
+        27,
         21,
-        22,
+        13,
+        9,
         11,
-        3,
-        29
+        14
       ],
       "Q5": [
+        24,
         18,
         13,
-        24,
-        15,
         27,
         5,
-        32,
-        22
+        15,
+        1,
+        9
       ],
       "Q6": [
         18,
         13,
-        6,
-        1,
         12,
+        24,
         27,
+        21,
         26,
-        14
+        32
       ],
       "Q7": [
         12,
         18,
-        21,
         16,
+        21,
+        24,
         6,
         13,
-        7,
-        23
+        15
       ],
       "Q8": [
         21,
         29,
-        20,
-        26,
         18,
-        1,
-        13,
-        4
+        4,
+        20,
+        6,
+        16,
+        26
       ],
       "Q9": [
         14,
         28,
         15,
-        32,
-        21,
         9,
-        11,
-        8
+        8,
+        32,
+        25,
+        22
       ]
     },
     "S12-grounds-hallowby-town.docx": {
       "1": [
-        19,
         15,
-        16,
-        14,
-        26,
         28,
+        16,
+        19,
+        22,
         9,
-        22
+        14,
+        26
       ],
       "10": [
-        14,
         25,
-        24,
-        23,
         26,
-        1,
+        22,
+        24,
         21,
-        19
+        23,
+        1,
+        20
       ],
       "11": [
         14,
         25,
         4,
-        32,
         5,
-        21,
+        32,
+        15,
         22,
-        27
+        28
       ],
       "2": [
         16,
         18,
+        21,
         17,
         13,
-        21,
+        20,
         26,
-        14,
         29
       ],
       "3": [
+        7,
         19,
+        22,
         5,
         27,
-        7,
-        22,
+        26,
         9,
-        17,
-        26
+        14
       ],
       "4": [
-        14,
-        19,
         22,
-        11,
-        26,
-        17,
+        19,
+        14,
         25,
-        15
+        26,
+        15,
+        20,
+        11
       ],
       "5": [
         26,
-        5,
         9,
         14,
+        8,
         1,
-        11,
-        6,
-        19
+        5,
+        25,
+        30
       ],
       "6": [
         6,
-        8,
-        4,
         3,
-        1,
+        4,
+        8,
         5,
-        18,
-        29
+        29,
+        1,
+        32
       ],
       "7": [
         8,
         11,
         12,
-        15,
-        10,
+        28,
         32,
-        6,
-        14
+        9,
+        15,
+        10
       ],
       "8": [
         1,
@@ -488,19 +475,19 @@
         32,
         29,
         15,
+        9,
         4,
-        5,
-        9
+        24
       ],
       "9": [
         5,
-        22,
         3,
-        9,
+        22,
         15,
         19,
-        32,
-        1
+        9,
+        4,
+        6
       ]
     }
   }
