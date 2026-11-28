@@ -149,3 +149,82 @@ Single-entry gains over 0.760:
 1. Make the BM25 length consistent, add a unit test, and re-run `python -m eval.run retrieval`.
 2. Strip the SYNONYMS entries shaped to the library and labels, or explicitly label the gain as in-sample. Either way, the board, STATUS and EVAL.md must stop calling the 0.8 trigger cleared unless the honest number clears it.
 3. Update DESIGN 4.2 (ranking method, synonyms, normalised rank) and the EVAL.md before/after row.
+
+---
+
+## Re-review: 877a936 (2026-11-28)
+
+**Verdict: PASS.** Before merge, two sentences in the docs need correcting (R2 below). This is a docs-only fix, and the Studio Lead can check it in the diff without another re-review.
+
+Diff checked: `git diff 66e78f7 877a936`. Changed files: evidence.py, test_tender_ingest.py, DESIGN.md, EVAL.md, NEXT.md and retrieval.json. Everything below was run on a detached worktree at exactly 877a936, which includes the docs commit.
+
+### Evidence (commands run)
+- `pytest -q -o addopts="" tests/test_tender_ingest.py`: **46 passed**.
+- **Full backend suite on 877a936: 1268 passed, 1 skipped, 0 failed, exit 0** (245 s). This matches the builder's count, so the docs edits changed nothing.
+- `UPLOADS_PER_HOUR=1000 python -m eval.seed` on a fresh DB, then `python -m eval.run retrieval`:
+
+| | Recall@8 | primary hit @8 | k=5 recall | primary hit @5 |
+|---|---|---|---|---|
+| pooled | **0.727** | 0.929 | **0.602** | 0.893 |
+| S04 | 0.669 | | | |
+| S08 | 0.778 | | | |
+| S12 | 0.733 | | | |
+
+  - These match EVAL.md, NEXT.md and the committed `retrieval.json`.
+  - The only diff against the committed file is the last float digit of two recall values (`0.6023809523809522` vs `...524`). The retrieved lists are identical. That is float summation noise, not a correctness problem.
+- I counted statements with a SQLAlchemy `before_cursor_execute` hook:
+  - **Exactly 4 for each of the 30 labelled questions.**
+  - The empty string takes 0. A stopword-only question takes 1 and returns [].
+  - Average time on the 32-passage demo tenant: 6.5 ms (previous tip 11.0, main 2.0).
+- Scale, using the same synthetic tenants as before:
+
+| tenant | main | previous tip | 877a936 |
+|---|---|---|---|
+| Bulk A (5,120 passages) | 208 ms | 357 ms | **298 ms** |
+| Bulk B (20,000 passages) | 816 ms | 1,189 ms | **913 ms** |
+
+  DESIGN 4.2 now records the scale limit.
+- I re-ran the fuzz inputs: quotes, `'); DROP TABLE tenants; --`, backslashes and tsquery operators. There were no errors, and none of the inputs got past the quoting.
+
+### Original findings, status
+1. **BM25 length: fixed.** `evidence.py:103` uses `length = len(tf)` (distinct lexemes), which matches `avg(length(tsv))`. The new test `test_bm25_length_term_uses_distinct_lexemes_on_both_sides` pins the formula: 3 positions of one lexeme give length 2, not 4, checked at two average lengths.
+2. **Synonym overfitting: fixed.** `SYNONYMS`, `_expansions` and `EXPANSION_WEIGHT` are gone. Candidates and scoring both use only the question's own lexemes. EVAL.md states that k=8 is still below the 0.8 trigger. It also says the synonym map was removed because it was in-sample, and that BM25 alone is the unbiased gain (0.68 to 0.73). The board line still carries the old 0.82 claim from the previous tip, so the Studio Lead should update it when recording the merge.
+3. **Docs: done.** DESIGN 4.2 now describes the two-step search, the tenant-scoped statistics, the absolute rank, the floor and the scale note. EVAL.md has the before/after row. Two inaccuracies remain; see R2.
+4. **Floor: fixed.**
+   - `rank = raw / (sum(idf) * (k1+1))` (`evidence.py:123,132`). For each term, tf*(k1+1)/(tf+norm) < k1+1 because norm >= k1*(1-b) > 0, so rank is strictly between 0 and 1 and the code boost (+1.0) still always wins.
+   - `test_retrieval_floor_can_reject_a_weakly_related_pack` shows a one-word match gets rank < 0.3, and `min_score=0.3` returns [].
+   - On the demo labels the floor cannot yet separate gap questions cleanly: the two gap questions' top hits have rank 0.054 and 0.118, and the lowest answerable top hit is 0.069. That is a job for L1 tuning, not a defect here.
+5. **Round trips: fixed** (4 statements, see above).
+6. **Scale:** acceptable and documented.
+7. **TOKEN_BOOST:** see R1.
+8. **`_DF` tenant filter: fixed.** `evidence.py:84` adds `d.tenant_id = :tenant`. The new test `test_df_is_per_tenant` gives tenant B 10 passages containing the query words and asserts that tenant A's ranks are unchanged to 9 decimals. Since n, df and avg_len all feed rank, that test would catch a leak.
+
+### Re-review findings
+**R1. Non-blocking: leaving TOKEN_BOOST at 0.25 is acceptable, but it now behaves differently from what the docs say.**
+
+- Measured top-1 rank over the 28 answerable questions on this branch: median 0.118, range 0.069 to 0.385. Every rank returned for any question fell between 0.017 and 0.385.
+- On main, `ts_rank_cd` gave top-1 median 0.564 (max 0.73).
+- So a +0.25 year or acronym boost has gone from about half the typical top rank to about twice it. In practice it now lifts any passage holding a year or acronym above every passage that lacks one.
+- Sweep (pooled recall at k=8 / k=5 / primary hit @8):
+
+| TOKEN_BOOST | 877a936 | main |
+|---|---|---|
+| 0.0 | 0.745 / 0.626 / 0.964 | 0.676 / 0.529 (k=8 / k=5) |
+| 0.1 | 0.727 / 0.602 / 0.929 | - |
+| 0.25 | 0.727 / 0.602 / 0.929 | 0.682 / 0.524 (k=8 / k=5) |
+| 0.5 | 0.727 / 0.602 / 0.929 | - |
+
+  The boost helped slightly on main and costs about 0.02 here.
+- Keeping 0.25 is defensible. The difference is about one question in 28, picking a value from this sweep would be tuning on the labels (exactly what finding 2 removed), and code boosts, the case that matters for "ISO 14001", are unaffected.
+- Suggested follow-up, chosen without the labels: express the year/acronym boost relative to the candidate set, for example 0.25 times the best candidate's rank, so its effect stays the same whatever the rank scale. Or decide at L1 on a held-out pack.
+
+**R2. Fix before merge (docs only): two sentences misstate the boost.**
+- `DESIGN.md:98` says the +0.25 is "a quarter of the rank scale, so it can reorder close candidates". In practice no rank observed exceeded 0.385, so it overrides nearly all BM25 differences. Suggested wording: "a year or acronym +0.25, which is larger than typical BM25 ranks (top hit median about 0.12 on the demo library), so in practice it lifts any passage with that token above those without; left untuned (T-214 re-review R1)".
+- `NEXT.md:7` says ranks are "typically 0.2 to 0.5". Measured: top-1 median 0.12, all returned ranks 0.017 to 0.385. Correct the range.
+
+**R3. Nit:** `EVAL.md:18` is missing a full stop: "... embeddings Tuning may use these labels".
+
+**R4. Nit:** the board line for T-214 still says "Recall@8 0.68->0.82". Update it to 0.73 (k=5 0.60) when recording the merge.
+
+### Verdict
+**PASS.** The code is correct, tenant-safe, injection-safe and tested, and the full suite is green on the exact tree. Apply the R2 sentence fixes (and the R3/R4 nits) in the merge commit.
