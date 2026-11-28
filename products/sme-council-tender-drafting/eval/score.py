@@ -19,7 +19,7 @@ under `invented_unscored`. Null against null is ignored.
 
 Deadline (T-213): report-only, never in BARS and never part of `pass`. `result["deadline"]` holds, per pack with a key deadline,
 whether an extracted deadline item (kind "deadline" or a non-empty `deadline` field) carries the key's day, month and year
-(`deadline_match`), and separately whether the time matches; pooled `found` and `total`.
+(`found`, from `score_deadline`), and separately whether the time matches; pooled `found` and `total`.
 """
 from __future__ import annotations
 
@@ -85,8 +85,8 @@ _D_ISO = re.compile(r"\b(\d{4})-(\d{2})-(\d{2})(?!\d)")
 _D_NUM = re.compile(r"\b(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{4})\b")
 _D_DMY = re.compile(rf"\b(\d{{1,2}})(?:st|nd|rd|th)?\s+(?:of\s+)?({_MON})\b\.?,?\s+(\d{{4}})\b", re.I)
 _D_MDY = re.compile(rf"\b({_MON})\b\.?\s+(\d{{1,2}})(?:st|nd|rd|th)?,?\s+(\d{{4}})\b", re.I)
-_T_HM = re.compile(r"(?<!\d)(\d{1,2}):(\d{2})(?!\d)")
-_T_AMPM = re.compile(r"(?<![\d:])(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\b", re.I)
+_T_HM = re.compile(r"(?<![\d.:])(\d{1,2})[:.](\d{2})(?!\d|\.\d)(?!\s*[ap]\.?m\b)", re.I)   # "30.04.2027" is a date, not a time
+_T_AMPM = re.compile(r"(?<![\d:.])(\d{1,2})(?:[:.](\d{2}))?\s*([ap])\.?m\b", re.I)
 _T_NOON = re.compile(r"\b(?:noon|midday)\b", re.I)
 
 
@@ -103,7 +103,7 @@ def parse_deadline_text(s) -> dict:
         dates.add((int(y), _MONTHS[mo.lower()], int(d)))
     for mo, d, y in _D_MDY.findall(s):
         dates.add((int(y), _MONTHS[mo.lower()], int(d)))
-    times = {(int(h), int(mi)) for h, mi in _T_HM.findall(s)}
+    times = {(int(h), int(mi)) for h, mi in _T_HM.findall(s) if int(h) < 24 and int(mi) < 60}
     for h, mi, ap in _T_AMPM.findall(s):
         times.add(((int(h) % 12) + (12 if ap.lower() == "p" else 0), int(mi or 0)))
     if _T_NOON.search(s):
@@ -113,7 +113,7 @@ def parse_deadline_text(s) -> dict:
 
 def score_deadline(packs: list[dict]) -> dict:
     """Report-only deadline check (never a bar). Per pack that has a key deadline: `found` when one extracted deadline item
-    holds the key's full date, `time_match` when one holds the key's time (None if the key has no time)."""
+    holds the key's full date, `time_match` when one holds the key's time (None if the key has no time or the date was not found)."""
     rows, found = [], 0
     for p in packs:
         kd = next((k for k in p["key"] if k.get("kind") == "deadline"), None)
@@ -130,7 +130,7 @@ def score_deadline(packs: list[dict]) -> dict:
                 if want["times"] and want["times"] <= have["times"]:
                     time_hit = True
         rows.append({"pack": p["pack"], "key_text": kd.get("text"), "found": hit, "got": texts,
-                     "time_match": (time_hit if want["times"] else None) if hit else (False if want["times"] else None)})
+                     "time_match": (time_hit if want["times"] else None) if hit else None})
         found += hit
     return {"packs": rows, "found": found, "total": len(rows)}
 

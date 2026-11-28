@@ -1033,6 +1033,9 @@ def test_deadline_parser_formats():
     assert P("April 30, 2027 at 2pm") == {"dates": want, "times": {(14, 0)}}
     assert P("12:00 midday on Friday 21 May 2027") == {"dates": {(2027, 5, 21)}, "times": {(12, 0)}}
     assert P("14:00 on Friday 23 April 2027") == {"dates": {(2027, 4, 23)}, "times": {(14, 0)}}   # the 14 is a time, not a day
+    assert P("17.00")["times"] == {(17, 0)} and P("5.00pm")["times"] == {(17, 0)} and P("5.30 p.m.")["times"] == {(17, 30)}
+    assert P("30.04.2027") == {"dates": want, "times": set()}
+    assert P("30.04.2027 17.00") == {"dates": want, "times": {(17, 0)}}
     assert P("") == {"dates": set(), "times": set()} and P(None) == {"dates": set(), "times": set()}
 
 
@@ -1058,7 +1061,7 @@ def test_deadline_found_in_other_formats(got):
 def test_deadline_wrong_day_month_or_year_is_not_found():
     for dt in ("2027-04-29T12:00", "30 May 2027 12:00", "30 April 2026 12:00"):
         d = _dl([{"kind": "deadline", "text": dt, "deadline": None}])
-        assert d["found"] == 0 and d["packs"][0]["found"] is False
+        assert d["found"] == 0 and d["packs"][0]["found"] is False and d["packs"][0]["time_match"] is None
 
 
 def test_deadline_right_date_wrong_time_is_found_with_time_match_false():
