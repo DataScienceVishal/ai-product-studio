@@ -181,3 +181,31 @@ Remove `_is_bracketed_limit_heading`, `_IMPERATIVE_OR_INVERTED` and `_INVERTED_A
 **Keep:** the `_stated` change (the question's own block wins, with fallback to the whole window). It is independent of the bracket rule and only makes results more correct. Also keep the token-reporting work (item 2) and the DESIGN.md note (item 3), both reviewed correct above.
 
 After those changes, a PASS needs: green full suite, `test_known_limit_cases_hold` passing, and the probe above matching main on every row.
+
+## Re-review 4 (3e271f8, 2026-11-28)
+
+Detached checkout of 3e271f8, clean tree.
+
+### Verdict: PASS
+
+### Tests
+
+```
+TEST_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/starter_test python3.13 -m pytest -q -o addopts=""
+1217 passed, 1 skipped in 237.44s
+```
+
+### Evidence
+
+- `git diff origin/main...HEAD -- app/tender/extract.py` touches only `_quote_window` (an optional `with_offset` return) and `_stated` (the question's own block is searched first, with fallback to the whole window). `_is_bracketed_limit_heading`, `_IMPERATIVE_OR_INVERTED` and `_INVERTED_ANYWHERE` are gone, and grep finds no references to them in app/ or tests/. `_heading_start` is identical to main.
+- The 21-line probe set (re-review 3) gives the same result as main on every row: 20 give None, and "Social value (max 300 words)" gives 300.
+- Earlier probes: C1 rows give None/500/600, and the heading-only cases (plain, in-block, "How we ...", multi-paragraph) still give 300 as on main. KL-1a now gives None, matching main and its new `open` status. The only differences from main are where the question's own limit wins. "Social value (max 300 words)" followed by a question that states "Maximum 500 words" gives 500 (main: 300), which is a correct change covered by `test_the_questions_own_limit_wins_over_a_heading_limit`. With no own limit, the fallback search covers the same window as main, so no heading limit is lost.
+- Token reporting (item 2) and the DESIGN.md note (item 3) are unchanged since they were reviewed correct above.
+- EVAL.md "Known limits" item 1 now records the rule that was tried and removed, the 11/21 evidence, and KL-1a, KL-1b and KL-2 as open.
+
+### Non-blocking
+
+- N1. `test_an_instruction_ending_in_a_bracketed_limit_is_not_the_next_questions_heading` (test_tender_extract.py:434) and the new `test_an_earlier_question_ending_...` overlap, and the first one's name refers to a rule that no longer exists. Rename it or merge the two later.
+- N2. Re-review 1 R2 is still open: a question whose own limit sits in a later paragraph still gives the heading's limit, the same as main. Worth a KL case.
+
+Merge is fine once the board records this PASS.
