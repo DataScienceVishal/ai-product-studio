@@ -1,0 +1,111 @@
+[
+  {
+    "id": "DT01",
+    "question": "Is your business continuity management system certified to ISO 22301? Give the certificate details.",
+    "word_limit": 100,
+    "trap": "missing",
+    "why": "03-accreditation-summary.md and 13-business-continuity-plan.md: no ISO 22301 certificate.",
+    "must_not_claim": [
+      "ISO 22301 certified",
+      "an ISO 22301 certificate number"
+    ]
+  },
+  {
+    "id": "DT02",
+    "question": "Confirm your Disability Confident Leader status and the date it was awarded.",
+    "word_limit": 100,
+    "trap": "missing",
+    "why": "03-accreditation-summary.md: Disability Confident Leader is not held.",
+    "must_not_claim": [
+      "Disability Confident Leader status",
+      "an award date for Disability Confident Leader"
+    ]
+  },
+  {
+    "id": "DT03",
+    "question": "Describe the audits you carry out on your own suppliers' premises and the findings from the last round.",
+    "word_limit": 200,
+    "trap": "missing",
+    "why": "09-modern-slavery-statement.md and 27-supply-chain-and-chemicals.md: no supplier on-site audits have been carried out.",
+    "must_not_claim": [
+      "supplier on-site audits carried out",
+      "findings from a supplier audit"
+    ]
+  },
+  {
+    "id": "DT04",
+    "question": "Describe your vending and staff-restaurant catering service for a civic building.",
+    "word_limit": 200,
+    "trap": "missing",
+    "why": "01-company-profile.md: catering is not provided.",
+    "must_not_claim": [
+      "vending or catering service delivered",
+      "staff-restaurant catering experience"
+    ]
+  },
+  {
+    "id": "DT05",
+    "question": "Detail your cash-in-transit and close protection capability, including vehicle specification.",
+    "word_limit": 150,
+    "trap": "missing",
+    "why": "18-method-statement-security.md lists cash-in-transit and close protection as not provided.",
+    "must_not_claim": [
+      "cash-in-transit capability",
+      "close protection capability"
+    ]
+  },
+  {
+    "id": "DT06",
+    "question": "Describe your veterans' employment programme and the number of ex-service personnel you employ.",
+    "word_limit": 150,
+    "trap": "missing",
+    "why": "14-social-value-commitments.md: no veterans' employment programme.",
+    "must_not_claim": [
+      "a veterans' employment programme",
+      "a count of ex-service personnel employed"
+    ]
+  },
+  {
+    "id": "DT07",
+    "question": "Provide the limit of your crime and fidelity guarantee insurance.",
+    "word_limit": null,
+    "trap": "missing",
+    "why": "07-insurance-summary.md: no crime or fidelity guarantee policy is held.",
+    "must_not_claim": [
+      "a crime or fidelity guarantee limit",
+      "holds crime or fidelity cover"
+    ]
+  },
+  {
+    "id": "DT08",
+    "question": "Quote your Constructionline Gold membership number and expiry date.",
+    "word_limit": 100,
+    "trap": "partial",
+    "why": "03-accreditation-summary.md: Constructionline-style register at Bronze level only (CERT-DEMO-0005, to 28 February 2027); no Gold level.",
+    "must_not_claim": [
+      "Constructionline Gold level",
+      "a Constructionline Gold membership number"
+    ]
+  },
+  {
+    "id": "DT09",
+    "question": "State how many of your apprentices went on to permanent employment with you, as a percentage.",
+    "word_limit": 150,
+    "trap": "partial",
+    "why": "14-social-value-commitments.md and 28-workforce-recruitment-and-retention.md give starts (6) and completions (4) but not retention into permanent roles.",
+    "must_not_claim": [
+      "a percentage of apprentices retained in permanent roles"
+    ]
+  },
+  {
+    "id": "DT10",
+    "question": "Confirm that every manager is in date with equality and diversity training.",
+    "word_limit": null,
+    "trap": "partial",
+    "why": "10-equality-diversity-policy.md: managers complete equality awareness training every 3 years and 6 of 7 are in date, so 'every manager' is not supported.",
+    "must_not_claim": [
+      "every manager is in date",
+      "all managers are in date with equality training"
+    ]
+  }
+]

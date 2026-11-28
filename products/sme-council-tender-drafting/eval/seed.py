@@ -89,11 +89,17 @@ def load_cache(sessions, tenant_id, recorded_dir: Path = RECORDED_DIR) -> int:
     return n
 
 
+def evidence_docs(evidence_dir: Path) -> list[Path]:
+    """Evidence files in upload order (this order fixes the E-n numbers the eval keys cite). README.md describes the
+    library, including its deliberate gaps, so uploading it would leak the trap answers into retrieval: it is skipped."""
+    return [p for p in sorted(evidence_dir.glob("*.md")) + sorted(evidence_dir.glob("*.txt")) if p.name.lower() != "readme.md"]
+
+
 def seed(client, sessions, tenant_id, *, evidence_dir: Path = EVIDENCE_DIR, packs_dir: Path = PACKS_DIR,
          recorded_dir: Path = RECORDED_DIR) -> dict:
     """`client` is signed in as the demo tenant's owner. Packs are checked first, so a missing pack changes nothing."""
     packs = find_packs(packs_dir)
-    docs = sorted(evidence_dir.glob("*.md")) + sorted(evidence_dir.glob("*.txt"))
+    docs = evidence_docs(evidence_dir)
     if not docs:
         raise SeedError(f"no evidence documents in {evidence_dir}")
     passages = 0

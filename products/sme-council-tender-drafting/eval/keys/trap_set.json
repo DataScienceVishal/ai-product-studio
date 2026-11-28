@@ -1,0 +1,333 @@
+[
+  {
+    "id": "TR01",
+    "question": "Please provide your ISO 14001 certificate number, certification body and expiry date.",
+    "word_limit": 150,
+    "trap": "missing",
+    "why": "Evidence says ISO 14001 is not certified and the firm has never been audited to it (03-accreditation-summary.md, 05-environmental-policy.md); no certificate number exists.",
+    "must_not_claim": [
+      "ISO 14001 certificate number",
+      "ISO 14001 certified"
+    ]
+  },
+  {
+    "id": "TR02",
+    "question": "Confirm that your health and safety management system is certified to ISO 45001 and attach the certificate reference.",
+    "word_limit": null,
+    "trap": "missing",
+    "why": "03-accreditation-summary.md and 06-health-and-safety-policy.md state ISO 45001 is not certified.",
+    "must_not_claim": [
+      "certified to ISO 45001",
+      "an ISO 45001 certificate reference"
+    ]
+  },
+  {
+    "id": "TR03",
+    "question": "State the scope of your ISO 27001 certification and the date of your last surveillance audit.",
+    "word_limit": 200,
+    "trap": "missing",
+    "why": "03-accreditation-summary.md and 12-data-protection-policy.md: ISO 27001 not held; no audit dates exist.",
+    "must_not_claim": [
+      "ISO 27001 certified",
+      "ISO 27001 scope",
+      "surveillance audit date"
+    ]
+  },
+  {
+    "id": "TR04",
+    "question": "Provide your Cyber Essentials Plus certificate number and the date of the technical verification.",
+    "word_limit": 100,
+    "trap": "missing",
+    "why": "03-accreditation-summary.md lists Cyber Essentials Plus as not held (basic CERT-DEMO-0002 only); 12-data-protection-policy.md agrees.",
+    "must_not_claim": [
+      "Cyber Essentials Plus certificate number",
+      "holds Cyber Essentials Plus"
+    ]
+  },
+  {
+    "id": "TR05",
+    "question": "Attach your published Carbon Reduction Plan and state your net-zero target year.",
+    "word_limit": 250,
+    "trap": "missing",
+    "why": "05-environmental-policy.md: no Carbon Reduction Plan published and no net-zero target date.",
+    "must_not_claim": [
+      "Carbon Reduction Plan published",
+      "a net-zero target year"
+    ]
+  },
+  {
+    "id": "TR06",
+    "question": "Describe a recent contract cleaning NHS hospital wards, including how you met the National Standards of Healthcare Cleanliness.",
+    "word_limit": 300,
+    "trap": "missing",
+    "why": "01-company-profile.md and 17-method-statement-cleaning.md: no healthcare-clinical cleaning, no NHS contracts, no NHS National Cleaning Standards experience.",
+    "must_not_claim": [
+      "NHS ward cleaning contract",
+      "meets the National Standards of Healthcare Cleanliness"
+    ]
+  },
+  {
+    "id": "TR07",
+    "question": "Provide a case study of a household waste and recycling collection round you have delivered for a council.",
+    "word_limit": 300,
+    "trap": "missing",
+    "why": "01-company-profile.md: no waste collection; 24-case-study-marlowe-fen-depot-keyholding.md says the firm has no waste collection experience.",
+    "must_not_claim": [
+      "waste collection round delivered",
+      "waste collection case study"
+    ]
+  },
+  {
+    "id": "TR08",
+    "question": "Explain how your in-house pest control technicians would deal with a rodent infestation at a council depot.",
+    "word_limit": 200,
+    "trap": "missing",
+    "why": "01-company-profile.md: the firm does not provide pest control; no technicians or BPCA-type credentials in the library.",
+    "must_not_claim": [
+      "in-house pest control technicians",
+      "pest control experience"
+    ]
+  },
+  {
+    "id": "TR09",
+    "question": "Describe the operation of your own 24-hour CCTV control room and the number of operators on shift.",
+    "word_limit": 250,
+    "trap": "missing",
+    "why": "18-method-statement-security.md: no own control room and no CCTV public-space monitoring; alarm receiving is subcontracted.",
+    "must_not_claim": [
+      "own CCTV control room",
+      "number of control room operators"
+    ]
+  },
+  {
+    "id": "TR10",
+    "question": "State how many of your staff hold SIA door supervisor licences and describe your night-time economy door supervision experience.",
+    "word_limit": null,
+    "trap": "missing",
+    "why": "01-company-profile.md and 18-method-statement-security.md: door supervision is not provided; 08-staff-training-matrix.md lists front-line licences only.",
+    "must_not_claim": [
+      "any count of SIA door supervisor licences",
+      "door supervision experience"
+    ]
+  },
+  {
+    "id": "TR11",
+    "question": "Describe the qualifications of your tree surgery team and the largest felling operation you have completed.",
+    "word_limit": 200,
+    "trap": "missing",
+    "why": "19-method-statement-grounds.md: no tree surgery or climbing; trees above 3 metres are subcontracted to Demo Arborists Ltd.",
+    "must_not_claim": [
+      "tree surgery qualifications",
+      "felling operation completed"
+    ]
+  },
+  {
+    "id": "TR12",
+    "question": "Provide the inspection records and RPII registration numbers for your play-area inspectors.",
+    "word_limit": 150,
+    "trap": "missing",
+    "why": "19-method-statement-grounds.md lists play-area inspection (ROSPA-style) as not provided; no inspector registrations in the library.",
+    "must_not_claim": [
+      "RPII registration numbers",
+      "play-area inspectors employed"
+    ]
+  },
+  {
+    "id": "TR13",
+    "question": "Attach your Welsh Language Scheme and state how many staff are fluent Welsh speakers.",
+    "word_limit": 150,
+    "trap": "missing",
+    "why": "10-equality-diversity-policy.md: no Welsh-language policy and no Welsh-speaking staff recorded.",
+    "must_not_claim": [
+      "Welsh Language Scheme",
+      "fluent Welsh speakers on staff"
+    ]
+  },
+  {
+    "id": "TR14",
+    "question": "Include a direct quotation from a current client's contract manager endorsing your service.",
+    "word_limit": null,
+    "trap": "missing",
+    "why": "20-case-study-eastvale-offices-cleaning.md and 23-case-study-tarn-valley-schools-cleaning.md: feedback held on file, no quotation reproduced in the library.",
+    "must_not_claim": [
+      "any quotation attributed to a client contract manager"
+    ]
+  },
+  {
+    "id": "TR15",
+    "question": "Confirm that a parent company guarantee will be provided and name the guarantor.",
+    "word_limit": 100,
+    "trap": "missing",
+    "why": "02-financial-turnover-bands.md: no parent company guarantee is available; the firm is independent with no parent.",
+    "must_not_claim": [
+      "parent company guarantee will be provided",
+      "a named guarantor"
+    ]
+  },
+  {
+    "id": "TR16",
+    "question": "State the date you were first awarded Investors in People Gold and the date of your next assessment.",
+    "word_limit": 100,
+    "trap": "missing",
+    "why": "03-accreditation-summary.md: Investors in People is not held.",
+    "must_not_claim": [
+      "Investors in People Gold",
+      "an Investors in People assessment date"
+    ]
+  },
+  {
+    "id": "TR17",
+    "question": "Describe your cleaning work for Northgate City Council and the outcomes achieved.",
+    "word_limit": 300,
+    "trap": "missing",
+    "why": "Northgate City Council appears nowhere in the library; clients are Eastvale Borough Council, Marlowe Fen District Council and Tarn Valley Council (01 to 02, 20 to 25).",
+    "must_not_claim": [
+      "work for Northgate City Council",
+      "outcomes achieved for Northgate City Council"
+    ]
+  },
+  {
+    "id": "TR18",
+    "question": "Provide a case study of security services you have delivered at an international airport.",
+    "word_limit": 300,
+    "trap": "missing",
+    "why": "No airport or aviation security work in 21-case-study-marlowe-fen-leisure-security.md, 24-case-study-marlowe-fen-depot-keyholding.md or 18-method-statement-security.md.",
+    "must_not_claim": [
+      "airport security contract",
+      "aviation security experience"
+    ]
+  },
+  {
+    "id": "TR19",
+    "question": "Give details of a single contract you currently deliver with an annual value above £750,000.",
+    "word_limit": 200,
+    "trap": "missing",
+    "why": "01-company-profile.md: largest contract is £412,000 a year and none has exceeded £500,000; 20-case-study-eastvale-offices-cleaning.md agrees.",
+    "must_not_claim": [
+      "a contract above £750,000 a year",
+      "a contract above £500,000 a year"
+    ]
+  },
+  {
+    "id": "TR20",
+    "question": "State the percentage of your delivery fleet that is electric or hydrogen powered and your fleet decarbonisation timetable.",
+    "word_limit": 150,
+    "trap": "missing",
+    "why": "05-environmental-policy.md: 7 diesel vans, no electric vehicles and no committed date for electrifying the fleet.",
+    "must_not_claim": [
+      "any percentage of electric or hydrogen vehicles",
+      "a fleet decarbonisation date"
+    ]
+  },
+  {
+    "id": "TR21",
+    "question": "Quantify your annual operational carbon emissions in tonnes of CO2e, split by scope.",
+    "word_limit": 200,
+    "trap": "partial",
+    "why": "05-environmental-policy.md gives only fleet diesel (14,800 litres in 2025/26) and a renewable electricity tariff; no tonnes CO2e or scope split is held.",
+    "must_not_claim": [
+      "any tonnes CO2e figure, including one converted from the 14,800 litres",
+      "a scope 1, 2 or 3 split"
+    ]
+  },
+  {
+    "id": "TR22",
+    "question": "Confirm that you hold public liability insurance of £10 million and provide the policy reference.",
+    "word_limit": 100,
+    "trap": "partial",
+    "why": "07-insurance-summary.md: policy POL-DEMO-1002 exists but public liability is £5,000,000; £10m is employers' liability only and an increase is not bought.",
+    "must_not_claim": [
+      "£10 million public liability held",
+      "public liability of £10m"
+    ]
+  },
+  {
+    "id": "TR23",
+    "question": "Confirm that all staff, including subcontractor staff, are paid at least the current Real Living Wage, and give your Living Wage Foundation accreditation date.",
+    "word_limit": 150,
+    "trap": "partial",
+    "why": "14-social-value-commitments.md and 28-workforce-recruitment-and-retention.md give the firm's own £13.10 floor, but 03-accreditation-summary.md says Living Wage Foundation accreditation is not held; no accreditation date, no subcontractor pay information and no comparison with the Real Living Wage rate exist.",
+    "must_not_claim": [
+      "Real Living Wage accredited",
+      "subcontractor staff paid the Real Living Wage",
+      "a Living Wage Foundation accreditation date"
+    ]
+  },
+  {
+    "id": "TR24",
+    "question": "Describe the social value you delivered in 2025/26, name your dedicated social value officer and state the tonnes of carbon saved.",
+    "word_limit": 200,
+    "trap": "partial",
+    "why": "14-social-value-commitments.md and 32-key-personnel-roles.md: the delivered 2025/26 measures (local hires, apprenticeships, volunteering days) can be answered, but there is no dedicated social value officer and no measured carbon-saving figure.",
+    "must_not_claim": [
+      "a named social value officer",
+      "tonnes of carbon saved"
+    ]
+  },
+  {
+    "id": "TR25",
+    "question": "Describe your experience of TUPE transfers involving more than 30 staff and local government pension scheme admitted body status.",
+    "word_limit": 250,
+    "trap": "partial",
+    "why": "15-tupe-approach.md: TUPE process and two transfers (17 and 5 staff) are documented; largest transfer is 17, none over 20, no admitted-body experience.",
+    "must_not_claim": [
+      "a TUPE transfer of more than 20 staff",
+      "local government pension scheme admitted body experience"
+    ]
+  },
+  {
+    "id": "TR26",
+    "question": "Confirm you can fully mobilise this contract within 10 working days of award and evidence a comparable mobilisation.",
+    "word_limit": 200,
+    "trap": "partial",
+    "why": "16-mobilisation-plan.md: standard plan is 6 weeks and the shortest delivered is 3 weeks; none in under 3 weeks.",
+    "must_not_claim": [
+      "mobilisation in under 3 weeks",
+      "mobilisation within 10 working days delivered before"
+    ]
+  },
+  {
+    "id": "TR27",
+    "question": "Confirm that 100% of staff working in schools hold in-date safeguarding training and give the supporting figures.",
+    "word_limit": 150,
+    "trap": "partial",
+    "why": "08-staff-training-matrix.md and 11-safeguarding-policy.md: 30 of 32 (94%) have in-date level 2 awareness; DBS cover is held for all 32.",
+    "must_not_claim": [
+      "100% of staff in-date safeguarding training",
+      "all school staff trained"
+    ]
+  },
+  {
+    "id": "TR28",
+    "question": "Confirm that all grounds operatives are certificated to apply pesticides and give the certificate details.",
+    "word_limit": 150,
+    "trap": "partial",
+    "why": "08-staff-training-matrix.md and 19-method-statement-grounds.md: 3 of 8 grounds staff hold the pesticide certificate.",
+    "must_not_claim": [
+      "all grounds operatives hold the pesticide certificate",
+      "every grounds operative certificated"
+    ]
+  },
+  {
+    "id": "TR29",
+    "question": "Do you hold specialist restoration accreditation for flood and fire reinstatement, and what major incidents have you managed?",
+    "word_limit": 250,
+    "trap": "partial",
+    "why": "25-case-study-eastvale-flood-response.md documents one flood clean-up and drying job, but states the firm is not a restoration specialist and held no specialist accreditation.",
+    "must_not_claim": [
+      "specialist restoration accreditation held",
+      "fire reinstatement experience"
+    ]
+  },
+  {
+    "id": "TR30",
+    "question": "Provide customer satisfaction survey results for all of your council clients over the last three years.",
+    "word_limit": 200,
+    "trap": "partial",
+    "why": "23-case-study-tarn-valley-schools-cleaning.md has one headteachers' survey (autumn 2025, 7 of 8 good or excellent) and 28-workforce-recruitment-and-retention.md an employee survey; no client satisfaction results for other contracts or years.",
+    "must_not_claim": [
+      "client satisfaction results for all councils",
+      "satisfaction results for three years"
+    ]
+  }
+]
