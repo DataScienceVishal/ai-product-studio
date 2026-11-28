@@ -10,8 +10,9 @@ Branch `p/sme-council-tender-drafting/T-204` (off main). Not merged. No migratio
 - S4 DECISION: export moves the pack `signed` to `exported`. The route now locks the pack FOR UPDATE (`_lock_pack`) because it writes the row.
   Re-download from `exported` still works (each click adds an `exports` row), reopen is allowed from `exported`. Frontend already treats
   `exported` as signed and reloads after the download, so no frontend change.
-- S5 DECISION: keep GET (plain browser download, no frontend or e2e change). Documented in the route docstring: session cookie is SameSite=Lax so a
-  cross-site request carries no session, and the frontend sends X-Requested-With. Switching to POST remains an option if the audit row matters more.
+- S5 DECISION (revised after review C1): keep GET, but the route itself requires X-Requested-With (403 csrf_check_failed), because Lax cookies ride
+  cross-site top-level GETs and CsrfGuard only covers unsafe methods. `apiDownload` already sends it. Tests added; e2e run for the download.
+- Also: evidence-race 409 not 500 (live set trimmed to the loaded snapshot), `exported` badge green, extra tests for exported edits/re-download.
 - S8: reopen sets `ready` only if `claimcheck.pack_checked` passes, else `drafting` (e.g. evidence removed after sign-off). Test added.
 - Fragile appendix test now counts claims of the latest draft version only.
 

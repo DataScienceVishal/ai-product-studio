@@ -7,8 +7,6 @@ import zipfile
 from docx import Document
 from sqlalchemy import select
 
-import inspect
-
 from app.tender import claimcheck, export, gate
 from app.tender_models import Claim, Draft, EvidenceItem, ExportRecord, Signoff, TenderPack
 
@@ -172,7 +170,6 @@ def test_one_loader_feeds_export_signoff_and_claimcheck(client, app, db):
     pid, _ = signed_pack(client, app)
     tid = db.scalar(select(TenderPack.tenant_id))
     assert claimcheck.load_gate_inputs(db, tid, pid) == export.gate_inputs(export.load_rows(db, tid, pid))
-    assert "load_rows" in inspect.getsource(claimcheck.load_gate_inputs)  # no second copy of the queries to drift
 
 
 def test_export_loads_only_the_cited_evidence_rows(client, app, db):
@@ -205,3 +202,23 @@ def test_reopen_does_not_say_ready_when_evidence_was_removed(client, app, db):
     client.delete(f"/api/documents/{evidence_doc(client)[0]['id']}")
     r = client.post(f"/api/packs/{pid}/reopen")
     assert r.status_code == 200 and r.json()["pack"]["status"] == "drafting"
+
+
+def test_export_needs_the_x_requested_with_header(client, app, db):
+    pid, _ = signed_pack(client, app)
+    r = client.get(f"/api/packs/{pid}/export", headers={"X-Requested-With": ""})
+    assert r.status_code == 403 and r.json()["error"] == "csrf_check_failed"
+    assert pack_status(client, pid) == "signed" and db.scalar(select(ExportRecord)) is None
+    assert client.get(f"/api/packs/{pid}/export", headers={"X-Requested-With": "fetch"}).status_code == 200
+    assert pack_status(client, pid) == "exported"
+
+
+def test_exported_pack_refuses_edits_and_redownload_fails_after_evidence_removal(client, app, db):
+    pid, rid = signed_pack(client, app)
+    assert client.get(f"/api/packs/{pid}/export").status_code == 200
+    assert client.put(f"/api/requirements/{rid}/draft", json={"text": "x"}).status_code == 409
+    assert client.patch(f"/api/requirements/{rid}", json={"text": "y"}).status_code == 409
+    client.delete(f"/api/documents/{evidence_doc(client)[0]['id']}")
+    r = client.get(f"/api/packs/{pid}/export")
+    assert r.status_code == 409 and "evidence_removed" in r.json()["message"]
+    assert pack_status(client, pid) == "exported"

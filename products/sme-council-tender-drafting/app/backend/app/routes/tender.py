@@ -592,12 +592,15 @@ def sign_off(pack_id: uuid.UUID, body: SignoffIn, me: Current = Depends(current)
 
 
 @router.get("/packs/{pack_id}/export")
-def export_docx(pack_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
+def export_docx(pack_id: uuid.UUID, request: Request, me: Current = Depends(current), db: Session = Depends(get_db)):
     """The Word file, only if the gate passes on the rows as they are now (and the pack is signed, the sign-off valid and
     its digest current). The pack row is held FOR UPDATE (it is written below: signed becomes exported), so a reopen, an edit
-    or a second export waits until the file and its record commit. GET on purpose (a plain browser download): it writes an
-    audit row, but the session cookie is SameSite=Lax, so a cross-site request carries no session, and the frontend also
-    sends X-Requested-With. Re-downloading from `exported` is allowed."""
+    or a second export waits until the file and its record commit. Re-downloading from `exported` is allowed.
+    This GET writes (an audit row and the status), and SameSite=Lax cookies are sent on a cross-site top-level navigation,
+    so the global CsrfGuard (unsafe methods only) does not cover it: the route requires X-Requested-With itself. The
+    frontend's fetch sends it; a link or form from another site cannot add it."""
+    if not request.headers.get("x-requested-with"):
+        raise AppError(403, "csrf_check_failed", "Missing request header. Please reload the page and try again.")
     get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
     pack = _lock_pack(db, me.tenant.id, pack_id)
     try:

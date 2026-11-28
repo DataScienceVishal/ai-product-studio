@@ -71,6 +71,7 @@ def load_rows(db: Session, tenant_id, pack_id) -> Rows:
     ev = {e.display_no: (e, name) for e, name in db.execute(
         select(EvidenceItem, SourceDocument.filename).join(SourceDocument, live_join)
         .where(*live_where, EvidenceItem.display_no.in_(cited & live)))} if cited & live else {}
+    live -= (cited & live) - set(ev)  # one snapshot: a passage deleted between the two reads counts as not live (gate refuses, 409)
     return Rows(pack, tenant.name if tenant else "", reqs, drafts, claims, so, live, ev)
 
 
