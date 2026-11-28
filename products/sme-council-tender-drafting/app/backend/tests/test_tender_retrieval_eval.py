@@ -166,13 +166,14 @@ def test_runner_retrieves_the_right_passage_and_writes_no_model_rows(app, new_cl
 
 
 def test_runner_on_the_real_library_numbers_passages_like_the_keys(app, new_client, tmp_path):
-    sessions, tenant_id = _seeded(app, new_client, tmp_path, {p.name: p.read_text(encoding="utf-8")
-                                                             for p in SD.evidence_docs(SD.EVIDENCE_DIR)})
+    docs = {p.name: p.read_text(encoding="utf-8") for p in SD.evidence_docs(SD.EVIDENCE_DIR)}
+    n_docs = len(docs)  # the passage numbers run 1..number of evidence documents
+    sessions, tenant_id = _seeded(app, new_client, tmp_path, docs)
     emap = json.loads((PRODUCT / "eval" / "keys" / "evidence_map.json").read_text(encoding="utf-8"))["entries"][0]
     labels = {"packs": {"P.docx": [{"ref": "1", "text": emap["first80"], "relevant": [emap["e"]], "primary": [emap["e"]]}]}}
     res = R.retrieval_diagnostic(sessions, tenant_id, labels)
     got = res["retrieved"]["P.docx"]["1"]
-    assert len(got) <= 8 and len(got) > 5 and all(1 <= n <= 32 for n in got) and emap["e"] in got
+    assert len(got) <= 8 and len(got) > 5 and all(1 <= n <= n_docs for n in got) and emap["e"] in got
 
 
 def test_the_retrieval_result_records_the_labels_sha256(app, new_client, tmp_path):

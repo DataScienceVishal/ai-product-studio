@@ -137,10 +137,12 @@ def build(src: Path, dest: Path) -> dict:
     document.sections[0].footer.paragraphs[0].text = FOOTER
 
     pages, on_page, last = 1, 0, None
+    heads_on_page = 0  # words of the headings just placed that head this page (nothing else on it yet)
 
     def page_break():
-        nonlocal pages, on_page
+        nonlocal pages, on_page, heads_on_page
         if last is not None:
+            heads_on_page = 0
             run = document.paragraphs[-1].add_run() if document.paragraphs else document.add_paragraph().add_run()
             run.add_break(WD_BREAK.PAGE)
             pages += 1
@@ -165,8 +167,10 @@ def build(src: Path, dest: Path) -> dict:
             need += min(_words(*nxt), 80) if nxt[0] not in ("pagebreak", "table") else 0
             if nxt[0] == "table" and on_page + heads + _words(*nxt) > TABLE_PAGE_WORDS:
                 need = PAGE_WORDS + 1  # the table will force its own break: break before the heading, not between
-        if on_page and on_page + need > PAGE_WORDS and kind != "table":
+        only_heads = on_page == heads_on_page  # the page holds nothing but the headings just placed
+        if on_page and on_page + need > PAGE_WORDS and kind != "table" and not (kind == "heading" and only_heads):
             page_break()
+        only_heads = on_page == heads_on_page  # recomputed: the break above may have emptied the page
         if kind == "heading":
             level, text = payload
             document.add_heading(_BOLD.sub(r"\1", text), level=level)
@@ -177,7 +181,7 @@ def build(src: Path, dest: Path) -> dict:
         elif kind == "number":
             _runs(document.add_paragraph(), payload)  # keep the number as typed: buyers' own numbering is data
         elif kind == "table":
-            if on_page and on_page + n > TABLE_PAGE_WORDS:
+            if on_page and not only_heads and on_page + n > TABLE_PAGE_WORDS:  # never strand headings alone
                 page_break()
             width = max(len(r) for r in payload)
             table = document.add_table(rows=0, cols=width)
@@ -193,6 +197,7 @@ def build(src: Path, dest: Path) -> dict:
                         _runs(p, text)
             document.add_paragraph()
         on_page += n
+        heads_on_page = on_page if kind == "heading" and only_heads else 0
         total += n
         last = kind
     dest.parent.mkdir(parents=True, exist_ok=True)

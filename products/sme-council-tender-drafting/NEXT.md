@@ -1,3 +1,11 @@
+# STATUS (T-217) - S08 counts reconciled, builder table/heading fix, test and EVAL.md nits; no frozen file touched
+
+Branch `p/sme-council-tender-drafting/T-217` (off main). Not merged. No model calls, no spend.
+- 1. S08 prose now matches Appendix 1 (14 camera sites + 5 alarm-only = 19 alarm sites): 3.2 "14 sites with 138 cameras", Lot 1 "14 CCTV sites | 168 site-months" (14x12), Lot 2 "5 alarm-only sites | 60 site-months" (5x12), Appendix 1 intro "14 CCTV sites". None of these sentences is in eval/keys/retrieval_labels.json. Only the S08 .docx rebuilt; SOURCES.md hash now 66b37297b90162e7. `build_docx.py --check` passes for all 12.
+- 2. Builder: a table (or heading run) no longer breaks when the page holds only the headings just placed (`heads_on_page`). 2 new tests (parametrized), in test_tender_build_docx.py.
+- 3. Real-library retrieval test bound now `len(evidence docs)` instead of 32.
+- 4. EVAL.md amendment defines all_primaries_hit_rate and labels_sha256.
+
 # STATUS (T-212) - T-194 builder leftovers done; S08 Appendix 1 now 19 sites; no frozen file touched
 
 Branch `p/sme-council-tender-drafting/T-212` (off main). Not merged. No model calls, no spend, no migrations.

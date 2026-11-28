@@ -31,7 +31,7 @@ Roles by the SPEC rule in table order (also in `demo-data/packs/manifest.json`):
 | S05 | Security | `S05-security-council-guarding-patrol.docx` | 15 | e2ddb3231d2d9190 | held-out (drafting) |
 | S06 | Security | `S06-security-housing-concierge-estate.docx` | 10 | a053323cdf2f9a77 | held-out |
 | S07 | Security | `S07-security-college-events-stewarding.docx` | 10 | 4c69e0f9a5ffd9ab | held-out |
-| S08 | Security | `S08-security-trust-cctv-keyholding.docx` | 10 | f13e0bd3b1fd9bf8 | demo |
+| S08 | Security | `S08-security-trust-cctv-keyholding.docx` | 10 | 66b37297b90162e7 | demo |
 | S09 | Grounds | `S09-grounds-brackenholt-town.docx` | 13 | ca3bd93ce7f697a4 | held-out (drafting) |
 | S10 | Grounds | `S10-grounds-ashenmere-parish.docx` | 7 | 306262d9d2146487 | held-out |
 | S11 | Grounds | `S11-grounds-quillbrook-district.docx` | 9 | d49ea208a2065a75 | held-out |
