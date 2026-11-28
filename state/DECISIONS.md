@@ -528,3 +528,9 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 
 ## 2026-11-28T05:25Z run 39e8: T-207 tender leftovers
 - T-189 nit 6 decided: keep current behaviour. An identical redraft still creates a new draft version and counts toward the 5-a-day redraft limit. Reason: the limit is about user actions, the model cost is zero on a cache hit, and skipping versions would change the tested limit semantics. Documented in DESIGN.md on the T-207 branch.
+
+## 2026-11-28T06:25Z run 6963: T-182 starter billing lows
+- Paid duplicate subscription: cancel AND refund its latest paid invoice automatically (idempotency key from the event id); a failed refund logs ERROR refund_owed and returns 503 so Stripe redelivers. Chosen over an operator to-do because the money is clearly owed and the refund is idempotent.
+- Checkout Sessions get expires_at = now + 30 min (Stripe minimum) instead of expiring sibling sessions on completion: simpler, and the refund covers the leftover window.
+- Account deletion tries the tenant's live pending cancels synchronously and fails closed (503, account kept) if one is still live, matching the customer-close path.
+- N2 (restricted rk_test_ key for the cancels job) waits for the Stripe test keys; N5 needs no change.
