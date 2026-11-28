@@ -982,3 +982,95 @@ def test_cache_clearing_phases_say_the_demo_seed_must_be_rerun(ctx, capsys):
     assert "eval.seed" in r["reseed_required"] and "eval.seed" in capsys.readouterr().err
     ctx.provider = ScriptedFakeAI()                          # not cacheable: nothing cleared, no note
     assert "reseed_required" not in R.run_phase("T2", ctx)
+
+
+# ---------- T-213: invented limits in A2, report-only deadline ----------
+
+def _pair(key_kw=None, got_kw=None, kind=q):
+    """One matched question (or mandatory) pair with a stated word limit of 100 on both sides, plus the overrides."""
+    k = kind("1.1", "Describe your approach to mobilisation of the service", **{"word_limit": 100, **(key_kw or {})})
+    g = kind("1.1", "Describe your approach to mobilisation of the service", **{"word_limit": 100, **(got_kw or {})})
+    return SC.score_extraction([{"pack": "P", "key": [k], "got": [g]}])
+
+
+def test_invented_word_limit_counts_wrong_in_a2():
+    r = _pair({"word_limit": None, "page_limit": 2}, {"word_limit": 400, "page_limit": 2})["A2"]
+    assert (r["stated"], r["correct"]) == (2, 1) and r["score"] == 0.5 and not r["pass"]
+    assert r["wrong"] == [{"pack": "P", "ref": "1.1", "field": "word_limit", "key": None, "got": 400, "invented": True}]
+
+
+def test_invented_page_limit_counts_wrong_in_a2_for_mandatory_too():
+    for kind in (q, m):
+        r = _pair({"page_limit": None}, {"page_limit": 3}, kind=kind)["A2"]
+        assert (r["stated"], r["correct"]) == (2, 1), kind
+        assert r["wrong"][0]["field"] == "page_limit" and r["wrong"][0]["invented"] is True
+
+
+def test_wrong_value_against_non_null_key_has_no_invented_flag():
+    r = _pair(got_kw={"word_limit": 90})["A2"]
+    assert (r["stated"], r["correct"]) == (1, 0) and "invented" not in r["wrong"][0]
+
+
+def test_invented_marks_and_weight_are_listed_not_scored():
+    e = _pair({}, {"marks": 10, "weight_pct": 6})
+    assert (e["A2"]["stated"], e["A2"]["correct"], e["A2"]["score"]) == (1, 1, 1.0) and e["A2"]["wrong"] == []
+    assert e["A2"]["invented_unscored"] == [{"pack": "P", "ref": "1.1", "field": "marks", "got": 10},
+                                            {"pack": "P", "ref": "1.1", "field": "weight_pct", "got": 6}]
+
+
+def test_null_key_and_null_extracted_changes_nothing():
+    e = _pair({"word_limit": None}, {"word_limit": None})["A2"]
+    assert (e["stated"], e["correct"], e["score"]) == (0, 0, None) and e["wrong"] == [] and e["invented_unscored"] == []
+
+
+def test_deadline_parser_formats():
+    P = SC.parse_deadline_text
+    want = {(2027, 4, 30)}
+    assert P("Tender submission deadline: Friday 30 April 2027, 12:00 noon") == {"dates": want, "times": {(12, 0)}}
+    assert P("2027-04-30T12:00")["dates"] == want and P("2027-04-30T12:00")["times"] == {(12, 0)}
+    assert P("30/04/2027 12:00") == {"dates": want, "times": {(12, 0)}}
+    assert P("30th of April 2027 at 12 noon") == {"dates": want, "times": {(12, 0)}}
+    assert P("April 30, 2027 at 2pm") == {"dates": want, "times": {(14, 0)}}
+    assert P("12:00 midday on Friday 21 May 2027") == {"dates": {(2027, 5, 21)}, "times": {(12, 0)}}
+    assert P("14:00 on Friday 23 April 2027") == {"dates": {(2027, 4, 23)}, "times": {(14, 0)}}   # the 14 is a time, not a day
+    assert P("17.00")["times"] == {(17, 0)} and P("5.00pm")["times"] == {(17, 0)} and P("5.30 p.m.")["times"] == {(17, 30)}
+    assert P("30.04.2027") == {"dates": want, "times": set()}
+    assert P("30.04.2027 17.00") == {"dates": want, "times": {(17, 0)}}
+    assert P("") == {"dates": set(), "times": set()} and P(None) == {"dates": set(), "times": set()}
+
+
+DL_KEY = {"ref": "", "kind": "deadline", "text": "Tender submission deadline: Friday 30 April 2027, 12:00 noon"}
+
+
+def _dl(got):
+    return SC.score_extraction([{"pack": "P", "key": [DL_KEY], "got": got}])["deadline"]
+
+
+@pytest.mark.parametrize("got", [
+    {"kind": "deadline", "text": "Submit by", "deadline": "2027-04-30T12:00"},
+    {"kind": "deadline", "text": "Tenders due 30/04/2027 12:00", "deadline": None},
+    {"kind": "deadline", "text": "Closing: 30 April 2027 at 12 noon", "deadline": ""},
+    {"kind": "other", "text": "Return date", "deadline": "30 April 2027 12:00"},     # counted via the deadline field
+])
+def test_deadline_found_in_other_formats(got):
+    d = _dl([got])
+    assert d["found"] == 1 and d["total"] == 1 and d["packs"][0]["found"] and d["packs"][0]["time_match"] is True
+    assert d["packs"][0]["key_text"] == DL_KEY["text"] and len(d["packs"][0]["got"]) == 1
+
+
+def test_deadline_wrong_day_month_or_year_is_not_found():
+    for dt in ("2027-04-29T12:00", "30 May 2027 12:00", "30 April 2026 12:00"):
+        d = _dl([{"kind": "deadline", "text": dt, "deadline": None}])
+        assert d["found"] == 0 and d["packs"][0]["found"] is False and d["packs"][0]["time_match"] is None
+
+
+def test_deadline_right_date_wrong_time_is_found_with_time_match_false():
+    d = _dl([{"kind": "deadline", "text": "30 April 2027 at 17:00", "deadline": None}])
+    assert d["found"] == 1 and d["packs"][0]["time_match"] is False
+
+
+def test_no_deadline_item_means_not_found_and_never_affects_pass():
+    d = _dl([q("1.1", "Describe your approach")])
+    assert d["found"] == 0 and d["total"] == 1 and d["packs"][0]["found"] is False and d["packs"][0]["got"] == []
+    assert "deadline" not in SC.BARS
+    assert extraction()["deadline"] == {"packs": [], "found": 0, "total": 0}     # no key deadline: nothing reported
