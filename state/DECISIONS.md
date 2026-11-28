@@ -535,3 +535,9 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Account deletion tries the tenant's live pending cancels synchronously and fails closed (503, account kept) if one is still live, matching the customer-close path.
 - N2 (restricted rk_test_ key for the cancels job) waits for the Stripe test keys; N5 needs no change.
 - T-210 (run 6963): duplicate refund made crash-safe by storing the webhook event id only after cancel+refund succeed; no paid invoice yet on a paid plan -> 503 redelivery for up to 24 h then ERROR refund_owed; permanent refund rejection -> ERROR refund_owed and ack (no 3-day 503 loop).
+
+## 2026-11-28 run 234e (T-194)
+- Q-20 option B applied: no reply from Vishal, default time 07:45Z; downloads still 403 at 07:21Z. Work started at 07:23Z as reversible prep and merged at 07:38Z; inbox re-checked at the default time before Q-20 was marked defaulted. Real packs can replace the synthetic ones later by a dated amendment.
+- Synthetic packs are built as .docx (tender uploads must be PDF or Word) from Markdown sources, with page breaks about every 450 words so the parser's page references are A4-like and stable for answer keys. Headings are kept with their following text.
+- Pack names S01-S12 (not P01-P12) so the real candidates stay distinguishable; same SPEC role rule (demo = last of each sector, drafting held-out = first).
+- Validator item 7 (answer-key conventions) handed to qa as the first step of T-206, not fixed in the packs: the packs deliberately vary their limit formats.
