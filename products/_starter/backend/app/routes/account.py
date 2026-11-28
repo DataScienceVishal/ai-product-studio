@@ -12,7 +12,7 @@ from ..ai import tokens_this_month
 from ..db import get_db
 from ..deps import Current, current, owner, session_cookie, subscription_of
 from ..errors import AppError
-from ..models import Invitation, Note, Tenant, User
+from ..models import BillingCustomer, Invitation, Note, Tenant, User
 from ..security import hash_capacity_after, verify_password
 
 log = logging.getLogger("app.account")
@@ -62,11 +62,21 @@ def delete_account(data: DeleteIn, request: Request, me: Current = Depends(_dele
     tenant_id = str(me.tenant.id)
     sub = subscription_of(db, me.tenant.id)
     customer, subscription = sub.provider_customer, sub.provider_ref
+    billing = request.app.state.billing
+    # T-181 (T-179 M1): every customer this tenant ever had at the provider, not only the current one. The stored one
+    # goes first (with the subscription); the rest are duplicates or customers a takeover replaced.
+    others = [c for c in db.scalars(select(BillingCustomer.customer_ref).where(
+        BillingCustomer.tenant_id == me.tenant.id, BillingCustomer.provider == billing.name)
+        .order_by(BillingCustomer.created_at)) if c != customer]
     db.commit()  # no transaction open while the payment provider is called
-    if customer or subscription:
-        try:  # stop billing and remove their details at the provider first; if that fails, delete nothing
-            request.app.state.billing.close(customer, subscription)
+    calls = ([(customer, subscription)] if customer or subscription else []) + [(c, None) for c in others]
+    if calls:
+        try:  # stop billing and remove their details at the provider first; if any fails, delete nothing. The rows
+            # that list the customers stay, so the owner retries (deleting a customer is idempotent at the provider).
+            for call_customer, call_subscription in calls:
+                billing.close(call_customer, call_subscription)
         except AppError:
+            log.error("could not delete a payment-provider customer; account kept", extra={"tenant_id": tenant_id})
             raise AppError(503, "billing_unavailable", "We couldn't cancel your subscription with the payment "
                            "provider, so nothing was deleted. Please try again in a few minutes.") from None
     db.delete(db.get(Tenant, me.tenant.id))  # rows cascade: users, sessions, notes, usage, invitations
