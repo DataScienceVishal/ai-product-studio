@@ -567,3 +567,8 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 ## 2026-11-28T11:25Z, run 111d: T-216 slice 2 boost cap and floor rule
 - Several year/acronym tokens no longer add up: the relative boost is capped at one token's worth (0.25 x best rank), so it only reorders close candidates however many acronyms a question names (review finding 1).
 - RETRIEVAL_FLOOR tests `rank`, not `score`, so a relative boost cannot rescue a weak search; a passage holding an asked-for code (ISO, CHAS, Cyber Essentials...) passes the floor anyway, because holding the certificate is evidence (finding 2). Reversible; L1 tunes the floor value.
+
+## 2026-11-28T12:55Z, run 7c96: T-216 slice 3 drafter sees 8 passages (APP_PASSAGES 5 -> 8)
+- k=8 is the largest value that fits the DESIGN 4.3 token budget. That rule was fixed before looking at recall. It covers worst draft <= 21.5k, typical settled draft + check <= 30k, and the whole flow in one trial day. The recall the drafter sees goes from 0.626 to 0.745 (primary hit 0.929 to 0.964).
+- Trade accepted: one free-trial day now fits a 2-question pack instead of 3, and the daily pool gives 2 full draft+check pairs. This replaces "3 questions" in the T-190 entry. Evidence quality matters more than trial breadth. Reversible: set APP_PASSAGES back.
+- Criteria-based query expansion is not possible without an extraction schema change (questions carry no criteria text), so it is deferred. A per-tenant STATS cache is deferred until a tenant has thousands of passages.
