@@ -312,9 +312,12 @@ def run_configuration() -> dict:
                 "output_cap": cc.CLAIMCHECK_SPEC.max_output_tokens}}}
 
 
-def retrieval_diagnostic(sessions, tenant_id, labels: dict, k: int = 8) -> dict:
-    """DESIGN 4.2 retrieval check: the app's own search (search_evidence, as draft and the retrieve route call it: per-document cap, RETRIEVAL_FLOOR; depth k=8, not the 5 the draft shows) on
-    each labelled question's text, scored by score.retrieval_recall. No model call, no ledger, nothing written to the DB."""
+def retrieval_diagnostic(sessions, tenant_id, labels: dict, k: int = 8, labels_sha256: str | None = None) -> dict:
+    """DESIGN 4.2 retrieval check: the app's own search (search_evidence with the per-document cap and RETRIEVAL_FLOOR, called
+    the way the draft task and the draft route call it, except at depth k=8 instead of limit=APP_PASSAGES; the /evidence/search
+    route uses the defaults and no floor) on each labelled question's text, scored by score.retrieval_recall. `labels_sha256`
+    (sha256 of the labels file bytes, passed by main) is recorded so a stale results file can be told from a current one.
+    No model call, no ledger, nothing written to the DB."""
     from app.tender import draft as dr
     from app.tender.evidence import search_evidence
     from . import score as sc
@@ -330,6 +333,8 @@ def retrieval_diagnostic(sessions, tenant_id, labels: dict, k: int = 8) -> dict:
     res["app_passages"] = dr.APP_PASSAGES        # the draft task shows the model only this many; recall at that depth is informational
     res["at_app_passages"] = sc.retrieval_recall(labels, retrieved, k=dr.APP_PASSAGES)["pooled"]
     res["retrieval_floor"] = dr.RETRIEVAL_FLOOR
+    if labels_sha256 is not None:
+        res["labels_sha256"] = labels_sha256
     return res
 
 
@@ -375,7 +380,8 @@ def main(argv: list[str] | None = None) -> int:
         print("eval.run: demo tenant not found; run `python -m eval.seed` first", file=sys.stderr)
         return 4
     if args.phase == "retrieval":
-        res = retrieval_diagnostic(sessions, tenant_id, json.loads(labels_path.read_text(encoding="utf-8")))
+        raw = labels_path.read_bytes()
+        res = retrieval_diagnostic(sessions, tenant_id, json.loads(raw.decode("utf-8")), labels_sha256=hashlib.sha256(raw).hexdigest())
         RESULTS_DIR.mkdir(parents=True, exist_ok=True)
         text = json.dumps(res, indent=2, sort_keys=True)
         (RESULTS_DIR / "retrieval.json").write_text(text + "\n", encoding="utf-8")

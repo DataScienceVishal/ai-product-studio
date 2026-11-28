@@ -1,0 +1,4 @@
+# Frozen pre-registration files are hashed in eval/keys/FROZEN.sha256: never convert line endings.
+eval/keys/** -text
+demo-data/packs/*.docx -text
+demo-data/pack-sources/*.md -text

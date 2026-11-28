@@ -1,6 +1,7 @@
 {
   "app_passages": 8,
   "at_app_passages": {
+    "all_primaries_hit_rate": 0.8214285714285714,
     "gap_questions": 2,
     "gap_retrieved_anything": 2,
     "primary_hit_rate": 0.9642857142857143,
@@ -8,6 +9,7 @@
     "scored": 28
   },
   "k": 8,
+  "labels_sha256": "5d9541d33380fa08e1321e9cec91d555b02043e907a036b7917ee88539513d3c",
   "misses": [
     {
       "missing": [
@@ -158,6 +160,7 @@
   ],
   "per_pack": {
     "S04-cleaning-halls-and-toilets.docx": {
+      "all_primaries_hit_rate": 0.7777777777777778,
       "gap_questions": 0,
       "gap_retrieved_anything": 0,
       "primary_hit_rate": 1.0,
@@ -166,6 +169,7 @@
       "scored": 9
     },
     "S08-security-trust-cctv-keyholding.docx": {
+      "all_primaries_hit_rate": 1.0,
       "gap_questions": 1,
       "gap_retrieved_anything": 1,
       "primary_hit_rate": 1.0,
@@ -174,6 +178,7 @@
       "scored": 9
     },
     "S12-grounds-hallowby-town.docx": {
+      "all_primaries_hit_rate": 0.7,
       "gap_questions": 1,
       "gap_retrieved_anything": 1,
       "primary_hit_rate": 0.9,
@@ -183,6 +188,7 @@
     }
   },
   "pooled": {
+    "all_primaries_hit_rate": 0.8214285714285714,
     "gap_questions": 2,
     "gap_retrieved_anything": 2,
     "primary_hit_rate": 0.9642857142857143,
