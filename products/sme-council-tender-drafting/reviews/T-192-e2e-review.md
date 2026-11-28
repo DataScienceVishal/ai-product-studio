@@ -64,3 +64,39 @@ Branch `p/sme-council-tender-drafting/T-192-e2e`, HEAD `bfe5551`, against `main`
 
 ## Re-review scope
 Items 1-3 only. All three are test-file changes. Re-run `scripts/e2e.sh` three times in a row and attach the outputs.
+
+## Re-review (fixes at ebac3f5)
+
+**Verdict: PASS.** All three must-fix items are resolved. The changes are in test files only.
+
+### Evidence (on tree ebac3f5)
+- `scripts/e2e.sh` was run 3 times. All 3 runs exited 0 with `E2E PASS: tender core flow (7 steps)` and `E2E PASS: core flow`:
+  - one run on the default ports 8000 and 4173;
+  - two runs on separate ports (8102/4202 and 8103/4203).
+- A fourth run started straight after the first one, on the same ports. It exited 2 with "port ... already in use". The earlier uvicorn was still in its ~100 ms graceful shutdown (its `api.log` ends with "Finished server process"). Nothing was left running once it finished. This is the port guard working, not a test failure. See suggestion (b).
+- `git diff bfe5551..ebac3f5` touches only `tests/e2e/tender_flow.cjs`, `scripts/e2e.sh` and review files. No files under `backend/app/` or `frontend/src/` changed.
+
+### Items
+1. **Fixed: the navigation races.**
+   - `queueTask()` waits for the POST to return 202 before moving to the next page. It is used for `/extract`, `/draft` and `/check`.
+   - `waitIdle()` polls `/api/packs/<id>/status` until no task is queued or running, with a 90 s deadline and an error message that names the busy tasks. It runs after drafting and after the claim check.
+   - The no-op waits are gone.
+   - The 500 ms `waitForTimeout` inside `waitIdle` only sets how often it polls, and the loop is bounded by the deadline. Nothing relies on a fixed sleep to synchronise.
+2. **Fixed: the steps are now genuinely checked.**
+   - Step 4 asserts `42 staff`, a phrase that can only come from the evidence.
+   - Step 6 asserts that `cov-1` and `cov-2` show Answered Yes, `n / 150`, 0 gaps, Checked Yes, and the topic text. It also asserts that the only "compliant" on the page is the disclaimer.
+   - Step 7 asserts:
+     - the footer statement;
+     - the answer order (42 staff before 12 apprenticeships);
+     - `[E-n]` in the body;
+     - the appendix heading, its header row, and a specific claim row (`[E-n] / evidence1.txt / 1 / Our safeguarding policy`).
+3. **Fixed: `e2e.sh` failure handling.** The tender flow is now `|| status=$?`, core_flow always runs, the first non-zero status is kept, and `logs:` always prints.
+
+### Suggestions (non-blocking, for a later pass)
+- (a) **`tender_flow.cjs`, answer-order check:** `body = out.split("BODY:")[1]` also takes in the TABLE lines, and the appendix claim spans can contain "42 staff" and "12 apprenticeships". If an answer were missing from the body, the order check could match text in the appendix instead. Cut the body at `"\nTABLEROWS:"`.
+- (b) **`e2e.sh`, EXIT trap:** the trap kills the process groups but does not wait for them to exit, so an immediate back-to-back run on the same ports exits 2. Add a short bounded wait in the trap, for example polling `kill -0` for up to 5 s.
+- (c) **Earlier suggestions still open:**
+  - the dead `...click().catch(() => {})` navigation (line ~82);
+  - running the docx check as `python -I`;
+  - asserting the 150-word limit on the checklist page;
+  - asserting the source passages on the draft page.
