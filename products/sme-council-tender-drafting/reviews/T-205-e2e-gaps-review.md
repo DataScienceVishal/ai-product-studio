@@ -62,3 +62,17 @@ Branch `p/sme-council-tender-drafting/T-205`, HEAD `03f952c`, against `origin/ma
 
 ## Re-review scope
 Must-fix 1 only. Re-run `scripts/e2e.sh` once and attach the output.
+
+## Re-review (5798483, 2026-11-28)
+
+**Scope:** `git diff 85cff27..5798483` (one file, `app/tests/e2e/tender_limits.cjs`, +8/-2).
+
+**Must-fix resolved.** The sign-off POST now sends `statement_version: "v1"` (equal to `gate.STATEMENT_VERSION`), so the 422 `statement_required` branch in `routes/tender.py` `sign_off` (line 577) is no longer what refuses it. The test asserts exactly 409 with `not_ready` or `export_blocked`, and the export GET asserts 409 `export_blocked` with `/claims_blocked/` in the message.
+
+**Would it fail if an unsupported claim got through?** Yes, via the export assertion. `gate.export_allowed` (gate.py 113-117) collects every reason and adds `claims_blocked` only when a latest-draft claim has a verdict other than `supported`; `routes/tender.py` 615 joins all reasons into the message. If the claim were wrongly marked supported, the message would lack `claims_blocked` and the test fails. The UI assertions at lines 79 and 89 (“1 claim is not supported”, “1 unsupported”) also guard it.
+
+**Suggestion (non-blocking):** the sign-off refusal alone does not isolate the claim. At that point the pack also has the question 2/3 gaps and an over-limit answer, so `not_ready` would fire even with no unsupported claim. The export assertion covers this, so it is fine as is. A follow-up could fix the gaps first so the unsupported claim is the only blocker.
+
+**Tests:** `NODE_PATH=/opt/node-tools/node_modules bash scripts/e2e.sh` exit 0; 6/6 PASS (core flow 7 steps, export refused, limits/gaps/blocked claims, unicode, larger pack, core flow).
+
+**Verdict: PASS**
