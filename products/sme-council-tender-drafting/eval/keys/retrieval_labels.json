@@ -173,7 +173,7 @@
      "5": "environmental performance: eco-label chemicals, renewable tariff, recycling",
      "14": "local hires, local spend, apprenticeships, volunteering, commitments for a new contract",
      "27": "eco-labelled chemicals, recycled-content bin liners",
-     "28": "direct local recruitment, apprenticeships, pay floor"
+     "28": "direct recruitment, apprenticeships, pay floor"
     }
    }
   ],
@@ -202,6 +202,7 @@
     "text": "Describe how you will deliver the keyholding and response service across the Trust's sites, including the number and location of mobile officers, how you will meet the response times in 3.3, and the way you will keep key security to BS 7984-1.",
     "relevant": [
      12,
+     13,
      18,
      24
     ],
@@ -211,6 +212,7 @@
     ],
     "why": {
      "12": "access to client key lists limited to 4 named roles",
+     "13": "depot holds a duplicate set of site keys in a secure store",
      "18": "key-holders attend within 30 minutes, average 22 minutes over 64 call-outs",
      "24": "keyholding case study, 22-minute average vs 30-minute target, 4 officers"
     }
@@ -529,7 +531,7 @@
     "why": {
      "14": "local jobs, apprenticeships, volunteering days, community planting, new-contract commitments",
      "22": "5 community planting days, 118 volunteers, 1 apprentice",
-     "28": "apprenticeship starts, direct local recruitment"
+     "28": "apprenticeship starts, direct recruitment"
     }
    }
   ]
