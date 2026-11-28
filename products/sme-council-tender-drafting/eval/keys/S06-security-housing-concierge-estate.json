@@ -1,0 +1,191 @@
+{
+ "pack": "S06-security-housing-concierge-estate.docx",
+ "items": [
+  {
+   "ref": "Q1",
+   "kind": "question",
+   "text": "Explain how you will recruit, vet and retain concierge officers who are suitable for working with residents, including vulnerable residents, and how you will keep staff turnover below 20%.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": 10,
+   "weight_pct": null
+  },
+  {
+   "ref": "Q2",
+   "kind": "question",
+   "text": "Describe your approach to staffing and rostering the three blocks, the patrol and the void service, including cover for sickness and how you will avoid an officer working alone for long periods without a welfare check.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": 8,
+   "weight_pct": null
+  },
+  {
+   "ref": "Q3",
+   "kind": "question",
+   "text": "Describe the training you will give to concierge and patrol officers, including conflict management, first aid, fire safety awareness, equality and diversity, dealing with domestic abuse and mental health issues.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": 8,
+   "weight_pct": null
+  },
+  {
+   "ref": "Q4",
+   "kind": "question",
+   "text": "Set out how you will carry out the estate patrol, including use of intelligence, de-escalation, working with the police and the Neighbourhood Safety Team, and body-worn video.",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": 6,
+   "weight_pct": null,
+   "shared_group": "Q4-Q6",
+   "shared_words": 1200
+  },
+  {
+   "ref": "Q5",
+   "kind": "question",
+   "text": "Explain how you will respond to the following. (a): A resident reports a fire alarm sounding at Alder Court at 02:00 and a lift stuck between floors. (b): A resident tells the concierge they fear for the safety of a neighbour. Describe the escalation steps and what is reported afterwards.",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": 6,
+   "weight_pct": null,
+   "shared_group": "Q4-Q6",
+   "shared_words": 1200
+  },
+  {
+   "ref": "Q6",
+   "kind": "question",
+   "text": "Describe your approach to securing void properties, including response to a break-in, the safety of your operatives entering empty properties, and how you will meet the 24 hour target for fitting security screens.",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": 6,
+   "weight_pct": null,
+   "shared_group": "Q4-Q6",
+   "shared_words": 1200
+  },
+  {
+   "ref": "Q7",
+   "kind": "question",
+   "text": "Describe the systems and technology you will use for incident reporting, patrol tracking, lone worker protection and sharing information with the Association, including how you will protect resident data.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": 8,
+   "weight_pct": null
+  },
+  {
+   "ref": "Q8",
+   "kind": "question",
+   "text": "Explain your mobilisation plan from 2 August to 1 October 2027, including TUPE consultation, key risks, and how you will ensure the concierge service does not fall below standard on day one.",
+   "word_limit": null,
+   "page_limit": 1,
+   "marks": 8,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF1",
+   "kind": "mandatory",
+   "text": "Bidder is an SIA Approved Contractor (ACS) for security guarding",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF2",
+   "kind": "mandatory",
+   "text": "All operatives hold a valid SIA licence for the activity performed (door supervision licence is not acceptable for concierge duties)",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF3",
+   "kind": "mandatory",
+   "text": "Staff are screened to BS 7858:2019",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF4",
+   "kind": "mandatory",
+   "text": "Employer's liability insurance of at least £5 million",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF5",
+   "kind": "mandatory",
+   "text": "Public liability insurance of at least £10 million",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF6",
+   "kind": "mandatory",
+   "text": "Average annual turnover of at least £1.5 million over the last two years",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF7",
+   "kind": "mandatory",
+   "text": "Modern Slavery Act compliance and no convictions for slavery or trafficking offences",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF8",
+   "kind": "mandatory",
+   "text": "UK GDPR compliance, ICO registration, and willingness to sign a data processing agreement",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF9",
+   "kind": "mandatory",
+   "text": "Payment of the real Living Wage",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF10",
+   "kind": "mandatory",
+   "text": "Enhanced DBS check for every officer working at blocks with vulnerable residents",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF11",
+   "kind": "mandatory",
+   "text": "Confirm that the bidder has not been subject to any SIA enforcement action in the past three years. If it has, give details.",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "",
+   "kind": "deadline",
+   "text": "Tender submission deadline: 14:00 on Friday 23 April 2027",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  }
+ ]
+}

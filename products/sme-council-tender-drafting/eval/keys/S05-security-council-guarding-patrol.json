@@ -1,0 +1,302 @@
+{
+ "pack": "S05-security-council-guarding-patrol.docx",
+ "items": [
+  {
+   "ref": "Q1",
+   "kind": "question",
+   "text": "Describe how you will resource and roster the static posts, mobile patrols, keyholding and CCTV control room, including how you will cover sickness, annual leave, and peaks such as council meeting evenings, school holidays and Christmas lights events. Explain how you will keep to a 99.5% fill rate and manage working time rules and fatigue.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 5
+  },
+  {
+   "ref": "Q2",
+   "kind": "question",
+   "text": "Set out your approach to recruiting, screening and onboarding staff in line with BS 7858, including how you will verify SIA licences, right to work and references, and what you do where a candidate has gaps in their employment history. Say how long vetting takes and how you will ensure no one works unscreened on this contract.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 5
+  },
+  {
+   "ref": "Q3",
+   "kind": "question",
+   "text": "Describe the induction and ongoing training you will provide, including conflict management, first aid at work, fire marshal duties, equality and disability awareness, and site-specific training. Explain how you will record and refresh training and how it will be adapted for CCTV operators.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "Q4",
+   "kind": "question",
+   "text": "Many of the posts and all patrols are staffed by lone workers at night. Explain how you will supervise them, how you will check on their welfare, what technology you will use (for example, lone worker devices), and how you will respond if an officer does not check in.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "Q5",
+   "kind": "question",
+   "text": "Explain how you will respond to and escalate the following scenarios: (a) a confirmed intruder at the Millbrook Depot at 03:00; (b) a group of young people causing disturbance in a park, some apparently vulnerable; (c) a keyholder arriving at a site where the alarm has sounded and a door has been forced. Describe the decision-making, the use of the police and the Council's duty officer, and the reporting that follows.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "Q6",
+   "kind": "question",
+   "text": "Describe the systems you will use for guard tour, incident reporting, rostering and client access to data. Explain how the Council will see real-time information and how your systems handle data protection and cyber security.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "Q7",
+   "kind": "question",
+   "text": "Provide a mobilisation plan for the period 21 June to 31 August 2027. Cover TUPE consultation, recruitment, vetting, assignment instructions, key and equipment handover, the CCTV link, and the risks to a smooth start and how you will manage them.",
+   "word_limit": 350,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 5
+  },
+  {
+   "ref": "Q8",
+   "kind": "question",
+   "text": "Explain how you will measure and report against the KPIs in 3.9, how you will use data to improve performance, and what you will do when a target is missed. Give an example of a monthly report format.",
+   "word_limit": 350,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "Q9",
+   "kind": "question",
+   "text": "Describe your complaints procedure for complaints from the public, Council staff and employees, including timescales and how learning is shared.",
+   "word_limit": 350,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 2
+  },
+  {
+   "ref": "Q10",
+   "kind": "question",
+   "text": "Explain how you will manage the contract, including named roles, review meetings, escalation, change control for variations in hours, and how you will maintain continuity if your account manager leaves.",
+   "word_limit": 350,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "Q11",
+   "kind": "mandatory",
+   "text": "Confirm that the accreditations and insurances stated in Section 4 will remain valid throughout the term, and describe what you will do if any lapses.",
+   "word_limit": 150,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "Q12",
+   "kind": "question",
+   "text": "Describe your health and safety management system for this contract, including risk assessment of patrol routes and lone working, accident reporting, and the safe use of vehicles. Give your RIDDOR record for the last three years.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "Q13",
+   "kind": "question",
+   "text": "Explain how you will reduce the environmental impact of the service, including patrol vehicles, energy use in the control room and use of paper. Set out your plan for a transition to electric vehicles.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 2
+  },
+  {
+   "ref": "Q14",
+   "kind": "question",
+   "text": "Describe your business continuity plan for events such as severe weather, fuel shortages, a failure of the control room, a cyber attack or a pandemic. Explain how you will maintain the 24-hour keyholding response and CCTV monitoring if the control room becomes unavailable.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "Q15",
+   "kind": "question",
+   "text": "15(a) Explain how your staff are trained to recognise and report safeguarding concerns involving children and adults at risk, including rough sleepers and people in mental health crisis. 15(b) Describe how you will ensure officers deal with the public fairly and proportionately, including your approach to use of force, body-worn video and complaints from members of the public.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 3
+  },
+  {
+   "ref": "Q16",
+   "kind": "question",
+   "text": "Provide one case study of a comparable contract you delivered in the last three years, including a combined keyholding and patrol element in a local authority or public-sector setting. Describe the challenge, what you did, measurable outcomes, and lessons learned.",
+   "word_limit": null,
+   "page_limit": 2,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "Q17",
+   "kind": "question",
+   "text": "The Council's social value priorities are: local employment and skills; support for the local economy; fair work; and reducing carbon emissions. Describe the commitments you will make in each area, with measurable targets, how you will deliver them and how you will report progress.",
+   "word_limit": 600,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 7
+  },
+  {
+   "ref": "M1",
+   "kind": "mandatory",
+   "text": "All operatives, supervisors and control room staff hold a valid SIA licence for the activity undertaken",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M2",
+   "kind": "mandatory",
+   "text": "Bidder holds current SIA Approved Contractor Scheme approval for manned guarding, and keyholding where applicable",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M3",
+   "kind": "mandatory",
+   "text": "All staff are screened in accordance with BS 7858",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M4",
+   "kind": "mandatory",
+   "text": "Keyholding and alarm response is delivered to BS 7984",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M5",
+   "kind": "mandatory",
+   "text": "CCTV monitoring is delivered to BS 7958",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M6",
+   "kind": "mandatory",
+   "text": "Bidder holds ISO 9001 and ISO 45001, or equivalent",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M7",
+   "kind": "mandatory",
+   "text": "Employer's liability insurance of at least £10 million",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M8",
+   "kind": "mandatory",
+   "text": "Public liability insurance of at least £10 million",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M9",
+   "kind": "mandatory",
+   "text": "Professional indemnity insurance of at least £5 million",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M10",
+   "kind": "mandatory",
+   "text": "Minimum annual turnover of £3 million in each of the last two financial years",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M11",
+   "kind": "mandatory",
+   "text": "No grounds for mandatory exclusion under the Procurement Act 2023",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M12",
+   "kind": "mandatory",
+   "text": "Compliance with the Modern Slavery Act 2015, with a published statement where required",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M13",
+   "kind": "mandatory",
+   "text": "Compliance with UK GDPR and the Data Protection Act 2018, including registration with the Information Commissioner",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M14",
+   "kind": "mandatory",
+   "text": "Payment of at least the real Living Wage",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "M15",
+   "kind": "mandatory",
+   "text": "Right to work checks completed for all employees",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "",
+   "kind": "deadline",
+   "text": "Tender submission deadline: 12:00 noon on 14 April 2027",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  }
+ ]
+}

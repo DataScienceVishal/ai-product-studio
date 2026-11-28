@@ -1,0 +1,221 @@
+{
+ "pack": "S11-grounds-quillbrook-district.docx",
+ "items": [
+  {
+   "ref": "Q1",
+   "kind": "question",
+   "text": "Describe how you will take over the services on 1 September 2027, including the TUPE process, the transfer of knowledge about the pitches, the early renovation work that is needed in the autumn and the communication you will have with clubs and the public.",
+   "word_limit": 600,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 6
+  },
+  {
+   "ref": "Q2",
+   "kind": "question",
+   "text": "Provide a method statement and 12-month programme for pitch maintenance, including how you will plan marking, renovation and play around fixtures calendars. Explain how you will arrange resources in peak periods.",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 6
+  },
+  {
+   "ref": "Q3",
+   "kind": "question",
+   "text": "Explain your approach to the agronomy of the football, rugby and cricket surfaces, including how you will use soil testing, nutrient plans, aeration and overseeding to improve standards.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 6
+  },
+  {
+   "ref": "Q4",
+   "kind": "question",
+   "text": "Explain how you will meet the standards that the bowling clubs expect, how you will schedule daily cutting, and how you will work with the clubs.",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "Q5",
+   "kind": "question",
+   "text": "Describe the team to be deployed, including qualifications, supervision and holiday cover. Include details of apprenticeships and how you will maintain the Level 3 sports turf expertise.",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 6
+  },
+  {
+   "ref": "Q6",
+   "kind": "question",
+   "text": "Provide a schedule of the machinery you will use, its age and emission standard, and your plan to meet the electric tool target in section 2.4.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 5
+  },
+  {
+   "ref": "Q7",
+   "kind": "question",
+   "text": "Explain how you will monitor your own work, the evidence you will provide to the Council, and the key performance indicators you suggest, including a way of measuring pitch quality.",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 5
+  },
+  {
+   "ref": "Q8",
+   "kind": "question",
+   "text": "Describe your health and safety arrangements, including risk assessments for working near the public, the safe use of heavy machinery on sports pitches and your lone-working procedure.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 5
+  },
+  {
+   "ref": "Q9",
+   "kind": "question",
+   "text": "Explain how you will conduct play inspections to BS EN 1176 and how you will safeguard children when you work near them in parks, play areas and the leisure centre.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 5
+  },
+  {
+   "ref": "Q10",
+   "kind": "question",
+   "text": "Describe how you will reduce chemical use, protect biodiversity, use peat-free materials and reduce carbon.",
+   "word_limit": 350,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "Q11",
+   "kind": "question",
+   "text": "Explain how you will keep sports facilities playable in wet and dry weather and how your business would maintain service during staff absence or machinery failure.",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "Q12",
+   "kind": "question",
+   "text": "Explain how you will handle complaints from clubs and residents and give one example of how you have used innovation (for example technology, robotics or data) to improve the service on a previous contract.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "Q13",
+   "kind": "question",
+   "text": "Set out your measurable commitments to the Council's social value priorities: local jobs and training, support for community sports clubs and carbon reduction. Give targets, timings and how you will report.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 10
+  },
+  {
+   "ref": "P1",
+   "kind": "mandatory",
+   "text": "Public liability insurance of at least £10 million",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "P2",
+   "kind": "mandatory",
+   "text": "Employer's liability insurance of at least £10 million",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "P3",
+   "kind": "mandatory",
+   "text": "Turnover of at least £1 million in the latest financial year, or a parent company guarantee",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "P4",
+   "kind": "mandatory",
+   "text": "A current SSIP-accredited certificate such as CHAS, SafeContractor or Achilles",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "P5",
+   "kind": "mandatory",
+   "text": "NPTC PA1, PA2 and PA6 certificates held by every sprayer operator on the contract",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "P6",
+   "kind": "mandatory",
+   "text": "A named person holding the STRI or Institute of Groundsmanship qualification in sports turf (Level 3 or above)",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "P7",
+   "kind": "mandatory",
+   "text": "A Modern Slavery Act statement",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "P8",
+   "kind": "mandatory",
+   "text": "Compliance with UK GDPR and registered with the Information Commissioner",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "P9",
+   "kind": "mandatory",
+   "text": "Completed Selection Questionnaire using the standard PPN 03/24 structure",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "P10",
+   "kind": "mandatory",
+   "text": "A safeguarding policy covering work in the presence of children",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "",
+   "kind": "deadline",
+   "text": "Tender submission deadline: 12:00 on Friday 30 April 2027",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  }
+ ]
+}
