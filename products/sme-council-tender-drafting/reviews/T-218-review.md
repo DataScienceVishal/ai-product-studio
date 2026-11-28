@@ -47,3 +47,17 @@ None.
 2. **A test can damage the repo if the guard regresses.** `test_cli_refuses_without_writing` runs the real builder against the real `demo-data/packs/` and only detects writes afterwards through mtimes. A regression would rewrite the frozen packs during the test run. Copy `build_docx.py` and the sources into `tmp_path/pack-sources/` (OUT is resolved relative to the script) and run it there, or at least point FROZEN_LIST and OUT at a tmp copy.
 3. **A heading can still sit alone at the foot of a page (pre-existing, outside S2).** With 300 words on a page, then `## Method` and a 460-word paragraph, the heading lands at the foot of page 1 and the paragraph starts page 2. The heading lookahead counts only `min(next, 80)` words, but the builder never splits a paragraph across pages. Reproduced in scratch: page 0 = `[Normal, Heading 2 'Method']`, page 1 = `[Normal]`. No committed pack is affected (`--check` passes). If it matters for page references, use the next block's full word count when it is a para, bullet or number that cannot fit in what is left of the page.
 4. **Minor:** `main()` catches `SystemExit` from argparse and returns `e.code`. That works for these flags, but argparse can raise with a string code. `int(e.code or 0)` would then raise ValueError. Low impact.
+
+## Re-review (commit fde5fbc, suggestion 1 delta): PASS
+
+What changed: `frozen_names()` now strips a leading `*` from the path, so binary-mode lines count. `plan_writes()` now fails closed: if the frozen set is empty and `--allow-frozen` is not passed, it returns no packs to write plus an error, and `main` exits 2. There are 2 new tests, one for binary-mode lines and one for the fail-closed path.
+
+Evidence:
+```
+$ python3.13 demo-data/pack-sources/build_docx.py --check  -> check: all committed .docx match their sources
+$ sha256sum -c eval/keys/FROZEN.sha256 --quiet           -> rc=0
+$ pytest tests/test_tender_build_docx.py                  -> 42 passed in 11.75s
+scratch copy, FROZEN rewritten to binary mode ('hash *path'): --write -> 9 "skipped"; the original FROZEN.sha256 then verifies, rc=0
+scratch copy, FROZEN.sha256 removed: --write -> "no frozen packs listed in ...; refusing to write (pass --allow-frozen to override)", rc=2, nothing written
+```
+Suggestions 2-4 above are still open and non-blocking.
