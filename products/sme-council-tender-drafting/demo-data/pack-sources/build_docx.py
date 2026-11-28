@@ -1,7 +1,13 @@
 """Build the synthetic tender packs (.docx) from their Markdown sources (T-194, Q-20 option B). No model calls.
 
-    python3 demo-data/pack-sources/build_docx.py            # writes demo-data/packs/S*.docx
-    python3 demo-data/pack-sources/build_docx.py --check    # rebuilds into a temp dir and compares with the committed .docx
+    python3 demo-data/pack-sources/build_docx.py --check                # rebuild into a temp dir, compare with packs/ (never writes)
+    python3 demo-data/pack-sources/build_docx.py --write                # rewrite packs/S*.docx, skipping frozen held-out packs
+    python3 demo-data/pack-sources/build_docx.py --write --only S08     # rewrite only the named pack(s)
+    python3 demo-data/pack-sources/build_docx.py --write --allow-frozen # also rewrite the frozen packs (breaks FROZEN.sha256)
+    python3 demo-data/pack-sources/build_docx.py --help
+
+No arguments, or an unknown one, prints usage and exits 2 without writing anything (T-218). A pack is frozen when its
+.docx is listed in eval/keys/FROZEN.sha256; --write skips it (and --only on a frozen pack fails) unless --allow-frozen.
 
 Supported Markdown: '# ', '## ', '### ' headings (hashes followed by a space; '#5 ...' or '#### ...' stay plain text), paragraphs, '- ' bullets, '1. ' numbered items, pipe tables
 (header row plus a '|---|' separator), **bold** spans, and a '---pagebreak---' line. Anything else is kept as plain text.
@@ -15,11 +21,12 @@ page references in answer keys are stable. Every page carries a 'Synthetic demo 
 The build is deterministic in content: core properties are fixed, so the same source gives the same file text. The zip
 bytes are not compared (python-docx timestamps its zip members), `--check` compares `fingerprint()` instead: core
 properties, footer, and every paragraph (style, runs with bold, page breaks) and table cell in order. It exits 1 on any
-difference or a missing committed file. Running without --check rewrites the files; the frozen held-out packs are only
-touched when you run that explicitly, and tests/CI use --check, which never writes into packs/.
+difference or a missing committed file. Only --write rewrites files; the frozen held-out packs are only touched with
+--allow-frozen, and tests/CI use --check, which never writes into packs/.
 """
 from __future__ import annotations
 
+import argparse
 import datetime as dt
 import re
 import sys
@@ -32,6 +39,7 @@ from docx.shared import Pt
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE.parent / "packs"
+FROZEN_LIST = HERE.parent.parent / "eval" / "keys" / "FROZEN.sha256"
 PAGE_WORDS = 450
 TABLE_PAGE_WORDS = PAGE_WORDS * 2  # a page holding a table may reach about 900 words (the reviewer's page-budget rule)
 FOOTER = "Synthetic demo document - fictional buyer. Written by AI Product Studio for testing; not a real procurement."
@@ -168,7 +176,7 @@ def build(src: Path, dest: Path) -> dict:
             if nxt[0] == "table" and on_page + heads + _words(*nxt) > TABLE_PAGE_WORDS:
                 need = PAGE_WORDS + 1  # the table will force its own break: break before the heading, not between
         only_heads = on_page == heads_on_page  # the page holds nothing but the headings just placed
-        if on_page and on_page + need > PAGE_WORDS and kind != "table" and not (kind == "heading" and only_heads):
+        if on_page and on_page + need > PAGE_WORDS and kind != "table" and not only_heads:  # never strand headings alone
             page_break()
         only_heads = on_page == heads_on_page  # recomputed: the break above may have emptied the page
         if kind == "heading":
@@ -261,15 +269,85 @@ def check(out_dir: Path, packs: Path = OUT, srcs: list[Path] | None = None) -> l
     return problems
 
 
+def frozen_names(frozen_list: Path = FROZEN_LIST) -> set[str]:
+    """Names of the .docx packs pinned in FROZEN.sha256 (the held-out packs)."""
+    if not frozen_list.exists():
+        return set()
+    names = set()
+    for line in frozen_list.read_text(encoding="utf-8").splitlines():
+        parts = line.split()
+        path = parts[1].lstrip("*") if len(parts) == 2 else ""  # sha256sum binary mode writes '<hash> *<path>'
+        if path.startswith("demo-data/packs/") and path.endswith(".docx"):
+            names.add(Path(path).name)
+    return names
+
+
+def _parser() -> argparse.ArgumentParser:
+    ap = argparse.ArgumentParser(prog="build_docx.py", description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument("--check", action="store_true", help="rebuild into a temp dir and compare; never writes packs/")
+    mode.add_argument("--write", action="store_true", help="rewrite packs/S*.docx (frozen packs skipped)")
+    ap.add_argument("--only", nargs="+", metavar="SNN", help="with --write: only these packs, e.g. S08 S12")
+    ap.add_argument("--allow-frozen", action="store_true", help="with --write: also rewrite frozen held-out packs")
+    return ap
+
+
+def plan_writes(only: list[str] | None, allow_frozen: bool, srcs: list[Path] | None = None,
+                frozen: set[str] | None = None) -> tuple[list[Path], list[str], list[str]]:
+    """Return (sources to write, skipped frozen names, errors). Nothing is written here."""
+    srcs = srcs if srcs is not None else sources()
+    frozen = frozen if frozen is not None else frozen_names()
+    errors: list[str] = []
+    if not frozen and not allow_frozen:  # fail closed: without the frozen list we cannot tell held-out packs apart
+        return [], [], [f"no frozen packs listed in {FROZEN_LIST}; refusing to write (pass --allow-frozen to override)"]
+    chosen = srcs
+    if only:
+        wanted = {o.upper() for o in only}
+        chosen = [s for s in srcs if s.stem[:3].upper() in wanted]
+        missing = wanted - {s.stem[:3].upper() for s in chosen}
+        if missing:
+            errors.append("no source for: " + ", ".join(sorted(missing)))
+    todo, skipped = [], []
+    for s in chosen:
+        if (s.stem + ".docx") in frozen and not allow_frozen:
+            skipped.append(s.stem + ".docx")
+        else:
+            todo.append(s)
+    if only and skipped:
+        errors.append("frozen held-out pack(s), rerun with --allow-frozen to rewrite: " + ", ".join(skipped))
+    return todo, skipped, errors
+
+
 def main(argv: list[str]) -> int:
-    if "--check" in argv:
+    ap = _parser()
+    try:
+        args = ap.parse_args(argv[1:])
+    except SystemExit as e:  # --help exits 0, a bad argument exits 2; neither writes
+        return int(e.code or 0)
+    if args.check:
+        if args.only or args.allow_frozen:
+            ap.print_usage(sys.stderr)
+            print("build_docx.py: --only/--allow-frozen need --write", file=sys.stderr)
+            return 2
         with tempfile.TemporaryDirectory() as tmp:
             problems = check(Path(tmp))
         for line in problems:
             print("DRIFT " + line, file=sys.stderr)
-        print("check: " + ("FAILED, rebuild with build_docx.py" if problems else "all committed .docx match their sources"))
+        print("check: " + ("FAILED, rebuild with build_docx.py --write" if problems else "all committed .docx match their sources"))
         return 1 if problems else 0
-    for src in sources():
+    if not args.write:
+        ap.print_usage(sys.stderr)
+        print("build_docx.py: nothing done; pass --check or --write (see --help)", file=sys.stderr)
+        return 2
+    todo, skipped, errors = plan_writes(args.only, args.allow_frozen)
+    if errors:
+        for e in errors:
+            print("build_docx.py: " + e, file=sys.stderr)
+        return 2
+    for name in skipped:
+        print(f"{name}: skipped (frozen held-out pack; --allow-frozen to rewrite)")
+    for src in todo:
         r = build(src, OUT / (src.stem + ".docx"))
         print(f"{r['file']}: {r['pages']} pages, {r['words']} words")
     return 0
