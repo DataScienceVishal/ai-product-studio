@@ -534,3 +534,4 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Checkout Sessions get expires_at = now + 30 min (Stripe minimum) instead of expiring sibling sessions on completion: simpler, and the refund covers the leftover window.
 - Account deletion tries the tenant's live pending cancels synchronously and fails closed (503, account kept) if one is still live, matching the customer-close path.
 - N2 (restricted rk_test_ key for the cancels job) waits for the Stripe test keys; N5 needs no change.
+- T-210 (run 6963): duplicate refund made crash-safe by storing the webhook event id only after cancel+refund succeed; no paid invoice yet on a paid plan -> 503 redelivery for up to 24 h then ERROR refund_owed; permanent refund rejection -> ERROR refund_owed and ack (no 3-day 503 loop).
