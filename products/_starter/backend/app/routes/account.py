@@ -12,6 +12,7 @@ from ..ai import tokens_this_month
 from ..db import get_db
 from ..deps import Current, current, owner, session_cookie, subscription_of
 from ..errors import AppError
+from .billing import settle_pending_cancels
 from ..models import BillingCustomer, BillingEvent, Invitation, Note, Subscription, Tenant, User, deleted_tenant_marker
 from ..security import hash_capacity_after, verify_password
 
@@ -84,6 +85,10 @@ def delete_account(data: DeleteIn, request: Request, me: Current = Depends(_dele
     # loop: close what we know (no lock held, the calls are slow), then lock the subscription row and re-read the list.
     # Nothing new: delete the tenant under that same lock (a later webhook finds no subscription and closes its own
     # customer, see routes/billing.py `_close_orphan`). Something new: release the lock, close it, look again.
+    # T-182 (T-179 L1): first cancel the tenant's pending (replaced) subscriptions. One that is still live blocks deletion.
+    if not settle_pending_cancels(db, me.tenant.id, billing.name, billing):
+        raise AppError(503, "billing_unavailable", "We couldn't cancel your subscription with the payment "
+                       "provider, so nothing was deleted. Please try again in a few minutes.")
     closed: set[tuple[str | None, str | None]] = set()
     for _ in range(MAX_CLOSE_ROUNDS):
         pending = _pending_calls(db, me.tenant.id, billing.name, sub, closed)
