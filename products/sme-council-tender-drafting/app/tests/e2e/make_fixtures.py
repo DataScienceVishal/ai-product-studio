@@ -42,14 +42,14 @@ uni = out / "unicode"
 uni.mkdir(exist_ok=True)
 d = docx.Document()
 d.add_paragraph("Invitation to Tender: Grounds maintenance for the Café Quarter – Northfield Council", style="Heading 1")
-d.add_paragraph("1. Describe your safeguarding arrangements for the “Zoë Café” contract – value up to £2m. Maximum of 150 words.")
+d.add_paragraph("1. Describe your safeguarding arrangements for the “Zoë Café” contract – worth up to £2m. Maximum of 150 words.")
 d.add_paragraph("2. Describe your social value pledge for local charities – Maximum of 150 words.")
 d.save(uni / "tender.docx")
 (uni / "evidence1.txt").write_text(
     "Our safeguarding lead Zoë O’Brien–Núñez has held the role since 2021 and the “Zoë Café” contract is worth £1,250,000 a year",
     encoding="utf-8")
 (uni / "evidence2.txt").write_text(
-    "Our social value pledge – £75,000 a year for local charities – supports the “Café Aroma” training café in Besançon Road",
+    "Our social value pledge – £75,000 a year for local charities – supports the “Aroma Bär” training venue in Besançon Road",
     encoding="utf-8")
 
 # ---- large (tender_unicode.cjs, second scenario): 8 questions over 4 pages, 8 evidence files ----
@@ -59,11 +59,11 @@ topics = ["beekeeping", "irrigation", "pesticide", "hedgerow", "drainage", "play
 d = docx.Document()
 d.add_paragraph("Invitation to Tender: Grounds maintenance for Northfield Council", style="Heading 1")
 for i, topic in enumerate(topics, start=1):
-    d.add_paragraph(f"{i}. Describe your approach to {topic} across the borough. Maximum of {100 + 10 * i} words.")
+    d.add_paragraph(f"{i}. Describe your approach to {topic}. Maximum of {100 + 10 * i} words.")
     d.add_paragraph("Bidders should write in plain English and give evidence for every claim. " * 12)
     if i % 2 == 0 and i < len(topics):
         d.add_page_break()
 d.save(big / "tender.docx")
 for i, topic in enumerate(topics, start=1):
     (big / f"evidence{i}.txt").write_text(
-        f"Our {topic} work was reviewed in 2025 and covers {10 + i * 7} sites across the borough", encoding="utf-8")
+        f"Our {topic} work was reviewed in 2025 and covers {10 + i * 7} sites", encoding="utf-8")

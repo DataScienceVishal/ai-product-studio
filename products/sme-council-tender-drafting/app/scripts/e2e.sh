@@ -64,6 +64,12 @@ fixtures="$logs/fixtures"
 "$python" "$here/tests/e2e/make_fixtures.py" "$fixtures"
 E2E_BASE_URL="http://127.0.0.1:$web_port" E2E_SCREENSHOT="$logs/tender-failure.png" E2E_FIXTURES="$fixtures" PYTHON="$python" \
   node "$here/tests/e2e/tender_flow.cjs" || status=$?
+for scenario in tender_refusal tender_limits tender_unicode; do  # one at a time: the server reads one upload at once
+  one=0
+  E2E_BASE_URL="http://127.0.0.1:$web_port" E2E_SCREENSHOT="$logs/$scenario-failure.png" E2E_FIXTURES="$fixtures" PYTHON="$python" \
+    node "$here/tests/e2e/$scenario.cjs" || one=$?
+  [ "$status" -ne 0 ] || status=$one
+done
 core=0
 E2E_BASE_URL="http://127.0.0.1:$web_port" E2E_SCREENSHOT="$logs/failure.png" node "$here/tests/e2e/core_flow.cjs" || core=$?
 [ "$status" -ne 0 ] || status=$core
