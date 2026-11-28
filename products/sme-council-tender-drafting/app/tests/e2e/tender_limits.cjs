@@ -92,8 +92,14 @@ h.runScenario("tender limits, gaps and blocked claims", async ({ page, step }) =
   await page.getByLabel(/I have read this statement/).check();
   await page.getByLabel("Your full name").fill("Alex Reviewer");
   assert.equal(await page.getByRole("button", { name: "Sign off this pack" }).isDisabled(), true);
-  const refused = await h.call(page, "POST", `/api/packs/${packId}/signoff`, { reviewer_name: "Alex Reviewer", accept_statement: true, statement_version: "x" });
-  assert.ok(refused.status >= 400 && refused.status < 500, `sign-off should be refused, got ${refused.status}`);
+  const refused = await h.call(page, "POST", `/api/packs/${packId}/signoff`, { reviewer_name: "Alex Reviewer", accept_statement: true, statement_version: "v1" });
+  assert.equal(refused.status, 409, `sign-off should be refused by the gate, got ${refused.status} ${JSON.stringify(refused.json)}`);
+  // The statement is valid ("v1"), so the refusal comes from the pack state: an unsupported claim keeps the pack
+  // out of "ready" (not_ready), or the server-side gate refuses it (export_blocked with claims_blocked).
+  assert.ok(refused.json && ["not_ready", "export_blocked"].includes(refused.json.error), `refusal code: ${JSON.stringify(refused.json)}`);
+  if (refused.json.error === "export_blocked") assert.match(refused.json.message, /claims_blocked/);
   const exp = await h.call(page, "GET", `/api/packs/${packId}/export`);
   assert.equal(exp.status, 409);
+  assert.equal(exp.json && exp.json.error, "export_blocked");
+  assert.match(exp.json.message, /claims_blocked/);
 });
