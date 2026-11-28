@@ -120,12 +120,16 @@ _IMPERATIVE_OR_INVERTED = re.compile(r"^(?:\d+[.)]\s*)?(?:please\s+)?(?:describe
                                      r"demonstrate|confirm|list|identify|do you|can you|have you|"
                                      r"(?:how|what|why|who|when|where|which)\s+(?:is|are|do|does|did|can|could|would|should|will|have|has)\b)", re.I)
 
+# An inverted auxiliary plus subject anywhere ("What steps will you take ...", "How many staff will you ...") marks a question (T-207 R4).
+_INVERTED_ANYWHERE = re.compile(r"\b(?:will|would|do|does|did|can|could|should|shall|must|may|might|are|is|have|has)\s+(?:you|we|us)\b", re.I)
+
 
 def _is_bracketed_limit_heading(line: str) -> bool:
     """The bracket only widens the window; `_LIMIT` still has to find "max N words" in it. An instruction ("Describe your
     approach ... (max 300 words)") or a question is an earlier question, not a heading, so it is refused (T-207 C1)."""
     return (bool(line) and "\n" not in line and len(line) <= 150 and "?" not in line
-            and not _IMPERATIVE_OR_INVERTED.match(line) and bool(_BRACKET_LIMIT_END.search(line)))
+            and not _IMPERATIVE_OR_INVERTED.match(line)
+            and not _INVERTED_ANYWHERE.search(line) and bool(_BRACKET_LIMIT_END.search(line)))
 
 
 def _heading_start(page_text: str, qstart: int) -> int:

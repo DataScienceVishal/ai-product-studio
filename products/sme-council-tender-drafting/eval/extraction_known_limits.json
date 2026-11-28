@@ -81,6 +81,42 @@
       "expected_today": null,
       "ideal": null,
       "note": "T-207 R1: an inverted 'How/What will you ...' question without '?' is an earlier question, not a heading"
+    },
+    {
+      "id": "KL-9",
+      "status": "fixed",
+      "page": "What steps will you take to reduce emissions (max 300 words)\n\nDescribe your staffing plan.",
+      "quote": "Describe your staffing plan.",
+      "expected_today": null,
+      "ideal": null,
+      "note": "T-207 R4: inverted auxiliary + you/we/us anywhere marks an earlier question, not a heading"
+    },
+    {
+      "id": "KL-10",
+      "status": "fixed",
+      "page": "How many staff will you deploy (max 200 words)\n\nDescribe your staffing plan.",
+      "quote": "Describe your staffing plan.",
+      "expected_today": null,
+      "ideal": null,
+      "note": "T-207 R4: inverted auxiliary + you/we/us anywhere marks an earlier question, not a heading"
+    },
+    {
+      "id": "KL-11",
+      "status": "fixed",
+      "page": "What experience do you have of similar contracts (max 300 words)\n\nDescribe your staffing plan.",
+      "quote": "Describe your staffing plan.",
+      "expected_today": null,
+      "ideal": null,
+      "note": "T-207 R4: inverted auxiliary + you/we/us anywhere marks an earlier question, not a heading"
+    },
+    {
+      "id": "KL-12",
+      "status": "fixed",
+      "page": "How must you comply with TUPE (max 300 words)\n\nDescribe your staffing plan.",
+      "quote": "Describe your staffing plan.",
+      "expected_today": null,
+      "ideal": null,
+      "note": "T-207 R4: inverted auxiliary + you/we/us anywhere marks an earlier question, not a heading"
     }
   ]
 }
