@@ -92,3 +92,42 @@ I ran the probes on 004739f and on origin/main:
 
 - R2. "Own limit wins" covers only the quote's own block. A heading "(max 300 words)" followed by the question, then a blank line, then "Your answer must be no more than 400 words." still returns 300. Main does the same, so this is not a regression. Record it as an open KL case, or extend `own` to the end of the window when the heading is the only other limit.
 - R3. Imperatives not in either list ("Summarise", "Specify", "Evidence", "Show", "Include") still pass `_is_heading`, the same as main. This is the existing KL-3 family. Worth adding to the EVAL.md note.
+
+## Re-review 2 (707f2f9, 2026-11-28)
+
+Reviewed `git diff 9b8249d..707f2f9`. The code change is `will we` -> `will` in `_IMPERATIVE_OR_INVERTED`, plus KL-7 and KL-8. Detached checkout of 707f2f9, clean tree.
+
+### Verdict: CHANGES
+
+### Tests
+
+```
+TEST_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/starter_test python3.13 -m pytest -q -o addopts=""
+1217 passed, 1 skipped in 250.30s
+```
+
+### R1: fixed
+
+"How will you ensure quality (max 300 words)" and "What will you do in the first 90 days (max 300 words)" now return None, the same as main. All earlier probes are unchanged: C1 gives None/500/600, numbered gives None, the KL-1a heading still gives 300, and the heading-only cases still give 300.
+
+### Must-fix R4: same gap, wider: the inverted-question check only looks at the word straight after the question word (extract.py:119-121)
+
+`_IMPERATIVE_OR_INVERTED` catches "How/What + auxiliary" only when the auxiliary comes right after the question word. On main, `_is_heading` refuses any "how/what/why/who/when/where ... you" line. So this new rule now accepts any question where a noun sits between the question word and the auxiliary. The next question then borrows the limit when it states none. These are common council-tender wordings:
+
+| previous line (then blank line, then "Describe your staffing plan.") | 707f2f9 | main |
+|---|---|---|
+| What steps will you take to reduce emissions (max 300 words) | **300** | None |
+| How many staff will you deploy (max 200 words) | **200** | None |
+| What experience do you have of similar contracts (max 300 words) | **300** | None |
+| How must you comply with TUPE (max 300 words) | **300** | None ("must" is missing from the list) |
+
+Other word lists checked. `_QUESTION_LEAD` has no "which", "will you", "are you", or "please" + verb beyond its list. So "Which systems do you use ...", "Will you subcontract ...", "Are you able ...", "In what way will you ..." already pass `_is_heading` on main and give the same results on both trees. That is the existing KL-3 family, not a regression. `_LIMIT` and `_PAGE_LIMIT` were not touched.
+
+Fix (simulated by monkeypatching in a probe, not committed): in `_is_bracketed_limit_heading`, refuse a line that has an inverted auxiliary plus subject **anywhere**, instead of extending the word list after the lead:
+
+```python
+_INVERTED_ANYWHERE = re.compile(r"\b(?:will|would|do|does|did|can|could|should|shall|must|may|might|are|is|have|has)\s+(?:you|we|us)\b", re.I)
+... and not _INVERTED_ANYWHERE.search(line)
+```
+
+With this check, all four rows above return None (matching main). KL-1a "How you will deliver ..." and KL-1b "What we need from you ..." still return 300, because neither has an inverted auxiliary. Add the four rows as KL cases with expected None. Optionally note the main-equivalent "Which/Will you/Are you" lines in EVAL.md as part of KL-3.
