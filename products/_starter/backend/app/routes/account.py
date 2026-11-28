@@ -12,7 +12,7 @@ from ..ai import tokens_this_month
 from ..db import get_db
 from ..deps import Current, current, owner, session_cookie, subscription_of
 from ..errors import AppError
-from ..models import BillingCustomer, Invitation, Note, Subscription, Tenant, User
+from ..models import BillingCustomer, BillingEvent, Invitation, Note, Subscription, Tenant, User, deleted_tenant_marker
 from ..security import hash_capacity_after, verify_password
 
 log = logging.getLogger("app.account")
@@ -104,6 +104,8 @@ def delete_account(data: DeleteIn, request: Request, me: Current = Depends(_dele
         log.error("customers kept appearing during account deletion; account kept", extra={"tenant_id": tenant_id})
         raise AppError(503, "billing_unavailable", "We couldn't finish closing your billing account, so nothing was "
                        "deleted. Please try again in a few minutes.")
+    # T-208: tombstone in the same transaction, so a paid checkout that completes later is known to be ours (see _close_orphan)
+    db.merge(BillingEvent(id=deleted_tenant_marker(me.tenant.id)))
     db.delete(db.get(Tenant, me.tenant.id))  # rows cascade: users, sessions, notes, usage, invitations
     db.commit()
     log.info("tenant deleted", extra={"deleted_tenant_id": tenant_id})

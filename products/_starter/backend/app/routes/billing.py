@@ -18,7 +18,7 @@ from ..billing import LIMITED_PROVIDERS, OFFERS, PLANS, BillingUpdate, MockBilli
 from ..db import get_db
 from ..deps import Current, owner, subscription_of, verified_owner
 from ..errors import AppError
-from ..models import BillingCustomer, BillingEvent, PendingCancel, Subscription
+from ..models import BillingCustomer, BillingEvent, PendingCancel, Subscription, deleted_tenant_marker
 
 log = logging.getLogger("app.billing")
 router = APIRouter(prefix="/api/billing", tags=["billing"])
@@ -144,9 +144,16 @@ def _apply_update(db: Session, update: BillingUpdate, provider: str, billing=Non
         return False
     # Lock the row, so two webhooks delivered at once apply one after the other and the order check holds.
     sub = db.scalar(select(Subscription).where(Subscription.tenant_id == update.tenant_id).with_for_update())
-    if sub is None:  # the tenant deleted their account; keep the event id, change nothing in our tables
-        db.commit()
+    if sub is None:  # the tenant deleted their account (or was never ours); change nothing in our tables
+        # T-208 review S1: close at the provider FIRST and store the event id after, so a crash in between leaves the
+        # redelivery to try again. The flushed id is rolled back so no transaction is open during the provider call.
+        db.rollback()
         _close_orphan(db, update, provider, billing)
+        db.add(BillingEvent(id=update.event_id))
+        try:
+            db.commit()
+        except IntegrityError:  # the same event was delivered twice at once and the other one stored it
+            db.rollback()
         return True
     if update.customer_ref:  # T-181 (T-179 M1): remember every customer, so account deletion can remove them all
         if not _record_customer(db, update.tenant_id, provider, update.customer_ref):
@@ -261,24 +268,28 @@ def _apply_update(db: Session, update: BillingUpdate, provider: str, billing=Non
 
 
 def _close_orphan(db: Session, update: BillingUpdate, provider: str, billing) -> None:
-    """T-208 (T-181 S1): an event for a tenant that no longer exists (a checkout opened before the account was deleted and
-    paid after). Its customer and subscription were never in our tables, so deletion could not remove them and they would
-    bill for ever. Close them at the provider, unless a live tenant has recorded that customer (then it is theirs).
-    On failure forget the event id and answer 503, so the provider redelivers and the close is tried again."""
+    """T-208 (T-181 S1): a checkout started before the account was deleted and paid after. Its customer and subscription
+    were never in our tables, so deletion could not remove them and they would bill for ever. Close them at the provider.
+    Only when THIS app deleted the tenant (the tombstone `deleted-tenant:<id>` that account deletion writes): the provider
+    account sends every event to every endpoint, so an unknown tenant id may belong to another product on the same account,
+    and its customer must never be touched. Only events that start a subscription count (cancellation and customer-deleted
+    events are what our own close produces). Not when a live tenant has recorded the customer.
+    On failure answer 503 (the event id is not stored yet), so the provider redelivers and the close is tried again."""
+    if billing is None or not update.starts_subscription or not (update.customer_ref or update.provider_ref):
+        return
+    if db.get(BillingEvent, deleted_tenant_marker(update.tenant_id)) is None:
+        log.warning("event for a tenant this app never deleted: ignored")
+        return
     customer = update.customer_ref
     if customer and db.scalar(select(BillingCustomer.id).where(BillingCustomer.provider == provider,
                                                                BillingCustomer.customer_ref == customer)) is not None:
         return  # a live tenant owns this customer: never delete it
-    subscription = update.provider_ref if update.starts_subscription else None
-    if billing is None or not (customer or subscription):
-        return
+    db.rollback()  # end the read transaction before the network call
     try:
-        billing.close(customer, subscription)
+        billing.close(customer, update.provider_ref)
     except Exception as error:
         log.error("could not close the customer of a deleted tenant (will be retried on redelivery)",
                   extra={"tenant_id": str(update.tenant_id)}, exc_info=True)
-        db.execute(delete(BillingEvent).where(BillingEvent.id == update.event_id))
-        db.commit()
         raise AppError(503, "billing_unavailable", "Could not close the customer yet. Try again.") from error
     log.warning("closed the payment-provider customer of a deleted tenant", extra={"tenant_id": str(update.tenant_id)})
 

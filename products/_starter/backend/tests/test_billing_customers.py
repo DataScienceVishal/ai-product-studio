@@ -376,3 +376,69 @@ def test_a_customer_inserted_concurrently_by_another_tenant_is_refused_at_the_in
         assert _record_customer(db, t, "mock", "cus_RACE") is False
         db.scalar = real
         assert db.scalar(select(func.count()).select_from(BillingCustomer)) == 1  # session still usable, no half row
+
+
+# ---- T-208 review: C1 (tombstone), S1 (close before storing the id), S2 (only start events) ----
+
+def test_a_signed_event_for_a_tenant_this_app_never_had_closes_nothing_and_is_recorded(app, database):
+    from app.models import BillingEvent
+    billing = app.state.billing
+    assert _orphan_event(database, billing, str(uuid.uuid4()), "e_foreign", "sub_foreign", "cus_FOREIGN") is True
+    assert billing.closed == []  # another product's customer on the same provider account
+    with database.sessions() as db:
+        assert db.get(BillingEvent, "e_foreign") is not None
+
+
+def test_account_deletion_writes_the_tombstone_with_the_tenant_delete(app, owner, database):
+    from app.models import BillingEvent, deleted_tenant_marker
+    client, _ = owner
+    t = _tenant(client)
+    assert _delete_account(client).status_code == 204
+    with database.sessions() as db:
+        assert db.get(BillingEvent, deleted_tenant_marker(t)) is not None
+
+
+def test_a_failed_deletion_writes_no_tombstone(app, owner, database):
+    from app.models import BillingEvent, deleted_tenant_marker
+    client, _ = owner
+    t, billing = _tenant(client), app.state.billing
+    _apply(database, billing, t, "e1", "sub_1", "cus_A", int(time.time()) - 100)
+    billing.close = lambda c, s: (_ for _ in ()).throw(AppError(503, "billing_unavailable", "down"))
+    assert _delete_account(client).status_code == 503
+    with database.sessions() as db:
+        assert db.get(BillingEvent, deleted_tenant_marker(t)) is None
+
+
+def test_the_orphan_is_closed_before_its_event_id_is_stored(app, owner, database):
+    from app.models import BillingEvent
+    client, _ = owner
+    t, billing = _tenant(client), app.state.billing
+    assert _delete_account(client).status_code == 204
+    stored_at_close = []
+    real_close = billing.close
+
+    def spy(customer, subscription):
+        with database.sessions() as db:
+            stored_at_close.append(db.get(BillingEvent, "e_late") is not None)
+        real_close(customer, subscription)
+
+    billing.close = spy
+    _orphan_event(database, billing, t, "e_late", "sub_late", "cus_LATE")
+    assert stored_at_close == [False] and ("cus_LATE", "sub_late") in billing.closed
+    with database.sessions() as db:
+        assert db.get(BillingEvent, "e_late") is not None
+
+
+def test_a_cancellation_event_for_a_deleted_tenant_does_not_call_the_provider(app, owner, database):
+    client, _ = owner
+    t, billing = _tenant(client), app.state.billing
+    assert _delete_account(client).status_code == 204
+    billing.closed.clear()
+    obj = {"id": "sub_1", "customer": "cus_A", "status": "canceled", "metadata": {"tenant_id": t}}
+    payload = json.dumps({"id": "e_del", "type": "customer.subscription.deleted", "created": int(time.time()),
+                          "livemode": False, "data": {"object": obj}}).encode()
+    update_ = _stripe(lambda r: httpx.Response(200, json={})).parse_webhook(payload, sign(payload, SECRET))
+    assert update_ is not None and not update_.starts_subscription
+    with database.sessions() as db:
+        assert apply_update(db, update_, billing.name, billing) is True
+    assert billing.closed == []
