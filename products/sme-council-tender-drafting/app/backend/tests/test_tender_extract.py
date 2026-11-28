@@ -359,6 +359,16 @@ def test_the_heading_window_never_borrows_the_previous_questions_limit():
     assert ex.stated_word_limit(numbered, "State your insurance cover.") is None
 
 
+def test_an_unnumbered_one_line_previous_question_is_not_taken_as_the_next_heading():
+    """T-201 item 7: the previous question's own limit must not become the next question's window."""
+    page = "Describe your approach in no more than 200 words\n\nDescribe your staffing plan."
+    assert ex.stated_word_limit(page, "Describe your staffing plan.") is None
+    same_block = "Describe your approach in no more than 200 words\nDescribe your staffing plan."
+    assert ex.stated_word_limit(same_block, "Describe your staffing plan.") is None
+    # a real heading still counts
+    assert ex.stated_word_limit("Staffing (max 150 words)\n\nDescribe your staffing plan.", "Describe your staffing plan.") == 150
+
+
 def test_a_wrong_limit_is_flagged_when_the_limit_is_in_the_heading():
     page = {1: "Q3 Social Value (max 500 words, 10%)\nDescribe the social value you will deliver."}
     item = {"ref": "Q3", "kind": "question", "text": "Describe the social value you will deliver.", "word_limit": 300,

@@ -97,6 +97,13 @@ _NEXT_QUESTION = re.compile(r"\n\s*(?:q(?:uestion)?\s*)?\d+(?:\.\d+)*\s*[.):]", 
 
 
 _HEADING_LOOKBACK = 300
+# A one-line block that opens with a question verb is the previous (unnumbered) question, not a heading for the next one (T-201 item 7).
+_QUESTION_LEAD = re.compile(r"^(?:\d+[.)]\s*)?(?:please\s+)?(?:describe|explain|set out|provide|outline|state|detail|give|tell us|"
+                            r"demonstrate|confirm|list|identify|how|what|why|who|when|where|do you|can you|have you)\b", re.I)
+
+
+def _is_heading(line: str) -> bool:
+    return bool(line) and "\n" not in line and len(line) <= 150 and not re.search(r"[.!?]$", line) and not _QUESTION_LEAD.match(line)
 
 
 def _heading_start(page_text: str, qstart: int) -> int:
@@ -112,14 +119,14 @@ def _heading_start(page_text: str, qstart: int) -> int:
         prev_blocks = list(re.finditer(r"\n[ \t]*\n", prev))
         pbs = prev_blocks[-1].end() if prev_blocks else 0
         line = prev[pbs:].strip()
-        if line and "\n" not in line and len(line) <= 150 and not re.search(r"[.!?]$", line):
+        if _is_heading(line):
             start = pbs
     elif before[start:].count("\n"):  # the quote is inside a block: its own line, plus the line above if that is a heading
         block = before[start:]
         ls = block.rfind("\n")
         pls = block.rfind("\n", 0, ls)
         cand = block[pls + 1:ls].strip()
-        start += pls + 1 if (cand and len(cand) <= 150 and not re.search(r"[.!?]$", cand)) else ls + 1
+        start += pls + 1 if _is_heading(cand) else ls + 1
     numbered = list(_NEXT_QUESTION.finditer(before, start))
     if numbered:
         start = numbered[-1].start() + 1  # the numbered line itself, after its newline

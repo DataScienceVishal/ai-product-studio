@@ -16,6 +16,8 @@ Rules (also in DATA.md):
   - AI usage rows: after 400 days (13 months covers a full year of billing questions). They outlive deleted
     tenants (unlinked), because the studio-wide daily AI budget must count them.
   - AI cache rows (ai_cache, customer content derived from uploads): 90 days after creation
+  - soft-deleted evidence documents (and their passages): 90 days after deleted_at, unless a pack with an exports row
+    has a draft citing one of their passages (the audit keeps it)
   - AI reservations still "pending" after 15 minutes (the process died mid-call): zeroed, so they stop counting
   - accounts whose owner never verified their email, never signed in for 30 days, and has no payment-provider
     customer: after 30 days, only when verification is required AND real email is sent (with the outbox nobody
@@ -28,20 +30,33 @@ import json
 import logging
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import delete, or_, select
+from sqlalchemy import delete, exists, or_, select
 from sqlalchemy.orm import Session
 
 from .ai import release_stale_reservations
 from .billing import build_billing
 from .config import Settings
 from .db import Database
-from .tender_models import AICache
+from .tender_models import AICache, Draft, EvidenceItem, ExportRecord, Requirement, SourceDocument
 from .models import (AIUsage, AuthSession, BillingEvent, EmailVerification, Invitation, PasswordReset, PendingCancel, Subscription,
                      Tenant, User)
 
 
 log = logging.getLogger("app.billing")
 AI_CACHE_DAYS = 90
+EVIDENCE_PURGE_DAYS = 90  # soft-deleted evidence documents (T-201 item 10)
+
+
+def _purgeable_evidence(now: datetime):
+    """Soft-deleted evidence documents past the horizon, unless an exported pack's drafts cite one of their passages
+    (an exports row is the audit; the appendix text it was built from stays while any export may cite it)."""
+    cited_by_export = exists().where(
+        EvidenceItem.document_id == SourceDocument.id, EvidenceItem.tenant_id == SourceDocument.tenant_id,
+        Draft.tenant_id == EvidenceItem.tenant_id, Draft.cited_ids.any(EvidenceItem.display_no),
+        Requirement.tenant_id == Draft.tenant_id, Requirement.id == Draft.requirement_id,
+        exists().where(ExportRecord.tenant_id == Requirement.tenant_id, ExportRecord.pack_id == Requirement.pack_id))
+    return (SourceDocument.kind == "evidence", SourceDocument.deleted_at.is_not(None),
+            SourceDocument.deleted_at < now - timedelta(days=EVIDENCE_PURGE_DAYS), ~cited_by_export)
 
 
 def purge(db: Session, now: datetime | None = None, unverified_after_days: int | None = None) -> dict[str, int]:
@@ -50,6 +65,8 @@ def purge(db: Session, now: datetime | None = None, unverified_after_days: int |
     statements = {
         # Age only: the row's own created_at decides, no tenant content is read, and no other table is touched.
         "ai_cache": delete(AICache).where(AICache.created_at < now - timedelta(days=AI_CACHE_DAYS)),
+        # The document row goes and its passages and pages cascade. Age and the exports audit decide; no text is read.
+        "soft_deleted_evidence": delete(SourceDocument).where(*_purgeable_evidence(now)),
         "sessions": delete(AuthSession).where(AuthSession.expires_at <= now),
         "password_resets": delete(PasswordReset).where(PasswordReset.created_at < week,
                                                        or_(PasswordReset.used_at.is_not(None), PasswordReset.expires_at <= now)),
