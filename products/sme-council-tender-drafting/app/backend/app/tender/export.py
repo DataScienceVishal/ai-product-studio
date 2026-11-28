@@ -39,7 +39,8 @@ class Rows:
     drafts: list[Draft]
     claims: list[Claim]
     signoff: Signoff | None
-    evidence: dict[int, tuple[EvidenceItem, str]]  # live evidence by display number -> (item, document name)
+    live: set[int]                                 # display numbers of every live passage (item and document not removed)
+    evidence: dict[int, tuple[EvidenceItem, str]]  # only the live passages the claims cite -> (item, document name)
 
 
 def clean(text: str) -> str:
@@ -52,6 +53,8 @@ def safe_filename(title: str) -> str:
 
 
 def load_rows(db: Session, tenant_id, pack_id) -> Rows:
+    """The one reader of the gate's inputs, used by sign-off, claim-check and export, so they cannot drift apart. Liveness is
+    a cheap set of display numbers; the full passages (text, tsv) are fetched only for the numbers the claims cite."""
     pack = db.scalar(select(TenderPack).where(TenderPack.tenant_id == tenant_id, TenderPack.id == pack_id))
     tenant = db.get(Tenant, tenant_id)
     reqs = list(db.scalars(select(Requirement).where(Requirement.tenant_id == tenant_id, Requirement.pack_id == pack_id)
@@ -61,11 +64,14 @@ def load_rows(db: Session, tenant_id, pack_id) -> Rows:
                              .order_by(Claim.draft_id, Claim.seq)))
     so = db.scalar(select(Signoff).where(Signoff.tenant_id == tenant_id, Signoff.pack_id == pack_id, Signoff.voided_at.is_(None))
                    .order_by(Signoff.signed_at.desc()).limit(1))
+    live_join = (SourceDocument.tenant_id == EvidenceItem.tenant_id) & (SourceDocument.id == EvidenceItem.document_id)
+    live_where = (EvidenceItem.tenant_id == tenant_id, EvidenceItem.deleted_at.is_(None), SourceDocument.deleted_at.is_(None))
+    live = {n for (n,) in db.execute(select(EvidenceItem.display_no).join(SourceDocument, live_join).where(*live_where))}
+    cited = {n for c in claims for n in c.cited_ids} | {int(n) for d in drafts for n in _CITE.findall(d.text)}
     ev = {e.display_no: (e, name) for e, name in db.execute(
-        select(EvidenceItem, SourceDocument.filename).join(
-            SourceDocument, (SourceDocument.tenant_id == EvidenceItem.tenant_id) & (SourceDocument.id == EvidenceItem.document_id))
-        .where(EvidenceItem.tenant_id == tenant_id, EvidenceItem.deleted_at.is_(None), SourceDocument.deleted_at.is_(None)))}
-    return Rows(pack, tenant.name if tenant else "", reqs, drafts, claims, so, ev)
+        select(EvidenceItem, SourceDocument.filename).join(SourceDocument, live_join)
+        .where(*live_where, EvidenceItem.display_no.in_(cited & live)))} if cited & live else {}
+    return Rows(pack, tenant.name if tenant else "", reqs, drafts, claims, so, live, ev)
 
 
 def gate_inputs(rows: Rows):
@@ -73,7 +79,7 @@ def gate_inputs(rows: Rows):
     drafts = [gate.GateDraft(str(d.id), str(d.requirement_id), d.version, d.text, d.text_sha256, d.check_sha256) for d in rows.drafts]
     claims = [gate.GateClaim(str(c.draft_id), c.verdict, tuple(c.cited_ids)) for c in rows.claims]
     so = gate.GateSignoff(rows.signoff.statement_version, rows.signoff.drafts_digest) if rows.signoff else None
-    return gate.GatePack(rows.pack.status), reqs, drafts, claims, so, set(rows.evidence)
+    return gate.GatePack(rows.pack.status), reqs, drafts, claims, so, set(rows.live)
 
 
 def _fix_zip(data: bytes) -> bytes:
