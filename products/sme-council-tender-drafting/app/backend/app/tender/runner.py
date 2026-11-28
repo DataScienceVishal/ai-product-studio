@@ -115,7 +115,8 @@ def run_one(sessions: sessionmaker, lease: timedelta, handlers: dict[str, Handle
     except LeaseLost:
         log.warning("ai task lease lost; another worker owns it", extra={"task": str(task.id)})
     except AppError as error:  # budget refusals, truncation, invalid output: fixed codes, no document text
-        _finish(sessions, task, "failed", error.code[:40], 0, 0)
+        tin, tout = error.task_tokens  # a handler may report what it used before it stopped
+        _finish(sessions, task, "failed", error.code[:40], tin, tout)
     except Exception:
         log.error("ai task crashed", extra={"task": str(task.id), "kind": task.kind}, exc_info=True)
         _finish(sessions, task, "failed", "internal", 0, 0)
