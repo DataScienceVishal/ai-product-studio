@@ -15,3 +15,5 @@ Runs add one line per notable result. The Desk clears this back to the header af
 
 - 2026-11-27T23:45Z run 0019: Tender demo S8 part 1 merged: signed-off packs export as a Word file (answers with [E-n] markers, a per-claim evidence table, PPN 017-style "Draft prepared with AI assistance; reviewed by ..." header), refused unless the sign-off is valid and the gate still passes; a Reopen button voids the sign-off for edits. Reviewer CHANGES then PASS; 1192 backend tests green. Left for S8: the end-to-end browser test and qa gate.
 - 2026-11-27T23:59Z run 0019: Tender demo end-to-end browser test written (all 7 steps pass on the fake AI, ending with a valid Word file); on a branch awaiting review. One old starter test needs updating first.
+
+- Tender demo (run 6986): T-192 done. A browser test now walks all 7 SPEC steps (sign up, upload tender, extract checklist, upload evidence, draft, claim check, sign-off, Word export) and checks the downloaded .docx header, footer, answers and claims appendix. Reviewer and qa PASS, merged to main. Next for the demo: D1 public packs (T-194, blocked on downloads, Q-20) and D3 answer keys (T-196).
