@@ -1,3 +1,11 @@
+# STATUS (T-218) - pack builder CLI safety; no pack, key or frozen file touched
+
+Branch `p/sme-council-tender-drafting/T-218` (off main). No model calls, no spend.
+- 1. `build_docx.py` uses argparse: no args or an unknown arg prints usage and exits 2 without writing; `--help` exits 0; `--check` unchanged (rejects `--only`/`--allow-frozen`). Rebuilding needs explicit `--write`; it skips packs listed in `eval/keys/FROZEN.sha256` (the 9 held-out) unless `--allow-frozen`; `--only S08 [S12 ...]` limits it, and `--only` naming a frozen pack without `--allow-frozen` fails (exit 2).
+- 2. T-217 review S2: the paragraph break no longer fires while the page holds only the headings just placed (a long paragraph under a fresh heading stays with it). `--check` still passes for all 12 packs, so no committed layout changed.
+- 3. T-217 review S3: `test_s08_reconciled_counts` pins 14 CCTV + 5 alarm-only sites, 168/60 site-months, 3.3 categories 4+6+9=19.
+- Tests: 21 new in test_tender_build_docx.py (40 total); the S2 test fails on the old guard.
+
 # STATUS (T-217) - S08 counts reconciled, builder table/heading fix, test and EVAL.md nits; no frozen file touched
 
 Branch `p/sme-council-tender-drafting/T-217` (off main). Not merged. No model calls, no spend.
