@@ -131,3 +131,53 @@ _INVERTED_ANYWHERE = re.compile(r"\b(?:will|would|do|does|did|can|could|should|s
 ```
 
 With this check, all four rows above return None (matching main). KL-1a "How you will deliver ..." and KL-1b "What we need from you ..." still return 300, because neither has an inverted auxiliary. Add the four rows as KL cases with expected None. Optionally note the main-equivalent "Which/Will you/Are you" lines in EVAL.md as part of KL-3.
+
+## Re-review 3 (4c2d655, 2026-11-28)
+
+Reviewed `git diff 271ef43..4c2d655`. The code change adds `_INVERTED_ANYWHERE` as a refusal in `_is_bracketed_limit_heading`, plus cases KL-9 to KL-12. Detached checkout of 4c2d655, clean tree.
+
+### Verdict: CHANGES (remove the bracket rule)
+
+### Tests
+
+```
+TEST_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/starter_test python3.13 -m pytest -q -o addopts=""
+1217 passed, 1 skipped in 247.30s
+```
+
+R4 is fixed: KL-9 to KL-12 all return None. But a wider probe shows the rule cannot be fixed by refusal lists.
+
+### Why the rule is unsafe
+
+The bracket rule changes results only for lines that main's `_is_heading` refuses: a `how/what/why/who/when/where` lead together with you/your/us. The refusal lists catch "auxiliary + you/we/us". They miss **"auxiliary + your/our"**, subject-before-verb questions ("What makes your bid ..."), and "there is/exist"-type questions. Each line below is followed by a blank line and then "Describe your staffing plan." (a question with no limit of its own):
+
+| previous line | 4c2d655 | main |
+|---|---|---|
+| What training will your staff receive (max 200 words) | **200** | None |
+| What social value will your organisation deliver (max 300 words) | **300** | None |
+| What makes your bid stand out (max 200 words) | **200** | None |
+| What arrangements are in place to safeguard your staff (max 250 words) | **250** | None |
+| Who in your team will lead the contract (max 150 words) | **150** | None |
+| What risks do your plans face (max 300 words) | **300** | None |
+| How your organisation will meet the KPIs (max 500 words) | **500** | None |
+| Why your organisation is best placed to deliver this contract (max 200 words) | **200** | None |
+| Where your staff are based (max 100 words) | **100** | None |
+| What contingency plans exist if your supplier fails (max 300 words) | **300** | None |
+| How many apprentices could your company take on (max 150 words) | **150** | None |
+| How would your service adapt / What steps will you take / How does your organisation / Who are your key personnel / Tell us about ... / Please explain ... / What is your approach ... | None | None |
+| How you will deliver social value (max 300 words) (KL-1a, intended) | 300 | None |
+| What we need from you (max 300 words) (KL-1b, intended) | 300 | None |
+| Social value (max 300 words) | 300 | 300 |
+
+In 11 of 21 realistic lines the branch borrows a limit that main does not, and nearly all of those lines are questions. Only 2 lines are the intended gain. "How your organisation will meet the KPIs" is the same shape as "How you will deliver social value". A line-shape rule cannot tell the KL-1a heading from a previous question, which is what EVAL.md already says about KL-3.
+
+### Required change
+
+Remove `_is_bracketed_limit_heading`, `_IMPERATIVE_OR_INVERTED` and `_INVERTED_ANYWHERE`, and the `or _is_bracketed_limit_heading(line)` call in `_heading_start`, as the lead plans. Then:
+- set KL-1a and KL-1b to `status: open`, `expected_today: null`, `ideal: 300`, and keep KL-4 to KL-12 as regression cases (all expect main's result);
+- change `test_a_bidder_addressed_heading_with_a_bracketed_limit_and_a_body_paragraph_is_a_heading` to assert today's None, or delete it, and rewrite EVAL.md "Known limits" item 1 back to "open, L1 decides with real tenders";
+- add the rows above as KL cases with expected None. They guard any future attempt at this rule.
+
+**Keep:** the `_stated` change (the question's own block wins, with fallback to the whole window). It is independent of the bracket rule and only makes results more correct. Also keep the token-reporting work (item 2) and the DESIGN.md note (item 3), both reviewed correct above.
+
+After those changes, a PASS needs: green full suite, `test_known_limit_cases_hold` passing, and the probe above matching main on every row.
