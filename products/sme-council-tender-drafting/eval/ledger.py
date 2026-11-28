@@ -259,7 +259,8 @@ class LedgerBudget:
         entry["usd"] = 0.0 if dry else round(
             input_tokens * self.cfg.price_in / 1e6 + output_tokens * self.cfg.price_out / 1e6, 6)
         self.ledger.append(entry)
-        if model != "unknown" and not approved and not dry:
+        # A successful reply that reports no model ("unknown") also stops the run: only a failed call may lack a model name.
+        if not approved and not dry and not (failed and model == "unknown"):
             raise ModelMismatch(f"provider reported model {model!r}; only {self.cfg.model!r} is approved: run stopped")
 
 
