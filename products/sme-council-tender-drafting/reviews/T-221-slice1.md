@@ -87,3 +87,25 @@ The diff touches 3 files (+246/-15): `eval/run.py`, `tests/test_tender_eval.py` 
   - No live clear: 2 failed.
   - No `cacheable=False`: 0 failed (S2).
   - `ai_` filter removed: 2 failed.
+
+## Re-review (delta 7261329..a9f5677)
+
+**Verdict: PASS.** C1 is fixed. I reviewed only the delta, in a clean worktree at a9f5677, with the Azure env unset and no live calls.
+
+- **Suite.** Fresh `starter_test` database, python3.13: **1381 passed, 1 skipped, 0 failed (379.0 s)**. This matches NEXT.md.
+- **C1 fix.** `eval/demo_word_limits.json` is a new, non-frozen file. `demo_questions` (run.py:157-167) now takes each question's `word_limit` from it.
+- **The rule matches the held-out keys.** It follows `eval/keys/README.md` rule 5 (own limit), rule 7 (a shared limit is null on each member; a combined limit inside one item is kept) and rules 8 and 9 (whole-response budgets and page limits give a null word limit). So T1 and T2 now draft under the same word-limit convention that E2 is scored with.
+- **Spot-checks against the pack-source tables.** All 15 entries match.
+  - S04 (lines 136-140): 4.1, 4.2(a), 4.2(b) and 4.3 are "Shared: 1,000 words in total across 4.1-4.3", so each is null. 4.4(a) is 400.
+  - S08 (lines 175-179): Q1 and Q2 are 750, Q3 is 500, Q4 is 400, and Q5 is "1,000 words in total across parts (a) and (b)", so 1000.
+  - S12 (lines 163-167): 1, 2 and 4 are "Maximum 1 A4 page", so null. 3 is "No limit (within 12 sides)", so null. 5 is 400.
+  - S12 has no pack-wide per-question word default; line 41 gives only a recommended length and the 12-side budget. So there is nothing to copy under rule 5.
+  - `test_demo_word_limits_match_the_pack_source_tables` parses the tables and checks the printed text verbatim, plus the number. `test_demo_questions_carry_the_printed_word_limits` checks that the limits reach the plan items.
+- **The earlier S2 is closed.** `test_tuning_phase_turns_the_cache_off_during_the_run_and_restores_it` now pins `cacheable = False` during a tuning run.
+- **Worst-case figures.** T2 is now 2 questions per pack, 27 items. T1 at $0.282 plus T2 at about $1.34 gives $1.62, under the $2.00 tuning cap. That is consistent with about $0.047 per draft-plus-check and about $0.16 for extraction per pass: 3 x (0.16 + 6 x 0.047) is about $1.33. The R1 latent bug and the missing live-path test with non-empty retrieval are now listed under "Left" in NEXT.md, and the stale cache line is fixed.
+- **Untouched.** `sha256sum -c eval/keys/FROZEN.sha256` reports 34/34 OK. The delta is empty for `eval/keys/`, `demo-data/`, `eval/budget.json`, `eval/ledger.jsonl`, `eval/results/` and `app/backend/app/`.
+
+Non-blocking notes:
+- **Most tuning drafts still have no limit, by design.** Under this rule, 4 of T1's 5 drafts (the S04 shared group) and 4 of T2's 6 questions have a null limit. This faithfully mirrors E2's treatment of shared and page limits, but the shorten path runs on only a few tuning items. If more shorten coverage is wanted, choose refs that carry their own limits; that is a Studio Lead call.
+- **A missing file is not reported cleanly.** A missing `demo_word_limits.json` raises `FileNotFoundError` rather than `PhaseNotReady`. A ref that is missing from the file silently gets a null limit. The test pins the first 5 refs per pack, so this is covered today.
+- **Nit.** `demo_word_limits.json` has no trailing newline.
