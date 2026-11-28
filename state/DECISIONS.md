@@ -521,3 +521,7 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 ## 2026-11-28T03:55Z run 2788: T-181 Stripe customers
 - One Stripe customer per tenant: checkout sends `customer` when the tenant has one for the current provider; every customer a webhook reveals is recorded in a new billing_customers table (a customer already owned by another tenant is ignored and logged).
 - Account deletion closes every recorded customer and fails closed (503, nothing deleted) on a provider error, so a retry finishes. Chosen over the pending_cancels queue because deletion already fails closed and the rows cascade with the tenant. Reversible.
+
+## 2026-11-28T05:20Z run 8368: T-208 Stripe orphan customers
+- A webhook for a tenant with no subscription row closes the named customer/subscription only when a `deleted-tenant:<uuid>` tombstone (a billing_events row written with the tenant delete) proves this app deleted that tenant, and only for subscription-starting events. Without the tombstone the event is ignored, because Stripe sends every event in an account to every endpoint and products may share one Stripe account. Reversible.
+- Account deletion re-reads billing_customers under a subscriptions FOR UPDATE lock, up to 5 rounds, closing new customers outside the lock; 503 and nothing deleted on failure. Chosen over one long transaction because provider calls are slow and idle transactions time out at 15 s.
