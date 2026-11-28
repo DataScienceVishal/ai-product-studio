@@ -511,3 +511,9 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - 2026-11-28T00:40Z run 6986: T-192 e2e. Kept the starter core_flow.cjs (it covers sign-out, wrong-password delete and account deletion) and changed it to assert the trial banner is absent instead of dropping it, because billing is off in the demo. Merged after reviewer PASS and qa PASS; small leftovers moved to T-205.
 - 2026-11-28T01:42Z run 0e9c | sme-council-tender-drafting | Pre-registered A8 rule: a trap answer passes with a gap marker OR an honest negative citing the passage that says so; fails if it asserts any must_not_claim string. Script half counts gap markers only; honest negatives go to the human check. Why: many traps have a citable 'not held' answer (validator T-196 fix 4).
 - 2026-11-28T01:42Z run 0e9c | sme-council-tender-drafting | seed.py skips demo-data/evidence/README.md (it documents the deliberate evidence gaps; uploading it leaks trap answers into retrieval).
+
+## 2026-11-28T02:50Z run 6f7a: T-199/T-201 tender hardening
+- Soft-deleted evidence is purged 90 days after deleted_at unless a draft of an exported pack cites it (cited_ids, outside_ids, [E-n] text markers or claim citations). Keeps the audit trail for anything that left the building. Reversible.
+- An edit to a ready pack moves it back to drafting (confirmed existing behaviour).
+- Nit 6 deferred: an identical redraft still makes a new version and counts towards 5 redrafts/day; harmless, product call later (T-207).
+- F5 heading heuristic: a one-line block starting with a question verb and containing you/your/us is not a heading. Known false cases go to the L1 extraction eval (T-207).
