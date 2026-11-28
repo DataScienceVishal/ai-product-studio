@@ -116,7 +116,14 @@ def test_pre_registered_files_are_frozen():
     on_disk = {f"eval/keys/{p.name}" for p in KEYS.iterdir() if p.is_file() and p.name != "FROZEN.sha256"}
     assert on_disk <= set(manifest), f"key files not in FROZEN.sha256: {sorted(on_disk - set(manifest))}"
     heldout = json.loads((PRODUCT / "demo-data" / "packs" / "manifest.json").read_text(encoding="utf-8"))["heldout"]
+    assert len(heldout) == 9 and len(set(heldout)) == 9, heldout          # the freeze covers exactly the 9 held-out packs
     for name in heldout:
         assert f"demo-data/packs/{name}" in manifest and f"demo-data/pack-sources/{name[:-5]}.md" in manifest
     changed = [rel for rel, digest in manifest.items() if hashlib.sha256((PRODUCT / rel).read_bytes()).hexdigest() != digest]
     assert not changed, f"pre-registered files changed after the freeze: {changed}"
+
+
+def test_frozen_files_are_marked_text_off_so_a_crlf_checkout_cannot_change_their_hashes():
+    attrs = (PRODUCT / ".gitattributes").read_text(encoding="utf-8").splitlines()
+    rules = {ln.split()[0] for ln in attrs if ln.strip() and not ln.startswith("#") and "-text" in ln.split()[1:]}
+    assert {"eval/keys/**", "demo-data/packs/*.docx", "demo-data/pack-sources/*.md"} <= rules

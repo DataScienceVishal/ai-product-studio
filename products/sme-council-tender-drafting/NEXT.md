@@ -7,6 +7,16 @@ Branch `p/sme-council-tender-drafting/T-212` (off main). Not merged. No model ca
 - Tests: full backend suite, fresh DB starter_test, 1295 passed, 1 skipped, 0 failed (1276 + 19 new).
 - Note: `python3` here lacks python-docx; use `python3.13` for the builder.
 
+# STATUS (T-215) - T-206 review nits done; no model calls, no spend; frozen keys and packs untouched
+
+Branch `p/sme-council-tender-drafting/T-215` (off main). Not merged.
+- Real-library test bound `<= e+400` is now `<= 32` (32 evidence files, E-n = file n; verified it passes, no other bound needed). Stale test-module docstring fixed too.
+- Docstrings: `eval/run.py retrieval_diagnostic` (which callers it mirrors) and `eval/score.py retrieval_recall` (any vs all primaries).
+- `eval/results/retrieval.json` now has `labels_sha256` (`5d9541d3...3d3c`, equals the FROZEN.sha256 entry) and `all_primaries_hit_rate`. Rerun locally (fresh DB, alembic, seed, `python -m eval.run retrieval`); recall unchanged: 0.745 at k=8, primary hit 0.964.
+- `all_primaries_hit_rate` pooled 0.821 (S04 0.778, S08 1.0, S12 0.7), also under `at_app_passages` (0.821).
+- `.gitattributes` in the product dir: `eval/keys/**`, `demo-data/packs/*.docx`, `demo-data/pack-sources/*.md` are `-text`. Freeze test passes; it now asserts exactly 9 held-out packs and that the attributes exist.
+- Full backend suite on the final tree (fresh Postgres): 1281 passed, 1 skipped (1276 + 5 new tests).
+
 # STATUS (T-216 slice 3) - APP_PASSAGES 5 -> 8 chosen against the token budget; seen recall 0.745; criteria expansion not possible (no such field); recall@8 still 0.745, below the 0.8 trigger
 
 Branch `p/sme-council-tender-drafting/T-216`, off main (slice 2 merged). Not merged. No migrations, no model calls, no spend.

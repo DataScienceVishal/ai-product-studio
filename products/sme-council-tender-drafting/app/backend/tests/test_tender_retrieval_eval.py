@@ -1,5 +1,5 @@
-"""T-206: the Recall@8 retrieval diagnostic (DESIGN 4.2, no bar): the pure scorer, the label-file structure (skipped until qa
-commits eval/keys/retrieval_labels.json) and the runner on a seeded tenant. No model is called anywhere."""
+"""T-206: the Recall@8 retrieval diagnostic (DESIGN 4.2, no bar): the pure scorer, the label-file structure
+(eval/keys/retrieval_labels.json, committed and frozen) and the runner on a seeded tenant. No model is called anywhere."""
 import json
 import re
 import sys
@@ -72,6 +72,25 @@ def test_k_cutoff():
     assert SC.retrieval_recall(lab(q("1", [9])), got, k=9)["pooled"]["recall"] == 1.0
 
 
+def test_all_primaries_hit_rate_needs_every_primary_in_the_top_k():
+    items = lab(q("1", [3, 4, 5], [3, 4]), q("2", [6, 7], [6, 7]), q("3", [8], [8]), q("4", [9, 10], [9]))
+    got = {"P.docx": {"1": [3, 4], "2": [6, 20], "3": [8], "4": [30]}}
+    r = SC.retrieval_recall(items, got)
+    # any: q1 yes, q2 yes (6 is in), q3 yes, q4 no; all: q1 yes, q2 no (7 missing), q3 yes, q4 no
+    assert r["pooled"]["primary_hit_rate"] == 0.75 and r["pooled"]["all_primaries_hit_rate"] == 0.5
+    assert r["per_pack"]["P.docx"]["all_primaries_hit_rate"] == 0.5
+    assert SC.retrieval_recall(items, got, k=1)["pooled"]["all_primaries_hit_rate"] == 0.25      # only q3's single primary fits in k=1
+
+
+def test_all_primaries_is_below_any_primary_on_the_real_labels_when_one_is_dropped():
+    labels = json.loads(LABELS.read_text(encoding="utf-8"))
+    got = {p: {i["ref"]: i["primary"] for i in items} for p, items in labels["packs"].items()}     # perfect retrieval
+    assert SC.retrieval_recall(labels, got)["pooled"]["all_primaries_hit_rate"] == 1.0
+    half = {p: {i["ref"]: i["primary"][:1] for i in items} for p, items in labels["packs"].items()}
+    r = SC.retrieval_recall(labels, half)["pooled"]
+    assert r["all_primaries_hit_rate"] < r["primary_hit_rate"] == 1.0                              # some question has 2+ primaries
+
+
 def test_pooled_is_mean_over_questions_across_packs():
     labels = {"packs": {"A": [q("1", [1])], "B": [q("1", [1, 2]), q("2", [5])]}}
     r = SC.retrieval_recall(labels, {"A": {"1": [1]}, "B": {"1": [1], "2": []}})
@@ -140,6 +159,8 @@ def test_runner_retrieves_the_right_passage_and_writes_no_model_rows(app, new_cl
     assert res["retrieved"]["P.docx"]["1"][0] == 1 and res["retrieved"]["P.docx"]["2"][0] == 2
     assert res["pooled"]["recall"] == 1.0 and res["pooled"]["gap_retrieved_anything"] == 0 and res["misses"] == []
     assert res["app_passages"] == dr.APP_PASSAGES == 8 and res["at_app_passages"]["recall"] == 1.0
+    assert res["pooled"]["all_primaries_hit_rate"] == 1.0 and res["at_app_passages"]["all_primaries_hit_rate"] == 1.0
+    assert "labels_sha256" not in res                      # recorded only when the caller (main) passes it
     with sessions() as db:
         assert db.scalar(select(AIUsage.id).limit(1)) is None
 
@@ -151,7 +172,32 @@ def test_runner_on_the_real_library_numbers_passages_like_the_keys(app, new_clie
     labels = {"packs": {"P.docx": [{"ref": "1", "text": emap["first80"], "relevant": [emap["e"]], "primary": [emap["e"]]}]}}
     res = R.retrieval_diagnostic(sessions, tenant_id, labels)
     got = res["retrieved"]["P.docx"]["1"]
-    assert len(got) <= 8 and len(got) > 5 and all(1 <= n <= emap["e"] + 400 for n in got) and emap["e"] in got
+    assert len(got) <= 8 and len(got) > 5 and all(1 <= n <= 32 for n in got) and emap["e"] in got
+
+
+def test_the_retrieval_result_records_the_labels_sha256(app, new_client, tmp_path):
+    sessions, tenant_id = _seeded(app, new_client, tmp_path, {"01-accreditation-summary.md": "# A\nWe hold ISO 9001 certificate.\n"})
+    labels = {"packs": {"P.docx": [{"ref": "1", "text": "ISO 9001 certificate", "relevant": [1], "primary": [1]}]}}
+    digest = "ab" * 32
+    assert R.retrieval_diagnostic(sessions, tenant_id, labels, labels_sha256=digest)["labels_sha256"] == digest
+
+
+def test_main_passes_the_sha256_of_the_labels_file_bytes(app, new_client, tmp_path, monkeypatch):
+    """main hashes the bytes it read; the value equals sha256sum of the labels file, so a stale results file is detectable."""
+    import hashlib
+    _seeded(app, new_client, tmp_path, {"01-accreditation-summary.md": "# A\nWe hold ISO 9001 certificate.\n"})
+    seen = {}
+
+    def fake(sessions, tenant_id, labels, k=8, labels_sha256=None):
+        seen["sha"] = labels_sha256
+        return {"labels_sha256": labels_sha256}
+
+    monkeypatch.setattr(R, "retrieval_diagnostic", fake)
+    monkeypatch.setattr(R, "RESULTS_DIR", tmp_path / "out")
+    monkeypatch.setenv("DATABASE_URL", app.state.db.engine.url.render_as_string(hide_password=False))
+    assert R.main(["retrieval"]) == 0
+    assert seen["sha"] == hashlib.sha256(LABELS.read_bytes()).hexdigest()
+    assert json.loads((tmp_path / "out" / "retrieval.json").read_text())["labels_sha256"] == seen["sha"]
 
 
 def test_runner_refuses_when_labels_missing(monkeypatch, tmp_path, capsys):
