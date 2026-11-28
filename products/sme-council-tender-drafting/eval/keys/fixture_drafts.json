@@ -1,0 +1,193 @@
+[
+  {
+    "id": "F01",
+    "question": "Describe your quality management system and how you monitor performance.",
+    "text": "Harrowmere operates a quality management system certified to an ISO 9001-style standard, certificate CERT-DEMO-0001 [E-3]. The certificate was renewed after a recertification audit passed on 4 June 2026 and is valid to 11 June 2029 [E-3][E-4]. Every site is inspected: supervisors inspect weekly, the Contracts Manager audits monthly and the Quality, Health and Safety Manager audits each contract quarterly [E-4]. Our 2025/26 average audit score across the five council contracts was 94.6% [E-4][E-26], against a target of 90%. We log every complaint within 1 working day and resolve within 5 working days; in 2025/26 we received 37 complaints and resolved 94% inside that time [E-4][E-26]. Corrective actions record a root cause and a named owner and are closed within 20 working days [E-4]. We are also certified to ISO 14001 for environmental management [E-3]. The system is reviewed at a management review each January, with an audit score objective of 92% or higher for 2026/27 [E-4].",
+    "retrieved_ids": [
+      3,
+      4,
+      26
+    ]
+  },
+  {
+    "id": "F02",
+    "question": "Give a case study of cleaning public buildings for a council.",
+    "text": "At Eastvale Borough Council we clean 9 buildings daily: the Civic Offices, 5 libraries and 2 community halls, about 14,200 square metres [E-20]. The contract is worth £412,000 a year and is our largest [E-20]. The previous contractor left with an audit score of 71% and 6 complaints a month [E-20]. We mobilised in 5 weeks, with 17 staff transferring under TUPE [E-16][E-15]. We introduced colour coding and a weekly 20-point inspection, moved library cleaning to before opening and switched to concentrated eco-label chemicals and HEPA vacuums [E-20]. Audit scores reached 88% in month 1 and 92% by month 3 [E-20]. The same approach was used for Northgate City Council's town hall cleaning contract [E-20]. Complaints fell to an average of 1.3 a month [E-20]. The contract started on 1 April 2019 [E-20] and now runs to 31 March 2027 [E-20].",
+    "retrieved_ids": [
+      1,
+      15,
+      16,
+      20
+    ]
+  },
+  {
+    "id": "F03",
+    "question": "Describe your experience of providing security at a leisure facility.",
+    "text": "At Marlowe Fen Leisure Centre we provide static guarding, reception and car park patrols and evening lock-up for a pool and sports hall with about 410,000 visits a year [E-21]. The contract is worth £168,000 a year [E-21]. The contract started on 3 October 2020 [E-21] and was extended in October 2025 to 2 October 2027 [E-21]. Six dedicated licensed officers provide cover, with 2 officers on site at peak evenings [E-21]. Before we started there were 31 recorded incidents in six months; this fell to 12 in the first six months and 9 in the six months to 31 March 2026 [E-21]. We staffed 98% of shifts in 2025/26 [E-21][E-26], and there were zero formal complaints about officer conduct [E-21][E-26]. We mobilised in three weeks with six new officers licensed before start [E-21][E-16]. Conflict management training was given to all officers [E-21][E-8].",
+    "retrieved_ids": [
+      8,
+      16,
+      21,
+      26
+    ]
+  },
+  {
+    "id": "F04",
+    "question": "Tell us about your security accreditations and how you deliver static guarding.",
+    "text": "All 16 of our security officers hold front-line licences, a 100% completion rate [E-8]. The company holds an approved contractor scheme for security providers, certificate CERT-DEMO-0003, valid from 1 December 2024 to 30 November 2027 [E-3]. We also hold ISO 27001 certification for information security [E-3]. Our services are static guarding, electronic patrols, mobile key-holding and alarm response [E-18]. Alarm receiving is provided through a subcontractor, Demo ARC Ltd [E-18]. Key-holders attend alarm activations within 30 minutes in the Fenborough area, an average of 22 minutes across 64 call-outs in 2025/26 [E-18]. We provide static guarding at Eastvale Borough Council's civic offices [E-18]. Written incident reports are produced within 2 hours, and officers on lone working sites receive hourly welfare checks by phone [E-18]. Assignment instructions are reviewed every 6 months [E-18].",
+    "retrieved_ids": [
+      3,
+      8,
+      11,
+      18
+    ]
+  },
+  {
+    "id": "F05",
+    "question": "Describe your experience of grounds maintenance for a council.",
+    "text": "For Tarn Valley Council we maintain 12 parks and 4 cemeteries' grass areas, about 86 hectares, on a contract worth £146,000 a year [E-22]. The team is 6 operatives, 5 of whom transferred in under TUPE and 1 is an apprentice [E-22]. The council wanted to cut herbicide use and increase biodiversity [E-22]. We re-planned cutting rounds, saving about 11% of mileage, introduced no-mow zones and wildflower verges and moved to spot treatment of weeds only [E-22]. Herbicide use fell by 84% by volume between 2022 and 2025 [E-22][E-5]. Wildflower verges were extended by 3,100 square metres [E-22]. We completed 100% of scheduled cuts in 2025/26 [E-22][E-26]. We deliver the same service for Marlowe Fen District Council's parks [E-22]. Winter gritting of car parks was completed before 7:00 on all 24 call-outs in 2025/26 [E-22][E-19].",
+    "retrieved_ids": [
+      5,
+      19,
+      22,
+      26
+    ]
+  },
+  {
+    "id": "F06",
+    "question": "Describe your health and safety management system.",
+    "text": "The Quality, Health and Safety Manager is our competent adviser and holds a NEBOSH-style general certificate [E-6]. We hold contractor health and safety pre-qualification CERT-DEMO-0004, valid to 19 January 2027 [E-3][E-6]. Our health and safety system is certified to ISO 45001 [E-6]. Risk assessments and method statements are written for every site before mobilisation and reviewed every 12 months or after any incident [E-6]. In 2025/26 we recorded 9 minor accidents, 1 RIDDOR-reportable injury and 0 enforcement notices [E-6]. Security officers on single-manned sites check in by phone every 60 minutes [E-6]. Our health and safety policy was last approved on 3 March 2025 by the Managing Director [E-6]. A monthly safety briefing is held for each contract and toolbox talks for grounds crews every Monday [E-6].",
+    "retrieved_ids": [
+      3,
+      5,
+      6
+    ]
+  },
+  {
+    "id": "F07",
+    "question": "Set out your insurance cover.",
+    "text": "Our insurer is Demo Underwriting Ltd and the period of cover runs from 1 February 2026 to 31 January 2027 [E-7]. Employers' liability is £10,000,000 any one occurrence [E-7]. Public liability cover is £10,000,000 any one occurrence [E-7]. Professional indemnity is £1,000,000 any one claim, and cover for contract works, tools and equipment is £150,000 [E-7]. Our motor fleet of 7 vans is insured comprehensively [E-7]. We hold Constructionline Gold level supplier registration [E-3]. Over the last 5 years we have had 2 public liability claims, both closed, with a total of £7,400 paid [E-7]. Our broker is Demo Broking Ltd [E-7].",
+    "retrieved_ids": [
+      2,
+      3,
+      7
+    ]
+  },
+  {
+    "id": "F08",
+    "question": "Describe your approach to TUPE and your experience of transfers.",
+    "text": "We follow the TUPE Regulations 2006, and transferring staff keep their terms, continuous service and pension rights as the law requires [E-15]. We request employee liability information at least 28 days before transfer and meet the outgoing contractor and client within 5 working days of receiving it [E-15]. Every transferring employee gets a group briefing and a 1-to-1 meeting [E-15]. At Eastvale Borough Council, 17 cleaning staff transferred in and 17 of 17 remained after 6 months [E-15]; our Eastvale transfer took place on 1 April 2023 [E-15]. At Tarn Valley Council, 5 grounds staff transferred in on 1 June 2023 and 4 remain [E-15]. We also managed the transfer of 9 staff from Westmoor Borough Council [E-15]. We check pay is correct in the first payroll run [E-15].",
+    "retrieved_ids": [
+      15,
+      16
+    ]
+  },
+  {
+    "id": "F09",
+    "question": "Describe how you recruit and retain your workforce.",
+    "text": "We recruit directly and made 33 hires in 2025/26, with an average time to hire of 17 days [E-28]. Company staff turnover was 25% in 2025/26, with 25 leavers on an average headcount of 100 [E-26][E-28]; on the Eastvale contract it was 16% [E-28]. Of the 17 staff who transferred in 2022, 15 remain [E-28]. The hourly floor for operatives is £13.10 from 1 April 2026, with supervisors from £14.60 and night security shifts paid an extra £1.20 an hour [E-28]. The employer pension contribution is 5%, above the 3% statutory minimum [E-28]. We have 6 trained mental health first aiders and run an employee assistance helpline [E-28]. Our only employee survey was run in March 2024 [E-28], and 78% of respondents said they would recommend us as an employer [E-28]. Sickness absence was 3.9% [E-28].",
+    "retrieved_ids": [
+      26,
+      28
+    ]
+  },
+  {
+    "id": "F10",
+    "question": "Describe your environmental performance.",
+    "text": "In 2025/26, 92% of cleaning chemicals by volume carried an independent eco-label [E-5][E-27]. Our office and depot have been on a 100% renewable electricity tariff since 1 October 2024 [E-5]. Grounds work has used 100% peat-free compost since 1 January 2024 [E-5], and bin liners have been 100% recycled content since 2025 [E-27]. Our environmental management system is certified to ISO 14001 [E-5]. At Eastvale Borough Council offices we recycled 61% of office waste by weight in 2025/26, up from 44% in 2022 [E-5][E-20]. Concentrated products with dosing systems are used at Marlowe Fen District Council's leisure centre [E-5]. We operate 7 diesel vans [E-5]. Environmental incidents are logged and reviewed monthly [E-5].",
+    "retrieved_ids": [
+      5,
+      20,
+      27
+    ]
+  },
+  {
+    "id": "F11",
+    "question": "Describe the social value you have delivered.",
+    "text": "In 2025/26, 28 of 33 new hires (85%) lived within 10 miles of the contract site, and 6 hires came from the long-term unemployed through Fenborough Works Partnership [E-14]. We have had 6 apprenticeship starts since 2022, 2 of them in 2025/26 [E-14]. We delivered 140 staff volunteering days in 2025/26 [E-14]. 63% of supplier spend by value went to businesses within 40 miles of Fenborough [E-14]. We ran 5 community planting days with Tarn Valley Council parks, involving 118 volunteers [E-14][E-22]. We ran community planting days with Eastvale Borough Council's parks team [E-14]. For a new contract we offer at least one apprenticeship or work-experience place per £250,000 of annual contract value, and quarterly reporting against a measures framework agreed with the council [E-14].",
+    "retrieved_ids": [
+      14,
+      22
+    ]
+  },
+  {
+    "id": "F12",
+    "question": "Describe your data protection and information security arrangements.",
+    "text": "We process personal data as a data processor under UK GDPR and are registered with the data protection regulator [E-12]. Laptops are encrypted, multi-factor sign-in protects email and HR systems, and access to client key lists is limited to 4 named roles [E-12]. Cyber Essentials (basic) is held under CERT-DEMO-0002, valid to 3 September 2027 [E-12][E-3]. We also hold Cyber Essentials Plus [E-3]. CCTV and incident records are held for 31 days unless needed for a case [E-12]. In the last 5 years we have had 1 personal-data incident, a misdirected email, reported to the client within 24 hours with no regulator action [E-12]. The policy was last approved on 20 July 2024 [E-12]. No staff or client data is held outside the UK [E-12]. Data protection training is annual and 95% complete [E-12][E-8].",
+    "retrieved_ids": [
+      3,
+      8,
+      12
+    ]
+  },
+  {
+    "id": "F13",
+    "question": "Summarise your staff training and competence.",
+    "text": "All 102 of our staff completed induction (102 of 102) [E-8]. Manual handling is 100% complete for cleaning and grounds staff (78 of 78) and COSHH awareness is 97% (76 of 78) [E-8]. Safeguarding level 2 awareness is 100% complete across school and library staff [E-8][E-11]. All 10 cleaning supervisors hold the Level 2 industry cleaning qualification [E-8]. All 16 security officers hold front-line licences and have completed conflict management training [E-8]. All 8 grounds operatives are trained in working at height [E-8]. Our training programme is accredited under Investors in People [E-3]. The training budget for 2025/26 was £37,800 [E-8].",
+    "retrieved_ids": [
+      3,
+      8,
+      11
+    ]
+  },
+  {
+    "id": "F14",
+    "question": "Describe your key-holding and depot security experience.",
+    "text": "At Marlowe Fen District Council we provide overnight mobile patrols and key-holding for the waste and highways depot and 6 other council buildings [E-24]. Alarm response is through Demo ARC Ltd [E-24]. The contract is £58,000 a year, with 4 licensed officers on rotation [E-24]. The contract started on 1 April 2022 [E-24]. There were 64 alarm call-outs in 2025/26 with an average attendance of 22 minutes against a 30-minute target [E-24]. There have been no break-ins at the depot since the start, against 3 in the year before [E-24]. We also hold the overnight patrol contract for Tarn Valley Council's depot [E-24]. The contract extension to 2028 was agreed in March 2026 and the council issued a letter, held on file [E-24]. The contract is for security services only [E-24].",
+    "retrieved_ids": [
+      24
+    ]
+  },
+  {
+    "id": "F15",
+    "question": "Set out your mobilisation approach and track record.",
+    "text": "Our standard mobilisation plan runs for 6 weeks before service start and is led by the Operations Director [E-16]. In week -6 we confirm the specification, access, keys and client contacts and start the TUPE information request [E-16]. Site surveys and risk assessments follow in week -5, and staffing, equipment and DBS and licence checks in week -4 [E-16]. Induction and site training take place in week -2, with client sign-off of method statements [E-16]. Dry-run shifts happen in week -1 [E-16]. On the start date the Operations Director is on site for the first 3 days [E-16]. At Tarn Valley Council parks we mobilised in 4 weeks [E-16]. The Marlowe Fen leisure centre was mobilised in 2 weeks [E-16]. The Eastvale Borough Council contract started on 1 April 2021 [E-20].",
+    "retrieved_ids": [
+      16,
+      20
+    ]
+  },
+  {
+    "id": "F16",
+    "question": "Explain your business continuity arrangements.",
+    "text": "Our business continuity plan covers severe weather, loss of the Kestrel Works depot, mass staff absence, supplier failure, loss of IT and fuel shortage [E-13]. We keep a bank of 9 pre-vetted relief cleaners and 4 relief security officers, available at 4 hours' notice [E-13]. Critical services are restored within 4 hours and routine cleaning and grounds within 24 hours [E-13]. Our continuity management is certified to ISO 22301 [E-13]. During a 3-day snow period in winter 2025/26 the bank covered 100% of shifts at Tarn Valley Council [E-13]. The relief bank also covered the Marlowe Fen leisure centre during that snow period [E-13]. We hold 4 weeks of consumables at the depot, and a 24-hour duty manager number is given to each client [E-13]. The plan was last tested on 18 September 2026 [E-13].",
+    "retrieved_ids": [
+      13
+    ]
+  },
+  {
+    "id": "F17",
+    "question": "Describe account management, reporting and service credits.",
+    "text": "Each contract has a named Contracts Manager and a supervisor on site, and the Operations Director attends quarterly review meetings [E-29]. We hold weekly meetings for the first 4 weeks, then monthly service reviews [E-29]. A monthly performance report is sent within 5 working days of month end [E-29]. Complaints are acknowledged within 1 working day and answered within 5 working days, or 10 for complex issues [E-29]. In 2025/26 we received 37 complaints across all contracts and 94% were resolved within 5 working days [E-26]. Service credit schemes are agreed on 2 contracts [E-29]. We paid £4,140 in service credits in 2025/26 [E-29]. All service credits were paid to Marlowe Fen District Council [E-29]. We have never had a contract notice of default [E-29].",
+    "retrieved_ids": [
+      26,
+      29
+    ]
+  },
+  {
+    "id": "F18",
+    "question": "Give an overview of your company and financial standing.",
+    "text": "Harrowmere Facilities Ltd is an owner-managed company providing commercial cleaning, static security guarding and key-holding, and grounds maintenance [E-1]. The company was founded on 14 March 2005 [E-1]. We employed 102 people at 31 October 2026 [E-1]. Turnover in the year to 31 March 2026 was £3.82m, with 71% from public-sector clients [E-2][E-1]. Net assets were £486,000 and the current ratio 1.6 [E-2]. We hold five accreditations, including ISO 9001-style quality management (CERT-DEMO-0001) and Cyber Essentials (CERT-DEMO-0002) [E-3]. We hold Disability Confident Leader status [E-3]. Our largest contract is £412,000 a year [E-1]. Accounts for all three years were filed on time [E-2].",
+    "retrieved_ids": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "id": "F19",
+    "question": "Describe your cleaning method statement.",
+    "text": "We use a colour-coded cleaning system, with red for washroom floors, blue for general areas, green for kitchens and yellow for sanitary fittings, and we launder microfibre cloths at 60 degrees [E-17]. In public buildings we wipe touch points twice daily [E-17]. Carpet extraction takes place every 6 months, hard floors are machine scrubbed and sealed quarterly and windows are cleaned every 8 weeks [E-17]. There is one working supervisor per 7 operatives, with a weekly inspection scored on a 20-point sheet [E-17]. All 40 of our vacuum cleaners are battery-powered with HEPA filters [E-17]. This method statement was last reviewed on 1 September 2024 [E-17]. We do not provide clinical or healthcare cleaning [E-17].",
+    "retrieved_ids": [
+      17
+    ]
+  },
+  {
+    "id": "F20",
+    "question": "Introduce your key personnel and their qualifications.",
+    "text": "The Managing Director has 15 years in role and is responsible for strategy, bids sign-off and exclusion statements [E-32]. The Operations Director has 9 years in role, holds a Level 5 facilities management diploma and leads mobilisation, quarterly reviews and TUPE [E-32]. The Contracts Manager (cleaning) has 6 years in role, holds the Level 3 industry cleaning qualification and is our safeguarding lead [E-32]. The Quality, Health and Safety Manager has 5 years in role and holds a NEBOSH-style general certificate [E-32]. The Quality, Health and Safety Manager is a certified ISO 14001 lead auditor [E-32]. The Contracts Manager (security and grounds) manages our Eastvale Borough Council security contract [E-32]. Each contract manager has a named deputy [E-32]. We have no dedicated social value, sustainability or carbon manager [E-32].",
+    "retrieved_ids": [
+      32
+    ]
+  }
+]

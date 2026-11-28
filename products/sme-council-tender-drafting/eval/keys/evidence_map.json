@@ -1,0 +1,188 @@
+{
+  "derivation": "Demo tenant seeded by eval/seed.py: files in demo-data/evidence sorted by name (*.md then *.txt, README.md skipped by seed.evidence_docs), each parsed by app.tender.ingest.run_worker('txt') and split by app.tender.chunking.chunk_pages; display numbers run from 1 in that order (app.tender.evidence.next_numbers on a fresh tenant counter). Passage index is 1-based within the file. sha256 is of the passage text (utf-8).",
+  "total_passages": 32,
+  "entries": [
+    {
+      "e": 1,
+      "file": "01-company-profile.md",
+      "passage_index": 1,
+      "sha256": "96f9e626ee6bb1a90f7417d021f4040454b3900423c83958e1ffee0fddf6a685",
+      "first80": "# Company profile: Harrowmere Facilities Ltd (fictional)\n\n**Document ref:** HF-C"
+    },
+    {
+      "e": 2,
+      "file": "02-financial-turnover-bands.md",
+      "passage_index": 1,
+      "sha256": "88ff5d772b5f9241375729d133391f9eeccf5acd543b5c5cd26c4f86280c4e6c",
+      "first80": "# Financial standing and turnover bands\n\n**Document ref:** HF-FIN-02 | **Version"
+    },
+    {
+      "e": 3,
+      "file": "03-accreditation-summary.md",
+      "passage_index": 1,
+      "sha256": "fddfe8459d6419c78bff047dd446768ca267db378ebf4466f191cf2073a77038",
+      "first80": "# Accreditation summary\n\n**Document ref:** HF-ACC-03 | **Version:** 3.2 | **Date"
+    },
+    {
+      "e": 4,
+      "file": "04-quality-policy-iso9001.md",
+      "passage_index": 1,
+      "sha256": "1f91efc4637bfd5c9da32032f4171d367087ea732a5a07f2076d9d721b1a0ecb",
+      "first80": "# Quality policy (ISO 9001-style)\n\n**Document ref:** HF-QMS-04 | **Version:** 5."
+    },
+    {
+      "e": 5,
+      "file": "05-environmental-policy.md",
+      "passage_index": 1,
+      "sha256": "7725f51215a712e1bcac5e6009a1e82ab9a5d58f2703413df98b37b62e7c9b48",
+      "first80": "# Environmental policy (ISO 14001-style, not certified)\n\n**Document ref:** HF-EN"
+    },
+    {
+      "e": 6,
+      "file": "06-health-and-safety-policy.md",
+      "passage_index": 1,
+      "sha256": "45cffad2ffb8058b807a8480c4c11e3cdf7e33f9d8cfdad3bf1d8bd957327a52",
+      "first80": "# Health and safety policy\n\n**Document ref:** HF-HS-06 | **Version:** 6.1 | **Ap"
+    },
+    {
+      "e": 7,
+      "file": "07-insurance-summary.md",
+      "passage_index": 1,
+      "sha256": "c31eaf57647fe9f650aec273503d594628ccc76ac39d96ba79df3d406e38a6e9",
+      "first80": "# Insurance summary\n\n**Document ref:** HF-INS-07 | **Version:** 1.4 | **Date:** "
+    },
+    {
+      "e": 8,
+      "file": "08-staff-training-matrix.md",
+      "passage_index": 1,
+      "sha256": "9207274772a7518230f6244f11600fa7b84719156d8f369f93ed3c190167d8b1",
+      "first80": "# Staff training matrix (position at 31 October 2026)\n\n**Document ref:** HF-TRN-"
+    },
+    {
+      "e": 11,
+      "file": "11-safeguarding-policy.md",
+      "passage_index": 1,
+      "sha256": "def7675a2707fa827d01d26aeb075c0c851b5c37377f8eaca00ede3365ff6768",
+      "first80": "# Safeguarding policy\n\n**Document ref:** HF-SG-11 | **Version:** 2.2 | **Approve"
+    },
+    {
+      "e": 12,
+      "file": "12-data-protection-policy.md",
+      "passage_index": 1,
+      "sha256": "77317723c6317c5de764edaecefeddc6f79bd245f7e7eab87b45d6be81a5e62c",
+      "first80": "# Data protection and information security policy\n\n**Document ref:** HF-DP-12 | "
+    },
+    {
+      "e": 13,
+      "file": "13-business-continuity-plan.md",
+      "passage_index": 1,
+      "sha256": "d2067f3dd3f020d8e56eceb5c1abdbc99cb037d01f5d06d334abce25a693731c",
+      "first80": "# Business continuity plan (summary)\n\n**Document ref:** HF-BCP-13 | **Version:**"
+    },
+    {
+      "e": 14,
+      "file": "14-social-value-commitments.md",
+      "passage_index": 1,
+      "sha256": "4f904d14612fa64deff8e7575c288855a707aaa8b5c1b3cb8a8a777ee1d42768",
+      "first80": "# Social value commitments and delivery record\n\n**Document ref:** HF-SV-14 | **V"
+    },
+    {
+      "e": 15,
+      "file": "15-tupe-approach.md",
+      "passage_index": 1,
+      "sha256": "c60c65d10380101c0320dc8b18d6d1aa6339f5e8f395f3042e443cdb330214f4",
+      "first80": "# TUPE approach\n\n**Document ref:** HF-TUPE-15 | **Version:** 2.0 | **Date:** 2 J"
+    },
+    {
+      "e": 16,
+      "file": "16-mobilisation-plan.md",
+      "passage_index": 1,
+      "sha256": "b551ef4fee66f493cd9c8c7a1f4964a3071370be052c1914b7709c339376d602",
+      "first80": "# Standard mobilisation plan\n\n**Document ref:** HF-MOB-16 | **Version:** 3.0 | *"
+    },
+    {
+      "e": 17,
+      "file": "17-method-statement-cleaning.md",
+      "passage_index": 1,
+      "sha256": "cba0116f71252951ddf40dddc549975ea0ef119ae4bdd9ba5dee53cfda990da8",
+      "first80": "# Method statement: commercial cleaning\n\n**Document ref:** HF-MS-CLN-17 | **Vers"
+    },
+    {
+      "e": 18,
+      "file": "18-method-statement-security.md",
+      "passage_index": 1,
+      "sha256": "e4f7fa052f47aefac7100d754480eee30282bfaf8d916205cf09ab6890cf23d1",
+      "first80": "# Method statement: static security guarding and key-holding\n\n**Document ref:** "
+    },
+    {
+      "e": 19,
+      "file": "19-method-statement-grounds.md",
+      "passage_index": 1,
+      "sha256": "30de55e41562082e48036699ffb74a1b9d92448493ac57d38128b720c4768396",
+      "first80": "# Method statement: grounds maintenance\n\n**Document ref:** HF-MS-GRD-19 | **Vers"
+    },
+    {
+      "e": 20,
+      "file": "20-case-study-eastvale-offices-cleaning.md",
+      "passage_index": 1,
+      "sha256": "f1c331bf3a57a96bc19a4903ad05d68b2562f20fd378f969a4545b3242f77b33",
+      "first80": "# Case study: Eastvale Borough Council (fictional), offices and libraries cleani"
+    },
+    {
+      "e": 21,
+      "file": "21-case-study-marlowe-fen-leisure-security.md",
+      "passage_index": 1,
+      "sha256": "d1aa235d7134e11ee6f3c7510a881099457da8f3c5299603da751cb5a7537f62",
+      "first80": "# Case study: Marlowe Fen District Council (fictional), leisure centre security\n"
+    },
+    {
+      "e": 22,
+      "file": "22-case-study-tarn-valley-parks-grounds.md",
+      "passage_index": 1,
+      "sha256": "4990889b72fe12a096e86cd9827849b7d7e0fc9478a93577ddf64a684a0b78c6",
+      "first80": "# Case study: Tarn Valley Council (fictional), parks and open spaces grounds mai"
+    },
+    {
+      "e": 24,
+      "file": "24-case-study-marlowe-fen-depot-keyholding.md",
+      "passage_index": 1,
+      "sha256": "8351aa461a99ef16d6a18f3e870e85cc592684e48774f818e7597982e231b5a4",
+      "first80": "# Case study: Marlowe Fen District Council (fictional), depot security and key-h"
+    },
+    {
+      "e": 26,
+      "file": "26-kpi-performance-summary.md",
+      "passage_index": 1,
+      "sha256": "c5be2398e44df8c5a6d5361f5d8d37f3764e24b0e806499f15ff38b89bc4459a",
+      "first80": "# Contract performance summary, financial year 2025/26\n\n**Document ref:** HF-KPI"
+    },
+    {
+      "e": 27,
+      "file": "27-supply-chain-and-chemicals.md",
+      "passage_index": 1,
+      "sha256": "e26f75744b49ab6e7f6ec8274a3715ee8017145a5d27032bd2e18af93bb7c986",
+      "first80": "# Supply chain, subcontracting and chemicals policy\n\n**Document ref:** HF-SUP-27"
+    },
+    {
+      "e": 28,
+      "file": "28-workforce-recruitment-and-retention.md",
+      "passage_index": 1,
+      "sha256": "4852a6ec00116f413034f4f81382beac3550d5a92dc287847aeafb01deb813c2",
+      "first80": "# Workforce recruitment, retention and wellbeing\n\n**Document ref:** HF-HR-28 | *"
+    },
+    {
+      "e": 29,
+      "file": "29-account-management-and-complaints.md",
+      "passage_index": 1,
+      "sha256": "7e90368c511f1dc713e5085844fdd594ce1b6e60f28bce2e1e8862897dc8e4ec",
+      "first80": "# Account management, reporting and complaints procedure\n\n**Document ref:** HF-A"
+    },
+    {
+      "e": 32,
+      "file": "32-key-personnel-roles.md",
+      "passage_index": 1,
+      "sha256": "41c60ad6fe2e0fa2153a989682d309b7720814d9ea54027f837f6eed98bcc9de",
+      "first80": "# Key personnel (roles only)\n\n**Document ref:** HF-KP-32 | **Date:** 2 November "
+    }
+  ]
+}
