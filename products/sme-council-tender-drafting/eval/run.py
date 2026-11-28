@@ -312,6 +312,27 @@ def run_configuration() -> dict:
                 "output_cap": cc.CLAIMCHECK_SPEC.max_output_tokens}}}
 
 
+def retrieval_diagnostic(sessions, tenant_id, labels: dict, k: int = 8) -> dict:
+    """DESIGN 4.2 retrieval check: the app's own search (search_evidence, as draft and the retrieve route call it: per-document cap, RETRIEVAL_FLOOR; depth k=8, not the 5 the draft shows) on
+    each labelled question's text, scored by score.retrieval_recall. No model call, no ledger, nothing written to the DB."""
+    from app.tender import draft as dr
+    from app.tender.evidence import search_evidence
+    from . import score as sc
+    retrieved: dict[str, dict[str, list[int]]] = {}
+    with sessions() as db:
+        for pack, items in (labels.get("packs") or {}).items():
+            for it in items:
+                hits = search_evidence(db, tenant_id, it["text"], limit=k, min_score=dr.RETRIEVAL_FLOOR)
+                retrieved.setdefault(pack, {})[it["ref"]] = [h.display_no for h in hits]
+        db.rollback()
+    res = sc.retrieval_recall(labels, retrieved, k=k)
+    res["retrieved"] = retrieved
+    res["app_passages"] = dr.APP_PASSAGES        # the draft task shows the model only this many; recall at that depth is informational
+    res["at_app_passages"] = sc.retrieval_recall(labels, retrieved, k=dr.APP_PASSAGES)["pooled"]
+    res["retrieval_floor"] = dr.RETRIEVAL_FLOOR
+    return res
+
+
 def local_database(url: str) -> bool:
     from sqlalchemy.engine import make_url
     return (make_url(url).host or "localhost") in {"localhost", "127.0.0.1", "::1"}
@@ -319,7 +340,7 @@ def local_database(url: str) -> bool:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="eval.run")
-    ap.add_argument("phase", help="E1..E4, T1..T3, R1, R2, or 'config'")
+    ap.add_argument("phase", help="E1..E4, T1..T3, R1, R2, 'config', or 'retrieval' (Recall@8 diagnostic, no model call)")
     ap.add_argument("--live", action="store_true", help="refused in S9")
     ap.add_argument("--allow-remote-db", action="store_true", help="allow a DATABASE_URL whose host is not local")
     args = ap.parse_args(argv)
@@ -329,9 +350,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.phase == "config":
         print(json.dumps(run_configuration(), indent=2))
         return 0
-    from app.tender.scripted_ai import ScriptedFakeAI
-    cfg = load_budget_config()
-    ledger = Ledger(DRY_LEDGER, cfg, dry_run=True)
+    labels_path = KEYS_DIR / "retrieval_labels.json"
+    if args.phase == "retrieval" and not labels_path.is_file():
+        print(f"eval.run: not ready: retrieval labels not found at {labels_path} (written by qa)", file=sys.stderr)
+        return 4
+    if args.phase != "retrieval":
+        from app.tender.scripted_ai import ScriptedFakeAI
+        cfg = load_budget_config()
+        ledger = Ledger(DRY_LEDGER, cfg, dry_run=True)
     from sqlalchemy import select
     from app.config import Settings
     from app.db import Database
@@ -348,6 +374,13 @@ def main(argv: list[str] | None = None) -> int:
     if tenant_id is None:
         print("eval.run: demo tenant not found; run `python -m eval.seed` first", file=sys.stderr)
         return 4
+    if args.phase == "retrieval":
+        res = retrieval_diagnostic(sessions, tenant_id, json.loads(labels_path.read_text(encoding="utf-8")))
+        RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+        text = json.dumps(res, indent=2, sort_keys=True)
+        (RESULTS_DIR / "retrieval.json").write_text(text + "\n", encoding="utf-8")
+        print(text)
+        return 0
     ctx = Context(ScriptedFakeAI(), ledger, sessions, tenant_id, results_dir=DRY_RESULTS_DIR, dry=True)
     try:
         print(json.dumps(run_phase(args.phase, ctx), indent=2))

@@ -370,3 +370,50 @@ def score_seeded_claims(seeded: list[dict], checked: list[dict], draft_texts: di
             "pass": total > 0 and caught / total >= BARS["A6a"],
             "per_type": {t: {"caught": c, "total": n} for t, (c, n) in sorted(per_type.items())}, "misses": misses,
             "false_flags": {"flagged": false_flags, "non_seeded_claims": non_seeded, "rate": _ratio(false_flags, non_seeded)}}
+
+
+# ---------- retrieval diagnostic (DESIGN 4.2 "Retrieval check", T-206): no bar, never part of BARS or `pass` ----------
+
+def retrieval_recall(labels: dict, retrieved: dict, k: int = 8) -> dict:
+    """Recall@k of the app's retrieval against qa's hand labels (eval/keys/retrieval_labels.json).
+
+    labels    : {"packs": {pack: [{"ref", "relevant": [E...], "primary": [E...], ...}]}}
+    retrieved : {pack: {ref: [display numbers, best first]}}; only the first k count. A question absent from it counts
+                recall 0 (and primary miss) and is listed. A gap question (empty `relevant`) has no recall; it only
+                records whether anything was retrieved (informational).
+    Reports per pack and pooled: mean recall over questions with a non-empty `relevant`, primary hit rate over the same
+    questions that have a `primary`, gap counts, and the misses (a question with any relevant passage outside the top k).
+    """
+    per_pack, misses = {}, []
+    pooled = {"recalls": [], "primary": [], "gap": 0, "gap_retrieved": 0}
+    for pack, items in (labels.get("packs") or {}).items():
+        rec, prim, gap, gap_ret = [], [], 0, 0
+        for it in items:
+            ref = it["ref"]
+            relevant = [int(x) for x in it.get("relevant") or []]
+            got = (retrieved.get(pack) or {}).get(ref)
+            top = {int(x) for x in (got or [])[:k]}
+            if not relevant:
+                gap += 1
+                gap_ret += 1 if top else 0
+                continue
+            hit = [e for e in relevant if e in top]
+            rec.append(len(hit) / len(relevant))
+            primary = [int(x) for x in it.get("primary") or []]
+            if primary:
+                prim.append(any(e in top for e in primary))
+            missing = [e for e in relevant if e not in top]
+            if missing:
+                misses.append({"pack": pack, "ref": ref, "missing": missing, "not_retrieved": got is None})
+        per_pack[pack] = {"questions": len(items), "scored": len(rec), "recall": _ratio(sum(rec), len(rec)),
+                          "primary_hit_rate": _ratio(sum(prim), len(prim)), "gap_questions": gap,
+                          "gap_retrieved_anything": gap_ret}
+        pooled["recalls"] += rec
+        pooled["primary"] += prim
+        pooled["gap"] += gap
+        pooled["gap_retrieved"] += gap_ret
+    return {"k": k, "per_pack": per_pack,
+            "pooled": {"scored": len(pooled["recalls"]), "recall": _ratio(sum(pooled["recalls"]), len(pooled["recalls"])),
+                       "primary_hit_rate": _ratio(sum(pooled["primary"]), len(pooled["primary"])),
+                       "gap_questions": pooled["gap"], "gap_retrieved_anything": pooled["gap_retrieved"]},
+            "misses": misses}
