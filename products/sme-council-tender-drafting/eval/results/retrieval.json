@@ -3,8 +3,8 @@
   "at_app_passages": {
     "gap_questions": 2,
     "gap_retrieved_anything": 2,
-    "primary_hit_rate": 0.8928571428571429,
-    "recall": 0.6023809523809522,
+    "primary_hit_rate": 0.9285714285714286,
+    "recall": 0.6261904761904761,
     "scored": 28
   },
   "k": 8,
@@ -90,7 +90,6 @@
     },
     {
       "missing": [
-        6,
         16
       ],
       "not_retrieved": false,
@@ -104,14 +103,6 @@
       "not_retrieved": false,
       "pack": "S08-security-trust-cctv-keyholding.docx",
       "ref": "Q6"
-    },
-    {
-      "missing": [
-        16
-      ],
-      "not_retrieved": false,
-      "pack": "S08-security-trust-cctv-keyholding.docx",
-      "ref": "Q7"
     },
     {
       "missing": [
@@ -177,9 +168,9 @@
     "S08-security-trust-cctv-keyholding.docx": {
       "gap_questions": 1,
       "gap_retrieved_anything": 1,
-      "primary_hit_rate": 0.8888888888888888,
+      "primary_hit_rate": 1.0,
       "questions": 10,
-      "recall": 0.7777777777777778,
+      "recall": 0.8333333333333335,
       "scored": 9
     },
     "S12-grounds-hallowby-town.docx": {
@@ -194,8 +185,8 @@
   "pooled": {
     "gap_questions": 2,
     "gap_retrieved_anything": 2,
-    "primary_hit_rate": 0.9285714285714286,
-    "recall": 0.7267857142857144,
+    "primary_hit_rate": 0.9642857142857143,
+    "recall": 0.7446428571428572,
     "scored": 28
   },
   "retrieval_floor": 0.0,
@@ -242,9 +233,9 @@
         29
       ],
       "4.4(a)": [
-        22,
         15,
         24,
+        22,
         16,
         9,
         20,
@@ -325,13 +316,13 @@
       ],
       "Q3": [
         18,
-        1,
-        12,
         8,
+        1,
         28,
         13,
         24,
-        21
+        21,
+        6
       ],
       "Q4": [
         18,
@@ -365,13 +356,13 @@
       ],
       "Q7": [
         12,
+        18,
         21,
+        16,
         6,
+        13,
         7,
-        23,
-        20,
-        3,
-        18
+        23
       ],
       "Q8": [
         21,

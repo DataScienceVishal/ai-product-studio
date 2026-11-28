@@ -1,3 +1,11 @@
+# STATUS (T-216 slice 1) - year/acronym boost relative to the best rank; recall@8 0.745, still below the 0.8 trigger
+
+Branch `p/sme-council-tender-drafting/T-216` (off main). Not merged. No migrations, no model calls.
+- Done: in `tender/evidence.py` a year or acronym now adds `TOKEN_BOOST (0.25) x best rank of that search`; the code boost stays +1.0 absolute (still beats any rank < 1); `RETRIEVAL_FLOOR` still applies to `score`. 0.25 kept as the a-priori design value, not swept on labels. DESIGN 4.2 and EVAL.md retrieval row updated.
+- Recall (pooled, `UPLOADS_PER_HOUR=1000 python -m eval.run retrieval`, same seed): before 0.727 (k=8) / 0.602 (k=5) / primary hit k=8 0.929; after **0.745 / 0.626 / 0.964** (k=5 primary 0.893 -> 0.929). Per pack k=8: S04 0.669, S08 0.778 -> 0.833, S12 0.733. Equals the "boost off" figure from T-214, so the old absolute boost was costing about 0.02; the relative boost does not add beyond it. **Still below 0.8.**
+- Tests (`tests/test_tender_ingest.py`): acronym passage outranks an equal one; strong match not overtaken by a weak acronym passage (boost equals 0.25 x best rank); code boost still +1.0 and wins.
+- Left for T-216: APP_PASSAGES 5 -> 6-8 against the token budget (DESIGN 4.3), rerank or criteria-based expansion, STATS cache per tenant, document UPLOADS_PER_HOUR=1000 for the eval seed, one held-out run after the freeze.
+
 # STATUS (T-214) - retrieval rescoring: BM25 only, recall@8 0.73 (below the 0.8 trigger) - review CHANGES applied, awaiting re-review
 
 Branch `p/sme-council-tender-drafting/T-214` (off main). Not merged. No migrations, no model calls.
