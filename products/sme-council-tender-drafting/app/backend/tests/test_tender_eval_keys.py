@@ -31,7 +31,8 @@ def test_trap_sets():
     assert [t["id"] for t in trap] == [f"TR{i:02d}" for i in range(1, 31)]
     assert [t["id"] for t in dev] == [f"DT{i:02d}" for i in range(1, 11)]
     for t in trap + dev:
-        assert set(t) == {"id", "question", "word_limit", "trap", "why"}
+        assert set(t) == {"id", "question", "word_limit", "trap", "why", "must_not_claim"}
+        assert t["must_not_claim"] and all(isinstance(m, str) and m.strip() for m in t["must_not_claim"])
         assert t["trap"] in ("missing", "partial")
         assert t["word_limit"] is None or (isinstance(t["word_limit"], int) and t["word_limit"] > 0)
         assert t["question"].strip() and ".md" in t["why"] or "library" in t["why"]
