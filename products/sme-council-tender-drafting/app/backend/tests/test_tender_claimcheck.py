@@ -382,7 +382,7 @@ def test_delete_of_unrelated_evidence_leaves_a_ready_pack_ready(client, app):
 def test_upload_extract_draft_and_check_fit_the_30k_trial_day():
     """The whole path on the app path against the trial plan's daily cap. A reservation is input bytes + output cap + the
     provider headroom and is released at settle, so at every step settled use so far + the next reservation must fit.
-    Typical sizes: a 5-page chunk of 2,000 characters a page, 5 passages of 900 characters, a 300-word answer. Settled
+    Typical sizes: a 5-page chunk of 2,000 characters a page, APP_PASSAGES passages of about 900 characters, a 300-word answer. Settled
     use counts about 4 bytes a token in and typical outputs (extract 1,500, draft 600, check 700 tokens)."""
     cap = PLANS["trial"].ai_daily_tokens
     assert cap == 30_000
@@ -390,7 +390,7 @@ def test_upload_extract_draft_and_check_fit_the_30k_trial_day():
     chunk = ex.chunk_text([(n, "x" * 2000) for n in range(1, 6)])
     extract_user = build_user({"chunk": chunk}, "0" * 16)
     extract_res = reservation_estimate(provider, full_system(ex.EXTRACT_SPEC), extract_user, ex.EXTRACT_SPEC.max_output_tokens)
-    hits = [type("H", (), {"display_no": i, "text": "word " * 180})() for i in range(1, 6)]
+    hits = [type("H", (), {"display_no": i, "text": "word " * 180})() for i in range(1, dr.APP_PASSAGES + 1)]
     draft_payload = dr.draft_payload("Describe your quality system. " * 12, 300, 10, hits, dr.Limits())
     draft_res = dr.draft_reservation(provider, draft_payload)
     answer = "Our teams are trained to BICSc standards and hold ISO 9001 [E-1]. " * 25

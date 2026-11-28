@@ -1,10 +1,10 @@
 {
-  "app_passages": 5,
+  "app_passages": 8,
   "at_app_passages": {
     "gap_questions": 2,
     "gap_retrieved_anything": 2,
-    "primary_hit_rate": 0.9285714285714286,
-    "recall": 0.6261904761904761,
+    "primary_hit_rate": 0.9642857142857143,
+    "recall": 0.7446428571428572,
     "scored": 28
   },
   "k": 8,

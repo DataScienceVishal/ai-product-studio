@@ -30,14 +30,16 @@ log = logging.getLogger("app.tender.draft")
 
 GAP_TEXT = "[NEEDS FIRM INPUT: no evidence found for this question]"
 RETRIEVAL_FLOOR = 0.0          # minimum retrieval rank (a code match passes regardless); tuned in L1 (a hit below it counts as no evidence)
-# App-path sizing (R3). Trial tenants have 30k tokens a day, and a reservation is input bytes + cap + headroom, so a
-# draft and its re-check must reserve at most 30k between them. The harness passes its own, larger limits.
-APP_PASSAGES = 5
+# App-path sizing (R3). Trial tenants have 30k tokens a day, and a reservation is input bytes + cap + headroom and is
+# released at settle. So the rule is: the day's settled use (a typical draft, about 6k) plus the re-check's reservation
+# must be at most 30k (APP_PAIR_BUDGET). The harness passes its own, larger limits.
+APP_PASSAGES = 8                # largest k that keeps the worst-case reservations in budget (DESIGN 4.3, test_app_passages_is_the_largest_k_that_fits_the_budget)
 APP_PASSAGE_CHARS = 1000
 QUESTION_CHARS = 1500
 CHECK_CAP = 6000               # claimcheck output cap (DESIGN 4.4); the check itself is S6
 CHECK_SYSTEM_BYTES = 2000      # upper bound for the claimcheck system prompt
-APP_PAIR_BUDGET = 30_000
+APP_PAIR_BUDGET = 30_000       # trial daily cap the settled-draft-plus-check rule is tested against (tests/test_tender_draft.py)
+TYPICAL_DRAFT_SETTLED = 6_000
 REDRAFTS_PER_REQUIREMENT_PER_DAY = 5
 MAX_PER_TASK = 40
 DRAFT_PACK_STATES = ("drafting", "checking", "ready")  # the routes use the same set

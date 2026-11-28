@@ -14,6 +14,7 @@ sys.path.insert(0, str(PRODUCT))
 from eval import run as R, score as SC, seed as SD  # noqa: E402
 
 from app.models import Tenant  # noqa: E402
+from app.tender import draft as dr  # noqa: E402
 from . import tender_files as tf  # noqa: E402
 from .conftest import sign_up  # noqa: E402
 
@@ -138,7 +139,7 @@ def test_runner_retrieves_the_right_passage_and_writes_no_model_rows(app, new_cl
     res = R.retrieval_diagnostic(sessions, tenant_id, labels)
     assert res["retrieved"]["P.docx"]["1"][0] == 1 and res["retrieved"]["P.docx"]["2"][0] == 2
     assert res["pooled"]["recall"] == 1.0 and res["pooled"]["gap_retrieved_anything"] == 0 and res["misses"] == []
-    assert res["app_passages"] == 5 and res["at_app_passages"]["recall"] == 1.0
+    assert res["app_passages"] == dr.APP_PASSAGES == 8 and res["at_app_passages"]["recall"] == 1.0
     with sessions() as db:
         assert db.scalar(select(AIUsage.id).limit(1)) is None
 

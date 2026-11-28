@@ -239,20 +239,20 @@ def _hits(n, chars):
 
 def test_a_typical_draft_and_check_pair_reserves_at_most_30k():
     provider = AzureLike()
-    typical = dr.draft_payload("Describe your quality system. " * 12, 300, 10, _hits(5, 900), dr.Limits())
+    typical = dr.draft_payload("Describe your quality system. " * 12, 300, 10, _hits(dr.APP_PASSAGES, 900), dr.Limits())
     answer = "Our teams are trained to BICSc standards and hold ISO 9001 [E-1]. " * 25  # about 300 words
-    cited = dr.passage_block(_hits(4, 900), dr.Limits())
+    cited = dr.passage_block(_hits(dr.APP_PASSAGES, 900), dr.Limits())  # worst case: the draft cites every passage shown
     d, c = dr.draft_reservation(provider, typical), dr.check_reservation(provider, answer, cited)
-    assert d + c <= 30_000, (d, c)
+    assert d <= dr.APP_PAIR_BUDGET and dr.TYPICAL_DRAFT_SETTLED + c <= dr.APP_PAIR_BUDGET, (d, c)  # settled draft + check reservation
 
 
 def test_a_typical_draft_shorten_retry_and_check_stay_within_30k():
     """R3: the shorten retry re-sends only the prior answer and caps its output, so all three fit one trial day."""
     provider = AzureLike()
-    typical = dr.draft_payload("Describe your quality system. " * 12, 300, 10, _hits(5, 900), dr.Limits())
+    typical = dr.draft_payload("Describe your quality system. " * 12, 300, 10, _hits(dr.APP_PASSAGES, 900), dr.Limits())
     over = "Our teams are trained to BICSc standards and hold ISO 9001 [E-1]. " * 40  # about 480 words, over the limit
     short = "Our teams are trained to BICSc standards and hold ISO 9001 [E-1]. " * 25
-    cited = dr.passage_block(_hits(4, 900), dr.Limits())
+    cited = dr.passage_block(_hits(4, 900), dr.Limits())  # typical: the check cites 4 of the 8 shown (all 8 cited would need 31.5k for all three steps)
     # A reservation is released when the call settles at actual use, so at each step the day's settled use plus the
     # next reservation must fit. A typical answer settles at its input plus about 600 output tokens.
     typical_out = 600
@@ -283,6 +283,22 @@ def test_the_shorten_instruction_is_not_inside_a_data_block(client, app):
     assert "shorten" in system.lower() and "word_limit" in system
     assert "shorten" not in user.lower() and "instruction" not in user
     assert "previous_answer:\n<<<DATA-" in user  # the prior draft is data
+
+
+def test_app_passages_is_the_largest_k_that_fits_the_budget():
+    """DESIGN 4.3 rule, fixed a priori (not tuned on recall): at the real passage cap (APP_PASSAGE_CHARS) and question cap, the
+    worst draft reservation is under 21.5k, and a typical settled draft (6k) plus a re-check that cites ALL k passages
+    with a 3,000-character draft reserves at most 30k (APP_PAIR_BUDGET). The whole-flow trial-day test in test_tender_claimcheck.py is the third condition (at least 2 questions). The check's system prompt is the conservative 2,000-byte stand-in (the real one is smaller). Only the pair condition and the cap of 8 can bind here; 21.5k never does."""
+    provider = AzureLike()
+
+    def fits(k):
+        lim = dr.Limits(passages=k)
+        worst = dr.draft_payload("q" * 9000, 500, 100, _hits(k, 5000), lim)
+        cited = dr.passage_block(_hits(k, 5000), lim)
+        return (dr.draft_reservation(provider, worst) < 21_500
+                and dr.TYPICAL_DRAFT_SETTLED + dr.check_reservation(provider, "w" * 3000, cited) <= dr.APP_PAIR_BUDGET)
+    best = max(k for k in range(5, 9) if fits(k))
+    assert dr.APP_PASSAGES == best == 8
 
 
 def test_the_largest_app_path_draft_still_reserves_under_the_daily_cap():
