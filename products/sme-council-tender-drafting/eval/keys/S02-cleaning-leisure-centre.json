@@ -1,0 +1,185 @@
+{
+ "pack": "S02-cleaning-leisure-centre.docx",
+ "items": [
+  {
+   "ref": "1",
+   "kind": "question",
+   "text": "Explain how you will clean and disinfect the pool hall, poolside, changing rooms and showers to maintain hygiene and reduce slip risk during opening hours and at night. Include the equipment, chemicals, checking regime and how staff will be positioned at busy times.",
+   "word_limit": 750,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 10
+  },
+  {
+   "ref": "2",
+   "kind": "question",
+   "text": "Set out your staffing model for the minimum resource in Part 2, section 3, including shift patterns, supervisor cover, the use of agency or bank staff, and absence cover.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 8
+  },
+  {
+   "ref": "3",
+   "kind": "question",
+   "text": "Describe your plan to take over the service from 3 January 2028, including the TUPE process, recruitment, training, equipment and a handover that avoids any gap in service during the first two weeks.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 8
+  },
+  {
+   "ref": "4",
+   "kind": "question",
+   "text": "Describe how you will handle bodily fluid incidents, outbreaks of infection (for example norovirus, verrucas and skin infections) and deep cleans, including response times, personal protective equipment, training and waste disposal.",
+   "word_limit": 750,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 10
+  },
+  {
+   "ref": "5",
+   "kind": "question",
+   "text": "Describe how you will check quality, record it, report against the KPIs in Part 2 section 11 and put right poor performance.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 8
+  },
+  {
+   "ref": "6",
+   "kind": "question",
+   "text": "Explain how you will manage health and safety, including risk assessments, COSHH, safe systems for working near water, manual handling and safeguarding of members of the public (including children) while cleaning.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 8
+  },
+  {
+   "ref": "7",
+   "kind": "question",
+   "text": "Tell us how you will keep the centre operating if there is a sudden loss of staff, a plant failure leading to a partial closure, or severe weather.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 6
+  },
+  {
+   "ref": "8",
+   "kind": "question",
+   "text": "Describe the social value you will deliver through this contract. We are particularly interested in opportunities for local residents, young people and people with disabilities to take up work and training, and in actions to reduce the carbon impact of cleaning.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 8
+  },
+  {
+   "ref": "9",
+   "kind": "question",
+   "text": "Describe two improvements you would introduce in the first 12 months (for example technology, equipment or processes), with the expected benefit and how it will be measured.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "C1",
+   "kind": "mandatory",
+   "text": "Employer's liability insurance: At least £10 million",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "C2",
+   "kind": "mandatory",
+   "text": "Public liability insurance: At least £5 million",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "C3",
+   "kind": "mandatory",
+   "text": "Product liability insurance: At least £5 million",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "C4",
+   "kind": "mandatory",
+   "text": "Health and safety competence: Current SafeContractor, CHAS or other SSIP-recognised accreditation",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "C5",
+   "kind": "mandatory",
+   "text": "Financial standing: Annual turnover of at least £500,000 in the last financial year, and no adverse credit report",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "C6",
+   "kind": "mandatory",
+   "text": "Enhanced DBS checks available for all staff in public areas: Confirmed in writing",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "C7",
+   "kind": "mandatory",
+   "text": "Modern Slavery Act 2015 compliance: Statement or declaration",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "C8",
+   "kind": "mandatory",
+   "text": "Data protection: Registered with the ICO; a UK GDPR compliant privacy policy",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "C9",
+   "kind": "mandatory",
+   "text": "Equality: Equal opportunities policy in place",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "C10",
+   "kind": "mandatory",
+   "text": "Exclusion grounds: No mandatory exclusion grounds apply",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "",
+   "kind": "deadline",
+   "text": "Tender submission deadline: Thursday 14 October 2027 at 14:00",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  }
+ ]
+}

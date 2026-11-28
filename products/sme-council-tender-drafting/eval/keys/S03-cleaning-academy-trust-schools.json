@@ -1,0 +1,195 @@
+{
+ "pack": "S03-cleaning-academy-trust-schools.docx",
+ "items": [
+  {
+   "ref": "2.1",
+   "kind": "question",
+   "text": "Set out your method for delivering term-time daily cleaning and holiday deep cleans in all five schools, with a worked example of a typical weekday at the secondary school and a typical day at a primary school with a nursery.",
+   "word_limit": null,
+   "page_limit": 2,
+   "marks": null,
+   "weight_pct": 10
+  },
+  {
+   "ref": "2.2",
+   "kind": "question",
+   "text": "Describe how you will mobilise the contract across five sites during the summer holiday window (28 June to 31 August 2027) so that all schools are ready to open on 1 September 2027. Include staffing, TUPE consultation, training, equipment and a risk log.",
+   "word_limit": null,
+   "page_limit": 2,
+   "marks": null,
+   "weight_pct": 8
+  },
+  {
+   "ref": "3.1",
+   "kind": "question",
+   "text": "Explain how you will ensure all staff are safely recruited and vetted, how you will keep the central record up to date, how staff will be trained, and how you will respond if a safeguarding concern arises.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 8
+  },
+  {
+   "ref": "3.2",
+   "kind": "question",
+   "text": "Describe your rules for staff conduct on school premises, including interaction with pupils, mobile phones, working alone after hours, key holding and alarm responses.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 4
+  },
+  {
+   "ref": "4.1",
+   "kind": "question",
+   "text": "Describe how you will monitor and report quality, involve site managers, and deal with failures.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 8
+  },
+  {
+   "ref": "4.2",
+   "kind": "question",
+   "text": "Describe how you will manage health and safety, COSHH, safety data sheets, chemical storage in schools and the use of low-odour, child-safe products.",
+   "word_limit": 400,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 6
+  },
+  {
+   "ref": "4.3",
+   "kind": "question",
+   "text": "Provide two case studies from schools or similar settings (for example children's centres, nurseries or colleges) completed within the last 4 years. Include how the transition was managed, how quality was maintained and what improvements were delivered.",
+   "word_limit": null,
+   "page_limit": 1,
+   "marks": null,
+   "weight_pct": 6,
+   "case_studies": 2
+  },
+  {
+   "ref": "5.1(a)",
+   "kind": "question",
+   "text": "Describe commitments to create job, apprenticeship, work experience or training opportunities for local residents and Trust pupils, including students with special educational needs, with numbers and timescales.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 5
+  },
+  {
+   "ref": "5.1(b)",
+   "kind": "question",
+   "text": "Describe commitments to reduce carbon and plastic and to support the communities served by the schools, with measurable targets and how you will report them.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 5
+  },
+  {
+   "ref": "PF1",
+   "kind": "mandatory",
+   "text": "Employer's liability: £10m minimum",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF2",
+   "kind": "mandatory",
+   "text": "Public liability: £10m minimum",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF3",
+   "kind": "mandatory",
+   "text": "Professional indemnity: £1m minimum",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF4",
+   "kind": "mandatory",
+   "text": "Health and safety accreditation: SSIP member (for example SafeContractor, CHAS, Constructionline)",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF5",
+   "kind": "mandatory",
+   "text": "Minimum turnover: £1.2m per annum for the latest filed accounts",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF6",
+   "kind": "mandatory",
+   "text": "Safeguarding policy: Written safeguarding policy aligned to Keeping Children Safe in Education",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF7",
+   "kind": "mandatory",
+   "text": "DBS: Confirmation that enhanced DBS checks will be completed for every member of staff before they start",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF8",
+   "kind": "mandatory",
+   "text": "Modern Slavery: Compliance with the Modern Slavery Act 2015, with a statement or policy",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF9",
+   "kind": "mandatory",
+   "text": "Data protection: Registered with the Information Commissioner and compliant with UK GDPR",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF10",
+   "kind": "mandatory",
+   "text": "Exclusion grounds: None apply",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "PF11",
+   "kind": "mandatory",
+   "text": "References: Two references from schools or similar settings",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "",
+   "kind": "deadline",
+   "text": "Tender submission deadline: 12 noon on Monday 10 May 2027",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  }
+ ]
+}

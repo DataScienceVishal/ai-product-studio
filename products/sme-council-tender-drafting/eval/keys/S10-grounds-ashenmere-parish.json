@@ -1,0 +1,167 @@
+{
+ "pack": "S10-grounds-ashenmere-parish.docx",
+ "items": [
+  {
+   "ref": "Q0",
+   "kind": "mandatory",
+   "text": "Do you confirm that every person who will work in the play areas holds a current enhanced DBS check, and that you will provide the certificate number or evidence on request? Answer Yes or No and give brief detail.",
+   "word_limit": 100,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "Q1",
+   "kind": "question",
+   "text": "Describe your method statement and annual programme for this contract, including how you will sequence mowing across all six sites in the main growing season and how you will deal with wet weather.",
+   "word_limit": 500,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 10
+  },
+  {
+   "ref": "Q2",
+   "kind": "question",
+   "text": "Explain how you will carry out your work in the burial ground and closed churchyard with sensitivity to mourners, funerals and visitors, and how you will protect monuments.",
+   "word_limit": 350,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 8
+  },
+  {
+   "ref": "Q3",
+   "kind": "question",
+   "text": "Describe the staff, supervision and holiday cover you will provide. Say who the Clerk should call when there is a problem.",
+   "word_limit": 350,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 8
+  },
+  {
+   "ref": "Q4",
+   "kind": "question",
+   "text": "Describe the machinery you will use, how it will be maintained and how you will reduce noise and emissions, including any electric or battery equipment.",
+   "word_limit": 250,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 6
+  },
+  {
+   "ref": "Q5",
+   "kind": "question",
+   "text": "Explain your play area inspection procedure, your training and how you record and report defects. Include your approach to safeguarding when children are present.",
+   "word_limit": 350,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 6
+  },
+  {
+   "ref": "Q6",
+   "kind": "question",
+   "text": "Describe how you will protect biodiversity, manage the wildflower meadow and keep herbicide use to a minimum.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 6
+  },
+  {
+   "ref": "Q7",
+   "kind": "question",
+   "text": "Provide two examples of similar work you have done in the last three years for a parish or town council, with outcomes and a reference contact role.",
+   "word_limit": null,
+   "page_limit": 1,
+   "marks": null,
+   "weight_pct": 6
+  },
+  {
+   "ref": "Q8",
+   "kind": "question",
+   "text": "Social value: Describe how your business will bring local benefit during the contract, for example through local employment, volunteering with village groups or reduced travel emissions.",
+   "word_limit": 300,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": 10
+  },
+  {
+   "ref": "1.4-1",
+   "kind": "mandatory",
+   "text": "Public liability insurance of at least £5 million",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "1.4-2",
+   "kind": "mandatory",
+   "text": "Employer's liability insurance of at least £5 million, or a written statement that you employ no staff other than yourself and are legally exempt",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "1.4-3",
+   "kind": "mandatory",
+   "text": "Evidence of SSIP accreditation (for example CHAS or SafeContractor), or a plan to obtain it before the contract starts",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "1.4-4",
+   "kind": "mandatory",
+   "text": "Turnover of at least £120,000 in the last financial year",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "1.4-5",
+   "kind": "mandatory",
+   "text": "PA1 and PA6 certificates (NPTC or equivalent) for anyone who will spray herbicide",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "1.4-6",
+   "kind": "mandatory",
+   "text": "A Modern Slavery Act declaration",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "1.4-7",
+   "kind": "mandatory",
+   "text": "Confirmation of compliance with UK GDPR for any personal data seen during burial and visitor work",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "1.4-8",
+   "kind": "mandatory",
+   "text": "Enhanced DBS checks for any staff who will inspect or work in the play areas when children are present",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  },
+  {
+   "ref": "",
+   "kind": "deadline",
+   "text": "Tender submission deadline: 14:00 on Thursday 11 February 2027",
+   "word_limit": null,
+   "page_limit": null,
+   "marks": null,
+   "weight_pct": null
+  }
+ ]
+}

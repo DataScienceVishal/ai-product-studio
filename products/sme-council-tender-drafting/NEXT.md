@@ -1,3 +1,10 @@
+# STATUS (T-206 part B) - keys for all 9 held-out packs written; awaiting independent checker
+
+Branch `p/sme-council-tender-drafting/T-206`. Part A is committed (1c2f77e); part B is not. No model calls; keys hand-derived from `demo-data/pack-sources/*.md`.
+- Done: README rules 15-19 added (synthetic refs `<section>-<n>` for unnumbered items, "Question" label dropped, Studio Lead decision that general-rule limits stay copied and a missed rule is an extraction miss, SQ/briefing items not keyed, marks packs). Keys S02 (9 q, 10 mandatory), S03 (9 q, 11), S06 (8 q, 11, marks 60), S07 (10 q, 10), S10 (8 q, 9 incl. Q0 plus 8 bullets), S11 (13 q, 10); items incl. deadline 20/21/20/21/18/24. Earlier: S01 18 q, S05 16 q, S09 20 q. `tests/test_tender_pack_keys.py`: 10 passed (QUALITY_TOTAL/MARKS_TOTAL with line pointers).
+- Left: demo-pack retrieval labels for S04/S08/S12; independent checker of all 9 keys against the packs (check limits, general-rule copies, mandatory sets); the pre-registration commit in EVAL.md.
+- New ambiguities: (1) S03 4.3 "one side per case study": page_limit 1 plus case_studies 2; S10 Q7 "one A4 page for both examples": page_limit 1 (no per-item count). (2) S06 PF11 keyed mandatory from the free-text paragraph (validator item 4 asked for a pack fix; the md still has it as a paragraph). (3) S06 Q5 (a)/(b) one item. (4) S07/S02 numeric refs ("1", "9") are bare numbers, so ref matching is weak for them. (5) S11 briefing "mandatory" in key dates vs conditional in 1.3: not keyed. (6) S10 1.4 EL-exemption and SSIP "or plan" bullets keyed verbatim. (7) S02 Q1/Q4 750 words, general rule 500 copied to the other 6. (8) S06 Q4 to Q6 shared 1,200 words: word_limit null.
+
 # STATUS (T-206 part A) - keys for S01, S05, S09 written; awaiting part B
 
 Branch `p/sme-council-tender-drafting/T-206`. Not committed. No model calls; keys written by hand from `demo-data/pack-sources/*.md`, `demo-data/evidence/` not read.

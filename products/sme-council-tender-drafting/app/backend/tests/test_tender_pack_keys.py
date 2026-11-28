@@ -10,9 +10,18 @@ MANIFEST = json.loads((ROOT / "demo-data" / "packs" / "manifest.json").read_text
 
 # Quality + social value total for the questions in each pack (percent of tender score).
 QUALITY_TOTAL = {
-    "S01": 70,  # pack-source S01 l.~324: "Total available weighting for Section 5: 70 percent"
-    "S05": 60,  # S05 "Weighting check" table: Total 60%
-    "S09": 70,  # S09 section 7: Quality 60% + Social value 10%
+    "S01": 70,  # pack-source S01 .md l.396: "Total available weighting for Section 5: 70 percent"
+    "S05": 60,  # S05 .md l.335 "Weighting check" table: Total 60%
+    "S09": 70,  # S09 .md l.94, section 7: Quality 60% + Social value 10%
+    "S02": 70,  # S02 .md l.268, Part 5 "Total quality weighting: 70%" (Part 4 award criteria: Quality 70%)
+    "S03": 60,  # S03 .md l.266, Section 5 "Check: 10 + 8 + 8 + 4 + 8 + 6 + 6 + 5 + 5 = 60%"
+    "S07": 70,  # S07 .md l.177, Part 6 "Total weighting is 70%"
+    "S10": 60,  # S10 .md l.175 "Weighting check": Q1-Q7 50% + Q8 10%
+    "S11": 70,  # S11 .md l.73, 1.5: Quality Q1-Q12 60% + social value Q13 10%
+}
+# Packs that score in points: sum of `marks` of the questions instead of weight_pct.
+MARKS_TOTAL = {
+    "S06": 60,  # S06 .md l.167, Section 6 "Total marks available for quality: 10 + 8 + 8 + 6 + 6 + 6 + 8 + 8 = 60 marks"
 }
 BASE = {"ref", "kind", "text", "word_limit", "page_limit", "marks", "weight_pct"}
 EXTRA = {"case_studies", "shared_group", "shared_words"}
@@ -48,8 +57,14 @@ def test_pack_key(path):
     qs = [i for i in items if i["kind"] == "question"]
     if d["pack"] in MANIFEST["drafting_heldout"]:
         assert len(qs) >= 15
-    assert sum(i["weight_pct"] or 0 for i in qs) == QUALITY_TOTAL[path.stem[:3]]
-    assert all(i["weight_pct"] is None for i in items if i["kind"] != "question")
+    pk = path.stem[:3]
+    if pk in MARKS_TOTAL:
+        assert sum(i["marks"] or 0 for i in qs) == MARKS_TOTAL[pk]
+        assert all(i["weight_pct"] is None for i in items)
+    else:
+        assert sum(i["weight_pct"] or 0 for i in qs) == QUALITY_TOTAL[pk]
+        assert all(i["marks"] is None for i in items)
+    assert all(i["weight_pct"] is None and i["marks"] is None for i in items if i["kind"] != "question")
     deadlines = [i for i in items if i["kind"] == "deadline"]
     assert len(deadlines) == 1 and "2027" in deadlines[0]["text"] and ":" in deadlines[0]["text"]
     assert any(i["kind"] == "mandatory" for i in items)
