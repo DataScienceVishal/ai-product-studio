@@ -574,3 +574,11 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Criteria-based query expansion is not possible without an extraction schema change (questions carry no criteria text), so it is deferred. A per-tenant STATS cache is deferred until a tenant has thousands of passages.
 
 - 2026-11-28 (run 45dc, T-218): build_docx.py fails closed: with no frozen list it refuses to write unless --allow-frozen, because a rewrite silently breaks the pre-registered FROZEN hashes. Reversible.
+
+## 2026-11-28T15:05Z, desk d153: 15:00 digest
+- No new Telegram messages (pull returned 0); every inbox file is in HANDLED.md. No question defaults were due: no question is open or sent (Q-1 to Q-20 are all answered, defaulted or withdrawn).
+- No questions sent, so no buttons. Digest covers runs 0297, 634d, 1639, 111d, 7c96, b1da and 45dc (T-213, T-206, T-214, T-216 slices 1-3, T-212, T-215, T-217, T-218). Wins: what the drafter sees went from 0.52 (top 5, 09:42 diagnostic) to 0.745 (top 8 after slice 3), rounded to 75%; answer keys and held-out packs frozen plus the A2 invented-limit rule; the T-214 synonym map removed as fitted to demo labels (called "practice tenders"); S08 demo pack made consistent. Also line: the APP_PASSAGES 5 -> 8 trade (trial day fits 2 questions, not 3), since it changes what a trial user gets. Left out as minor: T-216 slice 2 boost hardening, T-215 eval nits, T-218 builder guard, test counts (1323 pass, 1 skip).
+- Problem slot kept on the old sp-ai-studio-deployer secret (revoke it and its role, delete AZURE_CREDENTIALS, ReadOnly lock on id-github-deploy; HURDLES 2026-11-24T23:59): still open, no reply since 08:00, repo still public.
+- Next lines: T-216 (rerank or embeddings design, recall target 0.8, a diagnostic and not a bar per DESIGN 4.2), then the L1 live eval inside the $6.00 Q-19 cap. Order per the 09:42Z run 634d decision (free retrieval tuning before any model spend).
+- Header keeps the hand-kept model spend ("About $15–20 of $80"): no new token-log rows, no eval/ledger.jsonl yet, and the spend report is still no_data.
+- Copy saved as state/runs/20261128T150000Z-desk-d153-digest.txt. DIGEST_NOTES cleared to its header. Committed to main directly (CLAUDE.md section 9 and Vishal's push-to-main instruction); the session branch is kept level.

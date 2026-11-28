@@ -68,6 +68,7 @@ Two builders working in the same clone switch branches under each other, so comm
 - 2026-11-27T15:01Z desk-5ad0: the 15:00 Desk prompt still lacks the line. Committed straight to main again (session branch kept level).
 - 2026-11-27T19:31Z desk-3be8: the 19:30 Desk prompt still lacks the line. Committed straight to main again (session branch kept level).
 - 2026-11-28T08:01Z desk-df0b: the 08:00 Desk prompt still lacks the line. Committed straight to main again (session branch kept level).
+- 2026-11-28T15:05Z desk-d153: the 15:00 Desk prompt still lacks the line. Committed straight to main again (session branch kept level).
 
 - 2026-11-27T12:40Z run e288 (studio process): a builder subagent left the main checkout on its product branch, so two state commits landed on `p/_starter/T-177` and one cherry-pick carried an unreviewed `main.bicep` edit to main (c0e4655). Fixed without rewriting history: reverted that file on main in the next commit, main's product tree is identical to before. Fix going forward: brief builders and reviewers to use a separate `git worktree` and never switch branches in the main checkout; Studio Lead checks `git branch --show-current` before committing state.
 

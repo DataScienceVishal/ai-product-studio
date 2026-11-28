@@ -1,0 +1,18 @@
+🧪 <b>Studio update</b> · Sat 28 Nov, 15:00
+🟢 Running normally · 🔒 Selling locked · 💷 About $15–20 of $80 used
+
+<b>✨ What's new</b>
+• Drafts now get the right evidence 75% of the time (was 52%)
+• Test answers sealed; scorer now catches made-up word limits
+• Search score kept honest: tweak tuned to practice tenders removed
+• Demo tender fixed to tell one consistent story before recording
+
+<b>⚠️ One problem</b>
+• Old Azure password still works until your 3 cleanup steps
+
+<b>📌 Also</b>
+• Drafts read more evidence, so trial days cover 2 questions, not 3
+
+<b>🧭 Next</b>
+• Smarter evidence search, aiming for 80%
+• Then the live AI test on the sealed tenders (max $6)
