@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
-from ..billing import LIMITED_PROVIDERS, OFFERS, PLANS, BillingUpdate, MockBilling, has_access, refund_key, sign
+from ..billing import LIMITED_PROVIDERS, OFFERS, PLANS, BillingUpdate, MockBilling, NoPaidInvoice, has_access, refund_key, sign
 from ..db import get_db
 from ..deps import Current, owner, subscription_of, verified_owner
 from ..errors import AppError
@@ -133,6 +133,51 @@ def apply_update(db: Session, update: BillingUpdate, provider: str, billing=None
     return applied
 
 
+REFUND_RETRY_WINDOW = timedelta(hours=24)  # T-210 (S2): stop answering 503 for "no paid invoice" after this long
+
+
+def _cancel_and_refund_duplicate(update: BillingUpdate, billing) -> None:
+    """Cancel the extra subscription and refund its first payment. Returns when the event may be acknowledged; raises
+    AppError(503) when Stripe should redeliver. Nothing is stored here (see the caller). No DB transaction is open."""
+    ctx = {"tenant_id": str(update.tenant_id), "extra_subscription": update.provider_ref}
+    try:
+        billing.cancel_subscription(update.provider_ref)
+    except Exception as error:
+        # T-173 S1: until the cancel works the customer is still charged for the extra subscription.
+        log.error("could not cancel the duplicate subscription (will be retried on redelivery)", extra=ctx, exc_info=True)
+        raise AppError(503, "cancel_failed", "Could not cancel the extra subscription yet. Try again.") from error
+    # T-182 (T-179 M3): the key comes from the event id, so a redelivery cannot refund twice. (T-210 S7: the key stays
+    # per event, not per subscription ref. A second event for the same extra subscription gets a new key and is caught
+    # by charge_already_refunded, which the adapter treats as done; a per-ref key would only make that explicit.)
+    try:
+        refunded = billing.refund_latest_invoice(update.provider_ref, refund_key(update.event_id))
+    except NoPaidInvoice as error:
+        # T-210 (S2): the first invoice may not be marked paid yet. Retry via redelivery, but only for 24 h.
+        age = datetime.now(timezone.utc) - update.occurred_at if update.occurred_at else timedelta(0)
+        log.error("refund_owed: the extra subscription was cancelled but no paid invoice was found to refund",
+                  extra={**ctx, "reason": "no_paid_invoice", "will_retry": age <= REFUND_RETRY_WINDOW})
+        if age <= REFUND_RETRY_WINDOW:
+            raise AppError(503, "refund_pending", "The extra subscription's payment is not visible yet. Try again.") from error
+        return
+    except Exception as error:
+        # Never log the provider's text (it can quote customer details): the code and the ref are what an operator needs.
+        code = error.code if isinstance(error, AppError) else type(error).__name__
+        # T-210 (S3): a permanent rejection (a 4xx other than charge_already_refunded, which the adapter treats as
+        # done) will not heal: log it for an operator and acknowledge. Timeouts, 5xx and 429 are billing_unavailable.
+        permanent = isinstance(error, AppError) and error.code == "billing_rejected"
+        log.error("refund_owed: the extra subscription was cancelled but its payment could not be refunded "
+                  + ("(rejected by the provider: refund it by hand)" if permanent else
+                     "(will be retried on redelivery; refund it by hand at the provider if this repeats)"),
+                  extra={**ctx, "error": code})
+        if permanent:
+            return
+        raise AppError(503, "refund_failed", "Could not refund the extra subscription yet. Try again.") from error
+    if refunded:
+        log.warning("extra subscription refunded", extra=ctx)
+    else:
+        log.info("no paid invoice to refund for the extra subscription (its first invoice was free)", extra=ctx)
+
+
 def _apply_update(db: Session, update: BillingUpdate, provider: str, billing=None) -> bool:
     """Apply a provider event once, in order. Returns False if this event id was already applied.
     An event older than the last one applied is recorded as seen but changes nothing.
@@ -217,41 +262,22 @@ def _apply_update(db: Session, update: BillingUpdate, provider: str, billing=Non
     if duplicate:
         # T-172 B1: the tenant already pays for a working subscription. A second one must not silently replace it
         # (the first would keep billing, untracked). Keep the first, cancel the extra one at the provider.
+        # T-210 (T-182 S1): do the provider calls FIRST and store the event id after both succeed, like the orphan path.
+        # A crash in between leaves no event id, so the redelivery redoes the cancel and the refund, which are
+        # idempotent (a cancelled subscription counts as done; the refund key or charge_already_refunded covers a repeat).
+        # Drop the flushed id and commit: that keeps the customer recorded above (account deletion must close it too)
+        # and releases the row lock, so no transaction is open during the provider calls.
+        db.execute(delete(BillingEvent).where(BillingEvent.id == update.event_id))
         db.commit()
         log.warning("duplicate subscription for a tenant with an active one: cancelling the extra",
                     extra={"tenant_id": str(update.tenant_id), "extra_subscription": update.provider_ref})
         if billing is not None:
-            try:
-                billing.cancel_subscription(update.provider_ref)
-            except Exception as error:
-                # T-173 S1: nothing else changed for the tenant, so forget the event id and answer 5xx. Stripe
-                # redelivers for days and the cancel is tried again. Until it works the customer is still charged
-                # for the extra subscription, so the error stays in the log too.
-                log.error("could not cancel the duplicate subscription (will be retried on redelivery)",
-                          extra={"tenant_id": str(update.tenant_id), "extra_subscription": update.provider_ref},
-                          exc_info=True)
-                db.execute(delete(BillingEvent).where(BillingEvent.id == update.event_id))
-                db.commit()
-                raise AppError(503, "cancel_failed", "Could not cancel the extra subscription yet. Try again.") from error
-            # T-182 (T-179 M3): the extra subscription's first invoice was paid. Refund it. The key comes from the event
-            # id, so the redelivery after a failure cannot refund twice.
-            try:
-                refunded = billing.refund_latest_invoice(update.provider_ref, refund_key(update.event_id))
-            except Exception as error:
-                # Never log the provider's text (it can quote customer details): the ref is what an operator needs.
-                log.error("refund_owed: the extra subscription was cancelled but its payment could not be refunded "
-                          "(will be retried on redelivery; refund it by hand at the provider if this repeats)",
-                          extra={"tenant_id": str(update.tenant_id), "extra_subscription": update.provider_ref,
-                                 "error": error.code if isinstance(error, AppError) else type(error).__name__})
-                db.execute(delete(BillingEvent).where(BillingEvent.id == update.event_id))
-                db.commit()
-                raise AppError(503, "refund_failed", "Could not refund the extra subscription yet. Try again.") from error
-            if refunded:
-                log.warning("extra subscription refunded", extra={"tenant_id": str(update.tenant_id),
-                                                                  "extra_subscription": update.provider_ref})
-            else:
-                log.info("no paid invoice to refund for the extra subscription",
-                         extra={"tenant_id": str(update.tenant_id), "extra_subscription": update.provider_ref})
+            _cancel_and_refund_duplicate(update, billing)
+        db.add(BillingEvent(id=update.event_id))
+        try:
+            db.commit()
+        except IntegrityError:  # a concurrent delivery of the same event finished first and stored it
+            db.rollback()
         return True
     tie_after_cancel = (update.occurred_at is not None and update.occurred_at == sub.last_event_at
                         and sub.status == "canceled" and update.status != "canceled" and not other_sub)
@@ -350,9 +376,9 @@ def _dead_marker(provider: str, ref: str | None) -> str | None:
 
 def _record_pending_cancel(db: Session, tenant_id: uuid.UUID, provider: str, ref: str) -> None:
     """Remember that `ref` must be cancelled at the provider. One row per (provider, ref)."""
-    owner_id = db.scalar(select(PendingCancel.tenant_id).where(PendingCancel.provider == provider,
-                                                               PendingCancel.ref == ref))
-    exists = db.scalar(select(PendingCancel.id).where(PendingCancel.provider == provider, PendingCancel.ref == ref))
+    row = db.execute(select(PendingCancel.id, PendingCancel.tenant_id).where(
+        PendingCancel.provider == provider, PendingCancel.ref == ref)).first()
+    exists, owner_id = (row.id, row.tenant_id) if row else (None, None)
     if exists is None:
         db.add(PendingCancel(tenant_id=tenant_id, provider=provider, ref=ref))
     elif owner_id is not None and owner_id != tenant_id:
@@ -461,7 +487,9 @@ def settle_pending_cancels(db: Session, tenant_id: uuid.UUID, provider: str, bil
     """T-182 (T-179 L1): account deletion. Try every pending cancel of this tenant for `provider` now (whatever its attempt
     count or backoff: the owner is waiting), with the same code path and per-cancel budget as the sweep. True when none is
     left; False when one is still live (it failed, another worker holds it, or the total budget was spent), in which case
-    the caller must keep the account: deleting it would leave the old subscription billing with nobody to tell."""
+    the caller must keep the account: deleting it would leave the old subscription billing with nobody to tell.
+    T-210 (T-182 S6): rows for a provider other than `provider` are ignored on purpose. One provider runs per deploy,
+    so such rows can only be left from an earlier configuration and are for an operator to clear."""
     ids = db.scalars(select(PendingCancel.id).where(PendingCancel.tenant_id == tenant_id,
                                                     PendingCancel.provider == provider)
                      .order_by(PendingCancel.created_at)).all()

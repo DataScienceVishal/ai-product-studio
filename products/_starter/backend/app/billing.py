@@ -37,6 +37,10 @@ def _clock() -> float:
 CHECKOUT_TTL = timedelta(minutes=31)
 
 
+class NoPaidInvoice(Exception):
+    """T-210 (T-182 S2): the subscription has no paid invoice (yet). Not the same as a free one (that returns False)."""
+
+
 def refund_key(event_id: str) -> str:
     """Idempotency key for the refund of a duplicate subscription: one per provider event, hashed to fit Stripe's 255."""
     return f"refund-{hashlib.sha256(event_id.encode()).hexdigest()}"
@@ -142,7 +146,8 @@ class BillingProvider(Protocol):
 
     def refund_latest_invoice(self, subscription_ref: str, idempotency_key: str) -> bool:
         """T-182 (T-179 M3): refund the subscription's latest PAID invoice in full. True: refunded (or already was).
-        False: nothing to refund (no paid invoice, or it was free). Raises on failure; the key makes a retry safe."""
+        False: nothing to refund (the invoice was free, or paid without a card payment). Raises NoPaidInvoice when there
+        is no paid invoice at all (it may get paid shortly), and AppError on failure; the key makes a retry safe."""
         ...
 
 
@@ -490,8 +495,10 @@ class StripeBilling:
                                                              "limit": "1"}),
                               timeout=self.CANCEL_TIMEOUT, attempts=2, deadline=deadline).get("data") or []
         invoice = invoices[0] if invoices else None
-        if not invoice or not (invoice.get("amount_paid") or 0) > 0:
-            return False
+        if not invoice:
+            raise NoPaidInvoice()
+        if not (invoice.get("amount_paid") or 0) > 0:
+            return False  # provably free (100% offer)
         intent = invoice.get("payment_intent")
         if not isinstance(intent, str) or not intent:
             payments = self._call("GET", "/invoice_payments?" + urlencode({"invoice": str(invoice.get("id")),

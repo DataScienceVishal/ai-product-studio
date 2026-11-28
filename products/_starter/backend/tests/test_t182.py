@@ -75,10 +75,10 @@ def test_stripe_refund_new_api_shape_uses_invoice_payments():
 
 
 def test_stripe_refund_without_a_paid_invoice_does_nothing():
-    for invoice in (None, {"id": "in_0", "amount_paid": 0, "payment_intent": None}):
-        calls = []
-        assert _stripe(_refund_handler(invoice, calls=calls)).refund_latest_invoice("sub_2", "k") is False
-        assert all(c[1] != "/v1/refunds" for c in calls)
+    calls = []  # T-210: a free invoice returns False; no paid invoice at all raises NoPaidInvoice (retried, see test_t210)
+    free = {"id": "in_0", "amount_paid": 0, "payment_intent": None}
+    assert _stripe(_refund_handler(free, calls=calls)).refund_latest_invoice("sub_2", "k") is False
+    assert all(c[1] != "/v1/refunds" for c in calls)
 
 
 def test_stripe_refund_already_refunded_counts_as_done():
@@ -125,7 +125,7 @@ def test_failed_refund_logs_refund_owed_answers_503_and_the_redelivery_refunds(o
     real = billing.refund_latest_invoice
 
     def boom(ref, key):
-        raise AppError(502, "billing_rejected", "provider said: card 4242 something")
+        raise AppError(503, "billing_unavailable", "provider said: card 4242 something")
 
     billing.refund_latest_invoice = boom
     with caplog.at_level(logging.ERROR, logger="app.billing"):
