@@ -285,6 +285,22 @@ def test_the_shorten_instruction_is_not_inside_a_data_block(client, app):
     assert "previous_answer:\n<<<DATA-" in user  # the prior draft is data
 
 
+def test_app_passages_is_the_largest_k_that_fits_the_budget():
+    """DESIGN 4.3 rule, fixed a priori (not tuned on recall): at the real passage cap (APP_PASSAGE_CHARS) and question cap, the
+    worst draft reservation is under 21.5k, and a typical settled draft (6k) plus a re-check that cites ALL k passages
+    with a 3,000-character draft reserves at most 30k. APP_PASSAGES is the largest k in 5..8 meeting both."""
+    provider = AzureLike()
+
+    def fits(k):
+        lim = dr.Limits(passages=k)
+        worst = dr.draft_payload("q" * 9000, 500, 100, _hits(k, 5000), lim)
+        cited = dr.passage_block(_hits(k, 5000), lim)
+        return (dr.draft_reservation(provider, worst) < 21_500
+                and 6_000 + dr.check_reservation(provider, "w" * 3000, cited) <= 30_000)
+    best = max(k for k in range(5, 9) if fits(k))
+    assert dr.APP_PASSAGES == best == 8
+
+
 def test_the_largest_app_path_draft_still_reserves_under_the_daily_cap():
     worst = dr.draft_payload("q" * 9000, 500, 100, _hits(8, 5000), dr.Limits())
     assert len(worst["question"]) == dr.QUESTION_CHARS and worst["passages"].count("[E-") == dr.APP_PASSAGES

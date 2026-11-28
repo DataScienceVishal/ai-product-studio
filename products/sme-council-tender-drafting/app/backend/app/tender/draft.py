@@ -32,7 +32,7 @@ GAP_TEXT = "[NEEDS FIRM INPUT: no evidence found for this question]"
 RETRIEVAL_FLOOR = 0.0          # minimum retrieval rank (a code match passes regardless); tuned in L1 (a hit below it counts as no evidence)
 # App-path sizing (R3). Trial tenants have 30k tokens a day, and a reservation is input bytes + cap + headroom, so a
 # draft and its re-check must reserve at most 30k between them. The harness passes its own, larger limits.
-APP_PASSAGES = 5
+APP_PASSAGES = 8                # largest k that keeps the worst-case reservations in budget (DESIGN 4.3, test_app_passages_is_the_largest_k_that_fits_the_budget)
 APP_PASSAGE_CHARS = 1000
 QUESTION_CHARS = 1500
 CHECK_CAP = 6000               # claimcheck output cap (DESIGN 4.4); the check itself is S6
