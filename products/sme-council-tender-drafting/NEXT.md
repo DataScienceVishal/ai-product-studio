@@ -1,3 +1,23 @@
+# STATUS (T-204, T-192 review follow-ups S1, S2, S4, S5, S8 + fragile test) - code done, awaiting reviewer
+
+Branch `p/sme-council-tender-drafting/T-204` (off main). Not merged. No migrations, no frontend change, no live model calls.
+
+## Done
+- S1: `export.load_rows` is the only reader of the gate inputs; `claimcheck.load_gate_inputs` is `export.gate_inputs(export.load_rows(...))`.
+  Sign-off, export-check and export share it (test: `test_one_loader_feeds_export_signoff_and_claimcheck`).
+- S2: `Rows.live` is the set of live display numbers (what the gate needs); `Rows.evidence` holds full items only for passages cited by the
+  claims or the answer text. Test with an extra uncited live item.
+- S4 DECISION: export moves the pack `signed` to `exported`. The route now locks the pack FOR UPDATE (`_lock_pack`) because it writes the row.
+  Re-download from `exported` still works (each click adds an `exports` row), reopen is allowed from `exported`. Frontend already treats
+  `exported` as signed and reloads after the download, so no frontend change.
+- S5 DECISION: keep GET (plain browser download, no frontend or e2e change). Documented in the route docstring: session cookie is SameSite=Lax so a
+  cross-site request carries no session, and the frontend sends X-Requested-With. Switching to POST remains an option if the audit row matters more.
+- S8: reopen sets `ready` only if `claimcheck.pack_checked` passes, else `drafting` (e.g. evidence removed after sign-off). Test added.
+- Fragile appendix test now counts claims of the latest draft version only.
+
+## Verify
+Backend full: see report. Frontend: `npx vitest run`, `npx tsc -b`. A fresh Postgres needs role studio/studio (superuser) and db starter_test.
+
 # STATUS (T-192 part 2: Playwright e2e of the 7 SPEC steps) - PASSES on ScriptedFakeAI, awaiting reviewer
 
 Branch `p/sme-council-tender-drafting/T-192-e2e`. Not merged. No live model calls.
