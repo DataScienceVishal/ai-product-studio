@@ -517,3 +517,7 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - An edit to a ready pack moves it back to drafting (confirmed existing behaviour).
 - Nit 6 deferred: an identical redraft still makes a new version and counts towards 5 redrafts/day; harmless, product call later (T-207).
 - F5 heading heuristic: a one-line block starting with a question verb and containing you/your/us is not a heading. Known false cases go to the L1 extraction eval (T-207).
+
+## 2026-11-28T03:55Z run 2788: T-181 Stripe customers
+- One Stripe customer per tenant: checkout sends `customer` when the tenant has one for the current provider; every customer a webhook reveals is recorded in a new billing_customers table (a customer already owned by another tenant is ignored and logged).
+- Account deletion closes every recorded customer and fails closed (503, nothing deleted) on a provider error, so a retry finishes. Chosen over the pending_cancels queue because deletion already fails closed and the rows cascade with the tenant. Reversible.

@@ -21,3 +21,4 @@ Runs add one line per notable result. The Desk clears this back to the header af
 - run 0e9c: Tender demo: Word export hardened. Export, sign-off and fact-check now read the same data through one path so they can't disagree; a pack shows 'exported' after download; a link on another website can no longer trigger an export in your name (reviewer caught it; fixed). 1201 tests green.
 
 - (run 6f7a) Tender demo: T-199 + T-201 hardening merged to main (9611e5f). The reviewer caught a real bug first: the old-evidence clean-up could have deleted evidence still quoted in an exported answer. Fixed and tested. 1211 backend tests pass. Small leftovers queued as T-207.
+- run 2788: T-181 merged: the starter now keeps one Stripe customer per tenant and deletes all of a tenant's Stripe customers on account deletion (privacy fix from the T-179 security pass). Reviewer PASS, 838 tests green. Follow-ups in T-208 (biggest: a checkout paid after account deletion still bills).
