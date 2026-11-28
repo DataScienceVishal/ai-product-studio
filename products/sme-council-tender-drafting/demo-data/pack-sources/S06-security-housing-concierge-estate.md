@@ -109,7 +109,7 @@ Bidders who do not meet every requirement below will be excluded. A bidder must 
 | PF9 | Payment of the real Living Wage | Declaration |
 | PF10 | Enhanced DBS check for every officer working at blocks with vulnerable residents | Confirmation |
 
-PF11: Confirm that the bidder has not been subject to any SIA enforcement action in the past three years. If it has, give details. The Association will decide in its discretion whether the matter is serious enough to exclude.
+PF11 (Pass/Fail): Confirm that the bidder has not been subject to any SIA enforcement action in the past three years. If it has, give details. A bidder that cannot confirm this, or whose details show enforcement action the Association judges serious, fails PF11.
 
 ---pagebreak---
 
@@ -159,7 +159,7 @@ Answer each question in the space provided in the response template. The marks a
 | Q2 | Describe your approach to staffing and rostering the three blocks, the patrol and the void service, including cover for sickness and how you will avoid an officer working alone for long periods without a welfare check. | 8 marks | Word limit: 400 |
 | Q3 | Describe the training you will give to concierge and patrol officers, including conflict management, first aid, fire safety awareness, equality and diversity, dealing with domestic abuse and mental health issues. | 8 marks | Word limit: 400 |
 | Q4 | Set out how you will carry out the estate patrol, including use of intelligence, de-escalation, working with the police and the Neighbourhood Safety Team, and body-worn video. | 6 marks | Q4 to Q6 combined: 1,200 words in total |
-| Q5 | Explain how you will respond to the following. 5.1(a): A resident reports a fire alarm sounding at Alder Court at 02:00 and a lift stuck between floors. 5.1(b): A resident tells the concierge they fear for the safety of a neighbour. Describe the escalation steps and what is reported afterwards. | 6 marks | Q4 to Q6 combined: 1,200 words in total |
+| Q5 | Explain how you will respond to the following. (a): A resident reports a fire alarm sounding at Alder Court at 02:00 and a lift stuck between floors. (b): A resident tells the concierge they fear for the safety of a neighbour. Describe the escalation steps and what is reported afterwards. | 6 marks | Q4 to Q6 combined: 1,200 words in total |
 | Q6 | Describe your approach to securing void properties, including response to a break-in, the safety of your operatives entering empty properties, and how you will meet the 24 hour target for fitting security screens. | 6 marks | Q4 to Q6 combined: 1,200 words in total |
 | Q7 | Describe the systems and technology you will use for incident reporting, patrol tracking, lone worker protection and sharing information with the Association, including how you will protect resident data. | 8 marks | Word limit: 300 |
 | Q8 | Explain your mobilisation plan from 2 August to 1 October 2027, including TUPE consultation, key risks, and how you will ensure the concierge service does not fall below standard on day one. | 8 marks | Maximum one side of A4 |
@@ -219,9 +219,9 @@ The contract will be a services contract based on the Association's standard ter
 
 | Role | Number | Hourly pay | Notice period |
 |---|---|---|---|
-| Concierge officer | 17 | £12.30 to £12.95 | 4 weeks |
+| Concierge officer | 17 | £12.75 to £13.40 | 4 weeks |
 | Concierge supervisor | 2 | £14.10 | 8 weeks |
-| Relief officer | 2 | £12.30 | 4 weeks |
+| Relief officer | 2 | £12.75 | 4 weeks |
 
 Contractual pension: employer contribution of 3% of qualifying earnings. No information about named individuals is provided.
 

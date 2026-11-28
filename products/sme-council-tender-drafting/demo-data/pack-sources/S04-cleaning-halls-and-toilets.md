@@ -55,9 +55,9 @@ Pellwick Parish Council (fictional) is a small council that manages three commun
 | Site | Description | Use | Cleaning needed |
 |---|---|---|---|
 | Pellwick Village Hall | Main hall, kitchen, stage, 2 meeting rooms, toilets | Hired most days; weddings and parties on Saturdays | Clean after hire sessions; full clean weekly |
-| Aldermoor Memorial Hall | Hall, kitchen, 2 toilets, committee room | Hired about 4 days a week | Twice weekly plus after events |
+| Pellwick Memorial Hall | Hall, kitchen, 2 toilets, committee room | Hired about 4 days a week | Twice weekly plus after events |
 | Hollin Green Community Centre | Hall, 3 rooms, kitchen, toilets, youth room | Used daily by groups, with a children's nursery on weekday mornings | Daily on weekdays |
-| Four public toilets | Pellwick Car Park, Aldermoor Green, Hollin Green and the Riverside Path | Open 08:00 to 18:00 daily (to 20:00 in summer) | Daily; deep clean weekly |
+| Four public toilets | Pellwick Car Park, Memorial Green, Hollin Green and the Riverside Path | Open 08:00 to 18:00 daily (to 20:00 in summer) | Daily; deep clean weekly |
 
 ## 2.2 Standards and requirements
 

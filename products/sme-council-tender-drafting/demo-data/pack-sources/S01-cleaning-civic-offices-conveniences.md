@@ -2,17 +2,17 @@
 
 SYNTHETIC DEMO TENDER - written by AI Product Studio for testing. The buyer is fictional; this is not a real procurement.
 
-## Brackenhall District Council (fictional)
+## Fennickstead District Council (fictional)
 
 | Item | Detail |
 |---|---|
-| Reference number | BDC/FM/2027/014 |
+| Reference number | FDC/FM/2027/014 |
 | Procurement route | Open procedure, below-threshold-style process run to the principles of the Procurement Act 2023 |
 | Contract title | Cleaning Services for Civic Buildings and Public Conveniences |
 | Contract term | 3 years (1 October 2027 to 30 September 2030) with an option to extend for up to 2 further periods of 12 months each |
 | Estimated contract value | £420,000 to £520,000 per annum (£1.26m to £1.56m over the initial term) |
-| Contracting authority contact | The Head of Facilities, via procurement@brackenhall-dc.example |
-| Portal | Brackenhall e-tendering portal (portal.brackenhall-dc.example) |
+| Contracting authority contact | The Head of Facilities, via procurement@fennickstead-dc.example |
+| Portal | Fennickstead e-tendering portal (portal.fennickstead-dc.example) |
 
 ### Key dates
 
@@ -20,7 +20,7 @@ SYNTHETIC DEMO TENDER - written by AI Product Studio for testing. The buyer is f
 |---|---|
 | Invitation to Tender issued | Monday 8 March 2027 |
 | Deadline for clarification questions | Friday 9 April 2027, 12:00 noon |
-| Site visits (compulsory for one representative per bidder) | Tuesday 13 and Wednesday 14 April 2027, 09:30 to 15:30 |
+| Site visits (strongly recommended, one representative per bidder) | Tuesday 13 and Wednesday 14 April 2027, 09:30 to 15:30 |
 | Tender submission deadline | Friday 30 April 2027, 12:00 noon |
 | Evaluation and moderation | 4 May to 21 May 2027 |
 | Bidder presentations (shortlisted bidders only) | Week commencing 24 May 2027 |
@@ -40,7 +40,7 @@ SYNTHETIC DEMO TENDER - written by AI Product Studio for testing. The buyer is f
 
 ## 1.1 Introduction
 
-Brackenhall District Council (fictional), referred to as "the Council", invites tenders for the cleaning of its civic buildings, depots and public conveniences. The Council serves a mixed rural and market-town district and has a strong commitment to local employment, fair pay and reducing the environmental impact of its estate.
+Fennickstead District Council (fictional), referred to as "the Council", invites tenders for the cleaning of its civic buildings, depots and public conveniences. The Council serves a mixed rural and market-town district and has a strong commitment to local employment, fair pay and reducing the environmental impact of its estate.
 
 This document and its appendices together form the Invitation to Tender (ITT). Bidders must read all of it. Submitting a tender is taken as acceptance of the instructions below.
 
@@ -81,7 +81,7 @@ All questions must be raised through the portal messaging function by the clarif
 
 ## 1.6 Site visits
 
-One representative of each bidder must attend one site visit. The visit covers the Civic Centre, the Depot and a sample of public conveniences. Failure to attend will not exclude a bidder, but the Council will not accept later claims that site conditions were not understood.
+One representative of each bidder should attend one site visit. The visit covers the Civic Centre, the Depot and a sample of public conveniences. Failure to attend will not exclude a bidder, but the Council will not accept later claims that site conditions were not understood.
 
 ## 1.7 Confidentiality and Freedom of Information
 
@@ -122,10 +122,10 @@ The premises are listed in full in Appendix A. In summary:
 
 | Site | Type | Approx. floor area (m2) | Opening pattern |
 |---|---|---|---|
-| Brackenhall Civic Centre | Council offices, committee rooms, public reception, council chamber | 4,800 | Mon to Fri 07:30 to 18:00; evening meetings up to 4 per month |
+| Fennickstead Civic Centre | Council offices, committee rooms, public reception, council chamber | 4,800 | Mon to Fri 07:30 to 18:00; evening meetings up to 4 per month |
 | Millbrook Depot offices and welfare block | Depot offices, mess room, shower and locker rooms | 650 | Mon to Sat 06:00 to 17:00 |
 | Library and Customer Hub (Ferncombe) | Shared library and customer service point | 1,100 | Mon to Sat 09:00 to 17:30 |
-| Brackenhall Register Office wing | Ceremony room, waiting area, offices | 520 | Mon to Sat, by appointment |
+| Fennickstead Register Office wing | Ceremony room, waiting area, offices | 520 | Mon to Sat, by appointment |
 | 14 public conveniences | Mix of automated and traditional blocks | 15 to 60 each | Daily, 07:00 to 19:00 (summer), 08:00 to 17:00 (winter) |
 
 Floor areas are indicative and bidders must satisfy themselves through the site visits.
@@ -390,7 +390,7 @@ Answer every question using the question number. The weighting shown is the perc
 
 | Ref | Question | Weighting | Word limit |
 |---|---|---|---|
-| 6.1 | Local employment and skills: describe how the contract will create employment and training opportunities for residents of the Brackenhall district, including apprenticeships, people furthest from the labour market and local supply chains. State measurable commitments. | 6% | 500 words |
+| 6.1 | Local employment and skills: describe how the contract will create employment and training opportunities for residents of the Fennickstead district, including apprenticeships, people furthest from the labour market and local supply chains. State measurable commitments. | 6% | 500 words |
 | 6.2 | Tackling climate change: describe your commitments to cut carbon emissions in delivery of the contract, with measures, timescales and how you will report. | 4% | 400 words |
 
 Total available weighting for Section 5: 70 percent (60 percent quality, 10 percent social value).

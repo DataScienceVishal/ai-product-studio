@@ -82,7 +82,7 @@ An average of 550 call-outs a year is expected (around 45% false alarms). The pr
 
 ### 3.4 Service C: Opening and closing
 
-For 8 community halls and the market the provider will unlock at 06:30 and lock at the time stated in the booking schedule (usually between 22:00 and 23:30), with 100% punctuality and a handwritten or digital sign-off. Around 4,400 visits are forecast per year.
+For the 4 community halls and the market the provider will unlock at 06:30 and lock at the time stated in the booking schedule (usually between 22:00 and 23:30), with 100% punctuality and a handwritten or digital sign-off. Around 4,400 visits are forecast per year.
 
 ### 3.5 Service D: Scheduled mobile patrols
 
@@ -176,14 +176,14 @@ A bidder scoring below 50 on Q1, Q2 or Q3 will be excluded.
 | Q2 | Describe how you will deliver the keyholding and response service across the Trust's sites, including the number and location of mobile officers, how you will meet the response times in 3.3, and the way you will keep key security to BS 7984-1. | 8% | no more than 750 words |
 | Q3 | Explain how you recruit, vet (BS 7858), train and supervise CCTV operators and mobile officers, including conflict management and first aid training, and the arrangements for lone workers on night call-outs. | 7% | Words: 500 |
 | Q4 | Describe the technology you will use, including the alarm receiving platform, video analytics, remote audio challenge, patrol tracking and reporting portal, and how the Trust will see real-time information. | 6% | Words: 400 |
-| Q5 | Answer both parts. 5.1(a): Describe how you will reduce false alarms at Trust sites, with examples of the reduction you have achieved elsewhere. 5.1(b): Describe how you would handle repeated activations at a single site where the cause is not found. | 6% | 1,000 words in total across 5.1(a) and 5.1(b) |
+| Q5 | Answer both parts. (a): Describe how you will reduce false alarms at Trust sites, with examples of the reduction you have achieved elsewhere. (b): Describe how you would handle repeated activations at a single site where the cause is not found. | 6% | 1,000 words in total across parts (a) and (b) |
 | Q6 | Explain your business continuity and disaster recovery arrangements for the alarm receiving and monitoring centre, including a back-up site, failover times, power, and communications failures, and your cyber security controls. | 5% | Words: 400 |
 | Q7 | Describe your approach to mobilisation between 1 September and 31 October 2027, including the transfer of keys, connection of alarm signalling, testing, creation of site records and how the risk of a gap in cover will be controlled. | 5% | Maximum 1 page |
 | Q8 | Describe how you will manage the contract, report on KPIs, deal with complaints and drive improvement, including how you will handle a serious service failure. State your proposed KPIs. | 5% | no more than 500 words |
 | Q9 | Social value: describe how you will create local employment and training opportunities as a result of this contract, such as apprenticeships and recruitment of local people who are long-term unemployed. | 6% | Words: 400 |
 | Q10 | Social value: describe how you will reduce carbon emissions from the service, such as route optimisation, electric or hybrid vehicles, and remote verification to avoid unnecessary attendances. | 4% | Words: 300 |
 
-Total weighting: Q1 8% + Q2 8% + Q3 7% + Q4 6% + Q5 6% + Q6 5% + Q7 5% + Q8 5% = 50% quality; Q9 6% + Q10 4% = 10% social value. Total 60%.
+Total weighting: Q1 8% + Q2 8% + Q3 7% + Q4 6% + Q5 6% + Q6 5% + Q7 5% + Q8 5% = 50% quality; Q9 6% + Q10 4% = 10% social value. Quality and social value together: 60%; price: 40%.
 
 ### 6.1 Pass/fail question
 
@@ -220,6 +220,8 @@ Payment is monthly in arrears within 30 days. The Trust may terminate on 3 month
 (Synthetic demo document - fictional buyer)
 
 ## Appendix 1: Site List Summary
+
+This summary groups sites by type. Some buildings hold more than one monitored system, so the 19 alarm sites and 11 CCTV sites in section 2 are counted per system, not per building. A full asset list is issued to the successful bidder at mobilisation.
 
 | Category | Sites | CCTV cameras | Notes |
 |---|---|---|---|

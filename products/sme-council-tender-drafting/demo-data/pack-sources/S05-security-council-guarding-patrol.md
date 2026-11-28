@@ -33,7 +33,7 @@ The Council is inviting tenders from suitably accredited security providers for 
 | Deadline for clarification questions | 12:00 on 12 March 2027 |
 | Council's final responses to clarifications | 19 March 2027 |
 | Tender submission deadline | 12:00 noon on 14 April 2027 |
-| Site familiarisation visits (optional, by appointment) | Weeks commencing 22 and 29 February 2027 |
+| Site familiarisation visits (optional, by appointment) | Weeks commencing 22 February and 1 March 2027 |
 | Clarification interviews with shortlisted bidders, if required | Week commencing 17 May 2027 |
 | Notice of decision | 4 June 2027 |
 | Standstill period ends | 15 June 2027 (minimum 8 working days) |
@@ -228,7 +228,7 @@ Each quality question is scored from 0 to 5 by a moderated panel. The score is m
 
 ### 5.3 Minimum quality threshold
 
-Any bidder scoring 2 or below on any question marked with an asterisk, or an overall quality score below 50% of the available quality marks, may be excluded. The questions marked with an asterisk are Q2, Q5 and Q15.
+Any bidder scoring 2 or below on any question marked with an asterisk, or an overall quality score below 50% of the available quality marks, may be excluded. The questions marked with an asterisk are Q2, Q5 and Q12.
 
 ### 5.4 Price evaluation
 
@@ -395,9 +395,9 @@ The contract will be based on the Council's standard services terms. Key terms i
 
 | Group | Number of staff | Pay range | Contracted hours |
 |---|---|---|---|
-| Static officers | 18 | £11.80 to £12.60 per hour | 30 to 48 per week |
-| Patrol officers | 8 | £12.10 to £12.80 per hour | 40 to 48 per week |
-| CCTV operators | 6 | £12.40 to £13.20 per hour | 36 to 42 per week |
+| Static officers | 18 | £12.75 to £13.40 per hour | 30 to 48 per week |
+| Patrol officers | 8 | £12.90 to £13.60 per hour | 40 to 48 per week |
+| CCTV operators | 6 | £13.10 to £13.90 per hour | 36 to 42 per week |
 | Supervisor | 2 | £14.00 to £15.20 per hour | 40 per week |
 
 Pension is a defined-contribution scheme at statutory minimum levels. No individual is identified. Data will be updated with further anonymised information at the clarification stage.

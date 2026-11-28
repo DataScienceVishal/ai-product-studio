@@ -61,7 +61,7 @@ All clarification questions must be submitted through the portal. Questions and 
 
 Each quality question states its own limit in the way shown beside the question. Limits are strict: text beyond the limit will not be read or scored. Diagrams, programmes and tables count towards a limit only where the question says so. Use Arial 11 point, single line spacing, with margins of at least 2cm. Where a limit is expressed in pages, a page means one side of A4.
 
-Sub-questions marked (a) and (b) are scored together under the weighting of the parent question, as shown.
+Sub-questions marked (a) and (b) are scored separately, each with its own weighting and limit as shown; together they make up the parent question.
 
 ## 5. Tender validity and costs
 
@@ -79,7 +79,7 @@ A bidder who fails any of the following will be excluded and its quality and pri
 | M4 | Minimum annual turnover of £400,000 in the most recent financial year | Latest filed accounts or signed accountant's letter |
 | M5 | Membership of CHAS, SafeContractor, Constructionline or another SSIP-recognised scheme | Current certificate |
 | M6 | At least one operative holding PA1 and PA6 (NPTC) certificates for pesticide application, on site whenever herbicide is applied | Copies of certificates |
-| M7 | A Level 3 or equivalent RoSPA/ROSPA-registered or ADIPS-accredited play inspector available to the contract | Certificate |
+| M7 | An RPII-registered routine or operational play inspector (or equivalent) available to the contract | Certificate |
 | M8 | Compliance with the Modern Slavery Act 2015, including a published statement where the bidder is required to produce one | Statement or declaration |
 | M9 | Compliance with UK GDPR and the Data Protection Act 2018 | Declaration and registration with the ICO |
 | M10 | Waste carrier registration (upper tier) with the Environment Agency | Registration number |

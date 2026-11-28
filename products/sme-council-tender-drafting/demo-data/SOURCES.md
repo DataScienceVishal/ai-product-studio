@@ -18,21 +18,21 @@ Decision: the fictional firm is **Harrowmere Facilities Ltd (fictional)**. SPEC.
 
 What this means for the eval: the A1-A3 extraction numbers are measured on packs the studio wrote, not on real buyers' documents, so they are weaker evidence than real packs; EVAL.md must say so beside the results. Real packs can replace these later (the P01-P12 candidates below) by the same swap rule; any swap after the pre-registration commit is a dated amendment.
 
-Sources: `demo-data/pack-sources/S*.md` (Markdown), built to `demo-data/packs/S*.docx` by `demo-data/pack-sources/build_docx.py` (deterministic text; a page break at each section and about every 450 words, so the app parses them in `docx_break` mode). Licence: written by the studio, no third-party text. Personal-data screening: none present by construction; checked by the validator (reviews/T-194-validator.md).
+Sources: `demo-data/pack-sources/S*.md` (Markdown), built to `demo-data/packs/S*.docx` by `demo-data/pack-sources/build_docx.py` (deterministic text; a page break at each section and about every 450 words, so the app parses them in `docx_break` mode). Licence: written by the studio, no third-party text. Personal-data screening: none present by construction; checked by the validator (reviews/T-194-validator.md). Validator fixes applied: S01 buyer renamed Fennickstead (Brackenhall is a real Huddersfield district), S04 site Aldermoor renamed (real Southampton area); web search found no UK place called Fennickstead (2026-11-28).
 
 Roles by the SPEC rule in table order (also in `demo-data/packs/manifest.json`): demo = the last pack of each sector (S04, S08, S12); held-out = the other 9; held-out drafting packs = the first of each sector (S01, S05, S09), each with at least 15 scored questions.
 
 | Pack | Sector | File | Pages (app parser) | Source SHA-256 (first 16) | Role |
 |---|---|---|---|---|---|
-| S01 | Cleaning | `S01-cleaning-civic-offices-conveniences.docx` | 13 | 678555bf4902a701 | held-out (drafting) |
+| S01 | Cleaning | `S01-cleaning-civic-offices-conveniences.docx` | 13 | 5be6d8dbb1187aca | held-out (drafting) |
 | S02 | Cleaning | `S02-cleaning-leisure-centre.docx` | 8 | 10eb9a2de6e7a9e0 | held-out |
 | S03 | Cleaning | `S03-cleaning-academy-trust-schools.docx` | 9 | 5c4916970215d6d8 | held-out |
-| S04 | Cleaning | `S04-cleaning-halls-and-toilets.docx` | 7 | 17279eb2a9694087 | demo |
-| S05 | Security | `S05-security-council-guarding-patrol.docx` | 15 | ccce0a7214a8bbe7 | held-out (drafting) |
-| S06 | Security | `S06-security-housing-concierge-estate.docx` | 10 | f10236afa9ef1cbb | held-out |
-| S07 | Security | `S07-security-college-events-stewarding.docx` | 10 | 6f21d9255fddc634 | held-out |
-| S08 | Security | `S08-security-trust-cctv-keyholding.docx` | 10 | 5dada8c933a1e14b | demo |
-| S09 | Grounds | `S09-grounds-brackenholt-town.docx` | 13 | 4feaf3efde0199fc | held-out (drafting) |
+| S04 | Cleaning | `S04-cleaning-halls-and-toilets.docx` | 7 | 0f9d2b91c97067e6 | demo |
+| S05 | Security | `S05-security-council-guarding-patrol.docx` | 15 | e2ddb3231d2d9190 | held-out (drafting) |
+| S06 | Security | `S06-security-housing-concierge-estate.docx` | 10 | a053323cdf2f9a77 | held-out |
+| S07 | Security | `S07-security-college-events-stewarding.docx` | 10 | 4c69e0f9a5ffd9ab | held-out |
+| S08 | Security | `S08-security-trust-cctv-keyholding.docx` | 10 | 7525283aa72c8fcd | demo |
+| S09 | Grounds | `S09-grounds-brackenholt-town.docx` | 13 | ca3bd93ce7f697a4 | held-out (drafting) |
 | S10 | Grounds | `S10-grounds-ashenmere-parish.docx` | 7 | 306262d9d2146487 | held-out |
 | S11 | Grounds | `S11-grounds-quillbrook-district.docx` | 9 | d49ea208a2065a75 | held-out |
 | S12 | Grounds | `S12-grounds-hallowby-town.docx` | 7 | 67faf4417d436a1d | demo |

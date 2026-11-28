@@ -142,3 +142,7 @@ Method: anchor on what firms pay now. Not tested with any buyer.
 - **AI budget:** long packs against a $6.10 a month cap. Mitigation: short packs, caching, recorded outputs; larger spend is ask-first.
 - **Self-graded evaluation:** the same studio writes the firm, the traps and the checker. Mitigation: key made before model runs, held-out packs, human sample, and the limit stated.
 - **Open:** whether a friend's firm bids often enough to matter (Q-4, unknown partner sector); the demo may earn contact points but cannot raise Competition.
+
+## Amendment 2026-11-28 (T-194)
+
+The 12 tender packs are synthetic (Q-20 option B): studio-written, fictional buyers, same selection and role rules. See `demo-data/SOURCES.md` D1 and the EVAL.md amendment of the same date. The demo must say the packs are synthetic.

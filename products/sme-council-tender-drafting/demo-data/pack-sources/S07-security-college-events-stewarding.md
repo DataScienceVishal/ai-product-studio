@@ -289,7 +289,7 @@ Payment is within 30 days of a correct invoice. Prices are fixed for 12 months, 
 
 | Role | Number | Pay | Hours per week |
 |---|---|---|---|
-| Night security officer | 5 | £12.40 to £13.00 per hour | 48 |
+| Night security officer | 5 | £12.85 to £13.50 per hour | 48 |
 | Night supervisor | 1 | £14.20 per hour | 48 |
 
 All employees are on contracts with the current provider and are entitled to statutory sick pay only. No named data is provided.
