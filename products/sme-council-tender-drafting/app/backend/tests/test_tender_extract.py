@@ -432,3 +432,23 @@ def test_known_limit_cases_hold():
         assert ex.stated_word_limit(c["page"], c["quote"]) == c["expected_today"], c["id"]
         if c["status"] == "fixed":
             assert c["expected_today"] == c["ideal"], c["id"]
+
+
+def test_an_instruction_ending_in_a_bracketed_limit_is_not_the_next_questions_heading():
+    """T-207 C1 (reviewer probes): the previous question's own limit must not be borrowed or override the next one's."""
+    assert ex.stated_word_limit("Describe your approach to social value (max 300 words)\n\nDescribe your staffing plan.",
+                                "Describe your staffing plan.") is None
+    assert ex.stated_word_limit("Describe your approach to social value (max 300 words)\n\n"
+                                "Describe your staffing plan (max 500 words)", "Describe your staffing plan (max 500 words)") == 500
+    assert ex.stated_word_limit("Explain how you will mobilise (maximum 250 words)\n\n"
+                                "What is your approach to TUPE? Answers should not exceed 600 words.",
+                                "What is your approach to TUPE?") == 600
+    assert ex.stated_word_limit("1. Describe your approach (max 300 words)\n\n2. Describe your staffing plan.",
+                                "Describe your staffing plan.") is None
+    assert ex.stated_word_limit("What is your approach? (max 300 words)\n\nDescribe your staffing plan.",
+                                "Describe your staffing plan.") is None
+
+
+def test_the_questions_own_limit_wins_over_a_heading_limit():
+    page = "Social value (max 300 words)\n\nDescribe the social value you will deliver. Maximum 500 words."
+    assert ex.stated_word_limit(page, "Describe the social value you will deliver.") == 500

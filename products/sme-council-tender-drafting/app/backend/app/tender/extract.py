@@ -116,8 +116,16 @@ def _is_heading(line: str) -> bool:
 _BRACKET_LIMIT_END = re.compile(r"\([^()]*\b\d[\d,]*\s*words?\b[^()]*\)$", re.I)
 
 
+_IMPERATIVE_OR_INVERTED = re.compile(r"^(?:\d+[.)]\s*)?(?:please\s+)?(?:describe|explain|set out|provide|outline|state|detail|give|tell us|"
+                                     r"demonstrate|confirm|list|identify|do you|can you|have you|"
+                                     r"(?:how|what|why|who|when|where|which)\s+(?:is|are|do|does|did|can|could|would|should|will we|have|has)\b)", re.I)
+
+
 def _is_bracketed_limit_heading(line: str) -> bool:
-    return bool(line) and "\n" not in line and len(line) <= 150 and bool(_BRACKET_LIMIT_END.search(line))
+    """The bracket only widens the window; `_LIMIT` still has to find "max N words" in it. An instruction ("Describe your
+    approach ... (max 300 words)") or a question is an earlier question, not a heading, so it is refused (T-207 C1)."""
+    return (bool(line) and "\n" not in line and len(line) <= 150 and "?" not in line
+            and not _IMPERATIVE_OR_INVERTED.match(line) and bool(_BRACKET_LIMIT_END.search(line)))
 
 
 def _heading_start(page_text: str, qstart: int) -> int:
@@ -147,7 +155,7 @@ def _heading_start(page_text: str, qstart: int) -> int:
     return base + start
 
 
-def _quote_window(page_text: str, near: str) -> str | None:
+def _quote_window(page_text: str, near: str, with_offset: bool = False):
     """The raw text of the item's own question: from its heading (see `_heading_start`) through the quote to the next
     numbered question (at most 400 characters past the quote). The quote is found on the raw text with whitespace-tolerant
     matching, so offsets never drift."""
@@ -161,12 +169,20 @@ def _quote_window(page_text: str, near: str) -> str | None:
     end = min(len(page_text), m.start() + max(len(near), m.end() - m.start()) + 400)
     window = page_text[start:end]
     nxt = _NEXT_QUESTION.search(window, m.end() - start)
-    return window[:nxt.start()] if nxt else window
+    window = window[:nxt.start()] if nxt else window
+    return (window, m.start() - start) if with_offset else window
 
 
 def _stated(pattern: re.Pattern, page_text: str, near: str) -> int | None:
-    window = _quote_window(page_text, near) if near else None
-    found = pattern.search(window if window is not None else page_text)  # no page-wide guess once the quote is located
+    located = _quote_window(page_text, near, True) if near else None
+    if located is None:
+        found = pattern.search(page_text)  # no quote to locate: as before
+    else:
+        window, qoff = located
+        # the question's own text wins; a heading's limit is used only when the question states none (T-207 C1)
+        blank = re.search(r"\n[ \t]*\n", window[max(qoff, 0):])  # own text: the quote to the end of its block
+        own = window[:max(qoff, 0) + blank.start()] if blank else window
+        found = pattern.search(own, max(qoff, 0)) or pattern.search(window)
     return int(found.group(1).replace(",", "")) if found else None
 
 

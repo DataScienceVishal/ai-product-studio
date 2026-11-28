@@ -1,9 +1,68 @@
 {
   "_doc": "L1 extraction eval cases for the heading rule's known limits (T-207, EVAL.md 'Known limits'). stated_word_limit(page, quote) must return `expected_today`; `ideal` is what a perfect rule would return. status 'fixed' cases have expected_today == ideal.",
   "cases": [
-    {"id": "KL-1a", "status": "fixed", "page": "How you will deliver social value (max 300 words)\n\nDescribe the social value you will deliver.", "quote": "Describe the social value you will deliver.", "expected_today": 300, "ideal": 300, "note": "heading addressing the bidder, limit in brackets at the end, separate body paragraph: found since T-207"},
-    {"id": "KL-1b", "status": "fixed", "page": "What we need from you (max 300 words)\n\nDescribe your mobilisation plan.", "quote": "Describe your mobilisation plan.", "expected_today": 300, "ideal": 300, "note": "same rule, second wording"},
-    {"id": "KL-2", "status": "open", "page": "How you will deliver social value (max 300 words)\nDescribe the social value you will deliver.", "quote": "Describe the social value you will deliver.", "expected_today": null, "ideal": 300, "note": "false negative that remains: the same heading directly above the question line (no blank line) is still refused"},
-    {"id": "KL-3", "status": "open", "page": "Describe the proposed methodology in no more than 200 words\n\nDescribe your staffing plan.", "quote": "Describe your staffing plan.", "expected_today": 200, "ideal": null, "note": "false positive: an impersonal earlier question (no you/your/us) is taken as the next question's heading, so its limit is borrowed"}
+    {
+      "id": "KL-1a",
+      "status": "fixed",
+      "page": "How you will deliver social value (max 300 words)\n\nDescribe the social value you will deliver.",
+      "quote": "Describe the social value you will deliver.",
+      "expected_today": 300,
+      "ideal": 300,
+      "note": "heading addressing the bidder, limit in brackets at the end, separate body paragraph: found since T-207"
+    },
+    {
+      "id": "KL-1b",
+      "status": "fixed",
+      "page": "What we need from you (max 300 words)\n\nDescribe your mobilisation plan.",
+      "quote": "Describe your mobilisation plan.",
+      "expected_today": 300,
+      "ideal": 300,
+      "note": "same rule, second wording"
+    },
+    {
+      "id": "KL-2",
+      "status": "open",
+      "page": "How you will deliver social value (max 300 words)\nDescribe the social value you will deliver.",
+      "quote": "Describe the social value you will deliver.",
+      "expected_today": null,
+      "ideal": 300,
+      "note": "false negative that remains: the same heading directly above the question line (no blank line) is still refused"
+    },
+    {
+      "id": "KL-3",
+      "status": "open",
+      "page": "Describe the proposed methodology in no more than 200 words\n\nDescribe your staffing plan.",
+      "quote": "Describe your staffing plan.",
+      "expected_today": 200,
+      "ideal": null,
+      "note": "false positive: an impersonal earlier question (no you/your/us) is taken as the next question's heading, so its limit is borrowed"
+    },
+    {
+      "id": "KL-4",
+      "status": "fixed",
+      "page": "Describe your approach to social value (max 300 words)\n\nDescribe your staffing plan.",
+      "quote": "Describe your staffing plan.",
+      "expected_today": null,
+      "ideal": null,
+      "note": "T-207 C1: an earlier instruction ending in a bracketed limit is not a heading"
+    },
+    {
+      "id": "KL-5",
+      "status": "fixed",
+      "page": "Describe your approach to social value (max 300 words)\n\nDescribe your staffing plan (max 500 words)",
+      "quote": "Describe your staffing plan (max 500 words)",
+      "expected_today": 500,
+      "ideal": 500,
+      "note": "T-207 C1: the question's own limit wins"
+    },
+    {
+      "id": "KL-6",
+      "status": "fixed",
+      "page": "Explain how you will mobilise (maximum 250 words)\n\nWhat is your approach to TUPE? Answers should not exceed 600 words.",
+      "quote": "What is your approach to TUPE?",
+      "expected_today": 600,
+      "ideal": 600,
+      "note": "T-207 C1"
+    }
   ]
 }
