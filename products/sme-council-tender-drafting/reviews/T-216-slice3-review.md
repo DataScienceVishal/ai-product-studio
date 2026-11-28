@@ -101,3 +101,38 @@ The app is still safe, because the draft reservation is released at settle befor
 - `git diff origin/main...origin/p/sme-council-tender-drafting/T-216`
 - worktrees at `d7b13f9` and `origin/main`. From `app/backend`: `TEST_DATABASE_URL=... python3.13 -m pytest -q -o addopts="" -s tests/test_tender_claimcheck.py::test_upload_extract_draft_and_check_fit_the_30k_trial_day tests/test_tender_draft.py -k "largest or 30k or budget or reserves"`. Result: 6 passed on the branch, 5 on main, and the printed pack figures are 2 and 3.
 - reservation tables from scripts that import `app.tender.draft` and `app.tender.claimcheck` (`PYTHONPATH=. python3.13`).
+
+## Re-review (2e40b12, 2026-11-28)
+
+**Verdict: PASS.**
+
+Scope: `git diff d7b13f9 2e40b12`, plus Studio Lead decision `4102c55` in `state/DECISIONS.md`. Tests were run in a scratch worktree at `2e40b12`: `tests/test_tender_draft.py`, `test_upload_extract_draft_and_check_fit_the_30k_trial_day` and `tests/test_tender_retrieval_eval.py` gave 34 passed. The printed figure is "largest pack that fits one trial day: 2 questions".
+
+Blocking findings:
+
+1. **Trial day falls from 3 questions to 2: resolved.**
+   - DECISIONS `4102c55` records that the Lead keeps k=8 and accepts 2 questions. It also says this replaces "3 questions" in the T-190 entry.
+   - DESIGN 4.3 now states "2 questions (was 3 at 5 passages)" in the whole-flow bullet.
+   - Rule (c), "the whole-flow test still fits at least 2 questions", was added to the choice rule.
+   - The NEXT.md slice 3 status carries a COST line, and the T-199 history line is corrected.
+   - The `>= 2` floor still has no margin. That is now a documented, accepted constraint.
+2. **Pool sentence: resolved.** DESIGN now says 2 full pairs a day, and that a third draft (14 to 16k) is admitted but its check (about 17k) is refused. That matches my arithmetic: 27.2k + 16.0k = 43.2k, which is at most 49k; then 33.2k + 16.7k = 49.9k, which is over 49k.
+3. **Pair tests at k=8 and the stated invariant: resolved.**
+   - Both pair tests now build `_hits(dr.APP_PASSAGES, 900)`.
+   - The first test cites all 8 passages. It asserts the admission rule: settled draft plus check is at most `APP_PAIR_BUDGET`. Measured: 6,000 + 18,526 = 24,526.
+   - The shorten test keeps 4 cited passages and says why. Its comment says citing all 8 would need 31.5k, and I measured 31,520.
+   - The comment at `draft.py:33-35` now states the settle-then-reserve rule.
+   - `APP_PAIR_BUDGET` and the new `TYPICAL_DRAFT_SETTLED` are used by the tests. Neither is read by the app, which is acceptable for documented sizing constants.
+
+Suggestions:
+
+- **Applied:** 5 (check bullet: typical 14.9k, worst 20.7k, 26.7k worst pair), 6 (the long draft with no word limit is documented as a pre-existing gap in DESIGN and NEXT), 7 (new-test docstring), 8 (import moved to the top of the file) and 9 (APP_PASSAGES item marked closed).
+- **Applied only in part:** 4.
+
+Non-blocking nits:
+
+- N1. `DESIGN.md:118` gives "about 0.7k tokens of system prompt ... about 2k tokens of passages". The reservation counts bytes, so 8 passages reserve about 8k, not 2k. As written, the parts add up to about 9.7k, not the 16.0k stated. Say "bytes", and give 8k for the passages.
+- N2. `DESIGN.md:124` says "10 pairs still fit over 5 days or 3 demo tenants". The 49k pool is shared by all trial tenants, so more tenants on the same day do not raise the 2-pairs-a-day ceiling. Only the days figure, 5 days, is right.
+- N3. The fix commit also adds this review file to the branch. That is fine, but this re-review section is not on the branch yet.
+
+Studio Lead (run 7c96): N1 and N2 fixed in DESIGN 4.3 before the merge; N3 is resolved by committing this section.
