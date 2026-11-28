@@ -3,7 +3,7 @@
 Cap: $80 of Azure for Students credit, resource group `rg-ai-studio` only.
 Ask Vishal first if one resource would cost more than $10 a month or the projected total would pass $80.
 
-Month-to-date spend: see the spend report below (spend unknown (no_data), updated 2026-11-27T22:13:29Z)
+Month-to-date spend: see the spend report below (spend unknown (no_data), updated 2026-11-28T15:29:27Z)
 
 | Resource | Product | Created (UTC) | Estimated $ per month | Status |
 |---|---|---|---|---|
@@ -48,7 +48,7 @@ T-12 total so far: ~$11.97 recorded at the real price (≤$17.16 if the two 502s
 <!-- spend:auto:start -->
 ## Spend report (written daily by .github/workflows/azure-spend.yml)
 
-- Updated: 2026-11-27T22:13:29Z. Covers resource group rg-ai-studio only; Cost Management data can lag by up to a day.
+- Updated: 2026-11-28T15:29:27Z. Covers resource group rg-ai-studio only; Cost Management data can lag by up to a day.
 - Status: no_data: Azure returned no cost rows (new subscription, data lag, or an unsupported offer). Spend is unknown.
 - Cost rows returned: month to date 0, since start 0, by resource 0
 - Projected monthly cost from the table above: $23.20
