@@ -91,9 +91,6 @@ def split_sentences(text_: str) -> list[str]:
         if out and _ABBREV.search(out[-1]) and seg[:1].isalnum() and not seg[:1].isupper():  # "Ltd. and", "e.g. cleaning" (T-189 nit 10)
             out[-1] += " " + seg
             continue
-        if out and re.search(r"\bNo\.$", out[-1]) and seg[:1].isdigit():  # "No. 5"
-            out[-1] += " " + seg
-            continue
         lead = re.match(r"(?:\[E-\d+\]\s*)+", seg)
         if out and lead:  # a citation that follows the full stop belongs to the sentence before it
             out[-1] += " " + lead.group(0).strip()

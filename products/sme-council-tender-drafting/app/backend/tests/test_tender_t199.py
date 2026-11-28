@@ -8,8 +8,9 @@ from sqlalchemy import func, select
 
 from app.maintenance import purge
 from app.tender import draft as dr
-from app.tender_models import AITask, Draft, EvidenceItem, SourceDocument
+from app.tender_models import AITask, Claim, Draft, EvidenceItem, SourceDocument
 
+from .conftest import sign_up
 from .test_tender_claimcheck import client, db, evidence_doc  # noqa: F401
 from .test_tender_draft import confirmed_pack, draft_now, latest
 from .test_tender_export import signed_pack
@@ -67,6 +68,64 @@ def test_purge_removes_aged_evidence_when_the_pack_was_never_exported(client, ap
     pid, _ = signed_pack(client, app)  # signed, but no exports row
     _soft_delete(client, db, 200)
     assert purge(db)["soft_deleted_evidence"] == 1
+
+
+def test_purge_keeps_evidence_cited_only_through_outside_ids_or_the_text(client, app, db):
+    """Review M1: the appendix prints every [E-n] in the text and every claim citation, not only cited_ids."""
+    from sqlalchemy import update
+    pid, _ = signed_pack(client, app)
+    assert client.get(f"/api/packs/{pid}/export", headers={"X-Requested-With": "fetch"}).status_code == 200
+    no = db.scalar(select(EvidenceItem.display_no).order_by(EvidenceItem.display_no).limit(1))
+    # the exported draft cites it only as an outside id (stored copy and text marker), never in cited_ids
+    for d in db.scalars(select(Draft)):
+        d.cited_ids, d.outside_ids, d.text = [], [no], f"We take quality seriously [E-{no}]."
+    for c in db.scalars(select(Claim)):
+        c.cited_ids = []
+    db.commit()
+    _soft_delete(client, db, 200)
+    assert purge(db)["soft_deleted_evidence"] == 0
+    # only the text marker remains
+    for d in db.scalars(select(Draft)):
+        d.outside_ids = []
+    db.commit()
+    assert purge(db)["soft_deleted_evidence"] == 0
+    # only a claim's citation remains
+    for d in db.scalars(select(Draft)):
+        d.text = "No marker here."
+    for c in db.scalars(select(Claim)):
+        c.cited_ids = [no]
+    db.commit()
+    assert purge(db)["soft_deleted_evidence"] == 0
+    for c in db.scalars(select(Claim)):
+        c.cited_ids = []
+    db.commit()
+    assert purge(db)["soft_deleted_evidence"] == 1
+
+
+def test_one_tenants_export_does_not_protect_another_tenants_evidence_with_the_same_number(client, app, db, new_client):
+    other = new_client()
+    sign_up(other, email="b@acme.test", company="Beta Ltd")
+    pid, _ = signed_pack(client, app)
+    assert client.get(f"/api/packs/{pid}/export", headers={"X-Requested-With": "fetch"}).status_code == 200
+    # tenant B: same evidence text, so the same display number, a ready pack that was never exported
+    ready_pack(other, app)
+    assert {i.display_no for i in db.scalars(select(EvidenceItem).where(EvidenceItem.tenant_id == db.scalar(
+        select(SourceDocument.tenant_id).order_by(SourceDocument.created_at.desc()).limit(1))))}
+    doc_b = evidence_doc(other)[0]
+    assert other.delete(f"/api/documents/{doc_b['id']}").status_code == 204
+    db.expire_all()
+    d = db.get(SourceDocument, doc_b["id"])
+    when = datetime.now(timezone.utc) - timedelta(days=200)
+    d.deleted_at = when
+    for i in db.scalars(select(EvidenceItem).where(EvidenceItem.document_id == d.id)):
+        i.deleted_at = when
+    db.commit()
+    nos_a = {i.display_no for i in db.scalars(select(EvidenceItem).where(EvidenceItem.tenant_id != d.tenant_id))}
+    nos_b = {i.display_no for i in db.scalars(select(EvidenceItem).where(EvidenceItem.tenant_id == d.tenant_id))}
+    assert nos_a & nos_b  # the numbers really collide across tenants
+    assert purge(db)["soft_deleted_evidence"] == 1  # B's document goes; A's export protects only A's rows
+    assert db.get(SourceDocument, doc_b["id"]) is None
+    assert db.scalar(select(func.count()).select_from(SourceDocument).where(SourceDocument.kind == "evidence")) == 1
 
 
 # ---------- T-189 nits ----------

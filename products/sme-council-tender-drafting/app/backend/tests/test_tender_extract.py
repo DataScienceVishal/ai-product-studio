@@ -365,7 +365,9 @@ def test_an_unnumbered_one_line_previous_question_is_not_taken_as_the_next_headi
     assert ex.stated_word_limit(page, "Describe your staffing plan.") is None
     same_block = "Describe your approach in no more than 200 words\nDescribe your staffing plan."
     assert ex.stated_word_limit(same_block, "Describe your staffing plan.") is None
-    # a real heading still counts
+    # a real heading still counts, also one that starts with a question word
+    assert ex.stated_word_limit("How we deliver social value (max 300 words)\n\nDescribe the social value you will deliver.",
+                                "Describe the social value you will deliver.") == 300
     assert ex.stated_word_limit("Staffing (max 150 words)\n\nDescribe your staffing plan.", "Describe your staffing plan.") == 150
 
 

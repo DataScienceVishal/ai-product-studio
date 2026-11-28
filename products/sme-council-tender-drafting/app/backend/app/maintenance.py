@@ -30,14 +30,14 @@ import json
 import logging
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import any_, delete, exists, or_, select
+from sqlalchemy import any_, delete, exists, func, or_, select
 from sqlalchemy.orm import Session
 
 from .ai import release_stale_reservations
 from .billing import build_billing
 from .config import Settings
 from .db import Database
-from .tender_models import AICache, Draft, EvidenceItem, ExportRecord, Requirement, SourceDocument
+from .tender_models import AICache, Claim, Draft, EvidenceItem, ExportRecord, Requirement, SourceDocument
 from .models import (AIUsage, AuthSession, BillingEvent, EmailVerification, Invitation, PasswordReset, PendingCancel, Subscription,
                      Tenant, User)
 
@@ -50,11 +50,19 @@ EVIDENCE_PURGE_DAYS = 90  # soft-deleted evidence documents (T-201 item 10)
 def _purgeable_evidence(now: datetime):
     """Soft-deleted evidence documents past the horizon, unless an exported pack's drafts cite one of their passages
     (an exports row is the audit; the appendix text it was built from stays while any export may cite it)."""
-    cited_by_export = exists().where(
-        EvidenceItem.document_id == SourceDocument.id, EvidenceItem.tenant_id == SourceDocument.tenant_id,
-        Draft.tenant_id == EvidenceItem.tenant_id, EvidenceItem.display_no == any_(Draft.cited_ids),
+    # Everything export.load_rows prints in the appendix: the [E-n] markers in the draft text, plus the claims' cited numbers.
+    # cited_ids and outside_ids are included too (a stored copy of the same markers). Every join carries the tenant.
+    in_exported_pack = exists().where(
         Requirement.tenant_id == Draft.tenant_id, Requirement.id == Draft.requirement_id,
         exists().where(ExportRecord.tenant_id == Requirement.tenant_id, ExportRecord.pack_id == Requirement.pack_id))
+    marker = func.concat(r"\[E-", EvidenceItem.display_no, r"\]")
+    claim_cites = exists().where(Claim.tenant_id == Draft.tenant_id, Claim.draft_id == Draft.id,
+                                 EvidenceItem.display_no == any_(Claim.cited_ids))
+    cited_by_export = exists().where(
+        EvidenceItem.document_id == SourceDocument.id, EvidenceItem.tenant_id == SourceDocument.tenant_id,
+        Draft.tenant_id == EvidenceItem.tenant_id, in_exported_pack,
+        or_(EvidenceItem.display_no == any_(Draft.cited_ids), EvidenceItem.display_no == any_(Draft.outside_ids),
+            Draft.text.op("~")(marker), claim_cites))
     return (SourceDocument.kind == "evidence", SourceDocument.deleted_at.is_not(None),
             SourceDocument.deleted_at < now - timedelta(days=EVIDENCE_PURGE_DAYS), ~cited_by_export)
 

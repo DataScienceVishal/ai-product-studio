@@ -24,6 +24,11 @@ T-201
 - 10. done: `maintenance.purge` deletes soft-deleted evidence documents (passages cascade) 90 days after `deleted_at` unless a pack with an exports row has a draft citing one of their passages (`EVIDENCE_PURGE_DAYS`, key `soft_deleted_evidence`); DATA.md rows updated. Tests in `tests/test_tender_t199.py`: `test_purge_removes_evidence_deleted_over_90_days_ago_and_its_passages`, `..._keeps_recently_deleted_and_live_evidence`, `..._keeps_evidence_cited_by_an_exported_pack`, `..._removes_aged_evidence_when_the_pack_was_never_exported`.
 - 11. already done, verified: sign-off and export both call `claimcheck.export_check` server-side (`routes/tender.py`; `test_tender_review.py::test_signoff_reruns_the_gate_on_the_server_even_if_the_pack_says_ready`, `test_tender_export.py::test_export_refused_without_sign_off` and the tamper tests).
 
+## Review fixes (reviews/T-199-review.md, CHANGES)
+- M1 done: the purge protects everything the export appendix prints: `[E-n]` markers in the draft text, `cited_ids`, `outside_ids` and the claims' `cited_ids`, for drafts of packs with an exports row. Tests `test_purge_keeps_evidence_cited_only_through_outside_ids_or_the_text`, `test_one_tenants_export_does_not_protect_another_tenants_evidence_with_the_same_number`.
+- `_is_heading` narrowed: a question-verb line is the previous question only if it also says you/your/us; "How we deliver social value (max 300 words)" is a heading again (test extended).
+- Dead "No." rule removed from `split_sentences`; `AppError.task_tokens` declared on the class. Known: tokens spent inside a `draft_answer` that then raises are still not reported (ai_usage has the real spend).
+
 ## Verify
 `cd app/backend && TEST_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/starter_test python3.13 -m pytest -q -o addopts=""` (fresh Postgres: role studio/studio superuser, db starter_test; `pip install -r requirements-dev.txt`). New tests: `tests/test_tender_t199.py`.
 

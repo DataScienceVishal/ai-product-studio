@@ -10,6 +10,8 @@ from .logs import request_id_var
 
 
 class AppError(Exception):
+    task_tokens: tuple[int, int] = (0, 0)  # (input, output) a task handler used before it failed; read by the job runner
+
     def __init__(self, status: int, code: str, message: str, headers: dict[str, str] | None = None):
         super().__init__(message)
         self.status, self.code, self.message, self.headers = status, code, message, headers

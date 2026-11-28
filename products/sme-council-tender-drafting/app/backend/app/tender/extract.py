@@ -103,7 +103,11 @@ _QUESTION_LEAD = re.compile(r"^(?:\d+[.)]\s*)?(?:please\s+)?(?:describe|explain|
 
 
 def _is_heading(line: str) -> bool:
-    return bool(line) and "\n" not in line and len(line) <= 150 and not re.search(r"[.!?]$", line) and not _QUESTION_LEAD.match(line)
+    if not line or "\n" in line or len(line) > 150 or re.search(r"[.!?]$", line):
+        return False
+    # Only a request ("Describe your approach ...") is the previous question; a heading such as "How we deliver social
+    # value (max 300 words)" has no "you/your" and stays a heading.
+    return not (_QUESTION_LEAD.match(line) and re.search(r"\byou(?:r|rs)?\b|\bus\b", line, re.I))
 
 
 def _heading_start(page_text: str, qstart: int) -> int:
