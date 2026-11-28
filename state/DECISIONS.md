@@ -586,3 +586,8 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 ## 2026-11-28T15:46Z, run 42f7: T-216 slice 4 PRF enabled; retrieval tuning closed
 - RM3-style pseudo-relevance feedback ships enabled because the ship rule fixed before measuring was met (pooled recall@8 0.745 -> 0.764, primary hit 0.964 -> 1.000). The per-pack mix (S04, S08 down; S12 up) is not grounds to switch it off afterwards; that would be a post-hoc choice. Reviewer condition: the held-out run reports PRF on and off, and PRF is turned off if held-out recall or primary hit is lower with it on. Reversible: PRF_ENABLED = False.
 - Free retrieval tuning stops here at 0.764 (diagnostic, not a bar). The remaining levers need Vishal (embeddings deployment, ask-first) or model spend (criteria in extraction). Next line is T-219, the L1 freeze and live eval inside the approved $6.00 Q-19 cap.
+
+## 2026-11-28T16:41Z, run 430c: T-219 slice 1 merged, first live call made
+- Enabled `eval.run --live` for the tuning phases only (T1-T3), merged after reviewer PASS. Scored and recording phases stay refused until the configuration freeze. This is the first spend under Q-19 A: $0.0144 of the $6.00 cap (tuning sub-cap $2.00).
+- T1 as coded covers extraction only. The freeze waits until T1 is re-run with draft and claimcheck (T-221), because the DESIGN 8.3 budget rewrite needs measured figures for the whole flow.
+- Live output showed the extraction `kind` field is unconstrained and the app silently files real questions as 'other' (T-220). Fixing the schema and prompt now counts as tuning, which is allowed before the freeze. Ranked above T-221 because it is a product bug, not only an eval issue.
