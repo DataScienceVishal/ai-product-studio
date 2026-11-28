@@ -133,6 +133,7 @@ def apply_update(db: Session, update: BillingUpdate, provider: str, billing=None
     return applied
 
 
+PERMANENT_REFUND_STATUSES = frozenset({400, 402})  # T-211
 REFUND_RETRY_WINDOW = timedelta(hours=24)  # T-210 (S2): stop answering 503 for "no paid invoice" after this long
 
 
@@ -153,10 +154,12 @@ def _cancel_and_refund_duplicate(update: BillingUpdate, billing) -> None:
         refunded = billing.refund_latest_invoice(update.provider_ref, refund_key(update.event_id))
     except NoPaidInvoice as error:
         # T-210 (S2): the first invoice may not be marked paid yet. Retry via redelivery, but only for 24 h.
-        age = datetime.now(timezone.utc) - update.occurred_at if update.occurred_at else timedelta(0)
+        # T-211: an event without a timestamp counts as expired (its age is unknown, so never retry it for ever).
+        age = datetime.now(timezone.utc) - update.occurred_at if update.occurred_at else None
+        retry = age is not None and age <= REFUND_RETRY_WINDOW
         log.error("refund_owed: the extra subscription was cancelled but no paid invoice was found to refund",
-                  extra={**ctx, "reason": "no_paid_invoice", "will_retry": age <= REFUND_RETRY_WINDOW})
-        if age <= REFUND_RETRY_WINDOW:
+                  extra={**ctx, "reason": "no_paid_invoice", "will_retry": retry})
+        if retry:
             raise AppError(503, "refund_pending", "The extra subscription's payment is not visible yet. Try again.") from error
         return
     except Exception as error:
@@ -164,7 +167,9 @@ def _cancel_and_refund_duplicate(update: BillingUpdate, billing) -> None:
         code = error.code if isinstance(error, AppError) else type(error).__name__
         # T-210 (S3): a permanent rejection (a 4xx other than charge_already_refunded, which the adapter treats as
         # done) will not heal: log it for an operator and acknowledge. Timeouts, 5xx and 429 are billing_unavailable.
-        permanent = isinstance(error, AppError) and error.code == "billing_rejected"
+        # T-211: only 400 and 402 are permanent. 409 (idempotency_key_in_use), 401, 403, 404 and the rest can heal.
+        permanent = (isinstance(error, AppError) and error.code == "billing_rejected"
+                     and error.provider_status in PERMANENT_REFUND_STATUSES)
         log.error("refund_owed: the extra subscription was cancelled but its payment could not be refunded "
                   + ("(rejected by the provider: refund it by hand)" if permanent else
                      "(will be retried on redelivery; refund it by hand at the provider if this repeats)"),
