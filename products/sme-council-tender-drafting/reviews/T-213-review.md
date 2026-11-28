@@ -46,3 +46,14 @@ The module docstring says the per-pack date check is "(`deadline_match`)". The c
 ## Security and performance
 
 No new input surface. The scorer reads local key and result JSON. The regexes are linear (no nested quantifiers), and `score_deadline` is O(candidates) per pack. There is no AI cost.
+
+## Re-review (d363cf1..3b3f278)
+
+**Verdict: PASS**
+
+- **Critical 1 is fixed.** `_T_HM` now accepts `:` or `.` as the separator. Its guards (`(?<![\d.:])`, `(?!\d|\.\d)`) keep a numeric date from being read as a time, and it leaves am/pm forms to `_T_AMPM`, which now accepts `.` too. Hour and minute ranges are checked. Probe results: "17.00", "5.00pm" and "17.00hrs" give 17:00. "5.30 p.m." gives 17:30, "12.00pm" gives 12:00, and "5:00 PM" gives 17:00. "30.04.2027" is a date only (no time), "30.04.2027 17.00" gives the date and 17:00, and "25.99" gives no time. Against the S01 key (12:00 noon), "30 April 2027 5.00pm" is now `found: True, time_match: False`; before the fix it was True. All 9 held-out key deadline texts still parse to exactly one date and one time.
+- **Critical 2 is fixed.** The docstring now names `found` from `score_deadline`.
+- **Suggestion 3 is done.** `time_match` is now null when the date is not found or the key has no time. The EVAL.md Deadline row says this and also documents the `.` separator and am/pm. The not-found test asserts `time_match is None`.
+- **New tests** cover "17.00", "5.00pm", "5.30 p.m.", "30.04.2027" (date only) and "30.04.2027 17.00".
+- `pytest tests/test_tender_eval.py -p no:warnings`: **132 passed** in 14.1s. The new assertions were added to existing tests, so the count is unchanged.
+- **Minor, not blocking:** a decimal such as "£12.50" in an extracted text is read as the time 12:50. This only adds times on the `got` side, so it can make `time_match` true only if 12:50 happens to be the key time. Suggestion 1 (tie the date to the time printed with it) remains open as a later improvement.
