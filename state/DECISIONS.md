@@ -572,3 +572,5 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - k=8 is the largest value that fits the DESIGN 4.3 token budget. That rule was fixed before looking at recall. It covers worst draft <= 21.5k, typical settled draft + check <= 30k, and the whole flow in one trial day. The recall the drafter sees goes from 0.626 to 0.745 (primary hit 0.929 to 0.964).
 - Trade accepted: one free-trial day now fits a 2-question pack instead of 3, and the daily pool gives 2 full draft+check pairs. This replaces "3 questions" in the T-190 entry. Evidence quality matters more than trial breadth. Reversible: set APP_PASSAGES back.
 - Criteria-based query expansion is not possible without an extraction schema change (questions carry no criteria text), so it is deferred. A per-tenant STATS cache is deferred until a tenant has thousands of passages.
+
+- 2026-11-28 (run 45dc, T-218): build_docx.py fails closed: with no frozen list it refuses to write unless --allow-frozen, because a rewrite silently breaks the pre-registered FROZEN hashes. Reversible.
