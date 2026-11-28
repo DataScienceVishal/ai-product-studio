@@ -1,0 +1,4 @@
+{"hold_id": "42bd3dbe530e4fa08e03b6831eb01552", "kind": "hold", "label": "extract:S04-cleaning-halls-and-toilets.docx:p0", "model": "gpt-5-mini", "phase": "T1", "task": "extract", "worst_usd": 0.024185}
+{"charged_worst": false, "failed": false, "hold_id": "42bd3dbe530e4fa08e03b6831eb01552", "input_tokens": 1767, "kind": "settle", "label": "extract:S04-cleaning-halls-and-toilets.docx:p0", "model": "gpt-5-mini", "output_tokens": 2688, "phase": "T1", "task": "extract", "usd": 0.005818}
+{"hold_id": "32e20e1f683c4eedad03cc7819e79543", "kind": "hold", "label": "extract:S04-cleaning-halls-and-toilets.docx:p0", "model": "gpt-5-mini", "phase": "T1", "task": "extract", "worst_usd": 0.022336}
+{"charged_worst": false, "failed": false, "hold_id": "32e20e1f683c4eedad03cc7819e79543", "input_tokens": 1545, "kind": "settle", "label": "extract:S04-cleaning-halls-and-toilets.docx:p0", "model": "gpt-5-mini", "output_tokens": 4089, "phase": "T1", "task": "extract", "usd": 0.008564}
