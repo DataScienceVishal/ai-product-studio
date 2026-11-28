@@ -77,3 +77,7 @@ Two builders working in the same clone switch branches under each other, so comm
 - Needs Vishal: yes for the browser download. Status: open.
 
 - 2026-11-28T04:55Z run 8368: a builder subagent left the main checkout on a detached HEAD (its branch commit), so the Lead's state commit landed off main and didn't push. Caught and redone on main; nothing lost. Fix: builder briefs must say "work only in your own worktree; never check out another ref in the main checkout", and the Lead runs `git branch --show-current` before committing state.
+
+## 2026-11-28T05:30Z run 39e8: lead committed into a builder's working tree
+- What happened: while a builder subagent worked in the main checkout, the lead ran `git pull ... && cat >> DECISIONS.md; git commit -qam ...`. The pull failed (dirty tree), but the commit still ran on the builder's branch and swept its unfinished edits into 48d0076 with the message "decisions: ...". The code is fine; only the message is wrong. History was not rewritten.
+- Fix (rule): once a subagent is working in the main checkout, the lead makes state commits only from a separate `git worktree` (scratchpad), and chains git steps with `&&` all the way through, never `;`.
