@@ -149,6 +149,7 @@ def _extract_items(ctx: Context, names: list[str], passes: int = 1) -> list[Item
 
 
 DEMO_QUESTIONS_PER_PACK = 5      # T-221: draft + claim-check items per demo pack and pass (DESIGN 8.3 "extraction plus 5 questions")
+TUNING_QUESTIONS_PER_PACK = 3    # tuning_demo (T2) only: 3 packs x 3 passes x 3 questions keeps T2's worst case ($1.62) under the $2.00 tuning cap
 DEMO_QUESTIONS_FILE = "retrieval_labels.json"   # no demo-pack answer keys exist (keys are held-out only); qa's hand labels hold the
 #                                                 3 demo packs' real question refs and text, in pack order. Read only, nothing invented.
 
@@ -187,7 +188,8 @@ def build_plan(phase: str, ctx: Context) -> list[Item]:
     if builder in ("end_to_end_1", "end_to_end_3", "tuning_demo"):
         names = demo[:1] if builder == "end_to_end_1" else demo[:DEMO_PACKS]
         passes = 3 if builder == "tuning_demo" else 1
-        qs = [q for n in names for q in demo_questions(ctx, n)]
+        per_pack = TUNING_QUESTIONS_PER_PACK if builder == "tuning_demo" else DEMO_QUESTIONS_PER_PACK
+        qs = [q for n in names for q in demo_questions(ctx, n, per_pack)]
         items: list[Item] = []
         for i in range(passes):          # per pass: the packs' extraction, then the drafts (each runs the claim check)
             items += [Item(f"extract:{n}:p{i}", "extract", {"pack": n, "pass": i}) for n in names]

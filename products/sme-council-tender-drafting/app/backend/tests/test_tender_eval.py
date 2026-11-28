@@ -805,7 +805,7 @@ def test_cache_is_cleared_before_repeat_passes_of_a_cacheable_provider(ctx, monk
     ctx.provider = type("Live", (ScriptedFakeAI,), {"cacheable": True})()
     (ctx.results_dir / "T2.jsonl").unlink()
     R.run_phase("T2", ctx)
-    assert len(cleared) == 54                                # 3 packs x 3 passes x (1 extract + 5 drafts), cleared before every item
+    assert len(cleared) == 36                                # 3 packs x 3 passes x (1 extract + 3 drafts), cleared before every item
     with ctx.sessions() as db:
         R.clear_ai_cache(ctx)
         assert db.scalar(select(func.count()).select_from(AICache).where(AICache.tenant_id == ctx.tenant_id)) == 0
@@ -1210,11 +1210,11 @@ def test_t1_plan_is_extract_plus_five_labelled_questions_of_the_first_demo_pack(
     assert R.DEMO_QUESTIONS_PER_PACK == 5 and R.DEMO_QUESTIONS_FILE == "retrieval_labels.json"
 
 
-@pytest.mark.parametrize("phase,size", [("T2", 3 * 3 * 6), ("R1", 3 * 6), ("R2", 6)])
-def test_demo_plans_size_and_unique_ids(ctx, phase, size):
-    plan = R.build_plan(phase, ctx)
+@pytest.mark.parametrize("phase,size,drafts", [("T2", 3 * 3 * 4, 27), ("R1", 3 * 6, 15), ("R2", 6, 5)])
+def test_demo_plans_size_and_unique_ids(ctx, phase, size, drafts):
+    plan = R.build_plan(phase, ctx)           # T2: 3 packs x 3 passes x (1 extract + 3 drafts); R1: 3 x (1 + 5); R2 = T1
     assert len(plan) == size and len({i.id for i in plan}) == size
-    assert sum(i.kind == "draft" for i in plan) == size * 5 // 6
+    assert sum(i.kind == "draft" for i in plan) == drafts
 
 
 def test_demo_plan_needs_the_labels_and_never_invents_questions(ctx):
