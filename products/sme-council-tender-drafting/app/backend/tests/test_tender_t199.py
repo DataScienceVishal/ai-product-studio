@@ -215,9 +215,9 @@ def test_a_failed_shorten_retry_keeps_the_draft_and_counts_its_tokens(client, ap
             if "previous_answer" in user:  # the shorten call
                 return AIResult("{not json", 7, 3, "fake")
             long_answer = " ".join(["word"] * 400) + ". End."
-            return AIResult(json.dumps({"answer": long_answer}), 100, 50, "fake")
+            return AIResult(json.dumps({"answer": long_answer, "gaps": [], "used_ids": []}), 100, 50, "fake")
     pid, rid = confirmed_pack(client, app)
     draft_now(client, app, pid, Long())
     db.expire_all()
     t = db.scalar(select(AITask).where(AITask.kind == "draft").order_by(AITask.created_at.desc()))
-    assert t.status == "done" and (t.input_tokens, t.output_tokens) == (100 + 14, 50 + 6)
+    assert t.status == "done" and (t.input_tokens, t.output_tokens) == (100 + 14, 50 + 6)  # the shorten step makes a call and one repair call, 7 in and 3 out each

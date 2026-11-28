@@ -1,3 +1,11 @@
+# STATUS (T-207, T-199 review non-blocking leftovers) - code done, awaiting reviewer
+
+Branch `p/sme-council-tender-drafting/T-207` (off main). Not merged. No migrations, no frontend change, no live model calls.
+- 1. Heading rule: documented both known edges in EVAL.md "Known limits"; cases in new `eval/extraction_known_limits.json` (no case file existed; read by `test_known_limit_cases_hold`). Narrow fix for the false negative only: a short line ending in a bracketed word limit and followed by a blank line and a body paragraph is a heading (`extract._is_bracketed_limit_heading`, used only where the quote opens its own block). All existing extract tests pass. Still open: same heading directly above the question with no blank line (KL-2), and the impersonal-earlier-question false positive (KL-3).
+- 2. Token reporting: `run_task` attaches the tokens of the calls that returned to any `AppError` it raises (`task_tokens`); `draft_answer` adds a failed shorten retry's tokens; `draft_handler` adds earlier drafts to the failing call's own. Tests `test_tokens_spent_inside_a_draft_call_that_then_fails_are_kept_on_the_task` (ai_invalid_output after one billed call: 200/100) and `test_a_failed_shorten_retry_keeps_the_draft_and_counts_its_tokens`.
+- 3. T-189 nit 6: KEEP (identical redraft still makes a version and counts toward 5 a day); documented in DESIGN.md section 4.3. No code change.
+Verify: see the command in the T-199 block below.
+
 # STATUS (T-199 + T-201 review leftovers) - code done, awaiting reviewer
 
 Branch `p/sme-council-tender-drafting/T-199` (off main). Not merged. No migrations (no `alembic check` needed), no frontend change, no live model calls.
