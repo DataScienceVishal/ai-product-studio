@@ -138,7 +138,8 @@ def test_runner_retrieves_the_right_passage_and_writes_no_model_rows(app, new_cl
     res = R.retrieval_diagnostic(sessions, tenant_id, labels)
     assert res["retrieved"]["P.docx"]["1"][0] == 1 and res["retrieved"]["P.docx"]["2"][0] == 2
     assert res["pooled"]["recall"] == 1.0 and res["pooled"]["gap_retrieved_anything"] == 0 and res["misses"] == []
-    assert res["app_passages"] == 5 and res["at_app_passages"]["recall"] == 1.0
+    from app.tender import draft as _dr
+    assert res["app_passages"] == _dr.APP_PASSAGES == 8 and res["at_app_passages"]["recall"] == 1.0
     with sessions() as db:
         assert db.scalar(select(AIUsage.id).limit(1)) is None
 
