@@ -68,12 +68,13 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - If no answer: waits (spending money is on the ask-first list); until then the studio behaves as C
 - Answer: B (Telegram reply "2B" to the 08:00 digest, 10:04:31Z). No mini deployment; the studio may run the MTD benchmark on the pro model, at most 20 documents (about $15), then stops. Model spend cap for T-12: $15.
 
-## Q-8 (status: sent 2026-11-24T15:00Z as 1; 2026-11-24T23:14Z Vishal asked how to add the sign-in, steps given in chat; treat as leaning A, waits for him to confirm it's added)
+## Q-8 (status: answered A 2026-11-27T22:15Z, carried out: Vishal registered the main-only federated credential and OIDC sign-in was proven live on main (T-60 done); recorded by desk df0b 2026-11-28T08:01Z; was: sent 2026-11-24T15:00Z as 1; 2026-11-24T23:14Z Vishal asked how to add the sign-in, steps given in chat)
 - Decision: How should GitHub deploy jobs sign in to Azure once Postgres uses Entra ID (T-18)?
 - Context: In the new design the deploy service principal is also the database admin. Its secret (AZURE_CREDENTIALS) can be read by a workflow on any branch, agent branches included. Security says the "demo data only" limit can't end while that is true. The fix is a federated (OIDC) credential that trusts only main. Adding one is a directory change, which needs your yes.
 - Options: A) Add a federated credential limited to main on the deploy app registration (about 5 minutes in the portal; the studio writes the exact steps and switches the workflow to OIDC), then delete the client secret (recommended) B) Keep the secret and accept the risk in writing: demo data only stays in force until handover C) Leave it for now and decide before the first real deploy
 - Recommended: A, because it takes the only long-lived database admin credential out of reach of non-main branches
 - If no answer: waits (ask-first list). The studio builds T-18 behind the demo-data condition (behaves as C), and nothing is deployed until Q-5's approval setting is flipped anyway
+- Answer: A, carried out by Vishal (federated subject registered; azure-spend run 46075232870 signed in by OIDC on main, T-60 closed 2026-11-27T22:15Z by run e6f8). Still his: revoke the old sp-ai-studio-deployer secret and role, delete AZURE_CREDENTIALS, ReadOnly lock on id-github-deploy (HURDLES 2026-11-24T23:59); reminded in the 2026-11-28 08:00 digest.
 
 ## Q-9 (status: answered 2026-11-24T23:14Z)
 - Decision: May the studio sign up for free trials (no card, studio email) of incumbent tools, to test whether their weak spots are real?

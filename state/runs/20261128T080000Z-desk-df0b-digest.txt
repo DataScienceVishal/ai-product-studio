@@ -1,0 +1,18 @@
+🧪 <b>Studio update</b> · Sat 28 Nov, 08:00
+🟢 Running normally · 🔒 Selling locked · 💷 About $15–20 of $80 used
+
+<b>✨ What's new</b>
+• Tender writer fully built: tender in, signed-off Word file out
+• Fact-checker blocks invented clients and figures; reviewer's tricks didn't get past
+• Wrote 12 made-up council tenders to test it, with checked answer keys
+• Starter app billing: duplicate payments auto-refunded; deleted accounts stop billing
+
+<b>⚠️ One problem</b>
+• Old Azure password works until you do last night's 3 cleanup steps
+
+<b>📌 Also</b>
+• Your 1A applied: $6 AI test cap approved; nothing spent yet
+• No reply on tender packs, so made-up ones; real ones welcome
+
+<b>🧭 Next</b>
+• Locking the test rules, then the live AI test (max $6)
