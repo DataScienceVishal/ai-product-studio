@@ -52,3 +52,43 @@ Fix (both parts recommended):
 - S1. The new test functions in test_tender_t199.py have an unused `import json` (first test). The `calls` class attribute on `Bad` is shared across instances. It is fine here, but a module-level counter or an instance attribute is clearer.
 - S2. EVAL.md "Known limits" item 2: once C1 is fixed, say that the bracketed rule refuses imperative leads. Otherwise, list the C1 pattern as a third known limit.
 - S3. `_BRACKET_LIMIT_END` accepts "(300 words)" with no max/limit word, but `_LIMIT` would not then find a limit in that heading. The rule widens the window without finding anything, which is harmless, but worth a comment.
+
+## Re-review (004739f, 2026-11-28)
+
+Reviewed `git diff 2d4de0d..004739f` (extract.py, tests, eval JSON, EVAL.md, NEXT.md). Detached checkout of 004739f, clean tree.
+
+### Verdict: CHANGES (one small must-fix)
+
+### Tests
+
+```
+TEST_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/starter_test python3.13 -m pytest -q -o addopts=""
+1217 passed, 1 skipped in 217.89s
+```
+
+The two added tests pass.
+
+### C1: fixed for the probed cases
+
+I ran the probes on 004739f and on origin/main:
+
+| case | 004739f | main |
+|---|---|---|
+| instruction + bracket, next question has no limit | None | None |
+| same, next question states 500 | 500 | 500 |
+| "Explain how you will mobilise (maximum 250 words)" then TUPE question with 600 | 600 | 600 |
+| numbered | None | None |
+| KL-1a "How you will deliver social value (max 300 words)" heading | 300 | None (the intended gain) |
+
+### No heading limit is lost
+
+`_stated` searches `own` (from the quote to the end of its block) first, then falls back to `pattern.search(window)` over the whole window. That window is the same as before, heading included, so it can never find less than main did. Probes where the question states no limit all still return the heading's 300 on both trees: a plain heading with a blank line, a plain heading in the same block, "How we deliver ...", and a heading with a multi-paragraph question. The page-limit path behaves the same as main. `qoff` is always >= 0 because the window starts at or before the match.
+
+### Must-fix R1: "How will you ... (max N words)" with no "?" is a new borrowed-limit false positive (extract.py:119-121)
+
+`_IMPERATIVE_OR_INVERTED` lists `will we` among the inverted forms but not `will` / `will you`. So an earlier question phrased "How will you ensure quality (max 300 words)" or "What will you do in the first 90 days (max 300 words)" is accepted as a heading. The next question, if it states no limit, borrows 300. On main both return None, because `_is_heading` refuses a question lead followed by "you". This is the C1 class again, in the borrow-only form: the question's own limit still wins when it states one. Councils often phrase questions as "How will you ...". Fix: replace `will we` with `will` in the inverted group, so it reads `...|should|will|have|has)\b`. Add both lines as KL cases with expected None.
+
+### Suggestions (non-blocking)
+
+- R2. "Own limit wins" covers only the quote's own block. A heading "(max 300 words)" followed by the question, then a blank line, then "Your answer must be no more than 400 words." still returns 300. Main does the same, so this is not a regression. Record it as an open KL case, or extend `own` to the end of the window when the heading is the only other limit.
+- R3. Imperatives not in either list ("Summarise", "Specify", "Evidence", "Show", "Include") still pass `_is_heading`, the same as main. This is the existing KL-3 family. Worth adding to the EVAL.md note.
