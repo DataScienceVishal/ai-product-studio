@@ -14,7 +14,7 @@ import logging
 import re
 import time
 import uuid
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Protocol
@@ -24,6 +24,22 @@ import httpx
 from .errors import AppError
 
 log = logging.getLogger("app.billing")
+
+
+def _clock() -> float:
+    """Monotonic seconds. A function so tests can drive time."""
+    return time.monotonic()
+
+
+# T-182 (T-179 M3 prevention): every Checkout Session expires. Stripe's minimum for `expires_at` is 30 minutes after
+# creation (https://docs.stripe.com/api/checkout/sessions/create#create_checkout_session-expires_at), so one more minute
+# keeps clock skew and request latency from making Stripe reject it. An abandoned tab can no longer be paid a day later.
+CHECKOUT_TTL = timedelta(minutes=31)
+
+
+def refund_key(event_id: str) -> str:
+    """Idempotency key for the refund of a duplicate subscription: one per provider event, hashed to fit Stripe's 255."""
+    return f"refund-{hashlib.sha256(event_id.encode()).hexdigest()}"
 
 
 @dataclass(frozen=True)
@@ -124,6 +140,11 @@ class BillingProvider(Protocol):
         """Cancel one subscription (a duplicate the tenant bought twice). Raises on failure."""
         ...
 
+    def refund_latest_invoice(self, subscription_ref: str, idempotency_key: str) -> bool:
+        """T-182 (T-179 M3): refund the subscription's latest PAID invoice in full. True: refunded (or already was).
+        False: nothing to refund (no paid invoice, or it was free). Raises on failure; the key makes a retry safe."""
+        ...
+
 
 def sign(payload: bytes, secret: str, timestamp: int | None = None) -> str:
     """Stripe-style signature header: t=<unix>,v1=<hex hmac-sha256 of "t.payload">."""
@@ -172,13 +193,15 @@ class MockBilling:
         self.sessions: dict[str, dict] = {}
         self.closed: list[tuple[str | None, str | None]] = []
         self.cancelled: list[str] = []
+        self.refunds: list[tuple[str, str]] = []  # (subscription ref, idempotency key)
 
     def create_checkout(self, tenant_id, plan, offer, success_url, cancel_url, customer_ref=None) -> Checkout:
         session_id = f"mock_cs_{uuid.uuid4().hex}"
         while len(self.sessions) >= self.MAX_SESSIONS:
             self.sessions.pop(next(iter(self.sessions)))
         self.sessions[session_id] = {"tenant_id": str(tenant_id), "plan": plan.id,
-                                     "offer": offer.code if offer else None, "customer": customer_ref}
+                                     "offer": offer.code if offer else None, "customer": customer_ref,
+                                     "expires_at": time.time() + CHECKOUT_TTL.total_seconds()}
         return Checkout(session_id, f"{self.base_url}/billing/mock-checkout?session={session_id}")
 
     def portal_session(self, customer_ref, return_url) -> str:
@@ -189,6 +212,8 @@ class MockBilling:
         session = self.sessions.get(session_id)
         if session is None:
             raise AppError(404, "not_found", "Unknown checkout session.")
+        if session.get("expires_at", float("inf")) <= time.time():  # a real Checkout Session cannot be paid once it has expired
+            raise AppError(410, "checkout_expired", "This checkout has expired. Start again.")
         period_end = datetime.now(timezone.utc) + timedelta(days=30)
         event = {"id": f"mock_evt_{uuid.uuid4().hex}", "type": "checkout.completed", "created": int(time.time()),
                  "data": {**session, "subscription": f"mock_sub_{session_id[8:20]}",
@@ -228,6 +253,11 @@ class MockBilling:
         if subscription_ref not in self.cancelled:  # cancelling twice is a no-op, like a canceled Stripe subscription
             self.cancelled.append(subscription_ref)
 
+    def refund_latest_invoice(self, subscription_ref, idempotency_key) -> bool:
+        if all(key != idempotency_key for _ref, key in self.refunds):  # same key: the same refund, recorded once
+            self.refunds.append((subscription_ref, idempotency_key))
+        return True
+
 
 # T-180 (T-179 M2): the cancel budget. DELETE gets 2 tries (4 s each, 1 s backoff between), the "is it already canceled?"
 # GET after a rejected DELETE gets 1. The worst case is a slow DELETE (4 + 1 + 4 = 9 s), or a slow first try, a fast
@@ -247,6 +277,7 @@ def _cancel_worst_case() -> float:
 
 
 CANCEL_WORST_CASE_SECONDS = _cancel_worst_case()
+REFUND_DEADLINE = 12.0  # T-182: invoice lookup, payment lookup and refund share it (outside any DB transaction)
 assert CANCEL_WORST_CASE_SECONDS <= 10, "the cancel call runs inside a row lock: keep it under the idle-in-transaction timeout"
 
 
@@ -273,29 +304,36 @@ class StripeBilling:
 
     def _call(self, method: str, path: str, form: dict | None = None, idempotency_key: str | None = None,
               accept_error_codes: frozenset[str] = frozenset(), timeout: float | None = None,
-              attempts: int = 3) -> dict:
+              attempts: int = 3, deadline: float | None = None) -> dict:
         """accept_error_codes: Stripe error codes on a 400 that the caller treats as an answer, not a failure.
         The reply body is then returned (read `error.code`). Any other 4xx still raises billing_rejected.
         timeout/attempts: per-request timeout (default: the client's) and the number of tries for a transport error,
-        429 or 5xx. A 4xx is never retried."""
+        429 or 5xx. A 4xx is never retried.
+        deadline: an absolute `_clock()` time shared by every try of one logical operation (T-182, T-180 S1). httpx's
+        timeout bounds each phase of one request, not the whole call, so each try gets min(timeout, time left), and no
+        try (or backoff sleep) is started when the time is spent: the call fails with 503 instead."""
         last = attempts - 1
-        extra = {} if timeout is None else {"timeout": timeout}
         headers = dict(self.headers)
         if idempotency_key:
             headers["Idempotency-Key"] = idempotency_key  # one key per logical request, reused across retries
         for attempt in range(attempts):
+            request_timeout = timeout
+            if deadline is not None:
+                left = deadline - _clock()
+                if left <= 0.05:
+                    raise AppError(503, "billing_unavailable", "Payments are unavailable. Try again shortly.")
+                request_timeout = left if timeout is None else min(timeout, left)
+            extra = {} if request_timeout is None else {"timeout": request_timeout}
             try:
                 response = self.client.request(method, f"{self.API}{path}", data=form, auth=(self.key, ""), headers=headers,
                                                **extra)
             except httpx.TransportError as error:
-                if attempt == last:
+                if attempt == last or not self._backoff(attempt, deadline):
                     raise AppError(503, "billing_unavailable", "Payments are unavailable. Try again shortly.") from error
-                time.sleep(2 ** attempt)
                 continue
             if response.status_code == 429 or response.status_code >= 500:
-                if attempt == last:
+                if attempt == last or not self._backoff(attempt, deadline):
                     raise AppError(503, "billing_unavailable", "Payments are unavailable. Try again shortly.")
-                time.sleep(2 ** attempt)
                 continue
             if response.status_code == 404 and method == "DELETE":
                 return {}  # already gone
@@ -313,6 +351,15 @@ class StripeBilling:
             except ValueError:
                 raise AppError(502, "billing_rejected", "The payment provider sent an unreadable reply.") from None
         raise AppError(503, "billing_unavailable", "Payments are unavailable. Try again shortly.")
+
+    @staticmethod
+    def _backoff(attempt: int, deadline: float | None) -> bool:
+        """Sleep before the next try. False (no sleep): the deadline leaves no room for another try after it."""
+        pause = 2 ** attempt
+        if deadline is not None and deadline - _clock() <= pause + 0.05:
+            return False
+        time.sleep(pause)
+        return True
 
     def ensure_coupon(self, offer: Offer) -> str:
         """Make sure the offer's coupon exists in Stripe (test mode) and return its id. Safe to call repeatedly.
@@ -341,6 +388,7 @@ class StripeBilling:
         form = {
             "mode": "subscription", "success_url": success_url, "cancel_url": cancel_url,
             "client_reference_id": str(tenant_id),
+            "expires_at": str(int(time.time() + CHECKOUT_TTL.total_seconds())),  # T-182 (T-179 M3 prevention)
             "line_items[0][quantity]": "1",
             "line_items[0][price_data][currency]": plan.currency,
             "line_items[0][price_data][unit_amount]": str(plan.price_pence),
@@ -412,14 +460,51 @@ class StripeBilling:
         # T-180 (T-179 M2): the pending-cancel path calls this while holding a row lock in an open transaction, which
         # Postgres ends after idle_in_transaction_session_timeout (15 s). The budget is therefore CANCEL_WORST_CASE_SECONDS
         # (9 s), asserted below to stay under that timeout.
+        # T-182 (T-180 S1): one wall-clock deadline for the DELETE tries and the GET check together.
         path = f"/subscriptions/{quote(str(subscription_ref), safe='')}"
+        deadline = _clock() + CANCEL_WORST_CASE_SECONDS
         try:
-            self._call("DELETE", path, timeout=self.CANCEL_TIMEOUT, attempts=CANCEL_DELETE_ATTEMPTS)
+            self._call("DELETE", path, timeout=self.CANCEL_TIMEOUT, attempts=CANCEL_DELETE_ATTEMPTS, deadline=deadline)
         except AppError as error:
             if error.code != "billing_rejected":
                 raise
-            if self._call("GET", path, timeout=self.CANCEL_TIMEOUT, attempts=CANCEL_CHECK_ATTEMPTS).get("status") != "canceled":
+            if self._call("GET", path, timeout=self.CANCEL_TIMEOUT, attempts=CANCEL_CHECK_ATTEMPTS,
+                          deadline=deadline).get("status") != "canceled":
                 raise
+
+    def refund_latest_invoice(self, subscription_ref, idempotency_key) -> bool:
+        """T-182 (T-179 M3): refund the subscription's latest paid invoice, the first payment of a duplicate.
+        1. GET /v1/invoices?subscription=..&status=paid&limit=1 (newest first)
+           https://docs.stripe.com/api/invoices/list
+        2. Find its payment. The adapter pins no API version by default (STRIPE_API_VERSION empty = the account's), so
+           both shapes are handled. Up to 2025-03-31 (basil) the invoice carries `payment_intent`. From basil that
+           field is gone ("Invoice Payments"); the payment is listed by GET /v1/invoice_payments?invoice=..&status=paid
+           (`data[0].payment.payment_intent`): https://docs.stripe.com/api/invoice-payment/list and
+           https://docs.stripe.com/changelog/basil/2025-03-31/add-support-for-multiple-partial-payments-on-an-invoice
+        3. POST /v1/refunds {payment_intent} with the Idempotency-Key (https://docs.stripe.com/api/refunds/create,
+           https://docs.stripe.com/api/idempotent_requests). `charge_already_refunded` counts as done.
+        No paid invoice, a free one (100% coupon), or one paid without a payment (customer balance): nothing to refund.
+        One deadline covers all three calls: this runs while the webhook waits."""
+        deadline = _clock() + REFUND_DEADLINE
+        invoices = self._call("GET", "/invoices?" + urlencode({"subscription": str(subscription_ref), "status": "paid",
+                                                             "limit": "1"}),
+                              timeout=self.CANCEL_TIMEOUT, attempts=2, deadline=deadline).get("data") or []
+        invoice = invoices[0] if invoices else None
+        if not invoice or not (invoice.get("amount_paid") or 0) > 0:
+            return False
+        intent = invoice.get("payment_intent")
+        if not isinstance(intent, str) or not intent:
+            payments = self._call("GET", "/invoice_payments?" + urlencode({"invoice": str(invoice.get("id")),
+                                                                         "status": "paid", "limit": "1"}),
+                                  timeout=self.CANCEL_TIMEOUT, attempts=2, deadline=deadline).get("data") or []
+            intent = ((payments[0] if payments else {}).get("payment") or {}).get("payment_intent")
+        if not isinstance(intent, str) or not intent:
+            log.warning("paid invoice has no card payment to refund", extra={"subscription": subscription_ref})
+            return False
+        body = self._call("POST", "/refunds", {"payment_intent": intent}, idempotency_key=idempotency_key,
+                          accept_error_codes=frozenset({"charge_already_refunded"}), timeout=self.CANCEL_TIMEOUT,
+                          attempts=2, deadline=deadline)
+        return "id" in body or (body.get("error") or {}).get("code") == "charge_already_refunded"
 
     def subscription_period_end(self, subscription_ref) -> datetime | None:
         """When the current paid period ends (a checkout event does not carry it). Raises on failure."""

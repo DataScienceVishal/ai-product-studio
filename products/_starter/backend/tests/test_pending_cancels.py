@@ -47,7 +47,7 @@ def test_failed_takeover_cancel_is_recorded_and_logged_at_error(owner, database,
         t, _now = _takeover(client, database, provider)
     assert _stripe_sub(database, t) == ("active", "pro", "sub_2")
     rows = _rows(database)
-    assert len(rows) == 1 and rows[0][:3] == ("stripe", "sub_1", 1) and rows[0][3] == "AppError: down"
+    assert len(rows) == 1 and rows[0][:3] == ("stripe", "sub_1", 1) and rows[0][3] == "billing_unavailable"
     assert any(r.levelname == "ERROR" and "cancel" in r.getMessage() for r in caplog.records)
 
 

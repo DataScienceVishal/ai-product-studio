@@ -33,7 +33,7 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 
 | What | Command | Where it runs |
 |---|---|---|
-| Backend unit and API tests (see the latest run in CI) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
+| Backend unit and API tests (875 passed, 1 skipped at T-182) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
 | Migrations match the models | `alembic upgrade head && alembic check` | every push |
 | Frontend unit tests (vitest, 203 passed in 7 files) | `cd frontend && npx vitest run` | every push (CI `frontend`) |
 | Frontend type check and build | `cd frontend && npm run build` | every push (CI `frontend`) |
@@ -135,12 +135,18 @@ because delayed payment methods can report `active` before the money arrives).
 
 - **Duplicate and replaced subscriptions (which one is kept).** The first working subscription wins, not the one the
   customer paid for last. If a tenant already has an active, in-date subscription and a second paid one starts (two
-  checkout tabs), the second is cancelled at the provider and the first is kept, even if the second was a different plan.
+  checkout tabs), the second is **cancelled and refunded** (T-182: its latest paid invoice is refunded in full with
+  `POST /v1/refunds`, idempotency key from the event id; no paid invoice means no refund and an INFO log) and the first is
+  kept, even if the second was a different plan. A failed refund logs ERROR `refund_owed` with the subscription id, answers
+  503 and is retried on Stripe's redelivery. Every Checkout Session also expires after 31 minutes (`expires_at`), so an
+  abandoned tab cannot be paid a day later.
   When the old subscription is past_due or lapsed (active but past its period end plus 3 days), a new paid checkout
   takes over instead: the new one is kept and the old one is cancelled at the provider (T-174). If that cancel fails, or
   the old one belongs to another provider (for example a mock one), the app logs "cancel it by hand" with the
   subscription id: an operator must cancel it in the provider dashboard. Failed cancels of a true duplicate answer 503, so
-  Stripe redelivers and the cancel is retried. Cancel calls use an 8 s timeout and one retry.
+  Stripe redelivers and the cancel is retried. A cancel call has one 9 s wall-clock deadline shared by its tries (T-182), and the
+  webhook's inline retry of pending cancels stops starting new rows after 5 s (the sweep does the rest). Account deletion
+  first tries the tenant's pending cancels and refuses with 503 (account kept) if one is still live.
 - **One Stripe customer per tenant (T-181).** Checkout sends `customer=<stored id>` when the tenant already has a customer
   at the current provider, so every subscription shares one customer (no `customer_email` is sent then). Every customer a
   billing event reveals is recorded in `billing_customers`. Account deletion deletes all of them at the provider first

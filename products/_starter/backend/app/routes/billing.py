@@ -3,18 +3,19 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import time
 import uuid
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
-from sqlalchemy import delete, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
-from ..billing import LIMITED_PROVIDERS, OFFERS, PLANS, BillingUpdate, MockBilling, has_access, sign
+from ..billing import LIMITED_PROVIDERS, OFFERS, PLANS, BillingUpdate, MockBilling, has_access, refund_key, sign
 from ..db import get_db
 from ..deps import Current, owner, subscription_of, verified_owner
 from ..errors import AppError
@@ -30,6 +31,13 @@ INLINE_RETRY_MAX_ATTEMPTS = 3
 SWEEP_BACKOFF_CAP = timedelta(hours=24)
 # When a row's attempts reach this, log one CRITICAL line (the transition only); later failures log at WARNING.
 ESCALATE_AT = 10
+# T-182 (T-180 S2): the webhook's inline retry stops starting new rows once this many seconds are spent (a row can take
+# about 9 s); the sweep picks up the rest. Keeps the whole webhook well under a provider's patience.
+INLINE_RETRY_BUDGET_SECONDS = 5.0
+
+
+def _clock() -> float:
+    return time.monotonic()
 
 
 def cancel_backoff(attempts: int) -> timedelta:
@@ -225,6 +233,25 @@ def _apply_update(db: Session, update: BillingUpdate, provider: str, billing=Non
                 db.execute(delete(BillingEvent).where(BillingEvent.id == update.event_id))
                 db.commit()
                 raise AppError(503, "cancel_failed", "Could not cancel the extra subscription yet. Try again.") from error
+            # T-182 (T-179 M3): the extra subscription's first invoice was paid. Refund it. The key comes from the event
+            # id, so the redelivery after a failure cannot refund twice.
+            try:
+                refunded = billing.refund_latest_invoice(update.provider_ref, refund_key(update.event_id))
+            except Exception as error:
+                # Never log the provider's text (it can quote customer details): the ref is what an operator needs.
+                log.error("refund_owed: the extra subscription was cancelled but its payment could not be refunded "
+                          "(will be retried on redelivery; refund it by hand at the provider if this repeats)",
+                          extra={"tenant_id": str(update.tenant_id), "extra_subscription": update.provider_ref,
+                                 "error": error.code if isinstance(error, AppError) else type(error).__name__})
+                db.execute(delete(BillingEvent).where(BillingEvent.id == update.event_id))
+                db.commit()
+                raise AppError(503, "refund_failed", "Could not refund the extra subscription yet. Try again.") from error
+            if refunded:
+                log.warning("extra subscription refunded", extra={"tenant_id": str(update.tenant_id),
+                                                                  "extra_subscription": update.provider_ref})
+            else:
+                log.info("no paid invoice to refund for the extra subscription",
+                         extra={"tenant_id": str(update.tenant_id), "extra_subscription": update.provider_ref})
         return True
     tie_after_cancel = (update.occurred_at is not None and update.occurred_at == sub.last_event_at
                         and sub.status == "canceled" and update.status != "canceled" and not other_sub)
@@ -251,8 +278,11 @@ def _apply_update(db: Session, update: BillingUpdate, provider: str, billing=Non
     if update.provider_ref and update.starts_subscription:
         # A ref that becomes current is no longer a to-do (it may have a row from an earlier takeover): cancelling it
         # would cancel what the customer just paid for.
+        # T-182 (T-179 N1): only this tenant's row (or an orphan one whose tenant was deleted), never another tenant's.
         db.execute(delete(PendingCancel).where(PendingCancel.provider == provider,
-                                               PendingCancel.ref == update.provider_ref))
+                                               PendingCancel.ref == update.provider_ref,
+                                               or_(PendingCancel.tenant_id == update.tenant_id,
+                                                   PendingCancel.tenant_id.is_(None))))
     if old_ref and old_provider == provider:
         # T-175: write the to-do in the same transaction as the takeover, so a crash after the commit cannot lose it.
         # apply_update retries it right after this event (and again on the tenant's next event, or by the sweep).
@@ -320,8 +350,15 @@ def _dead_marker(provider: str, ref: str | None) -> str | None:
 
 def _record_pending_cancel(db: Session, tenant_id: uuid.UUID, provider: str, ref: str) -> None:
     """Remember that `ref` must be cancelled at the provider. One row per (provider, ref)."""
-    if db.scalar(select(PendingCancel.id).where(PendingCancel.provider == provider, PendingCancel.ref == ref)) is None:
+    owner_id = db.scalar(select(PendingCancel.tenant_id).where(PendingCancel.provider == provider,
+                                                               PendingCancel.ref == ref))
+    exists = db.scalar(select(PendingCancel.id).where(PendingCancel.provider == provider, PendingCancel.ref == ref))
+    if exists is None:
         db.add(PendingCancel(tenant_id=tenant_id, provider=provider, ref=ref))
+    elif owner_id is not None and owner_id != tenant_id:
+        # T-182 (N1): (provider, ref) is unique, so another tenant's row cannot be duplicated; never adopt or touch it.
+        log.error("pending cancel for this subscription already belongs to another tenant: left alone",
+                  extra={"tenant_id": str(tenant_id), "old_subscription": ref})
 
 
 def _record_failed_attempt(db: Session, row: PendingCancel, error: Exception) -> int | None:
@@ -329,7 +366,9 @@ def _record_failed_attempt(db: Session, row: PendingCancel, error: Exception) ->
     T-180 (T-179 M2): if the commit fails (Postgres ended the idle transaction while the provider hung, 25P03, or the
     connection dropped), the lock is gone too. Roll back, open a fresh transaction, re-read the row and count the attempt
     there, so the backoff and the CRITICAL escalation keep working. A second failure propagates (the sweep logs it)."""
-    row_id, message = row.id, f"{type(error).__name__}: {error}"[:500]
+    # T-182 (T-179 N4): a code or a class name only, never message text (it could quote the provider's reply).
+    row_id = row.id
+    message = (error.code if isinstance(error, AppError) else type(error).__name__)[:500]
     try:
         row.attempts = (row.attempts or 0) + 1
         row.last_error = message
@@ -407,8 +446,43 @@ def retry_pending_cancels(db: Session, tenant_id: uuid.UUID, provider: str, bill
                                                     PendingCancel.provider == provider,
                                                     PendingCancel.attempts < INLINE_RETRY_MAX_ATTEMPTS)
                      .order_by(PendingCancel.created_at)).all()
+    started = _clock()
     for row_id in ids:
+        if _clock() - started >= INLINE_RETRY_BUDGET_SECONDS:  # T-182 (T-180 S2): the sweep does the rest
+            log.info("inline pending-cancel retry budget spent; the sweep continues")
+            break
         attempt_pending_cancel(db, row_id, billing)
+
+
+DELETION_CANCEL_BUDGET_SECONDS = 20.0
+
+
+def settle_pending_cancels(db: Session, tenant_id: uuid.UUID, provider: str, billing) -> bool:
+    """T-182 (T-179 L1): account deletion. Try every pending cancel of this tenant for `provider` now (whatever its attempt
+    count or backoff: the owner is waiting), with the same code path and per-cancel budget as the sweep. True when none is
+    left; False when one is still live (it failed, another worker holds it, or the total budget was spent), in which case
+    the caller must keep the account: deleting it would leave the old subscription billing with nobody to tell."""
+    ids = db.scalars(select(PendingCancel.id).where(PendingCancel.tenant_id == tenant_id,
+                                                    PendingCancel.provider == provider)
+                     .order_by(PendingCancel.created_at)).all()
+    db.commit()  # no transaction open while the provider is called
+    started = _clock()
+    for row_id in ids:
+        if _clock() - started >= DELETION_CANCEL_BUDGET_SECONDS:
+            break
+        try:
+            attempt_pending_cancel(db, row_id, billing)
+        except Exception:
+            db.rollback()
+            log.error("pending cancel could not be processed during account deletion",
+                      extra={"tenant_id": str(tenant_id)}, exc_info=True)
+    left = db.scalars(select(PendingCancel.ref).where(PendingCancel.tenant_id == tenant_id,
+                                                      PendingCancel.provider == provider)).all()
+    db.rollback()
+    for ref in left:
+        log.error("account deletion refused: a replaced subscription could not be cancelled",
+                  extra={"tenant_id": str(tenant_id), "old_subscription": ref})
+    return not left
 
 
 def _fill_period_end(db: Session, update: BillingUpdate, billing) -> None:
