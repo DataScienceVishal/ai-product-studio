@@ -18,10 +18,10 @@ const BASE = process.env.E2E_BASE_URL || "http://127.0.0.1:4173";
     await page.getByLabel("Work email").fill(`owner+${Date.now()}@e2e.test`);
     await page.getByLabel("Password").fill("a long enough passphrase");
     await page.getByRole("button", { name: "Create account" }).click();
-    await page.getByText("Free trial:").waitFor();
-
-    step("the dashboard shows tender packs and no prices, plans or billing link");
     await page.getByRole("heading", { name: "Tender packs" }).waitFor();
+
+    step("the dashboard shows tender packs and no trial banner, prices, plans or billing link");
+    assert.equal(await page.getByText("Free trial:").count(), 0);  // billing is off in the demo, so no trial countdown
     assert.equal(await page.getByRole("link", { name: "Billing" }).count(), 0);
     assert.doesNotMatch(await page.locator("body").innerText(), /£|upgrade|pricing|per month/i);
     assert.equal(await page.evaluate(async () => (await fetch("/api/billing/plans")).status), 404);

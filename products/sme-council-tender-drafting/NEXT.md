@@ -1,3 +1,24 @@
+# STATUS (T-192 part 2: Playwright e2e of the 7 SPEC steps) - PASSES on ScriptedFakeAI, awaiting reviewer
+
+Branch `p/sme-council-tender-drafting/T-192-e2e`. Not merged. No live model calls.
+
+## What works
+`app/tests/e2e/tender_flow.cjs` passes all 7 steps in chromium: sign up/in, create pack + upload tender DOCX, extract + confirm checklist,
+upload 2 evidence files, draft, claim check (verdict Supported shown), coverage + sign-off, export Word (download saved, zip valid, python-docx
+reads it, header "Draft prepared with AI assistance; reviewed by Alex Reviewer ...", body has the answer text and [E-n]).
+- `app/tests/e2e/e2e_app.py`: ASGI app = normal `create_app(ai=ScriptedFakeAI())`. Needed because `AI_PROVIDER=fake` builds the plain `FakeAI`,
+  which returns prose and makes every tender task fail `ai_invalid_output`. Lives under tests/, no production route or hook added.
+- `app/scripts/e2e.sh`: starts that app with `AI_WORKER_THREADS=2`, writes fixtures (`tests/e2e/make_fixtures.py`), runs tender_flow first, then core_flow.
+- Fixtures are shaped for ScriptedFakeAI's heuristics (one passage per evidence file, no full stop, no shared words between topics).
+
+## Fixed (run 6986)
+- `app/tests/e2e/core_flow.cjs` waited for "Free trial:", which never shows with billing off. It now waits for the Tender packs heading and
+  asserts the trial banner is absent. `scripts/e2e.sh` exits 0: tender flow 7/7 and core flow both PASS. Backend 1192 passed, vitest 232, tsc clean.
+
+## Run it
+`cd app && PYTHON=python3.13 NODE_PATH=/opt/node-tools/node_modules bash scripts/e2e.sh` (needs Postgres role studio/studio; creates db starter_e2e;
+ports 8000 and 4173 free; uses the pre-installed playwright via NODE_PATH, no `playwright install`).
+
 # STATUS (T-192, slice S8 part 1: Word export, reopen) - code done, awaiting reviewer
 
 Branch `p/sme-council-tender-drafting/T-192` (off main). Not merged. No live model calls.
