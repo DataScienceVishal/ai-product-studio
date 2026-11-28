@@ -221,7 +221,7 @@ Payment is monthly in arrears within 30 days. The Trust may terminate on 3 month
 
 ## Appendix 1: Site List Summary
 
-This summary groups sites by type. Some buildings hold more than one monitored system, so the 19 alarm sites and 11 CCTV sites in section 2 are counted per system, not per building. A full asset list is issued to the successful bidder at mobilisation.
+This summary groups sites by type. Some buildings hold more than one monitored system, so the 19 alarm sites and 11 CCTV sites in section 3.2 are counted per system, not per building. A full asset list is issued to the successful bidder at mobilisation.
 
 | Category | Sites | CCTV cameras | Notes |
 |---|---|---|---|

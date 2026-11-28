@@ -156,7 +156,7 @@ Periodic work will be programmed in advance and agreed with the Contract Manager
 
 ## 2.5 Public conveniences
 
-The Contractor will clean and inspect each public convenience at least once daily, and twice daily for the six highest-use sites identified in Appendix A. Each visit includes:
+The Contractor will clean and inspect each public convenience at least once daily, and twice daily for the five highest-use sites identified in Appendix A. Each visit includes:
 
 1. Inspection for damage, blockage, graffiti, needles or other hazards, reporting any hazard immediately to the Council's duty officer.
 2. Cleaning and disinfection of all pans, urinals, basins, taps, hand dryers, fittings, walls and doors.

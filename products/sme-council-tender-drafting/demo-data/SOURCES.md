@@ -22,16 +22,16 @@ Sources: `demo-data/pack-sources/S*.md` (Markdown), built to `demo-data/packs/S*
 
 Roles by the SPEC rule in table order (also in `demo-data/packs/manifest.json`): demo = the last pack of each sector (S04, S08, S12); held-out = the other 9; held-out drafting packs = the first of each sector (S01, S05, S09), each with at least 15 scored questions.
 
-| Pack | Sector | File | Pages (app parser) | Source SHA-256 (first 16) | Role |
+| Pack | Sector | File | Pages (app parser) | SHA-256 of the .md source (first 16) | Role |
 |---|---|---|---|---|---|
-| S01 | Cleaning | `S01-cleaning-civic-offices-conveniences.docx` | 13 | 5be6d8dbb1187aca | held-out (drafting) |
+| S01 | Cleaning | `S01-cleaning-civic-offices-conveniences.docx` | 13 | 58b843c69854e924 | held-out (drafting) |
 | S02 | Cleaning | `S02-cleaning-leisure-centre.docx` | 8 | 10eb9a2de6e7a9e0 | held-out |
 | S03 | Cleaning | `S03-cleaning-academy-trust-schools.docx` | 9 | 5c4916970215d6d8 | held-out |
 | S04 | Cleaning | `S04-cleaning-halls-and-toilets.docx` | 7 | 0f9d2b91c97067e6 | demo |
 | S05 | Security | `S05-security-council-guarding-patrol.docx` | 15 | e2ddb3231d2d9190 | held-out (drafting) |
 | S06 | Security | `S06-security-housing-concierge-estate.docx` | 10 | a053323cdf2f9a77 | held-out |
 | S07 | Security | `S07-security-college-events-stewarding.docx` | 10 | 4c69e0f9a5ffd9ab | held-out |
-| S08 | Security | `S08-security-trust-cctv-keyholding.docx` | 10 | 7525283aa72c8fcd | demo |
+| S08 | Security | `S08-security-trust-cctv-keyholding.docx` | 10 | ca797282faec1485 | demo |
 | S09 | Grounds | `S09-grounds-brackenholt-town.docx` | 13 | ca3bd93ce7f697a4 | held-out (drafting) |
 | S10 | Grounds | `S10-grounds-ashenmere-parish.docx` | 7 | 306262d9d2146487 | held-out |
 | S11 | Grounds | `S11-grounds-quillbrook-district.docx` | 9 | d49ea208a2065a75 | held-out |

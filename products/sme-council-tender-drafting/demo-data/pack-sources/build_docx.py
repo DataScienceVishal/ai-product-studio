@@ -139,13 +139,22 @@ def build(src: Path, dest: Path) -> dict:
             on_page = 0
 
     total = 0
-    for kind, payload in _blocks(src.read_text(encoding="utf-8")):
+    blocks = list(_blocks(src.read_text(encoding="utf-8")))
+    for idx, (kind, payload) in enumerate(blocks):
         if kind == "pagebreak":
             if on_page:
                 page_break()
             continue
         n = _words(kind, payload)
-        if on_page and on_page + n > PAGE_WORDS and kind != "table":
+        need = n
+        if kind == "heading":  # keep a heading with the start of what follows it, never stranded at a page foot
+            j = idx + 1
+            while j < len(blocks) and blocks[j][0] == "heading":  # a run of headings stays together too
+                need += _words(*blocks[j])
+                j += 1
+            nxt = blocks[j] if j < len(blocks) else ("pagebreak", None)
+            need += min(_words(*nxt), 80) if nxt[0] not in ("pagebreak", "table") else 0
+        if on_page and on_page + need > PAGE_WORDS and kind != "table":
             page_break()
         if kind == "heading":
             level, text = payload
