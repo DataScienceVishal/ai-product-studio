@@ -9,3 +9,5 @@ Runs add one line per notable result. The Desk clears this back to the header af
 
 - 2026-11-28 run 1639 (tender demo, T-214): evidence search improved and merged after a review caught that half the gain was fitted to the test answers. The fitted part was removed. Honest result: the search finds 73% of the right evidence in its top 8 (was 68%), 60% in the top 5 shown in drafts (was 52%). Still below our 80% target; follow-up T-216 queued with fixes that don't peek at the answers. Tests: 1268 pass.
 - 2026-11-28 run 1639 (tender demo, T-216 slice 1): an evidence-ranking fix merged (reviewer PASS). It raises the share of the right evidence found to 74.5% in the top 8 and 62.6% in the top 5. That is still below the 80% target, so more T-216 work is queued. Tests: 1271 pass.
+
+- Run 111d (T-216 slice 2, tender drafting): retrieval scoring hardened. A question naming many acronyms can no longer push a weak passage to the top, and the "no evidence" floor can no longer be cleared by the boost alone. Merged after reviewer PASS with 1275 tests green. Recall unchanged at 0.745 (still below the 0.8 target); next slice tries more passages per draft and a rerank.
