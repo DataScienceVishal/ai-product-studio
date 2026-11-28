@@ -46,3 +46,24 @@ There is one condition before merge: regenerate `eval/results/retrieval.json` (s
 3. **Weak test assertion.** In `test_runner_on_the_real_library_numbers_passages_like_the_keys` (tests/test_tender_retrieval_eval.py, last runner test), `1 <= n <= emap["e"] + 400` bounds almost nothing, and `len(got) > 5` depends on how many files match one first80 query. Asserting `all(1 <= n <= 32 for n in got)` would actually pin the "E-n = file n" numbering the labels rely on.
 4. **Stale docstrings.** The test module docstring says "skipped until qa commits ... retrieval_labels.json", but the file is now committed. The `retrieval_diagnostic` docstring says "as draft and the retrieve route call it". The `/search` route at `routes/tender.py:118` uses defaults, which happen to match, and the `/evidence` route uses k=5. Make the docstring precise.
 5. **Overwrites without labels.** `main` writes `eval/results/retrieval.json` with no labels hash or timestamp. Add `labels_sha256` so a stale results file is detectable. That would have caught M1.
+
+## Freeze commit (8e0c647): PASS
+
+Reviewed with `git show HEAD`. It changes EVAL.md, `test_tender_eval_keys.py`, `eval/keys/FROZEN.sha256` and the `eval/keys/README.md` freeze note.
+
+### Evidence
+- `sha256sum -c eval/keys/FROZEN.sha256` (run from the product root) reports all 34 entries OK.
+- The manifest covers all 16 files in `eval/keys/` except itself, plus the `.docx` and source `.md` for each of the 9 `heldout` packs in `demo-data/packs/manifest.json`.
+- The key, retrieval and pack-key tests give 37 passed. The coordinator reports the full suite at 1263 passed, 1 skipped on this tree, and a mutation check of the test.
+- The test is sound. It fails on any hash change and on any key file missing from the manifest, and it checks every held-out pack in both forms. `hashlib` is imported.
+
+### Correction to M1 (withdrawn)
+I re-scored the committed `eval/results/retrieval.json` `retrieved` lists against the current `retrieval_labels.json`. The result is identical to the stored output: pooled 0.6815, S04 0.657, S08 0.787, S12 0.608, primary hit rate 0.857; at k=5, recall 0.524 and primary 0.786; the same 18 misses. The file was written 32 seconds after the label fix commit (3cd3a5c), and it is consistent. The figures EVAL.md quotes are therefore correct, and M1 does not block. Regenerating it is still fine but not required.
+
+### EVAL.md
+The new retrieval row covers my nits 1 and 2. It says the query is the label text, not the parsed text, and that the primary hit rate is "any primary". Its numbers match the re-score above.
+
+### Nits (non-blocking, for the board)
+- `demo-data/packs/manifest.json` is not itself in FROZEN.sha256. If someone shrinks its `heldout` list, the test checks fewer packs, and the per-file hash check would still catch only the packs left listed. Add the manifest to FROZEN.sha256, or assert `len(heldout) == 9`.
+- The hashes are of raw bytes. A checkout with `core.autocrlf=true` would fail the test on `.md` and `.json` files. Add a `.gitattributes` with `eval/keys/** -text` and `demo-data/pack-sources/** -text` (or `eol=lf`).
+- The EVAL.md pre-registration row still says "Freeze commit: recorded ... once merged". Fill in the merge hash at merge time.
