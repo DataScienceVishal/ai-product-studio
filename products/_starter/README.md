@@ -33,7 +33,7 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 
 | What | Command | Where it runs |
 |---|---|---|
-| Backend unit and API tests (820 passed, 1 skipped) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
+| Backend unit and API tests (see the latest run in CI) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
 | Migrations match the models | `alembic upgrade head && alembic check` | every push |
 | Frontend unit tests (vitest, 203 passed in 7 files) | `cd frontend && npx vitest run` | every push (CI `frontend`) |
 | Frontend type check and build | `cd frontend && npm run build` | every push (CI `frontend`) |
@@ -141,6 +141,12 @@ because delayed payment methods can report `active` before the money arrives).
   the old one belongs to another provider (for example a mock one), the app logs "cancel it by hand" with the
   subscription id: an operator must cancel it in the provider dashboard. Failed cancels of a true duplicate answer 503, so
   Stripe redelivers and the cancel is retried. Cancel calls use an 8 s timeout and one retry.
+- **One Stripe customer per tenant (T-181).** Checkout sends `customer=<stored id>` when the tenant already has a customer
+  at the current provider, so every subscription shares one customer (no `customer_email` is sent then). Every customer a
+  billing event reveals is recorded in `billing_customers`. Account deletion deletes all of them at the provider first
+  (the stored one with its subscription, then the others); a failure answers 503 `billing_unavailable`, nothing is
+  deleted, and the list stays, so a retry finishes the job. A customer already recorded for another tenant is never
+  stored for this one.
 - **Trial and period end.** A failed first payment (a never-activated subscription going past_due, expired or deleted) does
   not end the free trial early. After a paid checkout the app reads the subscription from Stripe to store its period end;
   if that read fails, the next renewal event sets it.
