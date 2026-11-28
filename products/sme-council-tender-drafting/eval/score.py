@@ -9,6 +9,17 @@ Matching   : by `ref` first (normalised), then by text similarity >= 0.8, one-to
 
 Sentence splitting and word counting are the app's own (`app.tender.draft.split_sentences`, `count_words`), imported so the
 scorer cannot drift from what the product enforces. Everything else is stdlib.
+
+A2 (stated fields): for every matched question and mandatory item, each non-null key value of `word_limit`, `page_limit`,
+`marks` and `weight_pct` is a stated field and must equal the extracted value. Invented limits (T-213): a null key
+`word_limit` or `page_limit` means "this item has no limit of its own" (key rules 7-9), so a non-null extracted value there is
+a stated field that is wrong (it also adds `"invented": True` to its `wrong` row). A non-null extracted `marks` or
+`weight_pct` against a null key is not scored (the key leaves them null when the pack is not unambiguous) and is only listed
+under `invented_unscored`. Null against null is ignored.
+
+Deadline (T-213): report-only, never in BARS and never part of `pass`. `result["deadline"]` holds, per pack with a key deadline,
+whether an extracted deadline item (kind "deadline" or a non-empty `deadline` field) carries the key's day, month and year
+(`deadline_match`), and separately whether the time matches; pooled `found` and `total`.
 """
 from __future__ import annotations
 
@@ -25,6 +36,7 @@ SIM_THRESHOLD = 0.8
 REF_SIM_MIN = 0.5      # an equal ref also needs this much text similarity, so a wrong item with a reused number is not a match
 BARS = {"A1_recall": 0.90, "A1_precision": 0.90, "A2": 0.90, "A3": 0.85, "A4": 0.95, "A6a": 0.95, "A7": 1.0, "A8": 0.90}
 LIMIT_FIELDS = ("word_limit", "page_limit", "marks", "weight_pct")
+INVENTED_SCORED_FIELDS = ("word_limit", "page_limit")   # key null + extracted non-null counts as wrong; marks and weight are only listed
 
 
 def _norm(s) -> str:
@@ -65,13 +77,71 @@ def _is_mandatory(item: dict) -> bool:
     return item.get("kind") == "mandatory" or bool(item.get("pass_fail"))
 
 
+_MONTHS = {m: i for i, m in enumerate(
+    "january february march april may june july august september october november december".split(), 1)}
+_MONTHS.update({"sept": 9, **{m[:3]: i for m, i in list(_MONTHS.items())}})
+_MON = "|".join(sorted(_MONTHS, key=len, reverse=True))
+_D_ISO = re.compile(r"\b(\d{4})-(\d{2})-(\d{2})(?!\d)")
+_D_NUM = re.compile(r"\b(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{4})\b")
+_D_DMY = re.compile(rf"\b(\d{{1,2}})(?:st|nd|rd|th)?\s+(?:of\s+)?({_MON})\b\.?,?\s+(\d{{4}})\b", re.I)
+_D_MDY = re.compile(rf"\b({_MON})\b\.?\s+(\d{{1,2}})(?:st|nd|rd|th)?,?\s+(\d{{4}})\b", re.I)
+_T_HM = re.compile(r"(?<!\d)(\d{1,2}):(\d{2})(?!\d)")
+_T_AMPM = re.compile(r"(?<![\d:])(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\b", re.I)
+_T_NOON = re.compile(r"\b(?:noon|midday)\b", re.I)
+
+
+def parse_deadline_text(s) -> dict:
+    """Dates and times named in free text: {"dates": {(y, m, d)}, "times": {(h, min)}}. Handles "Friday 30 April 2027",
+    "30th of April 2027", "April 30, 2027", 2027-04-30T12:00, 30/04/2027 (day first), "12:00", "2pm", "12 noon", "midday"."""
+    s = str(s or "")
+    dates = set()
+    for y, mo, d in _D_ISO.findall(s):
+        dates.add((int(y), int(mo), int(d)))
+    for d, mo, y in _D_NUM.findall(s):
+        dates.add((int(y), int(mo), int(d)))
+    for d, mo, y in _D_DMY.findall(s):
+        dates.add((int(y), _MONTHS[mo.lower()], int(d)))
+    for mo, d, y in _D_MDY.findall(s):
+        dates.add((int(y), _MONTHS[mo.lower()], int(d)))
+    times = {(int(h), int(mi)) for h, mi in _T_HM.findall(s)}
+    for h, mi, ap in _T_AMPM.findall(s):
+        times.add(((int(h) % 12) + (12 if ap.lower() == "p" else 0), int(mi or 0)))
+    if _T_NOON.search(s):
+        times.add((12, 0))
+    return {"dates": dates, "times": times}
+
+
+def score_deadline(packs: list[dict]) -> dict:
+    """Report-only deadline check (never a bar). Per pack that has a key deadline: `found` when one extracted deadline item
+    holds the key's full date, `time_match` when one holds the key's time (None if the key has no time)."""
+    rows, found = [], 0
+    for p in packs:
+        kd = next((k for k in p["key"] if k.get("kind") == "deadline"), None)
+        if kd is None:
+            continue
+        want = parse_deadline_text(kd.get("text"))
+        cands = [g for g in p["got"] if g.get("kind") == "deadline" or str(g.get("deadline") or "").strip()]
+        texts = [f"{g.get('text') or ''} {g.get('deadline') or ''}".strip() for g in cands]
+        hit = time_hit = False
+        for t in texts:
+            have = parse_deadline_text(t)
+            if want["dates"] and want["dates"] <= have["dates"]:
+                hit = True
+                if want["times"] and want["times"] <= have["times"]:
+                    time_hit = True
+        rows.append({"pack": p["pack"], "key_text": kd.get("text"), "found": hit, "got": texts,
+                     "time_match": (time_hit if want["times"] else None) if hit else (False if want["times"] else None)})
+        found += hit
+    return {"packs": rows, "found": found, "total": len(rows)}
+
+
 def score_extraction(packs: list[dict]) -> dict:
     """packs: [{"pack", "key": [items], "got": [items]}]. Pooled A1 (questions), A2 (stated limits and marks on matched
     question and mandatory items) and A3 (mandatory items), plus per-pack figures and every miss."""
     q_key = q_got = q_hit = 0
     stated = correct = 0
     m_key = m_found = 0
-    shown_optional, per_pack, wrong_fields, missed_q = [], [], [], []
+    shown_optional, per_pack, wrong_fields, missed_q, invented_unscored = [], [], [], [], []
     for p in packs:
         key, got = p["key"], p["got"]
         kq = [k for k in key if k.get("kind") == "question"]
@@ -93,7 +163,14 @@ def score_extraction(packs: list[dict]) -> dict:
         for ks, gs, pairs in ((kq, gq, pairs_q), (km, got, pairs_m)):
             for i, j in pairs:
                 for f in LIMIT_FIELDS:
-                    if ks[i].get(f) is not None:
+                    if ks[i].get(f) is None and gs[j].get(f) is not None:
+                        if f in INVENTED_SCORED_FIELDS:   # a null key limit means "no limit of its own": an invented one is wrong
+                            stated += 1
+                            wrong_fields.append({"pack": p["pack"], "ref": ks[i].get("ref"), "field": f,
+                                                 "key": None, "got": gs[j].get(f), "invented": True})
+                        else:
+                            invented_unscored.append({"pack": p["pack"], "ref": ks[i].get("ref"), "field": f, "got": gs[j].get(f)})
+                    elif ks[i].get(f) is not None:
                         stated += 1
                         if gs[j].get(f) == ks[i].get(f):
                             correct += 1
@@ -108,9 +185,11 @@ def score_extraction(packs: list[dict]) -> dict:
         "A1": {"recall": recall, "precision": precision, "key": q_key, "extracted": q_got, "matched": q_hit,
                "pass": recall is not None and precision is not None and recall >= BARS["A1_recall"] and precision >= BARS["A1_precision"],
                "missed": missed_q},
-        "A2": {"score": a2, "stated": stated, "correct": correct, "pass": a2 is not None and a2 >= BARS["A2"], "wrong": wrong_fields},
+        "A2": {"score": a2, "stated": stated, "correct": correct, "pass": a2 is not None and a2 >= BARS["A2"], "wrong": wrong_fields,
+               "invented_unscored": invented_unscored},
         "A3": {"score": a3, "key": m_key, "found": m_found, "shown_optional": shown_optional,
                "pass": a3 is not None and a3 >= BARS["A3"] and not shown_optional},
+        "deadline": score_deadline(packs),
         "per_pack": per_pack,
     }
 
