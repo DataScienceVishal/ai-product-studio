@@ -7,7 +7,7 @@ record that commit hash below. After that, any change is a dated amendment, neve
 
 | Item | Value |
 |---|---|
-| Pre-registration commit (keys, trap set, fixture drafts, this file) | TBD |
+| Pre-registration commit (keys, trap set, fixture drafts, this file) | Keys and held-out packs frozen 2026-11-28 (T-206): `eval/keys/FROZEN.sha256` pins every file in `eval/keys/` and the 9 held-out packs (`.docx` and source `.md`); `tests/test_tender_eval_keys.py::test_pre_registered_files_are_frozen` fails on any change or unlisted key file. Freeze commit: recorded in the line below once merged. The configuration rows marked TBD here are frozen at L1, in a later commit recorded the same way |
 | Model and version | gpt-5-mini (2025-08-07), Azure deployment named in `AZURE_OPENAI_DEPLOYMENT_MINI`; reported model must start `gpt-5-mini` or the run stops |
 | API | Responses, strict `json_schema` |
 | Effort and output cap per task | extract low / 6,000; draft low / 4,000; shorten low / 1,500; claimcheck medium / 6,000 (starting values, final after tuning: TBD) |
@@ -15,6 +15,7 @@ record that commit hash below. After that, any change is a dated amendment, neve
 | Reasoning headroom | 0 (`eval/budget.json`) |
 | Prompt SHA-256 | from `python -m eval.run config` at the freeze: TBD |
 | Retrieval | k=8, at most 3 passages per document, score floor TBD (`RETRIEVAL_FLOOR`, 0 until L1 tuning) |
+| Retrieval diagnostic (not a bar) | `python -m eval.run retrieval` on a fresh seeded demo tenant: the app's `search_evidence` (same per-document cap, floor and tenant scoping as drafting) on each question in `eval/keys/retrieval_labels.json` (30 questions in S04, S08, S12; 2 are gaps), no model call. The query is the label's text (the pack's wording), not the extractor's parsed text, so it measures retrieval alone. `primary_hit_rate` counts a question as a hit if any of its primary passages is in the top k. Before tuning (2026-11-28, T-206): Recall@8 0.68 pooled (S04 0.66, S08 0.79, S12 0.61), primary hit rate 0.86; at the 5 passages the draft shows (`APP_PASSAGES`) recall 0.52, primary hit rate 0.79. Below the 0.8 trigger, so query expansion is the first L1 fix (DESIGN 4.2). Tuning may use these labels: the demo packs are tuning data |
 | Chunk size and overlap | `CHUNK_PAGES` and `OVERLAP_PAGES` in `app/tender/extract.py`: TBD at freeze |
 | Word-count rule | the app's own `count_words` (`app.tender.draft`), imported: `[E-n]` markers excluded, gap markers included, a token counts only if it holds a letter or digit (DESIGN 4.5) |
 | A1 and A2 matching | a question matches by `ref` (and a text similarity of at least 0.5, so a reused number on a different item is not a match), else by text similarity of at least 0.8 (difflib ratio on normalised text), one-to-one greedy; word limits, page limits, marks and weights must match exactly. Invented limits (T-213): where the key `word_limit` or `page_limit` is null and the extracted value is not, that field counts as stated and wrong (denominator +1, `wrong` row with `invented: true`); an extracted `marks` or `weight_pct` against a null key is not scored and is listed as `invented_unscored` |

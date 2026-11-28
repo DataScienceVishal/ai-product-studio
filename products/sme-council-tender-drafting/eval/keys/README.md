@@ -12,11 +12,8 @@
 E-numbers assume a fresh demo tenant seeded by `eval/seed.py`. seed.py skips `demo-data/evidence/README.md` (it lists the deliberate gaps and would leak the traps), so E-1 to E-32 are files 01 to 32.
 
 ## Rules
-- Keys are frozen at the pre-registration commit. Do not edit any file here after any live model run. A change after that is a dated amendment in SPEC.md, never a silent edit.
+- Keys are frozen at the pre-registration commit (T-206, 2026-11-28): `FROZEN.sha256` holds the SHA-256 of every file here and of the 9 held-out packs, and `tests/test_tender_eval_keys.py` fails if any of them changes or a key file is added without it. Do not edit any file here after any live model run. A change after that is a dated amendment in SPEC.md, never a silent edit.
 - `tests/test_tender_eval_keys.py` fails if the evidence or the chunker changes so that the numbering or passage text moves.
-
-## Still to come (once the tender packs exist, Q-20)
-- Answer keys for the 9 held-out packs.
 
 ## Definitions and scoring rules (pre-registered)
 - Seeded claim type `client`: an invented client (S03, S16), or a real library client credited with work it never had (the other 8). `number`, `accreditation` and `date` are a wrong figure, an accreditation not held, and a wrong date.
