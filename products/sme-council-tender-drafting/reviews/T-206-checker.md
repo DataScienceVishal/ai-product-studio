@@ -58,3 +58,28 @@ The rules are coherent and the 9 keys apply them consistently, apart from MF1-MF
 
 ## To reach PASS
 Fix MF1-MF3 in the keys. Record the MF4 decision in the README (and change `score.py` if option (a) is taken). Rerun `pytest app/backend/tests/test_tender_pack_keys.py`. A re-check would only need to look at those four items.
+
+## Re-check (after qa's fix commit on p/sme-council-tender-drafting/T-206)
+
+**Verdict: PASS for the keys, README rules and test.** MF4 has moved to board task T-213 and must be decided before the freeze. This PASS does not cover MF4.
+
+I read the current files directly. I had no shell, so I did not view `git diff HEAD~1` and did not run pytest.
+
+| Item | Now | Checked against | Result |
+|---|---|---|---|
+| MF1 S07 `6` word_limit | 400 | S07 .md l.211 "Word limit: 400." | fixed |
+| MF2 S05 `Q5` text | complete, ends "...and the reporting that follows." | S05 .md l.269, verbatim | fixed |
+| MF3 S06 deadline | "Tender submission deadline: 14:00 on Friday 23 April 2027" | rule 11; S06 .md l.31 | fixed |
+| N2 S06 `Q5` text | includes (a), (b) and "Describe the escalation steps and what is reported afterwards." | S06 .md l.162, verbatim | fixed |
+| Rule 1 | "never both (rule 19)"; now agrees with the test | — | fixed |
+| Rule 3 | exception for pass/fail reference rows (S03 PF11) | — | fixed |
+| Rule 6 | now covers pages (S03 4.3) | — | fixed |
+| Rule 17 | wrong S11 example removed ("S11 has no general per-question rule") | — | fixed |
+| Item order (README l.30) | rule now places pass/fail questions at their pack position (S05 Q11, S10 Q0) | key files | fixed, with nit R1 below |
+| N1 test spot limits | `test_spot_limits` asserts S07 6 = 400, S05 Q12 = 400, S02 3 = 500, S02 1 = 750, S09 2.1 = null, S06 Q8 = 1 page, S10 Q2 = 350, S05 Q11 = 150 | the pack lines in the review above | all 8 values agree with the pack text |
+
+No new errors were introduced in the items that changed.
+
+**Nit R1 (not blocking).** S01 `2.4` (a pass/fail question in Section 5, printed between 2.3 and 3.1) still sits after M10 in the S01 key. The revised README l.30 says such questions sit at their pack position. Either move it or add S01 2.4 to the exceptions. Order does not affect scoring.
+
+**Still open: T-213.** Two decisions are needed before the keys are frozen. First, whether a limit the extractor reports where the key has none (null) counts as wrong under A2. Second, whether deadline items get scored. Until T-213 is decided, the keys should not be frozen.
