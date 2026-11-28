@@ -30,7 +30,7 @@ import json
 import logging
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import delete, exists, or_, select
+from sqlalchemy import any_, delete, exists, or_, select
 from sqlalchemy.orm import Session
 
 from .ai import release_stale_reservations
@@ -52,7 +52,7 @@ def _purgeable_evidence(now: datetime):
     (an exports row is the audit; the appendix text it was built from stays while any export may cite it)."""
     cited_by_export = exists().where(
         EvidenceItem.document_id == SourceDocument.id, EvidenceItem.tenant_id == SourceDocument.tenant_id,
-        Draft.tenant_id == EvidenceItem.tenant_id, Draft.cited_ids.any(EvidenceItem.display_no),
+        Draft.tenant_id == EvidenceItem.tenant_id, EvidenceItem.display_no == any_(Draft.cited_ids),
         Requirement.tenant_id == Draft.tenant_id, Requirement.id == Draft.requirement_id,
         exists().where(ExportRecord.tenant_id == Requirement.tenant_id, ExportRecord.pack_id == Requirement.pack_id))
     return (SourceDocument.kind == "evidence", SourceDocument.deleted_at.is_not(None),

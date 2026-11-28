@@ -1,3 +1,32 @@
+# STATUS (T-199 + T-201 review leftovers) - code done, awaiting reviewer
+
+Branch `p/sme-council-tender-drafting/T-199` (off main). Not merged. No migrations (no `alembic check` needed), no frontend change, no live model calls.
+
+## Per item
+T-199
+- a. already done, evidence: `tests/test_tender_claimcheck.py::test_upload_extract_draft_and_check_fit_the_30k_trial_day` (every call fits, a 2+ question pack fits one trial day). DESIGN.md section 4.3 now carries the calculation and the refusal behaviour.
+- b. already done, evidence: sign-off and edit lock the pack FOR UPDATE (`routes/tender.py` `_lock_pack`; `tests/test_tender_export.py::test_signoff_takes_the_pack_row_lock`, `tests/test_tender_review.py::test_an_edit_racing_a_sign_off_waits_for_it_and_is_refused`); draft save reads the pack FOR SHARE (`tender/draft.py` `draft_handler`, `test_tender_draft.py` signed-between-queue-and-run test).
+- c. done: DESIGN.md "8 passages" -> 5 (`APP_PASSAGES`) in the flow diagram, the sizing bullet (reservation about 11.3k) and the `draft` task table.
+- d. already done, decision confirmed: an edit after ready moves the pack to `drafting` (`reopen_pack`) and the draft is unchecked, so `pack_checked` is false. Test `test_tender_claimcheck.py::test_an_edit_makes_the_draft_unchecked_and_does_not_leave_a_ready_pack_ready`, and `test_adding_or_editing_a_requirement_reopens_a_ready_pack`.
+- e. already done: `RETRIEVAL_FLOOR = 0.0` in `tender/draft.py` (tuned in L1).
+- f. nits 5-10 of reviews/T-189-review.md:
+  - 5 done: `redraft` takes the queue advisory lock before counting the daily redrafts.
+  - 6 DEFERRED: skipping a duplicate version would change the redraft limit semantics (an identical redraft would never count, the 5-a-day test relies on versions); needs a product decision, harmless as is (cost is zero on a cache hit).
+  - 7 done: `hashtextextended` in the extract, draft and check routes (no `hashtext` left in `app/`).
+  - 8 done: `GET /requirements/{id}/draft` selects only version, author, word_count, created_at for the list and loads the text of the chosen version only. Test `test_get_draft_returns_the_chosen_version_text_and_a_light_version_list`.
+  - 9 done: a failing draft handler attaches the tokens used so far (`AppError.task_tokens`), `runner.run_one` records them. Test `test_tokens_used_before_a_failure_are_kept_on_the_task`.
+  - 10 done: `split_sentences` keeps "Ltd. and", "e.g. 9001", "No. 5" together (lowercase or digit follower). Test `test_trimming_does_not_split_on_abbreviations`. Known limit: an abbreviation followed by a capitalised word still splits.
+
+T-201
+- 7. done: `extract._is_heading` refuses a one-line block that opens with a question verb. Test `test_tender_extract.py::test_an_unnumbered_one_line_previous_question_is_not_taken_as_the_next_heading`.
+- 8. already done: `queue_check` takes the pack row FOR UPDATE (`routes/tender.py`, `test_tender_review.py::test_queue_check_still_works_with_the_pack_row_locked`); sign-off locks too (see b).
+- 9. done, no code change: EVAL.md "Threat notes" lists the sentence-initial one-word name and the no-figure/no-name residual for L1.
+- 10. done: `maintenance.purge` deletes soft-deleted evidence documents (passages cascade) 90 days after `deleted_at` unless a pack with an exports row has a draft citing one of their passages (`EVIDENCE_PURGE_DAYS`, key `soft_deleted_evidence`); DATA.md rows updated. Tests in `tests/test_tender_t199.py`: `test_purge_removes_evidence_deleted_over_90_days_ago_and_its_passages`, `..._keeps_recently_deleted_and_live_evidence`, `..._keeps_evidence_cited_by_an_exported_pack`, `..._removes_aged_evidence_when_the_pack_was_never_exported`.
+- 11. already done, verified: sign-off and export both call `claimcheck.export_check` server-side (`routes/tender.py`; `test_tender_review.py::test_signoff_reruns_the_gate_on_the_server_even_if_the_pack_says_ready`, `test_tender_export.py::test_export_refused_without_sign_off` and the tamper tests).
+
+## Verify
+`cd app/backend && TEST_DATABASE_URL=postgresql+psycopg://studio:studio@localhost:5432/starter_test python3.13 -m pytest -q -o addopts=""` (fresh Postgres: role studio/studio superuser, db starter_test; `pip install -r requirements-dev.txt`). New tests: `tests/test_tender_t199.py`.
+
 # STATUS (T-204, T-192 review follow-ups S1, S2, S4, S5, S8 + fragile test) - code done, awaiting reviewer
 
 Branch `p/sme-council-tender-drafting/T-204` (off main). Not merged. No migrations, no frontend change, no live model calls.

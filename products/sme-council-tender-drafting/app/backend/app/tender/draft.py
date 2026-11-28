@@ -76,6 +76,9 @@ def count_words(text_: str) -> int:
     return sum(1 for w in _CITE.sub(" ", text_).split() if any(c.isalnum() for c in w))
 
 
+_ABBREV = re.compile(r"(?:\b(?:Ltd|Plc|Inc|Co|Corp|No|Nos|Mr|Mrs|Ms|Dr|St|Ref|Approx|Est|vs|etc|incl|min|max)|\b(?:e\.g|i\.e))\.$", re.I)
+
+
 def split_sentences(text_: str) -> list[str]:
     """Sentences, keeping a trailing [E-n] with its sentence and a [NEEDS FIRM INPUT: ...] marker whole."""
     out: list[str] = []
@@ -83,6 +86,12 @@ def split_sentences(text_: str) -> list[str]:
         if not seg:
             continue
         if out and out[-1].count("[") > out[-1].count("]"):  # inside a [NEEDS FIRM INPUT: ...] marker
+            out[-1] += " " + seg
+            continue
+        if out and _ABBREV.search(out[-1]) and seg[:1].isalnum() and not seg[:1].isupper():  # "Ltd. and", "e.g. cleaning" (T-189 nit 10)
+            out[-1] += " " + seg
+            continue
+        if out and re.search(r"\bNo\.$", out[-1]) and seg[:1].isdigit():  # "No. 5"
             out[-1] += " " + seg
             continue
         lead = re.match(r"(?:\[E-\d+\]\s*)+", seg)
@@ -252,8 +261,12 @@ def draft_handler(sessions: sessionmaker, task: AITask, heartbeat, provider) -> 
         with sessions() as db:
             hits = search_evidence(db, task.tenant_id, rtext, limit=APP_PASSAGES, min_score=RETRIEVAL_FLOOR)
             db.rollback()
-        d = draft_answer(rtext, limit, marks, hits, task.tenant_id, budget, provider=provider, sessions=sessions,
-                         before_call=heartbeat)
+        try:
+            d = draft_answer(rtext, limit, marks, hits, task.tenant_id, budget, provider=provider, sessions=sessions,
+                             before_call=heartbeat)
+        except AppError as error:  # keep the tokens the drafts already done used, for ai_tasks reporting (T-189 nit 9)
+            error.task_tokens = (tin, tout)
+            raise
         tin, tout = tin + d.input_tokens, tout + d.output_tokens
         with sessions() as db:
             # Sign-off is a digest of the draft hashes, so no version may be written once the pack is signed or exported.

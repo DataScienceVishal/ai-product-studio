@@ -28,6 +28,14 @@ record that commit hash below. After that, any change is a dated amendment, neve
 | Scored run | one run; `eval/results/<phase>.jsonl` and the ledger are committed after every phase; an infrastructure failure resumes from the first unfinished item; a live phase whose ledger has rows but whose results file is missing is refused |
 | Tuning data | the 3 demo packs and the 10-question dev trap set only; never the held-out packs |
 
+## Threat notes (known residuals, to be decided in L1 tuning)
+
+Recorded in T-201 item 9. No code was changed for these; they are decided with real model output in L1.
+
+1. **Sentence-initial one-word names still pass the quote check.** A claim that opens with a single capitalised name ("Tesco relies on us for ...") has no second capitalised word, so the two-capitalised-word name detector does not fire, and a short quote that is in the cited passage can support it. A checker that invents or mis-attributes a one-word client name can therefore mark it `supported`. Options for L1: treat a sentence-initial capitalised word that is not in a stop list as a name, or require the name to appear in the quote.
+2. **The no-figure, no-name residual.** A claim with no number, code or capitalised name (for example "We have never lost a contract") has nothing for the pure rules to check, so its verdict is the model's. The rules only downgrade; they cannot upgrade or catch a false `supported` here. A5 (human sample of cited claims) and A6a (seeded claims) measure this residual; L1 decides whether to add a rule for absolute words (never, always, all, every) that need a quote containing them.
+3. Both residuals fail toward a human reviewer: sign-off still requires the person to accept the responsibility statement, and nothing exports without it.
+
 ## Results
 
 TBD (L2). Per bar: value, bar, pass or fail, with the A6a misses by type and the model-checking-a-model caveat (SPEC section 6).

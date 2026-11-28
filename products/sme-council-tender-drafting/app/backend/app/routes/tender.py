@@ -253,7 +253,7 @@ def queue_extract(pack_id: uuid.UUID, me: Current = Depends(current), db: Sessio
     pack = get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
     if pack.status not in ("uploaded", "extracting", "review"):  # drafting and later: the checklist is confirmed
         raise AppError(409, "pack_locked", "The checklist for this pack is already confirmed.")
-    db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"), {"k": f"extract:{pack_id}"})
+    db.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:k, 0))"), {"k": f"extract:{pack_id}"})
     live = db.scalar(scoped(AITask, me.tenant.id).where(AITask.pack_id == pack_id, AITask.kind == "extract",
                                                         AITask.status.in_(("queued", "running"))))
     if live is not None:
@@ -367,7 +367,7 @@ def _question(db: Session, me: Current, req_id: uuid.UUID) -> tuple[Requirement,
 
 
 def _queue_draft(db: Session, me: Current, pack: TenderPack, target: uuid.UUID | None) -> dict:
-    db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"), {"k": f"draft:{pack.id}:{target}"})
+    db.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:k, 0))"), {"k": f"draft:{pack.id}:{target}"})
     live = db.scalar(scoped(AITask, me.tenant.id).where(
         AITask.pack_id == pack.id, AITask.kind == "draft", AITask.status.in_(("queued", "running")),
         AITask.target_id.is_(None) if target is None else AITask.target_id == target))
@@ -399,6 +399,8 @@ def redraft(req_id: uuid.UUID, me: Current = Depends(current), db: Session = Dep
                        else "This pack is already signed off.")
     if r.status != "confirmed" or r.kind != "question":
         raise AppError(409, "not_draftable", "Only a confirmed question can be drafted.")
+    # Take the queue lock before counting, so two concurrent redrafts cannot both pass the limit (T-189 nit 5).
+    db.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:k, 0))"), {"k": f"draft:{pack.id}:{req_id}"})
     since = datetime.now(timezone.utc) - timedelta(days=1)
     made = db.scalar(select(func.count()).select_from(Draft).where(
         Draft.tenant_id == me.tenant.id, Draft.requirement_id == req_id, Draft.author == "ai", Draft.created_at > since))
@@ -425,10 +427,13 @@ def requirement_evidence(req_id: uuid.UUID, me: Current = Depends(current), db: 
 def get_draft(req_id: uuid.UUID, version: int | None = Query(default=None, ge=1), me: Current = Depends(current),
               db: Session = Depends(get_db)):
     req, _ = _question(db, me, req_id)
-    rows = list(db.scalars(scoped(Draft, me.tenant.id).where(Draft.requirement_id == req_id).order_by(Draft.version.desc())))
-    chosen = next((d for d in rows if version is None or d.version == version), None)
-    if version is not None and chosen is None:
+    # Only the small columns for the version list; the text is loaded for the chosen version alone (T-189 nit 8).
+    rows = db.execute(select(Draft.version, Draft.author, Draft.word_count, Draft.created_at).where(
+        Draft.tenant_id == me.tenant.id, Draft.requirement_id == req_id).order_by(Draft.version.desc())).all()
+    want = next((v.version for v in rows if version is None or v.version == version), None)
+    if version is not None and want is None:
         raise AppError(404, "not_found", "That version doesn't exist.")
+    chosen = db.scalar(scoped(Draft, me.tenant.id).where(Draft.requirement_id == req_id, Draft.version == want)) if want else None
     return {"requirement": req_out(req), "draft": draft_out(chosen) if chosen else None,
             "versions": [{"version": d.version, "author": d.author, "word_count": d.word_count,
                           "created_at": d.created_at.isoformat()} for d in rows]}
@@ -467,7 +472,7 @@ def queue_check(pack_id: uuid.UUID, me: Current = Depends(current), db: Session 
     if pack.status not in _check.CHECK_PACK_STATES:
         raise AppError(409, "not_ready", "Confirm the checklist first." if pack.status in ("uploaded", "extracting", "review")
                        else "This pack is already signed off.")
-    db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"), {"k": f"check:{pack_id}"})
+    db.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:k, 0))"), {"k": f"check:{pack_id}"})
     live = db.scalar(scoped(AITask, me.tenant.id).where(AITask.pack_id == pack_id, AITask.kind == "claimcheck",
                                                         AITask.status.in_(("queued", "running"))))
     if live is not None:
