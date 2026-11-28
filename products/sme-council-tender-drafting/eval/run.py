@@ -149,19 +149,22 @@ def _extract_items(ctx: Context, names: list[str], passes: int = 1) -> list[Item
 
 
 DEMO_QUESTIONS_PER_PACK = 5      # T-221: draft + claim-check items per demo pack and pass (DESIGN 8.3 "extraction plus 5 questions")
-TUNING_QUESTIONS_PER_PACK = 3    # tuning_demo (T2) only: 3 packs x 3 passes x 3 questions keeps T2's worst case ($1.62) under the $2.00 tuning cap
+TUNING_QUESTIONS_PER_PACK = 2    # tuning_demo (T2) only: 3 packs x 3 passes x 2 questions keeps T1 + T2 worst case ($1.62) under the $2.00 tuning cap
 DEMO_QUESTIONS_FILE = "retrieval_labels.json"   # no demo-pack answer keys exist (keys are held-out only); qa's hand labels hold the
 #                                                 3 demo packs' real question refs and text, in pack order. Read only, nothing invented.
 
 
 def demo_questions(ctx: Context, pack: str, n: int = DEMO_QUESTIONS_PER_PACK) -> list[dict]:
     """The first n question items of a demo pack, from the frozen hand labels (ref and text as the pack prints them). The pack
-    prints no word limit in the labels, so none is passed (the draft uses the app default)."""
+    labels hold no limits, so each question's word_limit comes from eval/demo_word_limits.json (copied from the pack-source tables;
+    null for a shared, page or absent limit, as in the held-out keys)."""
     packs = _json(ctx, DEMO_QUESTIONS_FILE, "the demo packs' labelled questions").get("packs", {})
     items = packs.get(Path(pack).stem) or packs.get(pack)
     if not items:
         raise PhaseNotReady(f"no labelled questions for demo pack {pack} in {ctx.keys_dir / DEMO_QUESTIONS_FILE}")
-    return [{"id": f"{Path(pack).stem}:{i['ref']}", "question": i["text"], "word_limit": None} for i in items[:n]]
+    limits = json.loads((HERE / "demo_word_limits.json").read_text(encoding="utf-8"))["packs"].get(Path(pack).stem[:3], {})
+    return [{"id": f"{Path(pack).stem}:{i['ref']}", "question": i["text"], "word_limit": (limits.get(i["ref"]) or {}).get("word_limit")}
+            for i in items[:n]]
 
 
 def _draft_items(questions: list[dict], passes: int = 1) -> list[Item]:

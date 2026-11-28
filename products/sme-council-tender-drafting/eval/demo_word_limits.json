@@ -1,0 +1,71 @@
+{
+ "_doc": "Word limits of the demo packs' labelled questions (T-221 C1). Copied from the pack-source tables (demo-data/pack-sources/), not invented; a test checks each against the table text. Rule (same as the held-out keys, eval/keys/README.md rules 5, 7, 9): a limit printed with the question is its word_limit; a limit shared across several questions (S04 4.1-4.3) is null on each member; a combined limit inside one item (S08 Q5 parts a and b) is that item's word_limit; a page limit or no limit is null (the draft task takes words only). Not a frozen file.",
+ "packs": {
+  "S04": {
+   "4.1": {
+    "word_limit": null,
+    "printed": "Shared: 1,000 words in total across 4.1-4.3"
+   },
+   "4.2(a)": {
+    "word_limit": null,
+    "printed": "Shared: 1,000 words in total across 4.1-4.3"
+   },
+   "4.2(b)": {
+    "word_limit": null,
+    "printed": "Shared: 1,000 words in total across 4.1-4.3"
+   },
+   "4.3": {
+    "word_limit": null,
+    "printed": "Shared: 1,000 words in total across 4.1-4.3"
+   },
+   "4.4(a)": {
+    "word_limit": 400,
+    "printed": "400 words"
+   }
+  },
+  "S08": {
+   "Q1": {
+    "word_limit": 750,
+    "printed": "no more than 750 words"
+   },
+   "Q2": {
+    "word_limit": 750,
+    "printed": "no more than 750 words"
+   },
+   "Q3": {
+    "word_limit": 500,
+    "printed": "Words: 500"
+   },
+   "Q4": {
+    "word_limit": 400,
+    "printed": "Words: 400"
+   },
+   "Q5": {
+    "word_limit": 1000,
+    "printed": "1,000 words in total across parts (a) and (b)"
+   }
+  },
+  "S12": {
+   "1": {
+    "word_limit": null,
+    "printed": "Maximum 1 A4 page"
+   },
+   "2": {
+    "word_limit": null,
+    "printed": "Maximum 1 A4 page"
+   },
+   "3": {
+    "word_limit": null,
+    "printed": "No limit (within 12 sides)"
+   },
+   "4": {
+    "word_limit": null,
+    "printed": "Maximum 1 A4 page"
+   },
+   "5": {
+    "word_limit": 400,
+    "printed": "400 words"
+   }
+  }
+ }
+}

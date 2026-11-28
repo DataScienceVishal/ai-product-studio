@@ -805,7 +805,7 @@ def test_cache_is_cleared_before_repeat_passes_of_a_cacheable_provider(ctx, monk
     ctx.provider = type("Live", (ScriptedFakeAI,), {"cacheable": True})()
     (ctx.results_dir / "T2.jsonl").unlink()
     R.run_phase("T2", ctx)
-    assert len(cleared) == 36                                # 3 packs x 3 passes x (1 extract + 3 drafts), cleared before every item
+    assert len(cleared) == 27                                # 3 packs x 3 passes x (1 extract + 2 drafts), cleared before every item
     with ctx.sessions() as db:
         R.clear_ai_cache(ctx)
         assert db.scalar(select(func.count()).select_from(AICache).where(AICache.tenant_id == ctx.tenant_id)) == 0
@@ -1210,7 +1210,7 @@ def test_t1_plan_is_extract_plus_five_labelled_questions_of_the_first_demo_pack(
     assert R.DEMO_QUESTIONS_PER_PACK == 5 and R.DEMO_QUESTIONS_FILE == "retrieval_labels.json"
 
 
-@pytest.mark.parametrize("phase,size,drafts", [("T2", 3 * 3 * 4, 27), ("R1", 3 * 6, 15), ("R2", 6, 5)])
+@pytest.mark.parametrize("phase,size,drafts", [("T2", 3 * 3 * 3, 18), ("R1", 3 * 6, 15), ("R2", 6, 5)])
 def test_demo_plans_size_and_unique_ids(ctx, phase, size, drafts):
     plan = R.build_plan(phase, ctx)           # T2: 3 packs x 3 passes x (1 extract + 3 drafts); R1: 3 x (1 + 5); R2 = T1
     assert len(plan) == size and len({i.id for i in plan}) == size
@@ -1367,3 +1367,48 @@ def test_main_live_ai_unavailable_and_ai_rejected_exit_8_without_a_traceback(liv
         assert R.main(["T1", "--live"]) == 8
         err = capsys.readouterr().err
         assert "live phase stopped early" in err and "Traceback" not in err
+
+
+def _source_rows(stem):
+    src = next((R.PRODUCT / "demo-data" / "pack-sources").glob(f"{stem}-*.md")).read_text(encoding="utf-8")
+    rows = {}
+    for line in src.splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if line.startswith("|") and len(cells) >= 4:
+            rows[cells[0]] = cells
+    return rows
+
+
+@pytest.mark.parametrize("stem", ["S04", "S08", "S12"])
+def test_demo_word_limits_match_the_pack_source_tables(stem):
+    data = json.loads((R.HERE / "demo_word_limits.json").read_text())["packs"][stem]
+    rows = _source_rows(stem)
+    labels = json.loads((R.KEYS_DIR / "retrieval_labels.json").read_text())["packs"]
+    refs = [i["ref"] for p, items in labels.items() if p.startswith(stem) for i in items[:R.DEMO_QUESTIONS_PER_PACK]]
+    assert sorted(data) == sorted(refs)                       # exactly the questions the T1/R plans draft
+    for ref, v in data.items():
+        printed = rows[ref][-1]
+        assert v["printed"] == printed                        # the limit text is copied from the table, verbatim
+        nums = [int(x.replace(",", "")) for x in re.findall(r"\d[\d,]*(?=\s*words)|(?<=Words: )\d+", printed)]
+        if v["word_limit"] is None:
+            assert printed.startswith("Shared") or "page" in printed or printed.startswith("No limit")
+        else:
+            assert nums and v["word_limit"] == nums[0]
+
+
+def test_demo_questions_carry_the_printed_word_limits():
+    class C:
+        keys_dir = R.KEYS_DIR
+    assert [q["word_limit"] for q in R.demo_questions(C, "S08-security-trust-cctv-keyholding.docx")] == [750, 750, 500, 400, 1000]
+    assert [q["word_limit"] for q in R.demo_questions(C, "S04-cleaning-halls-and-toilets.docx")] == [None, None, None, None, 400]
+    assert [q["word_limit"] for q in R.demo_questions(C, "S12-grounds-hallowby-town.docx")] == [None, None, None, None, 400]
+
+
+def test_tuning_phase_turns_the_cache_off_during_the_run_and_restores_it(ctx, cfg, tmp_path, monkeypatch):
+    live = live_ctx(ctx, cfg, tmp_path)
+    live.provider = CountingLive()
+    live.provider.cacheable = True
+    seen = []
+    monkeypatch.setattr(R, "_run_item", lambda c, p, i: seen.append(c.provider.cacheable) or {})
+    R.run_phase("T1", live)
+    assert seen == [False] * 6 and live.provider.cacheable is True
