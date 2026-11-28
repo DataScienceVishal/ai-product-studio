@@ -113,7 +113,7 @@ def search_evidence(db: Session, tenant_id: uuid.UUID, question: str, *, limit: 
     BM25 so rare words count more than "describe" and "arrangements", then the must-have token boost and a per-document cap.
     `rank` is absolute: the BM25 score as a fraction of the most the question's terms could score (idf times k1+1, summed),
     so it is in (0, 1) and a weak match stays low. A code boost of 1.0 therefore always beats any rank. Year and acronym
-    tokens together add at most TOKEN_BOOST x the best candidate's rank (min(sum of matching weights, 1) x TOKEN_BOOST x best),
+    tokens together add at most TOKEN_BOOST x the best candidate's rank (min(number of matching year/acronym tokens, 1) x TOKEN_BOOST x best),
     so they reorder close candidates only. `min_score` (RETRIEVAL_FLOOR) tests `rank`, never the boosted score, so a relative
     boost cannot lift a weak search over the floor; a passage holding an asked-for code passes it regardless. Sorting is by
     score. Four statements per search."""

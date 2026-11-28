@@ -29,7 +29,7 @@ from .llm import AppBudget, TaskSpec, build_user, full_system, run_task
 log = logging.getLogger("app.tender.draft")
 
 GAP_TEXT = "[NEEDS FIRM INPUT: no evidence found for this question]"
-RETRIEVAL_FLOOR = 0.0          # minimum retrieval score; tuned in L1 (a hit below it counts as no evidence)
+RETRIEVAL_FLOOR = 0.0          # minimum retrieval rank (a code match passes regardless); tuned in L1 (a hit below it counts as no evidence)
 # App-path sizing (R3). Trial tenants have 30k tokens a day, and a reservation is input bytes + cap + headroom, so a
 # draft and its re-check must reserve at most 30k between them. The harness passes its own, larger limits.
 APP_PASSAGES = 5
