@@ -86,3 +86,33 @@ One must-fix: the evidence purge can delete evidence that an exported pack's ans
    only runs on aged soft-deleted docs. If drafts grow, a GIN index on `drafts.cited_ids` (and `outside_ids`) would serve it,
    and would also serve the `&&` query in `delete_document`.
 7. T-189 nit 6 is deferred with a stated reason. Agreed: it needs a product decision, not a code change.
+
+---
+
+## Re-review: 1ba2378 (diff 71206a3..1ba2378), 2026-11-28
+
+### Verdict: PASS
+
+**M1 closed.** The purge now protects a passage on the same evidence the export appendix uses: `cited_ids`, `outside_ids`,
+an `[E-n]` marker in the draft text (Postgres `~` with an exact `\[E-n\]`, so E-7 does not match E-77), and
+`Claim.cited_ids`. All of this is inside the exported-pack EXISTS, and every join keeps a tenant equality. My earlier repro
+(citation moved from `cited_ids` to `outside_ids` after export, doc soft-deleted 200 days ago) now gives
+`soft_deleted_evidence == 0`; on 71efe5d it gave 1. The new tests cover each path on its own (outside_ids, text marker
+only, claim citation only) and the negative case (nothing cites it, so it is purged). The two-tenant test checks that the
+numbers really collide and that only tenant B's document goes.
+
+**Other items:** `AppError.task_tokens` is declared on the class, and the runner reads it directly. The dead `No.` rule is
+removed (the abbreviation test still passes). `_is_heading` now treats a line as the previous question only when it starts
+with a request word and contains you/your/us.
+
+**Tests:** the touched files plus draft, AI, claim-check and export: 146 passed. Full backend: **1211 passed, 1 skipped**.
+
+### Non-blocking (heuristic edges of the narrowed heading rule, checked by hand)
+- False negative: a heading that addresses the bidder, such as "How you will deliver social value (max 300 words)" or "What we
+  need from you (max 300 words)", is rejected, so no limit is found (None). "How we deliver ..." and "Social value (max 300
+  words)" give 300 as expected.
+- The original T-201 case returns when the earlier question is impersonal: "Describe the proposed methodology in no more
+  than 200 words" is taken as a heading and gives 200 for the next question. "Provide details of your ..." is handled.
+- Both cases are rare. The user sees and confirms the limit at the checklist step, so they can correct it there. Record
+  both as known limits in EVAL.md and add them to the L1 extraction eval set. A sturdier rule would also count a line with
+  its own word-limit phrase followed by a question as a question. That is not needed for this merge.
