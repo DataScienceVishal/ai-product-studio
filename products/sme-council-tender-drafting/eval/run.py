@@ -148,6 +148,21 @@ def _extract_items(ctx: Context, names: list[str], passes: int = 1) -> list[Item
     return [Item(f"extract:{n}:p{i}", "extract", {"pack": n, "pass": i}) for i in range(passes) for n in names]
 
 
+DEMO_QUESTIONS_PER_PACK = 5      # T-221: draft + claim-check items per demo pack and pass (DESIGN 8.3 "extraction plus 5 questions")
+DEMO_QUESTIONS_FILE = "retrieval_labels.json"   # no demo-pack answer keys exist (keys are held-out only); qa's hand labels hold the
+#                                                 3 demo packs' real question refs and text, in pack order. Read only, nothing invented.
+
+
+def demo_questions(ctx: Context, pack: str, n: int = DEMO_QUESTIONS_PER_PACK) -> list[dict]:
+    """The first n question items of a demo pack, from the frozen hand labels (ref and text as the pack prints them). The pack
+    prints no word limit in the labels, so none is passed (the draft uses the app default)."""
+    packs = _json(ctx, DEMO_QUESTIONS_FILE, "the demo packs' labelled questions").get("packs", {})
+    items = packs.get(Path(pack).stem) or packs.get(pack)
+    if not items:
+        raise PhaseNotReady(f"no labelled questions for demo pack {pack} in {ctx.keys_dir / DEMO_QUESTIONS_FILE}")
+    return [{"id": f"{Path(pack).stem}:{i['ref']}", "question": i["text"], "word_limit": None} for i in items[:n]]
+
+
 def _draft_items(questions: list[dict], passes: int = 1) -> list[Item]:
     return [Item(f"draft:{q['id']}:p{i}", "draft", q) for i in range(passes) for q in questions]
 
@@ -171,7 +186,13 @@ def build_plan(phase: str, ctx: Context) -> list[Item]:
         return [Item(f"check:{d['id']}", "check", d) for d in _json(ctx, "fixture_drafts.json", "the 20 fixture drafts")]
     if builder in ("end_to_end_1", "end_to_end_3", "tuning_demo"):
         names = demo[:1] if builder == "end_to_end_1" else demo[:DEMO_PACKS]
-        return _extract_items(ctx, names, passes=3 if builder == "tuning_demo" else 1)
+        passes = 3 if builder == "tuning_demo" else 1
+        qs = [q for n in names for q in demo_questions(ctx, n)]
+        items: list[Item] = []
+        for i in range(passes):          # per pass: the packs' extraction, then the drafts (each runs the claim check)
+            items += [Item(f"extract:{n}:p{i}", "extract", {"pack": n, "pass": i}) for n in names]
+            items += [Item(f"draft:{q['id']}:p{i}", "draft", q) for q in qs]
+        return items
     raise PhaseNotReady(f"no plan for {phase}")
 
 
@@ -259,11 +280,9 @@ def _phase_rows(ctx: Context, phase: str) -> bool:
 def run_phase(phase: str, ctx: Context) -> dict:
     """Run a phase's plan. Finished items (in results/<phase>.jsonl) are skipped. A refused hold stops the phase cleanly.
     A failed item (the model's answer was invalid or truncated) is recorded with its error code and counts against the bar."""
-    from app.tender.llm import TaskFailed
-    from app.ai import AIUnavailable
     if phase not in PHASES:
         raise PhaseNotReady(f"unknown phase {phase!r}; known: {', '.join(PHASES)}")
-    if phase not in LIVE_PHASES and getattr(ctx.provider, "name", None) != "fake":
+    if phase not in LIVE_PHASES and (not ctx.dry or getattr(ctx.provider, "name", None) != "fake"):
         raise PhaseNotReady(live_refusal(phase))        # defence in depth: no scored or recording phase can reach a real model
     plan = build_plan(phase, ctx)
     if PHASES[phase].group == "scored":
@@ -275,6 +294,23 @@ def run_phase(phase: str, ctx: Context) -> dict:
     ctx.results_dir.mkdir(parents=True, exist_ok=True)
     path.touch(exist_ok=True)       # marks the phase as started: a live phase with ledger rows and no file is refused above
     done = {json.loads(l)["item"] for l in path.read_text(encoding="utf-8").splitlines() if l.strip()}
+    was_cacheable = getattr(ctx.provider, "cacheable", True)
+    # T-219 review S1: ai_cache is read before every call whatever the provider says, so a live phase clears it before every item
+    # (and tuning phases write nothing back), or a later item or phase could be answered with no ledger row and no cost measured.
+    live_clear = not ctx.dry
+    if live_clear and PHASES[phase].group == "tuning":
+        ctx.provider.cacheable = False
+    try:
+        return _run_plan(phase, ctx, plan, path, done, was_cacheable, live_clear)
+    finally:
+        if live_clear and PHASES[phase].group == "tuning":
+            ctx.provider.cacheable = was_cacheable
+
+
+def _run_plan(phase: str, ctx: Context, plan: list[Item], path: Path, done: set, was_cacheable: bool, live_clear: bool) -> dict:
+    from app.tender.llm import TaskFailed
+    from app.ai import AIUnavailable
+    from app.errors import AppError
     ran = skipped = failed = 0
     stopped = None
     cache_cleared = False
@@ -283,7 +319,7 @@ def run_phase(phase: str, ctx: Context) -> dict:
         if item.id in done:
             skipped += 1
             continue
-        if phase in CACHE_CLEAR_PHASES and getattr(ctx.provider, "cacheable", True):
+        if live_clear or (phase in CACHE_CLEAR_PHASES and was_cacheable):    # a live read of ai_cache happens whatever `cacheable` says
             clear_ai_cache(ctx)
             cache_cleared = True
         try:
@@ -302,6 +338,13 @@ def run_phase(phase: str, ctx: Context) -> dict:
             #                                         (tenant or DB lookup, plan) is infrastructure and propagates: the phase is fatal.
             result = {"error": getattr(e, "code", type(e).__name__)}
             failed += 1
+        except AppError as e:
+            if not str(getattr(e, "code", "")).startswith("ai_"):
+                raise                               # tenant, DB or plan errors are fatal, as before
+            # T-219 review S4: a provider error (an HTTP 400 is ai_rejected) stops the run cleanly. The hold was settled at the
+            # worst case by run_task, so the ledger is right; the item is not recorded and a resume retries it.
+            stopped = f"AI error {e.code}: {e.message}"
+            break
         with open(path, "a", encoding="utf-8") as f:
             f.write(json.dumps({"item": item.id, "result": result}, sort_keys=True, default=str) + "\n")
         ran += 1
