@@ -33,7 +33,7 @@ cd products/_starter/frontend && npm ci && npm run dev   # http://localhost:5173
 
 | What | Command | Where it runs |
 |---|---|---|
-| Backend unit and API tests (875 passed, 1 skipped at T-182) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
+| Backend unit and API tests (888 passed, 1 skipped at T-211) | `cd backend && .venv/bin/python -m pytest` | every push (CI `backend`) |
 | Migrations match the models | `alembic upgrade head && alembic check` | every push |
 | Frontend unit tests (vitest, 203 passed in 7 files) | `cd frontend && npx vitest run` | every push (CI `frontend`) |
 | Frontend type check and build | `cd frontend && npm run build` | every push (CI `frontend`) |
@@ -65,7 +65,7 @@ Run `python -m app.maintenance cancels` every few minutes or hourly (T-175): it 
 3. Delete the row: `DELETE FROM pending_cancels WHERE id = '<id>';`. Do this only after step 2, or the subscription keeps billing untracked.
 4. Tell the owner to delete the account again.
 
-**Refunds owed (T-210, T-182 S2/S3).** A duplicate subscription is cancelled and its first payment refunded. The log line `refund_owed` at ERROR means a refund did not happen and may need doing by hand at Stripe: `reason=no_paid_invoice` (no paid invoice found; Stripe is asked to redeliver for 24 h, then the event is acknowledged and the error stays in the log) or `error=billing_rejected` (Stripe refused the refund for good, for example a disputed charge; acknowledged, not retried).
+**Refunds owed (T-210, T-182 S2/S3).** A duplicate subscription is cancelled and its first payment refunded. The log line `refund_owed` at ERROR means a refund did not happen and may need doing by hand at Stripe: `reason=no_paid_invoice` (no paid invoice found; Stripe is asked to redeliver for 24 h, then the event is acknowledged and the error stays in the log) or `error=billing_rejected` (Stripe refused the refund for good, for example a disputed charge; acknowledged, not retried; only Stripe HTTP 400 and 402 count as a final refusal, while 409, 401, 403, 404, 429 and 5xx are retried by redelivery). The 24 h window is deliberate: an event with no timestamp counts as expired, and a delayed payment method (for example SEPA) that settles after the window ends as an ERROR `refund_owed` for the operator to refund by hand.
 
 Security findings and their status are in `SECURITY.md`; the code review is in `reviews/`.
 

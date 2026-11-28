@@ -4,6 +4,8 @@ from __future__ import annotations
 import logging
 import time
 
+import pytest
+
 from sqlalchemy import func, select
 
 from app import billing as billing_module
@@ -116,7 +118,7 @@ def test_permanent_refund_rejection_logs_refund_owed_with_code_and_acknowledges(
     client, _ = owner
 
     def rejected(ref, key):
-        raise AppError(502, "billing_rejected", "provider said: charge_disputed for card 4242")
+        raise AppError(502, "billing_rejected", "provider said: charge_disputed for card 4242", provider_status=400)
 
     app.state.billing.refund_latest_invoice = rejected
     with caplog.at_level(logging.ERROR, logger="app.billing"):
@@ -147,3 +149,64 @@ def test_stripe_no_paid_invoice_raises_but_a_free_invoice_returns_false():
         pass
     free = {"id": "in_0", "amount_paid": 0, "payment_intent": None}
     assert _stripe(_refund_handler(free, calls=[])).refund_latest_invoice("sub_2", "k") is False
+
+
+# ---- T-211: only 400/402 are permanent; an event without a timestamp is expired --------------------------------
+def _rejecting(status):
+    def rejected(ref, key):
+        raise AppError(502, "billing_rejected", "provider text 4242", provider_status=status)
+    return rejected
+
+
+def test_409_refund_rejection_is_transient_and_the_redelivery_refunds_once(owner, app, database, caplog):
+    client, _ = owner
+    billing = app.state.billing
+    real = billing.refund_latest_invoice
+    billing.refund_latest_invoice = _rejecting(409)
+    with caplog.at_level(logging.ERROR, logger="app.billing"):
+        assert _duplicate(client, app).status_code == 503
+    assert not _event_stored(database, "d2") and "4242" not in caplog.text
+    billing.refund_latest_invoice = real
+    assert _duplicate(client, app).status_code == 200
+    assert len(billing.refunds) == 1 and _event_stored(database, "d2")
+
+
+def test_400_and_402_refund_rejections_are_acknowledged_as_refund_owed(owner, app, database, caplog):
+    client, _ = owner
+    app.state.billing.refund_latest_invoice = _rejecting(402)
+    with caplog.at_level(logging.ERROR, logger="app.billing"):
+        assert _duplicate(client, app).status_code == 200
+    assert len(_owed(caplog)) == 1 and _event_stored(database, "d2")
+
+
+def test_403_refund_rejection_is_transient(owner, app, database):
+    client, _ = owner
+    app.state.billing.refund_latest_invoice = _rejecting(403)
+    assert _duplicate(client, app).status_code == 503
+    assert not _event_stored(database, "d2")
+
+
+def test_stripe_adapter_carries_the_provider_status():
+    from .test_t182 import _stripe
+    import httpx
+    stripe = _stripe(lambda request: httpx.Response(409, json={"error": {"code": "idempotency_key_in_use"}}))
+    with pytest.raises(AppError) as error:
+        stripe._call("POST", "/refunds", {"a": "b"}, attempts=1)
+    assert error.value.provider_status == 409 and "idempotency" not in error.value.message
+
+
+def test_no_paid_invoice_without_a_timestamp_is_treated_as_expired(owner, app, database, caplog):
+    client, _ = owner
+
+    def none_yet(ref, key):
+        raise NoPaidInvoice()
+
+    app.state.billing.refund_latest_invoice = none_yet
+    import uuid
+    from app.billing import BillingUpdate
+    from app.routes import billing as route
+    update = BillingUpdate(event_id="x1", tenant_id=uuid.uuid4(), status="active", provider_ref="s9", occurred_at=None)
+    with caplog.at_level(logging.ERROR, logger="app.billing"):
+        route._cancel_and_refund_duplicate(update, app.state.billing)  # returns: acknowledged, no 503
+    owed = _owed(caplog)
+    assert len(owed) == 1 and owed[0].will_retry is False

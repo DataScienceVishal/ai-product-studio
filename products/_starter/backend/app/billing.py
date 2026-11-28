@@ -350,7 +350,8 @@ class StripeBilling:
                 if error.get("code") in accept_error_codes:
                     return {"error": error}
             if response.status_code >= 400:
-                raise AppError(502, "billing_rejected", "The payment provider rejected the request.")
+                raise AppError(502, "billing_rejected", "The payment provider rejected the request.",
+                               provider_status=response.status_code)
             try:
                 return response.json()
             except ValueError:
