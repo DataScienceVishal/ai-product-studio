@@ -11,9 +11,9 @@ reads it, header "Draft prepared with AI assistance; reviewed by Alex Reviewer .
 - `app/scripts/e2e.sh`: starts that app with `AI_WORKER_THREADS=2`, writes fixtures (`tests/e2e/make_fixtures.py`), runs tender_flow first, then core_flow.
 - Fixtures are shaped for ScriptedFakeAI's heuristics (one passage per evidence file, no full stop, no shared words between topics).
 
-## What fails
-- `app/tests/e2e/core_flow.cjs` (the older starter test) fails at step 1: it waits for text "Free trial:", which the tender dashboard no longer shows.
-  Pre-existing, not touched here; e2e.sh runs it last so its failure does not hide the tender result (exit status still non-zero).
+## Fixed (run 6986)
+- `app/tests/e2e/core_flow.cjs` waited for "Free trial:", which never shows with billing off. It now waits for the Tender packs heading and
+  asserts the trial banner is absent. `scripts/e2e.sh` exits 0: tender flow 7/7 and core flow both PASS. Backend 1192 passed, vitest 232, tsc clean.
 
 ## Run it
 `cd app && PYTHON=python3.13 NODE_PATH=/opt/node-tools/node_modules bash scripts/e2e.sh` (needs Postgres role studio/studio; creates db starter_e2e;
