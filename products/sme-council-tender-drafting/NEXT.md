@@ -8,7 +8,7 @@ Branch `p/sme-council-tender-drafting/T-221` (off main). Not merged. No migratio
 - S3: `main(["T1","--live"])` tests with env set and `build_live_provider`, `LIVE_LEDGER`, `RESULTS_DIR` monkeypatched: non-dry ledger rows, results written, exit 0; exit 7 (wrong model); exit 8 (sub-cap; AIUnavailable; ai_rejected).
 - S6: a non-tuning phase is also refused when `not ctx.dry`. (One older test used E1 with a live ledger and the fake; it now uses T1.)
 - Not done: S2 (wrong-model pricing / AIUnavailable carrying the reported model) is left for slice 2. Not run live.
-- Tests: full backend suite on a fresh DB (python3.13): see the count in the final report below.
+- Tests: 20 new in tests/test_tender_eval.py (1356 -> 1376). Full backend suite, fresh DB, python3.13, Azure env unset: 1376 passed, 1 skipped, 0 failed (387 s).
 
 # STATUS (T-219 slice 1) - `--live` enabled for T1, T2, T3 only; no live call made, no spend
 
