@@ -108,3 +108,35 @@ def test_pending_cancels_last_attempt_migration_upgrades_and_downgrades(scratch_
         assert "last_attempt_at" not in {c["name"] for c in inspect(engine).get_columns("pending_cancels")}
     finally:
         engine.dispose()
+
+
+def test_billing_customers_migration_backfills_upgrades_and_downgrades(scratch_url):
+    config = _config(scratch_url)
+    command.upgrade(config, "0011")
+    engine = create_engine(scratch_url)
+    try:
+        assert "billing_customers" not in inspect(engine).get_table_names()
+        with engine.begin() as conn:  # t1: a Stripe customer; t2: none; t3 and t4 share one customer id
+            for name in ("t1", "t2", "t3", "t4"):
+                conn.execute(text("INSERT INTO tenants (id, name, created_at) VALUES (gen_random_uuid(), :n, now())"),
+                             {"n": name})
+            for name, provider, customer in (("t1", "stripe", "cus_A"), ("t2", "mock", None),
+                                             ("t3", "stripe", "cus_SHARED"), ("t4", "stripe", "cus_SHARED")):
+                conn.execute(text(
+                    "INSERT INTO subscriptions (id, tenant_id, plan, status, provider, provider_customer, updated_at) "
+                    "SELECT gen_random_uuid(), id, 'trial', 'trialing', :p, :c, now() FROM tenants WHERE name = :n"),
+                    {"n": name, "p": provider, "c": customer})
+        command.upgrade(config, "head")
+        assert "billing_customers" in inspect(engine).get_table_names()
+        with engine.connect() as conn:
+            rows = conn.execute(text(
+                "SELECT t.name, b.provider, b.customer_ref FROM billing_customers b JOIN tenants t ON t.id = b.tenant_id "
+                "ORDER BY b.customer_ref")).all()
+        # the NULL customer is skipped; the shared customer is kept for one tenant only (the migration must not fail)
+        assert [(p, c) for _, p, c in rows] == [("stripe", "cus_A"), ("stripe", "cus_SHARED")]
+        assert rows[0][0] == "t1" and rows[1][0] in {"t3", "t4"}
+        command.check(config)
+        command.downgrade(config, "0011")
+        assert "billing_customers" not in inspect(engine).get_table_names()
+    finally:
+        engine.dispose()

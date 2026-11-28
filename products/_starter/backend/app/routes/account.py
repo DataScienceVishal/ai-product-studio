@@ -12,7 +12,7 @@ from ..ai import tokens_this_month
 from ..db import get_db
 from ..deps import Current, current, owner, session_cookie, subscription_of
 from ..errors import AppError
-from ..models import BillingCustomer, Invitation, Note, Tenant, User
+from ..models import BillingCustomer, BillingEvent, Invitation, Note, Subscription, Tenant, User, deleted_tenant_marker
 from ..security import hash_capacity_after, verify_password
 
 log = logging.getLogger("app.account")
@@ -53,6 +53,22 @@ def _delete_account_gate(data: DeleteIn, request: Request, me: Current = Depends
     return me
 
 
+MAX_CLOSE_ROUNDS = 5  # rounds of "close what is listed, lock, look again"; the last one must find nothing new
+
+
+def _pending_calls(db: Session, tenant_id, provider: str, sub: Subscription, closed: set) -> list:
+    """The (customer, subscription) pairs still to close, under a lock on the subscription row (taken here, and held
+    until the caller commits or deletes). The tenant's current customer goes first, with its subscription."""
+    sub = db.scalar(select(Subscription).where(Subscription.tenant_id == tenant_id).with_for_update()
+                    .execution_options(populate_existing=True)) or sub
+    current = (sub.provider_customer, sub.provider_ref)  # whatever the provider name: closing an unknown id is a no-op
+    listed = db.scalars(select(BillingCustomer.customer_ref).where(
+        BillingCustomer.tenant_id == tenant_id, BillingCustomer.provider == provider)
+        .order_by(BillingCustomer.created_at)).all()
+    calls = ([current] if current != (None, None) else []) + [(c, None) for c in listed if c != current[0]]
+    return [c for c in calls if c not in closed]
+
+
 @router.delete("", status_code=204, dependencies=[Depends(hash_capacity_after(_delete_account_gate))])
 def delete_account(data: DeleteIn, request: Request, me: Current = Depends(_delete_account_gate),
                    db: Session = Depends(get_db)) -> Response:
@@ -61,24 +77,35 @@ def delete_account(data: DeleteIn, request: Request, me: Current = Depends(_dele
         raise AppError(401, "invalid_credentials", "That password isn't right.")
     tenant_id = str(me.tenant.id)
     sub = subscription_of(db, me.tenant.id)
-    customer, subscription = sub.provider_customer, sub.provider_ref
     billing = request.app.state.billing
-    # T-181 (T-179 M1): every customer this tenant ever had at the provider, not only the current one. The stored one
-    # goes first (with the subscription); the rest are duplicates or customers a takeover replaced.
-    others = [c for c in db.scalars(select(BillingCustomer.customer_ref).where(
-        BillingCustomer.tenant_id == me.tenant.id, BillingCustomer.provider == billing.name)
-        .order_by(BillingCustomer.created_at)) if c != customer]
-    db.commit()  # no transaction open while the payment provider is called
-    calls = ([(customer, subscription)] if customer or subscription else []) + [(c, None) for c in others]
-    if calls:
+    # T-181 (T-179 M1): every customer this tenant ever had at the provider, not only the current one.
+    # T-208 (T-181 S1, race): a webhook can record a new customer while the provider calls below run, and the cascade
+    # delete would then drop that row unclosed. Webhooks take the tenant's subscription row lock before recording, so we
+    # loop: close what we know (no lock held, the calls are slow), then lock the subscription row and re-read the list.
+    # Nothing new: delete the tenant under that same lock (a later webhook finds no subscription and closes its own
+    # customer, see routes/billing.py `_close_orphan`). Something new: release the lock, close it, look again.
+    closed: set[tuple[str | None, str | None]] = set()
+    for _ in range(MAX_CLOSE_ROUNDS):
+        pending = _pending_calls(db, me.tenant.id, billing.name, sub, closed)
+        if not pending:
+            break
+        db.commit()  # no transaction open while the payment provider is called
         try:  # stop billing and remove their details at the provider first; if any fails, delete nothing. The rows
             # that list the customers stay, so the owner retries (deleting a customer is idempotent at the provider).
-            for call_customer, call_subscription in calls:
-                billing.close(call_customer, call_subscription)
+            for call in pending:
+                billing.close(*call)
+                closed.add(call)
         except AppError:
             log.error("could not delete a payment-provider customer; account kept", extra={"tenant_id": tenant_id})
             raise AppError(503, "billing_unavailable", "We couldn't cancel your subscription with the payment "
                            "provider, so nothing was deleted. Please try again in a few minutes.") from None
+    else:
+        db.rollback()
+        log.error("customers kept appearing during account deletion; account kept", extra={"tenant_id": tenant_id})
+        raise AppError(503, "billing_unavailable", "We couldn't finish closing your billing account, so nothing was "
+                       "deleted. Please try again in a few minutes.")
+    # T-208: tombstone in the same transaction, so a paid checkout that completes later is known to be ours (see _close_orphan)
+    db.merge(BillingEvent(id=deleted_tenant_marker(me.tenant.id)))
     db.delete(db.get(Tenant, me.tenant.id))  # rows cascade: users, sessions, notes, usage, invitations
     db.commit()
     log.info("tenant deleted", extra={"deleted_tenant_id": tenant_id})

@@ -192,3 +192,10 @@ class EmailVerification(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+
+
+def deleted_tenant_marker(tenant_id) -> str:
+    """T-208: id of the BillingEvent row that account deletion writes in the same transaction as the tenant delete (a random
+    tenant UUID only, no personal data). It tells the webhook that an unknown tenant was ours and was deleted, as opposed to
+    belonging to another product on the same payment-provider account."""
+    return f"deleted-tenant:{tenant_id}"
