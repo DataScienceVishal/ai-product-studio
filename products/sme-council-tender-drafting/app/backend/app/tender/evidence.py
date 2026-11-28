@@ -151,7 +151,8 @@ def search_evidence(db: Session, tenant_id: uuid.UUID, question: str, *, limit: 
     tokens together add at most TOKEN_BOOST x the best candidate's rank (min(number of matching year/acronym tokens, 1) x TOKEN_BOOST x best),
     so they reorder close candidates only. `min_score` (RETRIEVAL_FLOOR) tests `rank`, never the boosted score, so a relative
     boost cannot lift a weak search over the floor; a passage holding an asked-for code passes it regardless. Sorting is by
-    score. Four statements per search."""
+    score (with PRF on, the second-pass score; `rank` stays first-pass).
+    Four statements per search, five with PRF on."""
     question = (question or "")[:2000]
     own = list(dict.fromkeys(_lexemes(db, question) if question.strip() else []))
     if not own:
