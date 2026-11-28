@@ -118,7 +118,7 @@ SELECT e.id, e.display_no, e.document_id, d.filename, e.page_from, e.page_to, e.
 FROM evidence_items e
 JOIN source_documents d ON d.tenant_id = e.tenant_id AND d.id = e.document_id
 WHERE e.tenant_id = :tenant AND e.deleted_at IS NULL AND d.tenant_id = :tenant AND d.kind = 'evidence' AND d.deleted_at IS NULL
-  AND e.tsv @@ (SELECT string_agg(quote_literal(x), ' | ')::tsquery FROM unnest(CAST(:lexes AS text[])) AS u(x))
+  AND e.tsv @@ (SELECT string_agg(quote_literal(x), ' | ')::tsquery FROM unnest(CAST(:own AS text[])) AS u(x))
 ORDER BY ts_rank_cd(e.tsv, (SELECT string_agg(quote_literal(x), ' | ')::tsquery FROM unnest(CAST(:lexes AS text[])) AS u(x)), 32) DESC, e.display_no
 LIMIT :cands
 """)
@@ -133,7 +133,7 @@ def _bm25(tv: str, weights: dict[str, float], idf: dict[str, float], avg_len: fl
 
 def search_evidence(db: Session, tenant_id: uuid.UUID, question: str, *, limit: int = TOP_K,
                     per_doc: int = PER_DOC, min_score: float = 0.0) -> list[Hit]:
-    """Top `limit` passages for the question: OR full-text candidates (question words plus domain synonyms), rescored by
+    """Top `limit` passages for the question: OR full-text candidates (a passage must hold a word of the question itself; synonyms only add score), rescored by
     BM25 so rare words count more than "describe" and "arrangements", then the must-have token boost and a per-document cap.
     `rank` is the BM25 score as a fraction of the best candidate's (0 to 1), so a code boost of 1.0 still beats any rank."""
     question = (question or "")[:2000]
@@ -147,7 +147,7 @@ def search_evidence(db: Session, tenant_id: uuid.UUID, question: str, *, limit: 
     n = int(st.n)
     df = {r.lex: int(r.df) for r in db.execute(_DF, {"lexes": lexes, "tenant": tenant_id})}
     idf = {t: math.log(1 + (n - df.get(t, 0) + 0.5) / (df.get(t, 0) + 0.5)) for t in lexes}
-    rows = db.execute(_CAND, {"lexes": lexes, "tenant": tenant_id, "cands": CANDIDATES}).all()
+    rows = db.execute(_CAND, {"lexes": lexes, "own": own, "tenant": tenant_id, "cands": CANDIDATES}).all()
     scored = [(_bm25(r.tv, weights, idf, float(st.avg_len)), r) for r in rows]
     top = max((s for s, _ in scored), default=0.0) or 1.0
     tokens = must_have_tokens(question)

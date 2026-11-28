@@ -308,19 +308,22 @@ def test_top_8_with_at_most_3_per_document(client, db):
 
 
 def test_rare_words_outrank_common_question_words(client, db):
-    common = "\n\n".join(f"Arrangements {i}\n\n" + tf.words(60, f"describe arrangements approach item{i}") for i in range(6))
-    assert up(client, "/api/evidence/documents", common.encode(), "common.txt").status_code == 201
-    assert up(client, "/api/evidence/documents", b"Lone Heading\n\n" + tf.words(60, "gritting salting winter").encode(), "rare.txt").status_code == 201
+    for i in range(6):
+        body = f"Item {i}\n\nOur approach and arrangements for item {i}.".encode()
+        assert up(client, "/api/evidence/documents", body, f"common{i}.txt").status_code == 201
+    assert up(client, "/api/evidence/documents", b"Lone Heading\n\nGritting and salting of winter roads.", "rare.txt").status_code == 201
     tid = db.scalar(select(Tenant.id))
     hits = search_evidence(db, tid, "Describe your approach and arrangements for gritting", limit=3)
     assert hits and hits[0].document_name == "rare.txt" and 0 < hits[0].rank <= 1
 
 
-def test_domain_synonyms_find_the_other_wording(client, db):
-    assert up(client, "/api/evidence/documents", b"Handover\n\n" + tf.words(40, "transition handover plan weeks").encode(), "h.txt").status_code == 201
+def test_domain_synonyms_add_score_but_never_admit_a_passage_alone(client, db):
+    assert up(client, "/api/evidence/documents", b"Plan A\n\n" + tf.words(40, "transition handover plan weeks").encode(), "a.txt").status_code == 201
+    assert up(client, "/api/evidence/documents", b"Plan B\n\n" + tf.words(40, "catering plan menus weeks").encode(), "b.txt").status_code == 201
+    assert up(client, "/api/evidence/documents", b"Other\n\n" + tf.words(40, "handover keys").encode(), "c.txt").status_code == 201
     tid = db.scalar(select(Tenant.id))
-    assert [h.document_name for h in search_evidence(db, tid, "Describe your mobilisation")] == ["h.txt"]
-    assert search_evidence(db, tid, "Describe your catering") == []
+    names = [h.document_name for h in search_evidence(db, tid, "mobilisation plan")]
+    assert names[:2] == ["a.txt", "b.txt"] and "c.txt" not in names  # the synonym lifts a.txt; c.txt has no word of the question
 
 
 def test_no_cross_tenant_retrieval(client, new_client, db):
