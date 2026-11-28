@@ -110,28 +110,6 @@ def _is_heading(line: str) -> bool:
     return not (_QUESTION_LEAD.match(line) and re.search(r"\byou(?:r|rs)?\b|\bus\b", line, re.I))
 
 
-# A short line that ends with a bracketed word limit and is followed by a separate body paragraph is the question's own heading,
-# even when it addresses the bidder ("How you will deliver social value (max 300 words)", T-207). Only used where the quote opens
-# its own block, so the heading is always followed by a separate body paragraph.
-_BRACKET_LIMIT_END = re.compile(r"\([^()]*\b\d[\d,]*\s*words?\b[^()]*\)$", re.I)
-
-
-_IMPERATIVE_OR_INVERTED = re.compile(r"^(?:\d+[.)]\s*)?(?:please\s+)?(?:describe|explain|set out|provide|outline|state|detail|give|tell us|"
-                                     r"demonstrate|confirm|list|identify|do you|can you|have you|"
-                                     r"(?:how|what|why|who|when|where|which)\s+(?:is|are|do|does|did|can|could|would|should|will|have|has)\b)", re.I)
-
-# An inverted auxiliary plus subject anywhere ("What steps will you take ...", "How many staff will you ...") marks a question (T-207 R4).
-_INVERTED_ANYWHERE = re.compile(r"\b(?:will|would|do|does|did|can|could|should|shall|must|may|might|are|is|have|has)\s+(?:you|we|us)\b", re.I)
-
-
-def _is_bracketed_limit_heading(line: str) -> bool:
-    """The bracket only widens the window; `_LIMIT` still has to find "max N words" in it. An instruction ("Describe your
-    approach ... (max 300 words)") or a question is an earlier question, not a heading, so it is refused (T-207 C1)."""
-    return (bool(line) and "\n" not in line and len(line) <= 150 and "?" not in line
-            and not _IMPERATIVE_OR_INVERTED.match(line)
-            and not _INVERTED_ANYWHERE.search(line) and bool(_BRACKET_LIMIT_END.search(line)))
-
-
 def _heading_start(page_text: str, qstart: int) -> int:
     """Where the question's own block starts, so a limit stated in its heading before the quote is found (T-200). The block
     starts after the last blank line or numbered-question line before the quote; when the quote opens its block and the
@@ -145,7 +123,7 @@ def _heading_start(page_text: str, qstart: int) -> int:
         prev_blocks = list(re.finditer(r"\n[ \t]*\n", prev))
         pbs = prev_blocks[-1].end() if prev_blocks else 0
         line = prev[pbs:].strip()
-        if _is_heading(line) or _is_bracketed_limit_heading(line):
+        if _is_heading(line):
             start = pbs
     elif before[start:].count("\n"):  # the quote is inside a block: its own line, plus the line above if that is a heading
         block = before[start:]

@@ -405,20 +405,17 @@ def test_extraction_write_takes_the_pack_lock_first_so_a_concurrent_user_row_is_
     assert len(rows) == 1 and rows[0].origin == "user"  # no duplicate proposal beside the user's row
 
 
-def test_a_bidder_addressed_heading_with_a_bracketed_limit_and_a_body_paragraph_is_a_heading():
-    """T-207 (a): "How you will deliver ..." says you, so the question-verb rule used to refuse it."""
-    q = "Describe the social value you will deliver."
-    assert ex.stated_word_limit("How you will deliver social value (max 300 words)\n\n" + q, q) == 300
-    assert ex.stated_word_limit("What we need from you (max 300 words)\n\nDescribe your mobilisation plan.",
-                                "Describe your mobilisation plan.") == 300
-    # still not borrowed: the previous question's limit not in brackets, or a sentence ending in a full stop
-    assert ex.stated_word_limit("Describe your approach in no more than 200 words\n\nDescribe your staffing plan.",
-                                "Describe your staffing plan.") is None
-    assert ex.stated_word_limit("Tell us about you (max 300 words).\n\nDescribe your staffing plan.",
-                                "Describe your staffing plan.") is None
-    # a bracket with no word limit is not a heading
-    assert ex.stated_word_limit("How you will deliver (see appendix 3)\n\nDescribe your staffing plan.",
-                                "Describe your staffing plan.") is None
+def test_an_earlier_question_ending_in_a_bracketed_limit_never_lends_it_to_the_next_question():
+    """T-207 re-review 3: a bracketed-limit heading rule was tried and removed because it borrowed earlier questions'
+    limits. A bidder-addressed heading ("How you will deliver ...") stays a known false negative (KL-1a/1b)."""
+    q = "Describe your staffing plan."
+    for prev in ("What training will your staff receive (max 200 words)",
+                 "What steps will you take to reduce emissions (max 300 words)",
+                 "How many staff will you deploy (max 200 words)",
+                 "Describe your approach in no more than 200 words",
+                 "Tell us about you (max 300 words)."):
+        assert ex.stated_word_limit(prev + "\n\n" + q, q) is None, prev
+    assert ex.stated_word_limit("How you will deliver social value (max 300 words)\n\n" + q, q) is None  # KL-1a, open
 
 
 def test_known_limit_cases_hold():

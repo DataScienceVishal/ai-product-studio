@@ -3,21 +3,21 @@
   "cases": [
     {
       "id": "KL-1a",
-      "status": "fixed",
+      "status": "open",
       "page": "How you will deliver social value (max 300 words)\n\nDescribe the social value you will deliver.",
       "quote": "Describe the social value you will deliver.",
-      "expected_today": 300,
+      "expected_today": null,
       "ideal": 300,
-      "note": "heading addressing the bidder, limit in brackets at the end, separate body paragraph: found since T-207"
+      "note": "false negative that remains: a heading addressing the bidder is taken for the previous question, so no limit is found. A bracketed-limit heading rule was tried in T-207 and removed after review (it borrowed limits from earlier questions in 11 of 21 realistic lines). The user confirms limits at the checklist step."
     },
     {
       "id": "KL-1b",
-      "status": "fixed",
+      "status": "open",
       "page": "What we need from you (max 300 words)\n\nDescribe your mobilisation plan.",
       "quote": "Describe your mobilisation plan.",
-      "expected_today": 300,
+      "expected_today": null,
       "ideal": 300,
-      "note": "same rule, second wording"
+      "note": "false negative that remains: a heading addressing the bidder is taken for the previous question, so no limit is found. A bracketed-limit heading rule was tried in T-207 and removed after review (it borrowed limits from earlier questions in 11 of 21 realistic lines). The user confirms limits at the checklist step."
     },
     {
       "id": "KL-2",
