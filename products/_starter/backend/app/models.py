@@ -84,6 +84,19 @@ class Subscription(Base):
                                                  nullable=False)
 
 
+class BillingCustomer(Base):
+    """T-181 (T-179 M1): every payment-provider customer a tenant has ever had (a takeover or a duplicate checkout can
+    leave more than the one in `subscriptions.provider_customer`). Account deletion deletes all of them at the provider
+    first, and fails closed (nothing deleted) while one cannot be removed, so the to-do lives as long as the tenant."""
+    __tablename__ = "billing_customers"
+    __table_args__ = (UniqueConstraint("provider", "customer_ref", name="uq_billing_customers_provider_ref"),)
+    id: Mapped[uuid.UUID] = _id()
+    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False)
+    provider: Mapped[str] = mapped_column(String(40), nullable=False)
+    customer_ref: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = _created()
+
+
 class BillingEvent(Base):
     """Webhook events already applied, so a repeated delivery is a no-op."""
     __tablename__ = "billing_events"

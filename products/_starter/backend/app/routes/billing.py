@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import uuid
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Request
@@ -17,7 +18,7 @@ from ..billing import LIMITED_PROVIDERS, OFFERS, PLANS, BillingUpdate, MockBilli
 from ..db import get_db
 from ..deps import Current, owner, subscription_of, verified_owner
 from ..errors import AppError
-from ..models import BillingEvent, PendingCancel, Subscription
+from ..models import BillingCustomer, BillingEvent, PendingCancel, Subscription
 
 log = logging.getLogger("app.billing")
 router = APIRouter(prefix="/api/billing", tags=["billing"])
@@ -79,8 +80,11 @@ def checkout(data: CheckoutIn, request: Request, me: Current = Depends(verified_
         if offer is None:
             raise AppError(422, "unknown_offer", "That offer code isn't valid.")
     base = request.app.state.settings.app_base_url.rstrip("/")
-    session = request.app.state.billing.create_checkout(me.tenant.id, plan, offer,
-                                                        f"{base}/billing/done", f"{base}/billing")
+    billing = request.app.state.billing
+    # T-181 (T-179 M1): one provider customer per tenant, so a second checkout never leaves a second customer behind.
+    customer = sub.provider_customer if sub.provider == billing.name else None
+    session = billing.create_checkout(me.tenant.id, plan, offer, f"{base}/billing/done", f"{base}/billing",
+                                      customer_ref=customer)
     return {"checkout_id": session.id, "url": session.url}
 
 
@@ -143,6 +147,12 @@ def _apply_update(db: Session, update: BillingUpdate, provider: str, billing=Non
     if sub is None:  # the tenant deleted their account; keep the event id, change nothing
         db.commit()
         return True
+    if update.customer_ref:  # T-181 (T-179 M1): remember every customer, so account deletion can remove them all
+        if not _record_customer(db, update.tenant_id, provider, update.customer_ref):
+            # Already recorded for another tenant: never store it here, or this tenant's deletion would delete theirs.
+            log.error("billing event names a customer that belongs to another tenant: ignored",
+                      extra={"tenant_id": str(update.tenant_id)})
+            update = replace(update, customer_ref=None)
     # Stripe timestamps are whole seconds, so two events can share one. Tie-break: on equal timestamps a
     # cancellation already applied wins over any later non-cancel event (we can't know their true order, and
     # wrongly reactivating a cancelled customer costs money while a wrongly kept cancellation is fixed by the
@@ -247,6 +257,17 @@ def _apply_update(db: Session, update: BillingUpdate, provider: str, billing=Non
                            "old_provider": old_provider})
     _fill_period_end(db, update, billing)
     return True
+
+
+def _record_customer(db: Session, tenant_id: uuid.UUID, provider: str, ref: str) -> bool:
+    """Remember a provider customer of this tenant (once per (provider, ref)); committed with the caller's next commit.
+    False if that customer is already recorded for a different tenant (it is never re-assigned)."""
+    owner_id = db.scalar(select(BillingCustomer.tenant_id).where(BillingCustomer.provider == provider,
+                                                                 BillingCustomer.customer_ref == ref))
+    if owner_id is None:
+        db.add(BillingCustomer(tenant_id=tenant_id, provider=provider, customer_ref=ref))
+        return True
+    return owner_id == tenant_id
 
 
 def _dead_marker(provider: str, ref: str | None) -> str | None:

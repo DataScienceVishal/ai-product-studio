@@ -103,7 +103,9 @@ class BillingProvider(Protocol):
     name: str
 
     def create_checkout(self, tenant_id: uuid.UUID, plan: Plan, offer: Offer | None,
-                        success_url: str, cancel_url: str) -> Checkout: ...
+                        success_url: str, cancel_url: str, customer_ref: str | None = None) -> Checkout:
+        """customer_ref: the tenant's existing customer at this provider; reuse it (one customer per tenant)."""
+        ...
 
     def portal_session(self, customer_ref: str, return_url: str) -> str:
         """URL of a provider-hosted page where the customer manages their payment method and subscription."""
@@ -168,12 +170,12 @@ class MockBilling:
         self.closed: list[tuple[str | None, str | None]] = []
         self.cancelled: list[str] = []
 
-    def create_checkout(self, tenant_id, plan, offer, success_url, cancel_url) -> Checkout:
+    def create_checkout(self, tenant_id, plan, offer, success_url, cancel_url, customer_ref=None) -> Checkout:
         session_id = f"mock_cs_{uuid.uuid4().hex}"
         while len(self.sessions) >= self.MAX_SESSIONS:
             self.sessions.pop(next(iter(self.sessions)))
         self.sessions[session_id] = {"tenant_id": str(tenant_id), "plan": plan.id,
-                                     "offer": offer.code if offer else None}
+                                     "offer": offer.code if offer else None, "customer": customer_ref}
         return Checkout(session_id, f"{self.base_url}/billing/mock-checkout?session={session_id}")
 
     def portal_session(self, customer_ref, return_url) -> str:
@@ -187,7 +189,7 @@ class MockBilling:
         period_end = datetime.now(timezone.utc) + timedelta(days=30)
         event = {"id": f"mock_evt_{uuid.uuid4().hex}", "type": "checkout.completed", "created": int(time.time()),
                  "data": {**session, "subscription": f"mock_sub_{session_id[8:20]}",
-                          "customer": f"mock_cus_{session['tenant_id'].replace('-', '')}",
+                          "customer": session.get("customer") or f"mock_cus_{session['tenant_id'].replace('-', '')}",
                           "current_period_end": int(period_end.timestamp())}}
         return json.dumps(event).encode()
 
@@ -324,7 +326,7 @@ class StripeBilling:
         self._coupons.add(coupon_id)
         return coupon_id
 
-    def create_checkout(self, tenant_id, plan, offer, success_url, cancel_url) -> Checkout:
+    def create_checkout(self, tenant_id, plan, offer, success_url, cancel_url, customer_ref=None) -> Checkout:
         meta = {"tenant_id": str(tenant_id), "plan": plan.id, "offer": offer.code if offer else ""}
         form = {
             "mode": "subscription", "success_url": success_url, "cancel_url": cancel_url,
@@ -335,6 +337,8 @@ class StripeBilling:
             "line_items[0][price_data][recurring][interval]": plan.interval,
             "line_items[0][price_data][product_data][name]": plan.name,
         }
+        if customer_ref:  # T-181 (T-179 M1): without it Checkout creates a new Customer for every subscription
+            form["customer"] = customer_ref  # (and no customer_email is sent: Stripe does not take both)
         # Decision (T-15): only offers the app validated exist. The offer is applied here, server-side, as a coupon;
         # allow_promotion_codes is NOT sent (Stripe rejects it together with discounts, and it would let customers
         # type codes the app never checked or recorded).
