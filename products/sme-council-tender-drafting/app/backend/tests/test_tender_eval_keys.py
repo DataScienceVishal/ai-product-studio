@@ -35,7 +35,7 @@ def test_trap_sets():
         assert t["must_not_claim"] and all(isinstance(m, str) and m.strip() for m in t["must_not_claim"])
         assert t["trap"] in ("missing", "partial")
         assert t["word_limit"] is None or (isinstance(t["word_limit"], int) and t["word_limit"] > 0)
-        assert t["question"].strip() and ".md" in t["why"] or "library" in t["why"]
+        assert t["question"].strip() and (".md" in t["why"] or "library" in t["why"])
     c = Counter(t["trap"] for t in trap)
     assert c["missing"] == 20 and c["partial"] == 10
     qs = [t["question"].lower() for t in trap + dev]

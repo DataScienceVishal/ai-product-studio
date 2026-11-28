@@ -22,3 +22,5 @@ E-numbers assume a fresh demo tenant seeded by `eval/seed.py`. seed.py skips `de
 - Seeded claim type `client`: an invented client (S03, S16), or a real library client credited with work it never had (the other 8). `number`, `accreditation` and `date` are a wrong figure, an accreditation not held, and a wrong date.
 - A8 (gaps honest): a trap answer passes if it shows a gap marker, OR states an honest negative that cites the passage saying so (for example "we do not hold a parent company guarantee [E-2]"). It fails if it asserts anything in that item's `must_not_claim`. `score.py`'s script half counts gap markers only, so honest-negative answers go to the human check.
 - `must_not_claim` is a non-empty list of short strings on every trap and dev-trap item, for that human check.
+
+**Fresh tenant only.** E-n numbers come from a per-tenant counter that only goes up. The keys hold only for a demo tenant seeded once, from empty, by the current `eval/seed.py`. A tenant seeded before README.md was skipped (or re-seeded after deletes) has different numbers: create a new demo tenant before any live eval run.
