@@ -503,3 +503,38 @@ def test_caps_are_rechecked_under_the_tenant_lock(client, app, monkeypatch):
     pages = lambda n: tf.pdf([[f"Page {i} " + "words here " * 8] for i in range(n)])
     r = up(client, "/api/evidence/documents", pages(3), "p.pdf")  # sneaked upload used 1 page, so 1 + 3 > 3
     assert sneaked["r"].status_code == 201 and r.status_code == 429 and r.json()["error"] == "page_limit"
+
+
+def _seed_boost(client, docs):
+    for name, body in docs.items():
+        assert up(client, "/api/evidence/documents", body.encode(), name).status_code == 201
+
+
+def test_an_acronym_passage_outranks_an_otherwise_equal_passage(client, db):
+    filler = tf.words(30, "winter roads salting fleet depot")
+    _seed_boost(client, {"plain.txt": f"Winter\n\n{filler}", "acr.txt": f"Winter\n\n{filler} Our CCTV monitoring."})
+    tid = db.scalar(select(Tenant.id))
+    hits = search_evidence(db, tid, "winter roads salting fleet depot CCTV")
+    assert [h.document_name for h in hits][0] == "acr.txt"
+    assert hits[0].score > hits[1].score
+
+
+def test_a_strong_match_is_not_overtaken_by_a_weak_acronym_passage(client, db):
+    strong = "Gritting\n\nGritting and salting of winter roads with our fleet of gritters from the depot."
+    weak = "Other\n\nThe depot also holds CCTV records for the yard." + " " + tf.words(30, "stores tea")
+    _seed_boost(client, {"strong.txt": strong, "weak.txt": weak})
+    tid = db.scalar(select(Tenant.id))
+    hits = search_evidence(db, tid, "gritting and salting of winter roads with our fleet of gritters depot CCTV")
+    by = {h.document_name: h for h in hits}
+    assert hits[0].document_name == "strong.txt"
+    assert by["weak.txt"].score - by["weak.txt"].rank == pytest.approx(0.25 * hits[0].rank)  # relative, not +0.25
+
+
+def test_the_code_boost_still_beats_any_rank_and_is_not_scaled(client, db):
+    strong = "Gritting\n\nGritting and salting of winter roads with our fleet of gritters from the depot."
+    code = "Cert\n\nWe hold ISO 14001 for the depot. " + tf.words(30, "stores tea")
+    _seed_boost(client, {"strong.txt": strong, "code.txt": code})
+    tid = db.scalar(select(Tenant.id))
+    hits = search_evidence(db, tid, "gritting and salting of winter roads fleet of gritters depot ISO 14001")
+    assert hits[0].document_name == "code.txt"
+    assert hits[0].score - hits[0].rank == pytest.approx(1.0)

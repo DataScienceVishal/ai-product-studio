@@ -11,7 +11,8 @@ from sqlalchemy.orm import Session
 
 
 TOP_K, PER_DOC, CANDIDATES = 8, 3, 300
-CODE_BOOST, TOKEN_BOOST, MAX_BOOST = 1.0, 0.25, 3.0  # rank is BM25 over its own ceiling, so always below 1: a code match (+1.0) always wins
+CODE_BOOST, MAX_BOOST = 1.0, 3.0  # rank is BM25 over its own ceiling, so always below 1: a code match (+1.0) always wins
+TOKEN_BOOST = 0.25  # year/acronym weight is a FRACTION of the search's best rank (one value chosen a priori, not tuned on labels)
 _CODES = re.compile(r"(?i)\bISO\s?\d{4,5}(?:[-:]\d{1,4})?|\bCHAS\b|\bSafe\s?Contractor\b|\bConstructionline\b|\bCyber\s+Essentials(?:\s+Plus)?\b")
 _YEAR = re.compile(r"\b(?:19|20)\d{2}\b")
 _ACRONYM = re.compile(r"\b[A-Z]{3,6}\b")
@@ -34,7 +35,7 @@ def must_have_tokens(question: str) -> list[tuple[re.Pattern, float]]:
     for m in _CODES.finditer(question):
         found[re.sub(r"\s+", " ", m.group(0).strip()).lower()] = CODE_BOOST
     for m in _YEAR.finditer(question):
-        found.setdefault(m.group(0), TOKEN_BOOST)
+        found.setdefault(m.group(0), TOKEN_BOOST)  # weights below CODE_BOOST are relative (see search_evidence)
     for m in _ACRONYM.finditer(question):
         if m.group(0) not in _ACRONYM_SKIP:
             found.setdefault(m.group(0).lower(), TOKEN_BOOST)
@@ -110,7 +111,7 @@ def search_evidence(db: Session, tenant_id: uuid.UUID, question: str, *, limit: 
     """Top `limit` passages for the question: OR full-text candidates (a passage must hold a word of the question), rescored by
     BM25 so rare words count more than "describe" and "arrangements", then the must-have token boost and a per-document cap.
     `rank` is absolute: the BM25 score as a fraction of the most the question's terms could score (idf times k1+1, summed),
-    so it is in (0, 1) and a weak match stays low. A code boost of 1.0 therefore always beats any rank, and `min_score`
+    so it is in (0, 1) and a weak match stays low. A code boost of 1.0 therefore always beats any rank; a year or acronym adds 0.25 times the best candidate's rank, so it reorders close candidates only, and `min_score`
     (RETRIEVAL_FLOOR) can reject a weak top hit. Four statements per search."""
     question = (question or "")[:2000]
     own = list(dict.fromkeys(_lexemes(db, question) if question.strip() else []))
@@ -123,13 +124,13 @@ def search_evidence(db: Session, tenant_id: uuid.UUID, question: str, *, limit: 
     ceiling = sum(idf.values()) * (BM25_K1 + 1) or 1.0
     rows = db.execute(_CAND, {"own": own, "tenant": tenant_id, "cands": CANDIDATES}).all()
     tokens = must_have_tokens(question)
+    scored = [(r, raw / ceiling) for r in rows if (raw := _bm25(r.tv, idf, float(st.avg_len))) > 0]
+    best = max((rank for _, rank in scored), default=0.0)
     hits = []
-    for r in rows:
-        raw = _bm25(r.tv, idf, float(st.avg_len))
-        if raw <= 0:
-            continue
-        boost = min(MAX_BOOST, sum(w for pat, w in tokens if pat.search(r.heading + " " + r.text)))
-        rank = raw / ceiling
+    for r, rank in scored:
+        # a code is absolute (+1.0 beats any rank); a year or acronym is relative to this search's best rank
+        boost = min(MAX_BOOST, sum(w if w >= CODE_BOOST else w * best
+                                   for pat, w in tokens if pat.search(r.heading + " " + r.text)))
         hits.append(Hit(r.id, r.display_no, r.document_id, r.filename, r.page_from, r.page_to, r.heading, r.text,
                         rank, rank + boost))
     hits.sort(key=lambda h: (-h.score, h.display_no))
