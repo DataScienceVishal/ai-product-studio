@@ -47,3 +47,20 @@ Whichever you pick, rewrite the docstring so it describes the real protection.
 - **S-d.** `test_one_loader_feeds_export_signoff_and_claimcheck` asserts on `inspect.getsource(...)` text. That is a brittle source-text check. The equality assertion is the behavioural part, so drop the getsource line.
 - **S-e. Missing tests:** an `exported` pack refuses a draft save and a requirement edit (409). Deleting cited evidence on an `exported` pack makes re-download fail with `evidence_removed`. Re-download keeps status `exported` (it does today, but no test pins it).
 - **S-f.** `Rows.live` still loads every display number for the tenant on each gate run, as before. That is fine at current sizes. Bound it to cited numbers later if evidence libraries grow large.
+
+---
+
+# Re-review: head bc69bfd (delta 9547c53..bc69bfd)
+
+## Verdict: PASS
+
+- **C1 fixed.** tender.py:602-603 refuses with 403 `csrf_check_failed` when `X-Requested-With` is missing or empty, before any read or write. The docstring now describes the real protection correctly. The frontend's `apiDownload` already sends the header, so it needs no change. `test_export_needs_the_x_requested_with_header` checks that the pack stays `signed` and no ExportRecord is written after a 403, and that a request with the header then moves the pack to `exported`.
+- **S-a fixed.** export.py:74, `live -= (cited & live) - set(ev)`: a passage deleted between the two reads now counts as not live. The gate then refuses with `evidence_removed` (409), and `render` can no longer hit a KeyError.
+- **S-c fixed** (exported badge is green). **S-d fixed** (the getsource check is gone). **S-e covered** by `test_exported_pack_refuses_edits_and_redownload_fails_after_evidence_removal`.
+- S-b (pre-existing) and S-f are still open. Neither blocks the merge.
+
+## Tests on bc69bfd
+
+- Backend: **1197 passed, 1 skipped**. That is 1195 plus the 2 new tests. The builder reported 1198, probably from a different tree.
+- Frontend: vitest **232/232** passed, and `tsc -b` is clean.
+- `git merge-tree --write-tree origin/main bc69bfd` (main at 66c8ed6, which includes T-196): **no conflicts**.
