@@ -104,3 +104,19 @@ def test_evidence_map_matches_app_chunker():
 def test_seed_skips_readme():
     assert "README.md" not in {p.name for p in SD.evidence_docs(SD.EVIDENCE_DIR)}
     assert len(SD.evidence_docs(SD.EVIDENCE_DIR)) == 32
+
+
+def test_pre_registered_files_are_frozen():
+    """T-206 pre-registration: eval/keys/FROZEN.sha256 pins every key file and the 9 held-out packs (source .md and .docx).
+    A change after the freeze must be a dated EVAL.md amendment that also regenerates the manifest; a new key file must be added to it."""
+    manifest = {}
+    for line in (KEYS / "FROZEN.sha256").read_text(encoding="utf-8").splitlines():
+        digest, rel = line.split("  ", 1)
+        manifest[rel] = digest
+    on_disk = {f"eval/keys/{p.name}" for p in KEYS.iterdir() if p.is_file() and p.name != "FROZEN.sha256"}
+    assert on_disk <= set(manifest), f"key files not in FROZEN.sha256: {sorted(on_disk - set(manifest))}"
+    heldout = json.loads((PRODUCT / "demo-data" / "packs" / "manifest.json").read_text(encoding="utf-8"))["heldout"]
+    for name in heldout:
+        assert f"demo-data/packs/{name}" in manifest and f"demo-data/pack-sources/{name[:-5]}.md" in manifest
+    changed = [rel for rel, digest in manifest.items() if hashlib.sha256((PRODUCT / rel).read_bytes()).hexdigest() != digest]
+    assert not changed, f"pre-registered files changed after the freeze: {changed}"

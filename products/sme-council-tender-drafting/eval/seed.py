@@ -140,7 +140,7 @@ def main() -> int:
     try:
         find_packs()  # fail before any account is created
         app = create_app(Settings())
-        with TestClient(app) as client:
+        with TestClient(app, base_url="https://testserver", headers={"X-Requested-With": "seed"}) as client:
             r = client.post("/api/auth/signup", json={"company_name": FIRM, "email": "demo@harrowmere.example", "password": password})
             if r.status_code not in (201, 409):
                 print(f"seed: sign-up failed ({r.status_code})", file=sys.stderr)
