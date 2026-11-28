@@ -38,7 +38,15 @@ ENV=dev DATABASE_URL="$db_url" COOKIE_SECURE=false APP_BASE_URL="http://127.0.0.
   setsid "$python" -m uvicorn e2e_app:app --app-dir "$here/tests/e2e" --host 127.0.0.1 --port "$api_port" >"$logs/api.log" 2>&1 &
 api_pid=$!
 web_pid=""
-trap 'kill -- -"$api_pid" ${web_pid:+-"$web_pid"} 2>/dev/null || true' EXIT  # set as soon as a server runs
+cleanup() {  # stop both servers and wait (up to 10 s) until their ports are free, so a next run can start at once
+  kill -- -"$api_pid" ${web_pid:+-"$web_pid"} 2>/dev/null || true
+  for _ in $(seq 1 20); do
+    port_free "$api_port" && port_free "$web_port" && return 0
+    sleep 0.5
+  done
+  echo "warning: servers still hold port $api_port or $web_port after 10 s"
+}
+trap cleanup EXIT  # set as soon as a server runs
 cd "$here/frontend"
 npx vite build >"$logs/build.log" 2>&1  # always test the current code, never an old build
 API_URL="http://127.0.0.1:$api_port" setsid npx vite preview --host 127.0.0.1 --port "$web_port" --strictPort >"$logs/web.log" 2>&1 &

@@ -153,7 +153,7 @@ print("TABLE:" + " | ".join(" / ".join(r) for r in rows))
     const out = execFileSync(PYTHON, ["-c", check, target], { encoding: "utf8" });
     assert.ok(out.includes("HEADER:Draft prepared with AI assistance; reviewed by Alex Reviewer"), "docx header missing");
     assert.match(out, /FOOTER:I understand that my firm, not the software, is responsible/, "docx footer missing");
-    const body = out.split("BODY:")[1];
+    const body = out.split("BODY:")[1].split("\nTABLEROWS:")[0];  // paragraphs only, not the appendix table
     const i42 = body.indexOf("42 staff"), i12 = body.indexOf("12 apprenticeships");
     assert.ok(i42 >= 0 && i12 > i42, "answers missing or out of order");
     assert.match(body, /\[E-\d+\]/);
