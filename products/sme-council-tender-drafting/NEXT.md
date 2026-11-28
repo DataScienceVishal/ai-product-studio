@@ -1,3 +1,12 @@
+# STATUS (T-212) - T-194 builder leftovers done; S08 Appendix 1 now 19 sites; no frozen file touched
+
+Branch `p/sme-council-tender-drafting/T-212` (off main). Not merged. No model calls, no spend, no migrations.
+- 1. Heading before a table: if the table would force its own break (page words + heading run + table > 900), the break goes before the heading. 2. `--check` rebuilds into a temp dir and compares `fingerprint()` (properties, footer, every paragraph with style, bold and page-break runs, every table cell; not zip bytes) with `demo-data/packs/*.docx`; exit 1 on drift or a missing file; never writes into packs/. 3. Headings are `#{1,3} ` only (`#5 x`, `#### x` stay text). 4. Page budget: 450 words for text, tables never split and a page with a table may reach `TABLE_PAGE_WORDS` = 900 (documented in the docstring, same behaviour as before). 5. `app/backend/tests/test_tender_build_docx.py` (19 tests).
+- 6. S08 (demo pack): Appendix 1 gains one row, "Other sites | 5 | 0 | Alarm only", so sites total 19 (3.3 table: 4+6+9) and cameras stay 138. No retrieval_labels text touched; S08 has no key. S08 .docx rebuilt (still 10 pages), SOURCES.md hash updated to f13e0bd3b1fd9bf8.
+- Frozen packs: the new builder reproduces all 11 other committed .docx content-identically (`--check` passes), so none was regenerated. Only S08 .docx changed.
+- Tests: full backend suite, fresh DB starter_test, 1295 passed, 1 skipped, 0 failed (1276 + 19 new).
+- Note: `python3` here lacks python-docx; use `python3.13` for the builder.
+
 # STATUS (T-216 slice 3) - APP_PASSAGES 5 -> 8 chosen against the token budget; seen recall 0.745; criteria expansion not possible (no such field); recall@8 still 0.745, below the 0.8 trigger
 
 Branch `p/sme-council-tender-drafting/T-216`, off main (slice 2 merged). Not merged. No migrations, no model calls, no spend.

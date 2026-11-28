@@ -230,6 +230,7 @@ This summary groups sites by type. Some buildings hold more than one monitored s
 | Business centre | 1 | 12 | Tenant access out of hours by fob |
 | Industrial estate units | 5 | 10 | Shared gate with barrier |
 | Community halls | 4 | 20 | Booked by community groups |
+| Other sites | 5 | 0 | Alarm only |
 
 ## Appendix 3: Response Protocols Summary
 

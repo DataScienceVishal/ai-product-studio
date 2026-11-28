@@ -1,15 +1,22 @@
 """Build the synthetic tender packs (.docx) from their Markdown sources (T-194, Q-20 option B). No model calls.
 
     python3 demo-data/pack-sources/build_docx.py            # writes demo-data/packs/S*.docx
-    python3 demo-data/pack-sources/build_docx.py --check    # rebuilds into a temp dir and reports page/word counts
+    python3 demo-data/pack-sources/build_docx.py --check    # rebuilds into a temp dir and compares with the committed .docx
 
-Supported Markdown: '#', '##', '###' headings, paragraphs, '- ' bullets, '1. ' numbered items, pipe tables
+Supported Markdown: '# ', '## ', '### ' headings (hashes followed by a space; '#5 ...' or '#### ...' stay plain text), paragraphs, '- ' bullets, '1. ' numbered items, pipe tables
 (header row plus a '|---|' separator), **bold** spans, and a '---pagebreak---' line. Anything else is kept as plain text.
 
-Pages: a real page break is written at each '---pagebreak---' and whenever about PAGE_WORDS words have gone onto the
-current page (at a paragraph or table boundary), so the app's parser (docx_break mode) sees A4-sized pages and the
+Pages: a real page break is written at each '---pagebreak---' and whenever about PAGE_WORDS (450) words have gone onto the
+current page (at a paragraph boundary). Tables are the exception: a table is never split, so a page may carry up to
+TABLE_PAGE_WORDS (900) words when a table is on it, and a table starts a new page only if it would take the page past
+that. A heading is kept with the block after it: if the next block is a table that would force a break, the break goes
+before the heading, so a heading is never stranded at the foot of a page. So the app's parser (docx_break mode) sees A4-sized pages and the
 page references in answer keys are stable. Every page carries a 'Synthetic demo document - fictional buyer' footer.
-The build is deterministic: core properties are fixed, so the same source gives the same file text.
+The build is deterministic in content: core properties are fixed, so the same source gives the same file text. The zip
+bytes are not compared (python-docx timestamps its zip members), `--check` compares `fingerprint()` instead: core
+properties, footer, and every paragraph (style, runs with bold, page breaks) and table cell in order. It exits 1 on any
+difference or a missing committed file. Running without --check rewrites the files; the frozen held-out packs are only
+touched when you run that explicitly, and tests/CI use --check, which never writes into packs/.
 """
 from __future__ import annotations
 
@@ -26,9 +33,11 @@ from docx.shared import Pt
 HERE = Path(__file__).resolve().parent
 OUT = HERE.parent / "packs"
 PAGE_WORDS = 450
+TABLE_PAGE_WORDS = PAGE_WORDS * 2  # a page holding a table may reach about 900 words (the reviewer's page-budget rule)
 FOOTER = "Synthetic demo document - fictional buyer. Written by AI Product Studio for testing; not a real procurement."
 FIXED_TIME = dt.datetime(2026, 11, 28, 0, 0, 0)
 _BOLD = re.compile(r"\*\*(.+?)\*\*")
+_HEADING = re.compile(r"^(#{1,3}) +(.*)$")
 _NUM = re.compile(r"^\d+\.\s+")
 _SEP = re.compile(r"^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$")
 
@@ -75,11 +84,10 @@ def _blocks(md: str):
         elif not s:
             if (b := flush()):
                 yield b
-        elif s.startswith("#"):
+        elif (hm := _HEADING.match(s)):
             if (b := flush()):
                 yield b
-            level = len(s) - len(s.lstrip("#"))
-            yield ("heading", (min(level, 3), s[level:].strip()))
+            yield ("heading", (len(hm.group(1)), hm.group(2).strip()))
         elif s.startswith("|") and i + 1 < len(lines) and _SEP.match(lines[i + 1].strip()):
             if (b := flush()):
                 yield b
@@ -153,7 +161,10 @@ def build(src: Path, dest: Path) -> dict:
                 need += _words(*blocks[j])
                 j += 1
             nxt = blocks[j] if j < len(blocks) else ("pagebreak", None)
+            heads = need
             need += min(_words(*nxt), 80) if nxt[0] not in ("pagebreak", "table") else 0
+            if nxt[0] == "table" and on_page + heads + _words(*nxt) > TABLE_PAGE_WORDS:
+                need = PAGE_WORDS + 1  # the table will force its own break: break before the heading, not between
         if on_page and on_page + need > PAGE_WORDS and kind != "table":
             page_break()
         if kind == "heading":
@@ -166,7 +177,7 @@ def build(src: Path, dest: Path) -> dict:
         elif kind == "number":
             _runs(document.add_paragraph(), payload)  # keep the number as typed: buyers' own numbering is data
         elif kind == "table":
-            if on_page and on_page + n > PAGE_WORDS * 2:
+            if on_page and on_page + n > TABLE_PAGE_WORDS:
                 page_break()
             width = max(len(r) for r in payload)
             table = document.add_table(rows=0, cols=width)
@@ -193,10 +204,68 @@ def sources() -> list[Path]:
     return sorted(HERE.glob("S[0-9][0-9]-*.md"))
 
 
+def _para_print(p) -> list:
+    runs = []
+    for r in p.runs:
+        brk = any(b.get("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}type") == "page"
+                  for b in r._r.iter("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}br"))
+        runs.append([r.text, bool(r.bold), brk])
+    return [p.style.name, runs]
+
+
+def fingerprint(path: Path) -> list:
+    """Deterministic content of a .docx: properties, footer, and body blocks in order (not zip bytes)."""
+    d = docx.Document(str(path))
+    cp = d.core_properties
+    out: list = [["props", cp.author, cp.title, cp.created.isoformat() if cp.created else None, cp.last_modified_by, cp.revision],
+                 ["footer", d.sections[0].footer.paragraphs[0].text]]
+    body = d.element.body
+    paras = {p._p: p for p in d.paragraphs}
+    tables = {t._tbl: t for t in d.tables}
+    for el in body.iterchildren():
+        if el in paras:
+            out.append(["p"] + _para_print(paras[el]))
+        elif el in tables:
+            out.append(["t", [[[_para_print(p) for p in c.paragraphs] for c in row.cells] for row in tables[el].rows]])
+    return out
+
+
+def first_difference(a: list, b: list) -> str | None:
+    for i, (x, y) in enumerate(zip(a, b)):
+        if x != y:
+            return f"block {i}: built {str(x)[:160]!r} != committed {str(y)[:160]!r}"
+    if len(a) != len(b):
+        return f"block count: built {len(a)} != committed {len(b)}"
+    return None
+
+
+def check(out_dir: Path, packs: Path = OUT, srcs: list[Path] | None = None) -> list[str]:
+    """Build every source into out_dir and compare with packs/<name>.docx; return the problems found."""
+    problems = []
+    for src in (srcs if srcs is not None else sources()):
+        built = out_dir / (src.stem + ".docx")
+        r = build(src, built)
+        print(f"{r['file']}: {r['pages']} pages, {r['words']} words")
+        committed = packs / built.name
+        if not committed.exists():
+            problems.append(f"{built.name}: no committed file in {packs}")
+            continue
+        diff = first_difference(fingerprint(built), fingerprint(committed))
+        if diff:
+            problems.append(f"{built.name}: differs from the committed file ({diff})")
+    return problems
+
+
 def main(argv: list[str]) -> int:
-    out = Path(tempfile.mkdtemp()) if "--check" in argv else OUT
+    if "--check" in argv:
+        with tempfile.TemporaryDirectory() as tmp:
+            problems = check(Path(tmp))
+        for line in problems:
+            print("DRIFT " + line, file=sys.stderr)
+        print("check: " + ("FAILED, rebuild with build_docx.py" if problems else "all committed .docx match their sources"))
+        return 1 if problems else 0
     for src in sources():
-        r = build(src, out / (src.stem + ".docx"))
+        r = build(src, OUT / (src.stem + ".docx"))
         print(f"{r['file']}: {r['pages']} pages, {r['words']} words")
     return 0
 
