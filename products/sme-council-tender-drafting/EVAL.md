@@ -7,7 +7,7 @@ record that commit hash below. After that, any change is a dated amendment, neve
 
 | Item | Value |
 |---|---|
-| Pre-registration commit (keys, trap set, fixture drafts, this file) | Keys and held-out packs frozen 2026-11-28 (T-206): `eval/keys/FROZEN.sha256` pins every file in `eval/keys/` and the 9 held-out packs (`.docx` and source `.md`); `tests/test_tender_eval_keys.py::test_pre_registered_files_are_frozen` fails on any change or unlisted key file. Freeze commit: recorded in the line below once merged. The configuration rows marked TBD here are frozen at L1, in a later commit recorded the same way |
+| Pre-registration commit (keys, trap set, fixture drafts, this file) | Keys and held-out packs frozen 2026-11-28 (T-206): `eval/keys/FROZEN.sha256` pins every file in `eval/keys/` and the 9 held-out packs (`.docx` and source `.md`); `tests/test_tender_eval_keys.py::test_pre_registered_files_are_frozen` fails on any change or unlisted key file. Freeze commit: `8e0c647` (merged to main in `6da698b`). The configuration rows marked TBD here are frozen at L1, in a later commit recorded the same way |
 | Model and version | gpt-5-mini (2025-08-07), Azure deployment named in `AZURE_OPENAI_DEPLOYMENT_MINI`; reported model must start `gpt-5-mini` or the run stops |
 | API | Responses, strict `json_schema` |
 | Effort and output cap per task | extract low / 6,000; draft low / 4,000; shorten low / 1,500; claimcheck medium / 6,000 (starting values, final after tuning: TBD) |
