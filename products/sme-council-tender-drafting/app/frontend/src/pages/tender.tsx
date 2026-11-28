@@ -179,7 +179,7 @@ export function PacksPage() {
                   <Link to={`/pack?id=${p.id}`}>{p.title}</Link>
                   <p className="text-sm text-slate-600">{p.buyer || "No buyer named"}{p.deadline ? ` · deadline ${new Date(p.deadline).toLocaleDateString("en-GB")}` : ""}</p>
                 </div>
-                <Badge tone={p.status === "ready" || p.status === "signed" ? "green" : "slate"}>{STATUS_LABEL[p.status] ?? p.status}</Badge>
+                <Badge tone={["ready", "signed", "exported"].includes(p.status) ? "green" : "slate"}>{STATUS_LABEL[p.status] ?? p.status}</Badge>
               </li>
             ))}
           </ul>

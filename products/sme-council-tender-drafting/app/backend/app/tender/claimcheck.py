@@ -265,7 +265,7 @@ from ..billing import ai_access  # noqa: E402
 from ..deps import subscription_of  # noqa: E402
 from ..errors import AppError  # noqa: E402
 from ..tender_models import AITask, Claim, Draft, EvidenceItem, Requirement, Signoff, SourceDocument, TenderPack  # noqa: E402
-from . import draft as _draft, gate, runner
+from . import draft as _draft, export as _export, gate, runner
 from .draft import reopen_pack  # noqa: F401  # noqa: E402
 from .llm import AppBudget, run_task  # noqa: E402
 
@@ -403,23 +403,8 @@ def reset_pack_after_exhausted(sessions: sessionmaker, task: AITask) -> None:
 
 
 def load_gate_inputs(db: Session, tenant_id, pack_id):
-    """Rows to the plain values `gate.export_allowed` takes. One read each; the caller decides what to do with the result."""
-    pack = db.scalar(select(TenderPack).where(TenderPack.tenant_id == tenant_id, TenderPack.id == pack_id))
-    req_rows = list(db.scalars(select(Requirement).where(Requirement.tenant_id == tenant_id, Requirement.pack_id == pack_id)))
-    reqs = [gate.GateReq(str(r.id), r.kind, r.status, r.word_limit) for r in req_rows]
-    req_ids = [r.id for r in req_rows]
-    drafts_rows = list(db.scalars(select(Draft).where(Draft.tenant_id == tenant_id, Draft.requirement_id.in_(req_ids))))
-    drafts = [gate.GateDraft(str(d.id), str(d.requirement_id), d.version, d.text, d.text_sha256, d.check_sha256)
-              for d in drafts_rows]
-    claims = [gate.GateClaim(str(c.draft_id), c.verdict, tuple(c.cited_ids)) for c in db.scalars(
-        select(Claim).where(Claim.tenant_id == tenant_id, Claim.draft_id.in_([d.id for d in drafts_rows])))]
-    so = db.scalar(select(Signoff).where(Signoff.tenant_id == tenant_id, Signoff.pack_id == pack_id,
-                                       Signoff.voided_at.is_(None)).order_by(Signoff.signed_at.desc()).limit(1))
-    signoff = gate.GateSignoff(so.statement_version, so.drafts_digest) if so else None
-    live = {n for (n,) in db.execute(select(EvidenceItem.display_no).join(
-        SourceDocument, (SourceDocument.tenant_id == EvidenceItem.tenant_id) & (SourceDocument.id == EvidenceItem.document_id))
-        .where(EvidenceItem.tenant_id == tenant_id, EvidenceItem.deleted_at.is_(None), SourceDocument.deleted_at.is_(None)))}
-    return gate.GatePack(pack.status), reqs, drafts, claims, signoff, live
+    """Rows to the plain values `gate.export_allowed` takes: the same loader and conversion the export uses."""
+    return _export.gate_inputs(_export.load_rows(db, tenant_id, pack_id))
 
 
 def export_check(db: Session, tenant_id, pack_id) -> tuple[bool, list[str]]:

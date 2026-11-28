@@ -592,12 +592,17 @@ def sign_off(pack_id: uuid.UUID, body: SignoffIn, me: Current = Depends(current)
 
 
 @router.get("/packs/{pack_id}/export")
-def export_docx(pack_id: uuid.UUID, me: Current = Depends(current), db: Session = Depends(get_db)):
+def export_docx(pack_id: uuid.UUID, request: Request, me: Current = Depends(current), db: Session = Depends(get_db)):
     """The Word file, only if the gate passes on the rows as they are now (and the pack is signed, the sign-off valid and
-    its digest current). The pack row is held FOR SHARE: a reopen or an edit waits until the file and its record commit."""
+    its digest current). The pack row is held FOR UPDATE (it is written below: signed becomes exported), so a reopen, an edit
+    or a second export waits until the file and its record commit. Re-downloading from `exported` is allowed.
+    This GET writes (an audit row and the status), and SameSite=Lax cookies are sent on a cross-site top-level navigation,
+    so the global CsrfGuard (unsafe methods only) does not cover it: the route requires X-Requested-With itself. The
+    frontend's fetch sends it; a link or form from another site cannot add it."""
+    if not request.headers.get("x-requested-with"):
+        raise AppError(403, "csrf_check_failed", "Missing request header. Please reload the page and try again.")
     get_scoped(db, TenderPack, me.tenant.id, pack_id, "tender pack")
-    db.scalar(scoped(TenderPack, me.tenant.id).where(TenderPack.id == pack_id).with_for_update(read=True)
-              .execution_options(populate_existing=True))
+    pack = _lock_pack(db, me.tenant.id, pack_id)
     try:
         data, rows = _export.build(db, me.tenant.id, pack_id)
     except _export.ExportRefused as e:
@@ -605,6 +610,7 @@ def export_docx(pack_id: uuid.UUID, me: Current = Depends(current), db: Session 
         raise AppError(409, "export_blocked", "Export is blocked: " + "; ".join(e.reasons))
     db.add(ExportRecord(tenant_id=me.tenant.id, pack_id=pack_id, signoff_id=rows.signoff.id,
                         docx_sha256=_export.sha256(data), created_by=me.user.id))
+    pack.status = "exported"
     db.commit()
     log.info("pack exported", extra={"pack_id": str(pack_id)})
     return Response(content=data, media_type=_export.DOCX_TYPE, headers={
@@ -622,7 +628,10 @@ def reopen_signed_pack(pack_id: uuid.UUID, me: Current = Depends(current), db: S
         raise AppError(409, "not_signed", "Only a signed-off pack can be reopened.")
     db.execute(update(_Signoff).where(_Signoff.tenant_id == me.tenant.id, _Signoff.pack_id == pack_id,
                                       _Signoff.voided_at.is_(None)).values(voided_at=datetime.now(timezone.utc)))
-    pack.status = "ready"
+    # S8: not blindly `ready`: if a passage was removed meanwhile, or a claim is blocked, the pack goes to `drafting` (the
+    # same test the end of a claim check uses), so the screens do not show "ready" for a pack the gate would block.
+    db.flush()
+    pack.status = "ready" if _check.pack_checked(db, me.tenant.id, pack_id) else "drafting"
     db.commit()
     log.info("pack reopened", extra={"pack_id": str(pack_id)})
     return {"pack": pack_out(pack)}
