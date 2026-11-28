@@ -1,0 +1,25 @@
+{
+  "synthetic": true,
+  "note": "Q-20 option B (T-194): synthetic packs written by the studio, fictional buyers. Demo = last of each sector, held-out = the rest, drafting_heldout = first of each sector (SPEC section 3 rule, SOURCES.md order).",
+  "demo": [
+    "S04-cleaning-halls-and-toilets.docx",
+    "S08-security-trust-cctv-keyholding.docx",
+    "S12-grounds-hallowby-town.docx"
+  ],
+  "heldout": [
+    "S01-cleaning-civic-offices-conveniences.docx",
+    "S02-cleaning-leisure-centre.docx",
+    "S03-cleaning-academy-trust-schools.docx",
+    "S05-security-council-guarding-patrol.docx",
+    "S06-security-housing-concierge-estate.docx",
+    "S07-security-college-events-stewarding.docx",
+    "S09-grounds-brackenholt-town.docx",
+    "S10-grounds-ashenmere-parish.docx",
+    "S11-grounds-quillbrook-district.docx"
+  ],
+  "drafting_heldout": [
+    "S01-cleaning-civic-offices-conveniences.docx",
+    "S05-security-council-guarding-patrol.docx",
+    "S09-grounds-brackenholt-town.docx"
+  ]
+}

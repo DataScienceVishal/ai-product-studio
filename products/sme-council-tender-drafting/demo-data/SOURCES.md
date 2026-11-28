@@ -14,6 +14,31 @@ Decision: the fictional firm is **Harrowmere Facilities Ltd (fictional)**. SPEC.
 
 ## D1: tender packs
 
+**Status (2026-11-28, run 234e, T-194): SYNTHETIC packs S01-S12 in use (Q-20 option B, applied by default after 12 hours with no reply).** Contracts Finder and Find a Tender still returned HTTP 403 on notice and attachment URLs at 07:21Z on 2026-11-28. The studio wrote 12 made-up packs in the style of small UK council tenders. Every buyer is fictional and marked so, every page carries a "Synthetic demo document - fictional buyer" footer, contacts are roles at `.example` domains, and phone numbers are in the Ofcom drama range (01632 960xxx). No text was copied from a real tender. The writers did not read the evidence library, the eval keys or the app code.
+
+What this means for the eval: the A1-A3 extraction numbers are measured on packs the studio wrote, not on real buyers' documents, so they are weaker evidence than real packs; EVAL.md must say so beside the results. Real packs can replace these later (the P01-P12 candidates below) by the same swap rule; any swap after the pre-registration commit is a dated amendment.
+
+Sources: `demo-data/pack-sources/S*.md` (Markdown), built to `demo-data/packs/S*.docx` by `demo-data/pack-sources/build_docx.py` (deterministic text; a page break at each section and about every 450 words, so the app parses them in `docx_break` mode). Licence: written by the studio, no third-party text. Personal-data screening: none present by construction; checked by the validator (reviews/T-194-validator.md). Validator fixes applied: S01 buyer renamed Fennickstead (Brackenhall is a real Huddersfield district), S04 site Aldermoor renamed (real Southampton area); web search found no UK place called Fennickstead (2026-11-28).
+
+Roles by the SPEC rule in table order (also in `demo-data/packs/manifest.json`): demo = the last pack of each sector (S04, S08, S12); held-out = the other 9; held-out drafting packs = the first of each sector (S01, S05, S09), each with at least 15 scored questions.
+
+| Pack | Sector | File | Pages (app parser) | SHA-256 of the .md source (first 16) | Role |
+|---|---|---|---|---|---|
+| S01 | Cleaning | `S01-cleaning-civic-offices-conveniences.docx` | 13 | 58b843c69854e924 | held-out (drafting) |
+| S02 | Cleaning | `S02-cleaning-leisure-centre.docx` | 8 | 10eb9a2de6e7a9e0 | held-out |
+| S03 | Cleaning | `S03-cleaning-academy-trust-schools.docx` | 9 | 5c4916970215d6d8 | held-out |
+| S04 | Cleaning | `S04-cleaning-halls-and-toilets.docx` | 7 | 0f9d2b91c97067e6 | demo |
+| S05 | Security | `S05-security-council-guarding-patrol.docx` | 15 | e2ddb3231d2d9190 | held-out (drafting) |
+| S06 | Security | `S06-security-housing-concierge-estate.docx` | 10 | a053323cdf2f9a77 | held-out |
+| S07 | Security | `S07-security-college-events-stewarding.docx` | 10 | 4c69e0f9a5ffd9ab | held-out |
+| S08 | Security | `S08-security-trust-cctv-keyholding.docx` | 10 | ca797282faec1485 | demo |
+| S09 | Grounds | `S09-grounds-brackenholt-town.docx` | 13 | ca3bd93ce7f697a4 | held-out (drafting) |
+| S10 | Grounds | `S10-grounds-ashenmere-parish.docx` | 7 | 306262d9d2146487 | held-out |
+| S11 | Grounds | `S11-grounds-quillbrook-district.docx` | 9 | d49ea208a2065a75 | held-out |
+| S12 | Grounds | `S12-grounds-hallowby-town.docx` | 7 | 67faf4417d436a1d | demo |
+
+### Earlier real candidates (not used; kept for a later swap)
+
 **Status: PARTIAL. 0 of 12 packs verified.** Twelve candidate packs were found and their notice data recorded, but none of their documents could be downloaded, so page counts, text checks and SHA-256 hashes are not done. No tender file is stored in the repo.
 
 Why: on 2026-11-27 (about 18:30 to 18:35 UTC) every `/Notice/...` page and every `/Notice/Attachment/...` download on both Contracts Finder and Find a Tender returned **HTTP 403 from the site's own load balancer (`server: awselb/2.0`)**. This was not the studio's egress proxy. The search pages (`/Search`) and the Contracts Finder OCDS API (`/Published/Notices/OCDS/Search`) still returned 200. A WebFetch of a notice page also got 403. Retries over about two minutes were still blocked. The block was not worked around (no browser user-agent spoofing, no mirrors). It may be a WAF rule against cloud/automated clients, or a rate limit set off by the API scan. A later run, or a person in a browser, should try again.
