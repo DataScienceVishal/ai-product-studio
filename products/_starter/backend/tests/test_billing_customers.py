@@ -442,3 +442,29 @@ def test_a_cancellation_event_for_a_deleted_tenant_does_not_call_the_provider(ap
     with database.sessions() as db:
         assert apply_update(db, update_, billing.name, billing) is True
     assert billing.closed == []
+
+
+def test_a_twin_delivery_storing_the_event_id_during_the_orphan_close_is_not_an_error(app, owner, database):
+    """T-209 (T-208 re-review): the same event is delivered twice at once. The other delivery stores its id while our
+    provider close is running; our own commit then hits the primary key. That must end cleanly, not as a 500."""
+    from app.models import BillingEvent
+    client, _ = owner
+    t, billing = _tenant(client), app.state.billing
+    assert _delete_account(client).status_code == 204
+    billing.closed.clear()
+    real_close = billing.close
+
+    def close_while_the_twin_stores_the_event(customer, subscription):
+        with database.sessions() as other:
+            other.add(BillingEvent(id="e_dup"))
+            other.commit()
+        real_close(customer, subscription)
+
+    billing.close = close_while_the_twin_stores_the_event
+    assert _orphan_event(database, billing, t, "e_dup", "sub_dup", "cus_DUP") is True  # no IntegrityError escapes
+    assert billing.closed == [("cus_DUP", "sub_dup")]
+    with database.sessions() as db:
+        assert db.scalar(select(func.count()).select_from(BillingEvent).where(BillingEvent.id == "e_dup")) == 1
+    billing.close = real_close
+    assert _orphan_event(database, billing, t, "e_dup", "sub_dup", "cus_DUP") is False  # redelivery: duplicate, skipped
+    assert billing.closed == [("cus_DUP", "sub_dup")]
