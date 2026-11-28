@@ -42,7 +42,7 @@
   {
    "ref": "Q5",
    "kind": "question",
-   "text": "Explain how you will respond to the following. (a): A resident reports a fire alarm sounding at Alder Court at 02:00 and a lift stuck between floors.",
+   "text": "Explain how you will respond to the following. (a): A resident reports a fire alarm sounding at Alder Court at 02:00 and a lift stuck between floors. (b): A resident tells the concierge they fear for the safety of a neighbour. Describe the escalation steps and what is reported afterwards.",
    "word_limit": null,
    "page_limit": null,
    "marks": 6,
@@ -181,7 +181,7 @@
   {
    "ref": "",
    "kind": "deadline",
-   "text": "Tender return deadline: 14:00 on Friday 23 April 2027",
+   "text": "Tender submission deadline: 14:00 on Friday 23 April 2027",
    "word_limit": null,
    "page_limit": null,
    "marks": null,

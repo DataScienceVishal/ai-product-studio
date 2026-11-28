@@ -72,3 +72,19 @@ def test_pack_key(path):
     for i in qs:
         if "shared_group" in i:
             assert i["word_limit"] is None and i["shared_words"]
+
+
+def _item(stem, ref, kind="question"):
+    d = _load(next(p for p in KEYS if p.stem.startswith(stem)))
+    return next(i for i in d["items"] if i["ref"] == ref and i["kind"] == kind)
+
+
+def test_spot_limits():
+    assert _item("S07", "6")["word_limit"] == 400          # S07 .md l.211 own limit
+    assert _item("S05", "Q12")["word_limit"] == 400        # S05 2.4 general rule
+    assert _item("S02", "3")["word_limit"] == 500          # S02 Part 1 section 3 general rule
+    assert _item("S02", "1")["word_limit"] == 750          # own limit beats the general rule
+    assert _item("S09", "2.1")["word_limit"] is None       # shared 800 words, rule 7
+    assert _item("S06", "Q8")["page_limit"] == 1           # S06 Q8 one side of A4
+    assert _item("S10", "Q2")["word_limit"] == 350         # S10 1.3 general rule
+    assert _item("S05", "Q11", "mandatory")["word_limit"] == 150
