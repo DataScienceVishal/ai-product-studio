@@ -162,7 +162,7 @@ Status moves through: open → sent <UTC> → answered | defaulted.
 - Recommended: A, because it fits the two-week demo window for under $6 and leaves the app's safety caps untouched.
 - If no answer: nothing is spent. The six build slices and three data tasks need no model calls and go ahead on the fake provider; the live eval waits for an explicit yes.
 
-## Q-20 (status: sent 2026-11-27T19:31Z as 2; default B due 2026-11-28T07:45Z, the time the digest gave (12h after send); queued by run 8a57 2026-11-27T18:45Z; reversible)
+## Q-20 (status: defaulted to B 2026-11-28T07:45Z, no reply (inbox checked 07:45Z); synthetic packs merged by run 234e (T-194); real packs can still replace them; was: sent 2026-11-27T19:31Z as 2; default B due 2026-11-28T07:45Z, the time the digest gave (12h after send); queued by run 8a57 2026-11-27T18:45Z; reversible)
 - Decision: How do we get the 12 public tender packs for the tender demo, now that Contracts Finder blocks downloads from the studio's cloud sessions?
 - Context: Notice pages and attachments return 403 to the studio (HURDLES 2026-11-27 run 8a57). 12 candidates (4 cleaning, 4 security, 4 grounds) are listed with links in products/sme-council-tender-drafting/demo-data/SOURCES.md. Building the app goes on regardless; only the answer keys and the scored eval wait.
 - Options: A) You download the attachments for P01-P12 in a browser (about 20 minutes) and commit them to demo-data/packs/ or send them via Telegram (recommended) B) Studio writes 12 realistic made-up tender packs in the style of real council ones, clearly labelled synthetic; weaker demo, but no wait C) Wait and let a later run retry the downloads
