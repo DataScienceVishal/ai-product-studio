@@ -109,3 +109,58 @@ recognise, and that includes tenants that never existed in this app.
   is tested. C1 is the gap.
 - **Security and logging.** The new logs carry only `tenant_id`, with no provider text or customer ids. Path segments are
   now `quote`d in `close`. ORM queries only.
+
+---
+
+## Re-review: dd779b3 (2026-11-28)
+
+**Verdict: PASS.** C1 is closed, the fix commit introduces no regressions, and S1 and S2 are done.
+
+### What changed
+- **C1.** `delete_account` now merges `BillingEvent("deleted-tenant:<uuid>")` (`models.deleted_tenant_marker`) in the same
+  transaction as the tenant delete, after the last locked re-read. `_close_orphan` returns without calling the provider
+  unless that tombstone exists. An unknown tenant only gets a WARNING log, and its event id is stored.
+- **S1.** When there is no subscription row, the path now does this in order: roll back the flushed event id, then
+  `_close_orphan`, which reads, rolls back again so no transaction is open during the network call, and closes. Only then
+  does it add and commit the event id. An `IntegrityError` on that commit is rolled back and the call returns True.
+- **S2.** The orphan close runs only for `starts_subscription` events.
+- **DATA.md.** The `billing_events` row now describes the tombstone (a random UUID with no personal data, purged after 400
+  days like event ids).
+
+### Evidence
+- Full backend suite at `dd779b3` (same worktree and venv, local Postgres 16): **854 passed, 1 skipped**, 1 warning, 134 s.
+  That matches the builder's count.
+- `alembic upgrade head` on a fresh database `t208_rev`, then `alembic check`: "No new upgrade operations detected". The
+  scratch database was dropped afterwards. There is no schema change: the tombstone reuses `billing_events`.
+- I reverted each part on its own and ran `tests/test_billing_customers.py` (25 tests):
+
+  | Part reverted | Tests that fail |
+  |---|---|
+  | tombstone check in `_close_orphan` | 1 (`a_signed_event_for_a_tenant_this_app_never_had_closes_nothing_and_is_recorded`) |
+  | tombstone write in `delete_account` | 5 |
+  | old order (event id committed before the close) | 2 (`failing_close_..._redelivery_closes_it`, `orphan_is_closed_before_its_event_id_is_stored`) |
+  | `starts_subscription` filter | 1 (`cancellation_event_for_a_deleted_tenant_does_not_call_the_provider`) |
+  | `IntegrityError` handling removed | **0** (the full suite still passes: 854 passed, 1 skipped) |
+
+- I probed the `IntegrityError` path with a temporary test, deleted afterwards. A twin delivery stores `e_dup` while the
+  close is running. Result: the first call returns True with no exception, the close happened once, and a later redelivery
+  of `e_dup` returns False because it is deduplicated. Redelivery after a failed close still works, and the test above
+  fails without that behaviour.
+
+### Correctness notes (no issues)
+- **Tombstone visibility.** A webhook waiting on the subscription row lock wakes up after deletion commits. It finds no row,
+  and its new read transaction sees the committed tombstone, so the orphan is closed. A failed or 503 deletion rolls back
+  without a tombstone, and `a_failed_deletion_writes_no_tombstone` covers that.
+- **No collision with event ids.** Stripe ids are `evt_...` and mock ids are `mock_evt_...`. A colliding id would need a
+  valid signature.
+- **Concurrent duplicates.** Both deliveries now pass the first flush, because the flushed id is rolled back before the
+  close. Both may call `close`, which is idempotent (a 404 counts as done), and exactly one stores the id. That costs at
+  most one extra provider call, in exchange for never losing a close to a crash.
+- **Unknown tenants.** The tombstone check means a tenant UUID from another product on the same Stripe account is never
+  closed, which was the C1 risk.
+
+### Remaining suggestions (not blocking)
+- Add a test for the `IntegrityError` branch, for example the twin-delivery probe above. Today nothing fails if it is
+  removed.
+- S3 and S4 from the first review (a threaded lock test, and the stale `provider_customer` after the checkout retry) are
+  still open. Both are optional.
