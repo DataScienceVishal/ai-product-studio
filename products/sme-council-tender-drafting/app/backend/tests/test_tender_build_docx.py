@@ -156,3 +156,21 @@ def test_s08_appendix_1_lists_19_sites():
     rows = [r for r in bd._blocks(app) if r[0] == "table"][0][1][1:]
     assert sum(int(r[1]) for r in rows) == 19 == int(re.search(r"(\d+) sites with intruder alarm panels", md).group(1))
     assert sum(int(r[2]) for r in rows) == 138
+
+
+# --- T-217: a table over the page budget must not leave its heading alone on a page ------------------------------
+@pytest.mark.parametrize("heads", ["## Big\n\n", "# One\n\n## Two\n\n"])
+def test_oversize_table_does_not_strand_its_heading_alone(tmp_path, heads):
+    big = "| a |\n|---|\n| " + words(950, "x") + " |\n"
+    md = words(100, "p") + "\n\n" + heads + big
+    bd.build(make(tmp_path, md), tmp_path / "S99-test.docx")
+    pages = pages_of(tmp_path / "S99-test.docx")
+    for pg in pages:
+        assert any("[table]" == b or "[Normal]" in b or "[List" in b for b in pg), f"page holds only headings: {pg}"
+    assert len(pages) == 2 and pages[1][-1] == "[table]" and pages[1][0].startswith("[Heading")
+
+
+def test_oversize_table_at_the_top_of_a_page_keeps_one_page(tmp_path):
+    big = "| a |\n|---|\n| " + words(950, "x") + " |\n"
+    bd.build(make(tmp_path, "## Big\n\n" + big), tmp_path / "S99-test.docx")
+    assert len(pages_of(tmp_path / "S99-test.docx")) == 1

@@ -58,7 +58,7 @@ Halden Vale Community Assets Trust (fictional) owns and operates three leisure c
 
 ### 3.2 Service A: CCTV and intruder alarm monitoring
 
-The provider will operate a 24 hour, 365 day alarm receiving and video monitoring centre which meets BS 5979 Category II (or equivalent EN 50518 standards for alarm receiving) and BS 7958 for CCTV. The Trust has 11 sites with 138 cameras, of which 64 are fitted with video analytics for intrusion detection, and 19 sites with intruder alarm panels. The provider will:
+The provider will operate a 24 hour, 365 day alarm receiving and video monitoring centre which meets BS 5979 Category II (or equivalent EN 50518 standards for alarm receiving) and BS 7958 for CCTV. The Trust has 14 sites with 138 cameras, of which 64 are fitted with video analytics for intrusion detection, and 19 sites with intruder alarm panels. The provider will:
 
 - receive and verify alarm activations and analytics events;
 - use live audio or video challenge where fitted;
@@ -199,8 +199,8 @@ Complete all items. Prices are in pounds sterling excluding VAT and fixed for 12
 
 | Ref | Item | Annual quantity for evaluation | Unit |
 |---|---|---|---|
-| 1 | Alarm and CCTV monitoring, per site per month, for 11 CCTV sites | 132 site-months | £ per site per month |
-| 2 | Alarm monitoring only, per site per month, for 8 alarm-only sites | 96 site-months | £ per site per month |
+| 1 | Alarm and CCTV monitoring, per site per month, for 14 CCTV sites | 168 site-months | £ per site per month |
+| 2 | Alarm monitoring only, per site per month, for 5 alarm-only sites | 60 site-months | £ per site per month |
 | 3 | Keyholding, annual fee per site | 19 | £ per site per year |
 | 4 | Alarm attendance, daytime (07:00 to 19:00) | 200 | £ per attendance |
 | 5 | Alarm attendance, night-time and weekends | 350 | £ per attendance |
@@ -221,7 +221,7 @@ Payment is monthly in arrears within 30 days. The Trust may terminate on 3 month
 
 ## Appendix 1: Site List Summary
 
-This summary groups sites by type. Some buildings hold more than one monitored system, so the 19 alarm sites and 11 CCTV sites in section 3.2 are counted per system, not per building. A full asset list is issued to the successful bidder at mobilisation.
+This summary groups sites by type. Some buildings hold more than one monitored system, so the 19 alarm sites and 14 CCTV sites in section 3.2 are counted per system, not per building. A full asset list is issued to the successful bidder at mobilisation.
 
 | Category | Sites | CCTV cameras | Notes |
 |---|---|---|---|
