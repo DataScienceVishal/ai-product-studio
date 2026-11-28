@@ -1,0 +1,537 @@
+{
+ "derivation": "Hand labels by qa, T-206, written from the three demo pack markdown files and the evidence library files 01 to 32 only; E-n numbers per evidence_map.json (E-n is evidence file n, one passage each). Relevant means a passage a careful bid writer would cite to answer the question (a fact, policy, method, case study or KPI that directly answers part of it), not a passage merely on the same theme; primary means the passage(s) without which the answer would be weak. Questions where the library holds nothing that answers them have empty relevant and primary and a gap note. Labels were made without consulting the app's retrieval.",
+ "packs": {
+  "S04-cleaning-halls-and-toilets.docx": [
+   {
+    "ref": "4.1",
+    "text": "Describe how you will clean the three halls, including between-hire changeovers, kitchens and the nursery areas at Hollin Green.",
+    "relevant": [
+     11,
+     17,
+     20,
+     23
+    ],
+    "primary": [
+     17
+    ],
+    "why": {
+     "11": "children-setting rules: clean before 8:00/after 16:30, never alone with a child, enhanced DBS",
+     "17": "colour-coded method, green for kitchens, daily and periodic tasks, touch points, supervision",
+     "20": "delivered cleaning of 2 community halls and libraries, 9 buildings, audit results",
+     "23": "cleaning in child settings: before 8:00/after 16:30, touch-point cleaning twice a day, DBS-checked team"
+    }
+   },
+   {
+    "ref": "4.2(a)",
+    "text": "Describe how you will clean and maintain the four public toilets, including the weekly deep clean and dealing with vandalism and misuse.",
+    "relevant": [
+     17
+    ],
+    "primary": [
+     17
+    ],
+    "why": {
+     "17": "washroom servicing, colour coding for washroom floors and sanitary fittings, periodic hard-floor scrub, daily refill of consumables"
+    }
+   },
+   {
+    "ref": "4.2(b)",
+    "text": "Describe your 4-hour emergency response arrangements, including out-of-hours and weekend arrangements.",
+    "relevant": [
+     13,
+     17,
+     25,
+     29
+    ],
+    "primary": [
+     13,
+     25
+    ],
+    "why": {
+     "13": "24-hour duty manager number, recovery targets, relief staff bank at 4 hours' notice",
+     "17": "fault reporting via duty manager line 24 hours a day",
+     "25": "worked example of a night-time emergency call-out: called 23:10, 6 operatives on site by 01:30",
+     "29": "24-hour duty manager and contact hours"
+    }
+   },
+   {
+    "ref": "4.3",
+    "text": "Explain who will do the work, how they will be supervised, and what you will do if someone is ill or on holiday.",
+    "relevant": [
+     13,
+     17,
+     20,
+     29,
+     32
+    ],
+    "primary": [
+     13,
+     17
+    ],
+    "why": {
+     "13": "bank of 9 relief cleaners at 4 hours' notice, mass-absence scenario",
+     "17": "one working supervisor per 7 operatives, weekly inspection",
+     "20": "example team structure: 22 operatives and 3 supervisors",
+     "29": "named Contracts Manager and on-site supervisor per contract",
+     "32": "contract manager roles with named deputies as cover"
+    }
+   },
+   {
+    "ref": "4.4(a)",
+    "text": "Describe how you will start the contract on 1 April 2028 and manage the possible TUPE transfer of two staff.",
+    "relevant": [
+     15,
+     16,
+     20
+    ],
+    "primary": [
+     15,
+     16
+    ],
+    "why": {
+     "15": "TUPE process steps, ELI request, briefings, past transfers of 17 and 5 staff",
+     "16": "6-week mobilisation plan by week, past mobilisation timings",
+     "20": "example of 5-week mobilisation with 17 TUPE transfers and audit results"
+    }
+   },
+   {
+    "ref": "4.4(b)",
+    "text": "Describe the training and induction your staff will receive before they begin work.",
+    "relevant": [
+     4,
+     8,
+     16
+    ],
+    "primary": [
+     8
+    ],
+    "why": {
+     "4": "objective that 100% complete induction before first unsupervised shift",
+     "8": "training matrix: induction 102/102, COSHH, manual handling, supervisor qualification, first aid",
+     "16": "induction and site training in week -2, DBS checks week -4"
+    }
+   },
+   {
+    "ref": "4.5",
+    "text": "Describe how you will manage health and safety and chemicals (COSHH), including working alone and keeping nursery children safe.",
+    "relevant": [
+     6,
+     8,
+     11,
+     23,
+     27
+    ],
+    "primary": [
+     6,
+     11,
+     27
+    ],
+    "why": {
+     "6": "H&S arrangements: risk assessments, COSHH training, lone working check-ins, incident record, SafeContractor",
+     "8": "COSHH 97% and lone working training figures",
+     "11": "safeguarding policy: enhanced DBS, never alone with a child, DSL, reporting",
+     "23": "cleaning in schools with enhanced-DBS team and safeguarding awareness, 0 concerns",
+     "27": "safety data sheets held in site folder for every product, eco-labelled chemicals"
+    }
+   },
+   {
+    "ref": "4.6",
+    "text": "Describe how you will check the quality of your work, and how the Parish Clerk and hall hirers can raise issues and be sure they will be dealt with.",
+    "relevant": [
+     4,
+     17,
+     20,
+     26,
+     29
+    ],
+    "primary": [
+     4,
+     17,
+     29
+    ],
+    "why": {
+     "4": "weekly/monthly/quarterly inspections, complaint log-acknowledge-resolve timings and 2025/26 results",
+     "17": "weekly 20-point inspection and monthly joint inspection with client",
+     "20": "example results: audit scores and complaints reduction",
+     "26": "audit scores and complaint figures across contracts",
+     "29": "complaints procedure, reporting, review meetings"
+    }
+   },
+   {
+    "ref": "4.8",
+    "text": "Social value: how will your business benefit the Pellwick area through this contract (for example local recruitment, buying locally, supporting community groups, reducing environmental impact)? Please give specific commitments.",
+    "relevant": [
+     5,
+     14,
+     27,
+     28
+    ],
+    "primary": [
+     14
+    ],
+    "why": {
+     "5": "environmental performance: eco-label chemicals, renewable tariff, recycling",
+     "14": "local hires, local spend, apprenticeships, volunteering, commitments for a new contract",
+     "27": "eco-labelled chemicals, recycled-content bin liners",
+     "28": "direct local recruitment, apprenticeships, pay floor"
+    }
+   }
+  ],
+  "S08-security-trust-cctv-keyholding.docx": [
+   {
+    "ref": "Q1",
+    "text": "Describe your monitoring centre operation, including staffing levels by time of day, how you will meet the 90 second action target for priority 1 sites, how you will verify alarms and how you will manage multiple simultaneous events.",
+    "relevant": [
+     1,
+     18,
+     24,
+     27
+    ],
+    "primary": [
+     18
+    ],
+    "why": {
+     "1": "states CCTV public-space monitoring is not provided",
+     "18": "alarm receiving via subcontracted partner ARC, no own control room, incident reporting",
+     "24": "alarm response through partner ARC, 64 call-outs",
+     "27": "alarm receiving is a subcontracted service, we remain responsible"
+    }
+   },
+   {
+    "ref": "Q2",
+    "text": "Describe how you will deliver the keyholding and response service across the Trust's sites, including the number and location of mobile officers, how you will meet the response times in 3.3, and the way you will keep key security to BS 7984-1.",
+    "relevant": [
+     12,
+     18,
+     24
+    ],
+    "primary": [
+     18,
+     24
+    ],
+    "why": {
+     "12": "access to client key lists limited to 4 named roles",
+     "18": "key-holders attend within 30 minutes, average 22 minutes over 64 call-outs",
+     "24": "keyholding case study, 22-minute average vs 30-minute target, 4 officers"
+    }
+   },
+   {
+    "ref": "Q3",
+    "text": "Explain how you recruit, vet (BS 7858), train and supervise CCTV operators and mobile officers, including conflict management and first aid training, and the arrangements for lone workers on night call-outs.",
+    "relevant": [
+     6,
+     8,
+     16,
+     18,
+     21,
+     28
+    ],
+    "primary": [
+     8,
+     18
+    ],
+    "why": {
+     "6": "lone working check-in by phone every 60 minutes",
+     "8": "security licence, conflict management, lone working, first aid training figures",
+     "16": "DBS and licence checks before service start",
+     "18": "shift limits, hourly welfare checks for lone workers, assignment instructions",
+     "21": "conflict management training for all officers, licensed before start",
+     "28": "direct recruitment, time to hire, night security pay"
+    }
+   },
+   {
+    "ref": "Q4",
+    "text": "Describe the technology you will use, including the alarm receiving platform, video analytics, remote audio challenge, patrol tracking and reporting portal, and how the Trust will see real-time information.",
+    "relevant": [
+     18
+    ],
+    "primary": [
+     18
+    ],
+    "why": {
+     "18": "electronic checkpoint tags, patrol logs available to client in 24 hours, alarm receiving via partner"
+    }
+   },
+   {
+    "ref": "Q5",
+    "text": "Answer both parts. (a): Describe how you will reduce false alarms at Trust sites, with examples of the reduction you have achieved elsewhere.",
+    "relevant": [],
+    "primary": [],
+    "why": {},
+    "gap": "No passage describes false-alarm reduction, false-alarm analysis, or handling repeated activations; the closest content (incident reductions at leisure centre, alarm call-out counts) is not about false alarms."
+   },
+   {
+    "ref": "Q6",
+    "text": "Explain your business continuity and disaster recovery arrangements for the alarm receiving and monitoring centre, including a back-up site, failover times, power, and communications failures, and your cyber security controls.",
+    "relevant": [
+     3,
+     12,
+     13,
+     18
+    ],
+    "primary": [
+     12,
+     13
+    ],
+    "why": {
+     "3": "Cyber Essentials held; ISO 27001 and Plus not held",
+     "12": "cyber controls: encryption, MFA, access limits, breach history",
+     "13": "continuity plan, scenarios, recovery targets, no second depot",
+     "18": "alarm receiving is subcontracted, no own control room"
+    }
+   },
+   {
+    "ref": "Q7",
+    "text": "Describe your approach to mobilisation between 1 September and 31 October 2027, including the transfer of keys, connection of alarm signalling, testing, creation of site records and how the risk of a gap in cover will be controlled.",
+    "relevant": [
+     16,
+     18,
+     21
+    ],
+    "primary": [
+     16
+    ],
+    "why": {
+     "16": "6-week plan: keys logged, assets, dry-run shifts, out-of-hours contact tested",
+     "18": "assignment instructions written at mobilisation and signed off by client",
+     "21": "3-week security mobilisation with officers licensed before start"
+    }
+   },
+   {
+    "ref": "Q8",
+    "text": "Describe how you will manage the contract, report on KPIs, deal with complaints and drive improvement, including how you will handle a serious service failure. State your proposed KPIs.",
+    "relevant": [
+     4,
+     26,
+     29
+    ],
+    "primary": [
+     26,
+     29
+    ],
+    "why": {
+     "4": "complaint timings, corrective-action process, management review",
+     "26": "KPI figures: audit scores, complaints, shifts delivered, response times",
+     "29": "account management, reporting, complaints procedure, service credits"
+    }
+   },
+   {
+    "ref": "Q9",
+    "text": "Social value: describe how you will create local employment and training opportunities as a result of this contract, such as apprenticeships and recruitment of local people who are long-term unemployed.",
+    "relevant": [
+     14,
+     28
+    ],
+    "primary": [
+     14
+    ],
+    "why": {
+     "14": "85% local hires, 6 long-term unemployed hires, apprenticeship starts, new-contract commitment",
+     "28": "direct recruitment, apprenticeships, progression"
+    }
+   },
+   {
+    "ref": "Q10",
+    "text": "Social value: describe how you will reduce carbon emissions from the service, such as route optimisation, electric or hybrid vehicles, and remote verification to avoid unnecessary attendances.",
+    "relevant": [
+     5,
+     14,
+     22
+    ],
+    "primary": [
+     5
+    ],
+    "why": {
+     "5": "fleet of 7 diesel vans, no EVs, no carbon plan, renewable tariff",
+     "14": "states no measured carbon-saving figure",
+     "22": "re-planned rounds saved about 11% of mileage"
+    }
+   }
+  ],
+  "S12-grounds-hallowby-town.docx": [
+   {
+    "ref": "1",
+    "text": "Describe your approach to mobilisation and your programme for the first 12 weeks, including the transfer of staff, and the timing of the first bedding change and hedge cuts.",
+    "relevant": [
+     15,
+     16,
+     19,
+     22
+    ],
+    "primary": [
+     15,
+     16,
+     22
+    ],
+    "why": {
+     "15": "TUPE process and past grounds transfer of 5 staff",
+     "16": "week-by-week mobilisation plan and first 4 weeks of review",
+     "19": "annual schedule agreed in March, hedge cuts twice a year outside nesting season",
+     "22": "grounds mobilisation in 4 weeks, first round on day 3, 5 TUPE staff"
+    }
+   },
+   {
+    "ref": "2",
+    "text": "Explain your staffing, supervision and holiday cover, including who will be on site daily and how the Council can contact them.",
+    "relevant": [
+     13,
+     19,
+     29,
+     32
+    ],
+    "primary": [
+     19,
+     29
+    ],
+    "why": {
+     "13": "relief staff bank, mass-absence and severe-weather scenarios, 24-hour duty manager",
+     "19": "two 3-person crews with working crew leaders, 8 operatives",
+     "29": "named Contracts Manager and supervisor, contact hours, 24-hour duty manager",
+     "32": "contract manager role with named deputy"
+    }
+   },
+   {
+    "ref": "3",
+    "text": "Describe the machinery, vehicles and tools you will use, including gritting equipment and any electric tools.",
+    "relevant": [
+     5,
+     19
+    ],
+    "primary": [
+     19
+    ],
+    "why": {
+     "5": "fleet of 7 diesel vans, no electric vehicles",
+     "19": "4 ride-on and 6 pedestrian mowers, trailer spreader for gritting, servicing"
+    }
+   },
+   {
+    "ref": "4",
+    "text": "Explain how you will keep the Market Square and Hub Gardens clean and presentable on market days, including your litter-picking method.",
+    "relevant": [
+     19
+    ],
+    "primary": [
+     19
+    ],
+    "why": {
+     "19": "litter picking and bed maintenance in scope, fortnightly schedule-versus-actual report"
+    }
+   },
+   {
+    "ref": "5",
+    "text": "Explain how you will carry out small facilities repairs, including who does the work, how you price and report jobs, and how you handle gas or electrical work.",
+    "relevant": [],
+    "primary": [],
+    "why": {},
+    "gap": "No passage covers small facilities or handyman repairs, repair pricing or reporting, or gas/electrical work or qualifications; grounds method statement lists only grounds tasks."
+   },
+   {
+    "ref": "6",
+    "text": "Describe your health and safety system, including lone working, working near the public, and traffic management on the canal towpath.",
+    "relevant": [
+     3,
+     6,
+     8
+    ],
+    "primary": [
+     6
+    ],
+    "why": {
+     "3": "SafeContractor-style pre-qualification held",
+     "6": "H&S arrangements, lone working, grounds toolbox talks, working at height, incident record",
+     "8": "lone working and working-at-height training figures"
+    }
+   },
+   {
+    "ref": "7",
+    "text": "Describe your training and the qualifications of staff, including PA1/PA6 and first aid, and how you will protect children and vulnerable adults at the Hub.",
+    "relevant": [
+     8,
+     11,
+     19
+    ],
+    "primary": [
+     8,
+     11
+    ],
+    "why": {
+     "8": "pesticide certificate 3 of 8, first aid, safeguarding awareness, chainsaw, working at height",
+     "11": "safeguarding policy: enhanced DBS, never alone with a child, designated lead",
+     "19": "3 of 8 operatives hold herbicide certificate"
+    }
+   },
+   {
+    "ref": "8",
+    "text": "Explain how you will monitor quality, report to the Council and put right defects.",
+    "relevant": [
+     4,
+     19,
+     22,
+     29
+    ],
+    "primary": [
+     4,
+     19,
+     29
+    ],
+    "why": {
+     "4": "inspections, corrective-action process, complaint timings",
+     "19": "fortnightly schedule-versus-actual report",
+     "22": "100% of cuts completed, complaints resolved within 3 working days",
+     "29": "monthly report, complaints procedure, review meetings"
+    }
+   },
+   {
+    "ref": "9",
+    "text": "Describe your approach to environmental management, herbicide reduction and biodiversity.",
+    "relevant": [
+     5,
+     19,
+     22
+    ],
+    "primary": [
+     5,
+     22
+    ],
+    "why": {
+     "5": "peat-free compost, herbicide down 64%, wildflower verges, not ISO 14001 certified",
+     "19": "spot-treatment herbicide by certified staff, wildflower verges, peat-free",
+     "22": "herbicide down 64%, no-mow zones, 3,100 sq m wildflower verges"
+    }
+   },
+   {
+    "ref": "10",
+    "text": "Provide two relevant case studies or references, including value, dates and results.",
+    "relevant": [
+     20,
+     22
+    ],
+    "primary": [
+     22
+    ],
+    "why": {
+     "20": "council contract case study, £412,000, dates, results",
+     "22": "council grounds case study, £146,000, dates, results"
+    }
+   },
+   {
+    "ref": "11",
+    "text": "Social value: describe your commitments on local jobs, training and community support, with measurable outputs.",
+    "relevant": [
+     14,
+     22,
+     28
+    ],
+    "primary": [
+     14
+    ],
+    "why": {
+     "14": "local jobs, apprenticeships, volunteering days, community planting, new-contract commitments",
+     "22": "5 community planting days, 118 volunteers, 1 apprentice",
+     "28": "apprenticeship starts, direct local recruitment"
+    }
+   }
+  ]
+ }
+}
