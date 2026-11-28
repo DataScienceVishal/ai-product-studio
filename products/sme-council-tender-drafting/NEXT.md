@@ -1,3 +1,18 @@
+# STATUS (T-219 slice 1) - `--live` enabled for T1, T2, T3 only; no live call made, no spend
+
+Branch `p/sme-council-tender-drafting/T-219` (off main). Not merged. No migrations. Frozen keys, FROZEN.sha256 and packs untouched.
+- `eval/run.py`: `--live` runs only T1-T3 (`LIVE_PHASES`). E1-E4, R1, R2 (and config, retrieval) with `--live` exit 3: "wait for the L1 configuration freeze (EVAL.md TBD rows filled and committed)". `run_phase` also refuses any non-tuning phase when the provider is not the fake (defence in depth). Live needs `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT_MINI`; any missing or blank: exit 6, no client built, no call. The key is only handed to the client, never printed.
+- Live uses the app's `app.ai.AzureOpenAI` (api responses, headroom 0, 180 s timeout and deadline, 2 retries), `Ledger(eval/ledger.jsonl, dry_run=False)`, results in `eval/results/`. Every call goes through `LedgerBudget` (hold under the file lock, group and total cap, worst-case charge on unknown outcome, ledger-rows-without-results refused, resume, cache clear for T2/T3). `main` now also wires the pack loader (app parser) and the retriever (`search_evidence`, APP_PASSAGES, RETRIEVAL_FLOOR) which were missing in the dry path too.
+- Model check: `LedgerBudget.settle` now stops the run (ModelMismatch, exit 7) for a successful reply whose model is not `gpt-5-mini*`, including a missing model ("unknown"; only a failed call may lack a name). The mismatch settle row is written and priced first; the item is not recorded. Any other stop (cap, AI unavailable) in live exits 8.
+- Tests: 27 new (26 net of one replaced) in `tests/test_tender_eval.py` (E/R refusal, missing env, fake client through holds and settles on a temp ledger with dry_run False, wrong or missing model stops, sub-cap and total cap, results-missing refusal). Full backend suite, fresh DB: 1356 passed, 1 skipped, 0 failed.
+- Run T1 live (Studio Lead; spends up to the $0.40 phase worst case, tuning cap $2.00). Fresh local Postgres, then from `products/sme-council-tender-drafting/app/backend` (python3.13 with deps; `DATABASE_URL` local, e.g. `postgresql+psycopg://studio:studio@localhost:5432/tender_eval`):
+  `alembic upgrade head`
+  `cd ../.. && export PYTHONPATH=$PWD:$PWD/app/backend`
+  `UPLOADS_PER_HOUR=1000 UPLOAD_PAGES_PER_DAY=100000 python -m eval.seed`
+  `AZURE_OPENAI_ENDPOINT=... AZURE_OPENAI_API_KEY=... AZURE_OPENAI_DEPLOYMENT_MINI=... python -m eval.run T1 --live`
+  Then commit `eval/ledger.jsonl` and `eval/results/T1.jsonl`. T2 and T3 clear the demo tenant's ai_cache: reseed before any demo.
+- Not done: nothing run live; the real client was not exercised against Azure (only constructed in a test). The first live call is the first proof the endpoint form and headroom-0 reasoning caps work; with headroom 0 a reasoning-heavy answer may truncate (the harness retries once at double cap, priced).
+
 # STATUS (T-216 slice 4) - RM3 pseudo-relevance feedback added and enabled; recall@8 0.745 -> 0.764 (below the 0.8 trigger); no model calls, no spend
 
 Branch `p/sme-council-tender-drafting/T-216-s4` (off main). Not merged. No migrations. Frozen keys, FROZEN.sha256 and packs untouched.

@@ -3,7 +3,9 @@
     python -m eval.run E1                # DRY RUN (default): ScriptedFakeAI, no spend, ledger.dry.jsonl
     python -m eval.run config            # prints the EVAL.md "Run configuration" facts (prompt hashes, caps)
 
-There is no live path in S9. `--live` is refused until L1 (a reviewer PASS on this slice, the keys committed, Q-20 settled).
+    python -m eval.run T1 --live         # LIVE, tuning phases T1-T3 only (T-219): real Azure OpenAI client, eval/ledger.jsonl
+`--live` is refused for E1-E4, R1, R2 (and config/retrieval) until the L1 configuration freeze (EVAL.md TBD rows filled and
+committed). Live needs AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY and AZURE_OPENAI_DEPLOYMENT_MINI in the environment.
 Item results are appended to eval/results/<phase>.jsonl; a re-run skips finished items (the T-56 resume rule).
 """
 from __future__ import annotations
@@ -11,6 +13,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
 from dataclasses import dataclass, field
@@ -20,7 +23,8 @@ from typing import Callable
 PRODUCT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PRODUCT / "app" / "backend"))
 
-from .ledger import (DEFAULT_CONFIG, HERE, BudgetExceeded, Ledger, LedgerBudget, load_budget_config, preflight_scored)
+from .ledger import (DEFAULT_CONFIG, HERE, BudgetExceeded, Ledger, LedgerBudget, ModelMismatch, load_budget_config,
+                     preflight_scored)
 
 KEYS_DIR = HERE / "keys"
 RESULTS_DIR = HERE / "results"          # live results are committed after every phase (DESIGN 8.5); results/dry/ is ignored
@@ -28,6 +32,10 @@ DRY_RESULTS_DIR = RESULTS_DIR / "dry"
 DRY_LEDGER = HERE / "ledger.dry.jsonl"
 LIVE_LEDGER = HERE / "ledger.jsonl"
 DEMO_PACKS = 3
+LIVE_PHASES = frozenset({"T1", "T2", "T3"})       # the only phases that may call the model (T-219); E and R wait for L1
+LIVE_ENV = ("AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_API_KEY", "AZURE_OPENAI_DEPLOYMENT_MINI")
+LIVE_RETRIES = 2                                  # per call; backoff is the client's own (_pause). A 5xx is not billed; a post-send drop is charged worst case
+LIVE_TIMEOUT_SECONDS = 180.0                      # as the app's worker provider
 CACHE_CLEAR_PHASES = {"T2", "T3", "R2"}          # repeat passes and the A9 stopwatch must not be answered from ai_cache
 
 
@@ -255,6 +263,8 @@ def run_phase(phase: str, ctx: Context) -> dict:
     from app.ai import AIUnavailable
     if phase not in PHASES:
         raise PhaseNotReady(f"unknown phase {phase!r}; known: {', '.join(PHASES)}")
+    if phase not in LIVE_PHASES and getattr(ctx.provider, "name", None) != "fake":
+        raise PhaseNotReady(live_refusal(phase))        # defence in depth: no scored or recording phase can reach a real model
     plan = build_plan(phase, ctx)
     if PHASES[phase].group == "scored":
         preflight_scored(ctx.ledger, phase, [(n, p.worst_usd) for n, p in PHASES.items() if p.group == "scored"])
@@ -268,6 +278,7 @@ def run_phase(phase: str, ctx: Context) -> dict:
     ran = skipped = failed = 0
     stopped = None
     cache_cleared = False
+    model_mismatch = False
     for item in plan:
         if item.id in done:
             skipped += 1
@@ -279,6 +290,10 @@ def run_phase(phase: str, ctx: Context) -> dict:
             result = _run_item(ctx, phase, item)
         except BudgetExceeded as e:
             stopped = str(e)
+            break
+        except ModelMismatch as e:                  # the settle row is already written (priced); the item is not recorded
+            stopped = f"MODEL MISMATCH: {e}"
+            model_mismatch = True
             break
         except AIUnavailable as e:                  # infrastructure: stop for a resume, do not record the item
             stopped = f"AI unavailable: {type(e).__name__}; resume later"
@@ -292,6 +307,8 @@ def run_phase(phase: str, ctx: Context) -> dict:
         ran += 1
     res = {"phase": phase, "planned": len(plan), "ran": ran, "failed": failed, "skipped": skipped, "stopped": stopped,
            "dry_run": ctx.dry}
+    if model_mismatch:
+        res["model_mismatch"] = True
     if cache_cleared:
         res["reseed_required"] = RESEED_NOTE
         print(f"eval.run: {RESEED_NOTE}", file=sys.stderr)
@@ -338,6 +355,51 @@ def retrieval_diagnostic(sessions, tenant_id, labels: dict, k: int = 8, labels_s
     return res
 
 
+# ---------- live mode (T-219: tuning phases only) ----------
+
+def live_refusal(phase: str) -> str:
+    return (f"phase {phase} may not run live: only {', '.join(sorted(LIVE_PHASES))} (tuning) may call the model now. "
+            f"E1-E4, R1 and R2 wait for the L1 configuration freeze (EVAL.md TBD rows filled and committed).")
+
+
+def missing_live_env(env=None) -> list[str]:
+    env = os.environ if env is None else env
+    return [k for k in LIVE_ENV if not (env.get(k) or "").strip()]
+
+
+def build_live_provider(env=None):
+    """The app's real Azure OpenAI Responses client (app.ai.AzureOpenAI) from the environment. Headroom 0 so the cap sent is
+    the cap the ledger prices (DESIGN 8.5). The key is passed to the client only: never printed, logged or put in a message.
+    Tests monkeypatch this name to inject a fake."""
+    from app.ai import AzureOpenAI
+    env = os.environ if env is None else env
+    return AzureOpenAI(env["AZURE_OPENAI_ENDPOINT"].strip(), env["AZURE_OPENAI_DEPLOYMENT_MINI"].strip(), env["AZURE_OPENAI_API_KEY"],
+                       timeout=LIVE_TIMEOUT_SECONDS, deadline=LIVE_TIMEOUT_SECONDS, retries=LIVE_RETRIES, api="responses",
+                       reasoning_headroom=0)
+
+
+def pack_loader(packs_dir: Path) -> Callable[[str], list[tuple[int, str]]]:
+    """pack file name -> [(page, text)] through the app's own parser (sandboxed worker), as an upload would be parsed."""
+    def load(name: str) -> list[tuple[int, str]]:
+        from app.tender import ingest
+        path = packs_dir / name
+        parsed = ingest.parse_upload(path.read_bytes(), allow_text=True, max_pages=60)
+        return [(i + 1, p["text"]) for i, p in enumerate(parsed.pages)]
+    return load
+
+
+def retriever(sessions, tenant_id) -> Callable[[str], list]:
+    """question -> hits, called as the draft task calls it (limit APP_PASSAGES, RETRIEVAL_FLOOR)."""
+    def run(question: str) -> list:
+        from app.tender import draft as dr
+        from app.tender.evidence import search_evidence
+        with sessions() as db:
+            hits = search_evidence(db, tenant_id, question, limit=dr.APP_PASSAGES, min_score=dr.RETRIEVAL_FLOOR)
+            db.rollback()
+        return hits
+    return run
+
+
 def local_database(url: str) -> bool:
     from sqlalchemy.engine import make_url
     return (make_url(url).host or "localhost") in {"localhost", "127.0.0.1", "::1"}
@@ -346,12 +408,17 @@ def local_database(url: str) -> bool:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="eval.run")
     ap.add_argument("phase", help="E1..E4, T1..T3, R1, R2, 'config', or 'retrieval' (Recall@8 diagnostic, no model call)")
-    ap.add_argument("--live", action="store_true", help="refused in S9")
+    ap.add_argument("--live", action="store_true", help="call the real model: tuning phases T1-T3 only, through the ledger")
     ap.add_argument("--allow-remote-db", action="store_true", help="allow a DATABASE_URL whose host is not local")
     args = ap.parse_args(argv)
-    if args.live:
-        print("eval.run: live runs are not enabled in S9 (no live model calls until L1).", file=sys.stderr)
+    if args.live and args.phase not in LIVE_PHASES:
+        print(f"eval.run: {live_refusal(args.phase)}", file=sys.stderr)
         return 3
+    if args.live:
+        missing = missing_live_env()
+        if missing:
+            print(f"eval.run: live run refused, no call made: set {', '.join(missing)} in the environment", file=sys.stderr)
+            return 6
     if args.phase == "config":
         print(json.dumps(run_configuration(), indent=2))
         return 0
@@ -362,7 +429,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.phase != "retrieval":
         from app.tender.scripted_ai import ScriptedFakeAI
         cfg = load_budget_config()
-        ledger = Ledger(DRY_LEDGER, cfg, dry_run=True)
+        ledger = Ledger(LIVE_LEDGER if args.live else DRY_LEDGER, cfg, dry_run=not args.live)
     from sqlalchemy import select
     from app.config import Settings
     from app.db import Database
@@ -387,12 +454,19 @@ def main(argv: list[str] | None = None) -> int:
         (RESULTS_DIR / "retrieval.json").write_text(text + "\n", encoding="utf-8")
         print(text)
         return 0
-    ctx = Context(ScriptedFakeAI(), ledger, sessions, tenant_id, results_dir=DRY_RESULTS_DIR, dry=True)
+    provider = build_live_provider() if args.live else ScriptedFakeAI()
+    ctx = Context(provider, ledger, sessions, tenant_id, retrieve=retriever(sessions, tenant_id),
+                  load_pack=pack_loader(PRODUCT / "demo-data" / "packs"),
+                  results_dir=RESULTS_DIR if args.live else DRY_RESULTS_DIR, dry=not args.live)
     try:
-        print(json.dumps(run_phase(args.phase, ctx), indent=2))
+        res = run_phase(args.phase, ctx)
+        print(json.dumps(res, indent=2))
     except PhaseNotReady as e:
         print(f"eval.run: not ready: {e}", file=sys.stderr)
         return 4
+    if args.live and res.get("stopped"):
+        print(f"eval.run: live phase stopped early: {res['stopped']}", file=sys.stderr)
+        return 7 if res.get("model_mismatch") else 8
     return 0
 
 

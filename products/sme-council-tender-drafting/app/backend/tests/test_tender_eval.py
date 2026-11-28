@@ -812,11 +812,130 @@ def test_run_refuses_a_non_local_database():
     assert not R.local_database("postgresql+psycopg://u:p@db.example.azure.com:5432/x")
 
 
-def test_live_is_refused_and_nothing_defaults_to_live(capsys):
-    assert R.main(["E1", "--live"]) == 3
-    assert "not enabled" in capsys.readouterr().err
-    src = (PRODUCT / "eval" / "run.py").read_text()
-    assert "AzureOpenAI" not in src and "build_provider" not in src      # no live provider is even constructed
+@pytest.mark.parametrize("phase", ["E1", "E2", "E3", "E4", "R1", "R2", "config", "retrieval"])
+def test_live_is_refused_outside_the_tuning_phases(phase, capsys, monkeypatch):
+    for k in R.LIVE_ENV:
+        monkeypatch.setenv(k, "x")                       # even fully configured, nothing but T1-T3 may go live
+    monkeypatch.setattr(R, "build_live_provider", lambda *a, **k: pytest.fail("a provider was built"))
+    assert R.main([phase, "--live"]) == 3
+    err = capsys.readouterr().err
+    assert "L1 configuration freeze" in err and "T1" in err
+
+
+def test_live_phases_are_exactly_the_tuning_group(cfg):
+    assert R.LIVE_PHASES == {n for n, p in R.PHASES.items() if p.group == "tuning"} == {"T1", "T2", "T3"}
+
+
+def test_live_with_missing_env_makes_no_call_and_exits_nonzero(capsys, monkeypatch):
+    for k in R.LIVE_ENV:
+        monkeypatch.delenv(k, raising=False)
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://example.invalid")      # one set, two missing
+    monkeypatch.setattr(R, "build_live_provider", lambda *a, **k: pytest.fail("a provider was built"))
+    assert R.main(["T1", "--live"]) == 6
+    err = capsys.readouterr().err
+    assert "AZURE_OPENAI_API_KEY" in err and "AZURE_OPENAI_DEPLOYMENT_MINI" in err and "AZURE_OPENAI_ENDPOINT" not in err
+
+
+def test_missing_live_env_treats_blank_as_missing():
+    assert R.missing_live_env({"AZURE_OPENAI_ENDPOINT": "e", "AZURE_OPENAI_API_KEY": "  ", "AZURE_OPENAI_DEPLOYMENT_MINI": "d"}) == \
+        ["AZURE_OPENAI_API_KEY"]
+
+
+def test_live_provider_is_the_apps_client_with_zero_headroom_and_hides_the_key():
+    env = {"AZURE_OPENAI_ENDPOINT": "https://example.invalid", "AZURE_OPENAI_API_KEY": "sekrit-key-123",
+           "AZURE_OPENAI_DEPLOYMENT_MINI": "mini-dep"}
+    p = R.build_live_provider(env)
+    from app.ai import AzureOpenAI
+    assert isinstance(p, AzureOpenAI) and p.api == "responses" and p.output_headroom == 0 and p.deployment == "mini-dep"
+    assert p.retries == R.LIVE_RETRIES and p.timeout == R.LIVE_TIMEOUT_SECONDS
+    assert "sekrit-key-123" not in json.dumps(R.run_configuration())
+    assert "sekrit" not in (PRODUCT / "eval" / "run.py").read_text()
+
+
+@pytest.mark.parametrize("phase", ["E1", "E2", "E3", "E4", "R1", "R2"])
+def test_run_phase_refuses_a_scored_or_recording_phase_with_a_real_provider(ctx, phase):
+    class Real(ScriptedFakeAI):
+        name = "azure"
+    real = dc_replace(ctx, provider=Real())
+    with pytest.raises(R.PhaseNotReady, match="L1 configuration freeze"):
+        R.run_phase(phase, real)
+    assert real.provider.calls == []
+
+
+class LiveFake(ScriptedFakeAI):
+    """Stands in for the Azure client: not named fake, so every call is priced and held for real."""
+    name = "azure"
+    recorded_answer = None
+
+    def __init__(self, model="gpt-5-mini-2025-08-07"):
+        super().__init__()
+        self.model = model
+
+    def complete(self, system, user, max_output_tokens=1200, *, json_schema=None, effort=None):
+        r = super().complete(system, user, max_output_tokens, json_schema=json_schema, effort=effort)
+        return type(r)(text=r.text, input_tokens=100, output_tokens=50, model=self.model)
+
+
+def test_live_t1_path_writes_holds_and_settles_to_the_ledger(ctx, cfg, tmp_path):
+    live = live_ctx(ctx, cfg, tmp_path)
+    live.provider = LiveFake()
+    r = R.run_phase("T1", live)
+    assert r["dry_run"] is False and r["ran"] == 1 and r["stopped"] is None
+    rows = live.ledger.rows()
+    holds = [x for x in rows if x["kind"] == "hold"]
+    settles = [x for x in rows if x["kind"] == "settle"]
+    assert holds and len(holds) == len(settles)
+    assert {x["hold_id"] for x in holds} == {x["hold_id"] for x in settles}          # every hold is closed by its settle
+    assert all(x["phase"] == "T1" and x["model"] == "gpt-5-mini" for x in holds)
+    assert all(x["model"].startswith("gpt-5-mini") and x["input_tokens"] == 100 and x["usd"] > 0 for x in settles)
+    assert live.ledger.spent(phase="T1") == pytest.approx(len(settles) * (100 * 0.25 + 50 * 2.0) / 1e6)
+    assert (live.results_dir / "T1.jsonl").exists()
+
+
+def test_live_wrong_reported_model_stops_the_run(ctx, cfg, tmp_path):
+    live = live_ctx(ctx, cfg, tmp_path)
+    live.provider = LiveFake(model="gpt-5.4-pro")
+    r = R.run_phase("T1", live)
+    assert r["ran"] == 0 and r["model_mismatch"] and "MODEL MISMATCH" in r["stopped"]
+    settles = [x for x in live.ledger.rows() if x["kind"] == "settle"]
+    assert len(settles) == 1 and settles[0]["usd"] > 0                                  # priced, never hidden
+    assert (live.results_dir / "T1.jsonl").read_text() == ""                            # the item was not recorded
+
+
+@pytest.mark.parametrize("model", ["unknown", "", "gpt-5"])
+def test_live_missing_or_other_model_name_stops_the_run(ctx, cfg, tmp_path, model):
+    live = live_ctx(ctx, cfg, tmp_path)
+    live.provider = LiveFake(model=model)
+    assert R.run_phase("T1", live)["model_mismatch"] is True
+
+
+def test_live_cap_is_enforced_before_the_call(ctx, cfg, tmp_path):
+    live = live_ctx(ctx, cfg, tmp_path)
+    live.provider = LiveFake()
+    live.ledger.append({"phase": "T2", "task": "x", "model": "gpt-5-mini", "input_tokens": 0, "output_tokens": 999_000})
+    r = R.run_phase("T1", live)                                                          # tuning group already over its $2.00
+    assert r["ran"] == 0 and "tuning sub-cap" in r["stopped"] and live.provider.calls == []
+
+
+def test_live_total_cap_binds_on_its_own(ctx, cfg, tmp_path):
+    live = live_ctx(ctx, cfg, tmp_path)
+    live.provider = LiveFake()
+    live.ledger.append({"phase": "E1", "task": "x", "model": "gpt-5-mini", "input_tokens": 0, "output_tokens": 2_999_500})   # $5.999 (scored over its sub-cap)
+    r = R.run_phase("T1", live)                       # tuning is empty, so only the $6.00 total can refuse
+    assert r["ran"] == 0 and "total cap" in r["stopped"] and live.provider.calls == []
+
+
+def test_live_results_missing_with_ledger_rows_is_refused(ctx, cfg, tmp_path):
+    live = live_ctx(ctx, cfg, tmp_path)
+    live.provider = LiveFake()
+    live.ledger.append({"phase": "T1", "task": "x", "model": "gpt-5-mini", "input_tokens": 1, "output_tokens": 1})
+    with pytest.raises(R.PhaseNotReady, match="results"):
+        R.run_phase("T1", live)
+    assert live.provider.calls == []
+
+
+def test_live_ledger_and_results_defaults_point_at_the_committed_paths():
+    assert R.LIVE_LEDGER == PRODUCT / "eval" / "ledger.jsonl" and R.RESULTS_DIR == PRODUCT / "eval" / "results"
 
 
 def test_run_configuration_has_prompt_hashes():
