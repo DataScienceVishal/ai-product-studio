@@ -508,4 +508,4 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Export route is GET /api/packs/{id}/export (not export.docx); export leaves the pack status at signed. Header date format "%d %B %Y" (SPEC fixes no format).
 - T-201 "S8 must re-run claimcheck.export_check server-side": satisfied by export re-running gate.export_allowed on a single read and rendering from the same rows (reviewer agreed; stricter than a second read). Merging the two loaders is T-204 S1.
 
-- 2026-11-28T01:05Z run 6986: T-192 e2e. Kept the starter core_flow.cjs (it covers sign-out, wrong-password delete and account deletion) and changed it to assert the trial banner is absent instead of dropping it, because billing is off in the demo. Merged after reviewer PASS and qa PASS; small leftovers moved to T-205.
+- 2026-11-28T00:40Z run 6986: T-192 e2e. Kept the starter core_flow.cjs (it covers sign-out, wrong-password delete and account deletion) and changed it to assert the trial banner is absent instead of dropping it, because billing is off in the demo. Merged after reviewer PASS and qa PASS; small leftovers moved to T-205.
