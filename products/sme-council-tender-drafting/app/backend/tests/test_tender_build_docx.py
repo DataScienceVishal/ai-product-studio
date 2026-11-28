@@ -258,3 +258,16 @@ def test_s08_reconciled_counts():
     cat = [r for r in bd._blocks(s33) if r[0] == "table"][0][1][1:]
     assert [int(r[1]) for r in cat] == [4, 6, 9] and sum(int(r[1]) for r in cat) == 19
     assert "hold keys for all 19 sites" in s33
+
+
+def test_frozen_names_reads_binary_mode_lines(tmp_path):
+    f = tmp_path / "F.sha256"
+    f.write_text("ab *demo-data/packs/S01-x.docx\ncd  demo-data/packs/S02-y.docx\nef  eval/keys/a.json\n")
+    assert bd.frozen_names(f) == {"S01-x.docx", "S02-y.docx"}
+
+
+def test_plan_writes_fails_closed_without_a_frozen_list():
+    todo, _, errors = bd.plan_writes(None, False, frozen=set())
+    assert todo == [] and errors and "refusing" in errors[0]
+    todo, _, errors = bd.plan_writes(None, True, frozen=set())
+    assert len(todo) == 12 and not errors

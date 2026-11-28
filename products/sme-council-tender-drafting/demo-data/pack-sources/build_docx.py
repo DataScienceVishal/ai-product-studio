@@ -276,8 +276,9 @@ def frozen_names(frozen_list: Path = FROZEN_LIST) -> set[str]:
     names = set()
     for line in frozen_list.read_text(encoding="utf-8").splitlines():
         parts = line.split()
-        if len(parts) == 2 and parts[1].startswith("demo-data/packs/") and parts[1].endswith(".docx"):
-            names.add(Path(parts[1]).name)
+        path = parts[1].lstrip("*") if len(parts) == 2 else ""  # sha256sum binary mode writes '<hash> *<path>'
+        if path.startswith("demo-data/packs/") and path.endswith(".docx"):
+            names.add(Path(path).name)
     return names
 
 
@@ -298,6 +299,8 @@ def plan_writes(only: list[str] | None, allow_frozen: bool, srcs: list[Path] | N
     srcs = srcs if srcs is not None else sources()
     frozen = frozen if frozen is not None else frozen_names()
     errors: list[str] = []
+    if not frozen and not allow_frozen:  # fail closed: without the frozen list we cannot tell held-out packs apart
+        return [], [], [f"no frozen packs listed in {FROZEN_LIST}; refusing to write (pass --allow-frozen to override)"]
     chosen = srcs
     if only:
         wanted = {o.upper() for o in only}
