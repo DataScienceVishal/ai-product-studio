@@ -307,6 +307,59 @@ def test_top_8_with_at_most_3_per_document(client, db):
     assert max(Counter(h.document_id for h in hits).values()) == 3
 
 
+def test_rare_words_outrank_common_question_words(client, db):
+    for i in range(6):
+        body = f"Item {i}\n\nOur approach and arrangements for item {i}.".encode()
+        assert up(client, "/api/evidence/documents", body, f"common{i}.txt").status_code == 201
+    assert up(client, "/api/evidence/documents", b"Lone Heading\n\nGritting and salting of winter roads.", "rare.txt").status_code == 201
+    tid = db.scalar(select(Tenant.id))
+    hits = search_evidence(db, tid, "Describe your approach and arrangements for gritting", limit=3)
+    assert hits and hits[0].document_name == "rare.txt" and 0 < hits[0].rank <= 1
+
+
+def test_bm25_length_term_uses_distinct_lexemes_on_both_sides():
+    from app.tender.evidence import _bm25, BM25_K1, BM25_B
+    idf = {"gritt": 2.0}
+    tv = "'gritt':1,2,3 'road':4"  # 3 positions of 'gritt', 2 distinct lexemes: length is 2, not 4
+    tf, length = 3, 2
+    for avg in (2.0, 4.0):
+        want = 2.0 * tf * (BM25_K1 + 1) / (tf + BM25_K1 * (1 - BM25_B + BM25_B * length / avg))
+        assert _bm25(tv, idf, avg) == pytest.approx(want)
+    assert _bm25("'road':1", idf, 2.0) == 0.0
+
+
+def test_a_passage_without_a_question_word_is_never_a_candidate(client, db):
+    assert up(client, "/api/evidence/documents", b"Plan A\n\n" + tf.words(40, "transition handover plan weeks").encode(), "a.txt").status_code == 201
+    assert up(client, "/api/evidence/documents", b"Other\n\n" + tf.words(40, "handover keys").encode(), "c.txt").status_code == 201
+    tid = db.scalar(select(Tenant.id))
+    assert [h.document_name for h in search_evidence(db, tid, "mobilisation plan")] == ["a.txt"]
+
+
+def test_retrieval_floor_can_reject_a_weakly_related_pack(client, db):
+    body = b"Gritting\n\nGritting and salting of winter roads with our fleet of gritters."
+    assert up(client, "/api/evidence/documents", body, "g.txt").status_code == 201
+    assert up(client, "/api/evidence/documents", b"Other\n\n" + tf.words(40, "catering menus kitchen").encode(), "o.txt").status_code == 201
+    tid = db.scalar(select(Tenant.id))
+    q = "Describe your gritting fleet, vetting of drivers, subcontractor management, social value and carbon reduction plans"
+    weak = search_evidence(db, tid, q)
+    assert weak and 0 < weak[0].rank < 0.3                      # one stray word is not a full-confidence hit
+    assert search_evidence(db, tid, q, min_score=0.3) == []     # a floor above it gives "No evidence found"
+    strong = search_evidence(db, tid, "gritting and salting of winter roads with our fleet of gritters")
+    assert strong[0].rank > 0.5 and search_evidence(db, tid, "gritting salting roads fleet", min_score=0.3)
+
+
+def test_df_is_per_tenant(client, new_client, db):
+    for i in range(4):
+        assert up(client, "/api/evidence/documents", f"Item {i}\n\nGritting salting plan {i} with extra filler words.".encode(), f"x{i}.txt").status_code == 201
+    assert up(client, "/api/evidence/documents", b"Lone\n\nGritting only here. Our depot team runs the winter service from a single yard with its own stores.", "lone.txt").status_code == 201
+    tid = db.scalar(select(Tenant.id))
+    before = [(h.display_no, round(h.rank, 9)) for h in search_evidence(db, tid, "gritting salting")]
+    other = new_client(); sign_up(other, email="b@b.test", company="B")
+    for i in range(10):
+        assert up(other, "/api/evidence/documents", f"Item {i}\n\nGritting salting plan {i}.".encode(), f"y{i}.txt").status_code == 201
+    assert [(h.display_no, round(h.rank, 9)) for h in search_evidence(db, tid, "gritting salting")] == before
+
+
 def test_no_cross_tenant_retrieval(client, new_client, db):
     seed_iso(client)
     other = new_client(); sign_up(other, email="b@b.test", company="B")

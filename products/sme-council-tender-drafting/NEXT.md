@@ -1,3 +1,13 @@
+# STATUS (T-214) - retrieval rescoring: BM25 only, recall@8 0.73 (below the 0.8 trigger) - review CHANGES applied, awaiting re-review
+
+Branch `p/sme-council-tender-drafting/T-214` (off main). Not merged. No migrations, no model calls.
+- Done (reviewer findings 1 to 8): BM25 length now distinct lexemes on both sides; SYNONYMS map and expansion removed (BM25 only); `rank` is absolute (BM25 over the question's own ceiling, in (0, 1)) so `RETRIEVAL_FLOOR` works again (default 0.0 kept); 4 statements per search instead of about 43 (no per-word numnode, no restemming); stale boost comment fixed; DESIGN 4.2 and EVAL.md updated; `tenant_id` added to the `_DF` join.
+- Recall (pooled, `python -m eval.run retrieval`, seed with `UPLOADS_PER_HOUR=1000`): main 0.524 (k=5) / 0.682 (k=8); previous branch tip with synonyms 0.642 / 0.817; now **0.602 / 0.727**, primary hit k=8 0.93, k=5 0.89. **k=8 is below the 0.8 trigger**; that is the honest figure. Per pack k=8: S04 0.669, S08 0.778, S12 0.733.
+- Latency on the 32-passage demo tenant (30 questions): 11.9 ms and 43.5 statements per search before, 5.3 ms and 4.0 after.
+- Note: the +0.25 year/acronym boost now acts on an absolute rank (typically 0.2 to 0.5), so it is a larger share than before. Switching it off gives 0.745 / 0.626 on these labels, 0.1 gives the same as 0.25; left unchanged (not tuned on labels).
+- Tests: new `_bm25` length test, candidate rule, floor test, per-tenant df test in `tests/test_tender_ingest.py`; synonym test removed, rare-words test kept.
+- Left (follow-up): raise `APP_PASSAGES` against the token budget (DESIGN 4.3), a rerank pass, query expansion from scoring criteria or embeddings; STATS cache if a tenant reaches thousands of passages; the seed docs should say `UPLOADS_PER_HOUR=1000` is needed.
+
 # STATUS (T-206 part B) - keys for all 9 held-out packs written; awaiting independent checker
 
 Branch `p/sme-council-tender-drafting/T-206`. Part A is committed (1c2f77e); part B is not. No model calls; keys hand-derived from `demo-data/pack-sources/*.md`.
