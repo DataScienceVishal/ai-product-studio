@@ -582,3 +582,7 @@ The T-92 builder committed on local main instead of its branch (two builders sha
 - Next lines: T-216 (rerank or embeddings design, recall target 0.8, a diagnostic and not a bar per DESIGN 4.2), then the L1 live eval inside the $6.00 Q-19 cap. Order per the 09:42Z run 634d decision (free retrieval tuning before any model spend).
 - Header keeps the hand-kept model spend ("About $15–20 of $80"): no new token-log rows, no eval/ledger.jsonl yet, and the spend report is still no_data.
 - Copy saved as state/runs/20261128T150000Z-desk-d153-digest.txt. DIGEST_NOTES cleared to its header. Committed to main directly (CLAUDE.md section 9 and Vishal's push-to-main instruction); the session branch is kept level.
+
+## 2026-11-28T15:46Z, run 42f7: T-216 slice 4 PRF enabled; retrieval tuning closed
+- RM3-style pseudo-relevance feedback ships enabled because the ship rule fixed before measuring was met (pooled recall@8 0.745 -> 0.764, primary hit 0.964 -> 1.000). The per-pack mix (S04, S08 down; S12 up) is not grounds to switch it off afterwards; that would be a post-hoc choice. Reviewer condition: the held-out run reports PRF on and off, and PRF is turned off if held-out recall or primary hit is lower with it on. Reversible: PRF_ENABLED = False.
+- Free retrieval tuning stops here at 0.764 (diagnostic, not a bar). The remaining levers need Vishal (embeddings deployment, ask-first) or model spend (criteria in extraction). Next line is T-219, the L1 freeze and live eval inside the approved $6.00 Q-19 cap.
