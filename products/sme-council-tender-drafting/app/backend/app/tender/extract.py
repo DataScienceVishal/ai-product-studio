@@ -118,7 +118,7 @@ _BRACKET_LIMIT_END = re.compile(r"\([^()]*\b\d[\d,]*\s*words?\b[^()]*\)$", re.I)
 
 _IMPERATIVE_OR_INVERTED = re.compile(r"^(?:\d+[.)]\s*)?(?:please\s+)?(?:describe|explain|set out|provide|outline|state|detail|give|tell us|"
                                      r"demonstrate|confirm|list|identify|do you|can you|have you|"
-                                     r"(?:how|what|why|who|when|where|which)\s+(?:is|are|do|does|did|can|could|would|should|will we|have|has)\b)", re.I)
+                                     r"(?:how|what|why|who|when|where|which)\s+(?:is|are|do|does|did|can|could|would|should|will|have|has)\b)", re.I)
 
 
 def _is_bracketed_limit_heading(line: str) -> bool:

@@ -63,6 +63,24 @@
       "expected_today": 600,
       "ideal": 600,
       "note": "T-207 C1"
+    },
+    {
+      "id": "KL-7",
+      "status": "fixed",
+      "page": "How will you ensure quality (max 300 words)\n\nDescribe your staffing plan.",
+      "quote": "Describe your staffing plan.",
+      "expected_today": null,
+      "ideal": null,
+      "note": "T-207 R1: an inverted 'How/What will you ...' question without '?' is an earlier question, not a heading"
+    },
+    {
+      "id": "KL-8",
+      "status": "fixed",
+      "page": "What will you do to reduce emissions (max 300 words)\n\nDescribe your staffing plan.",
+      "quote": "Describe your staffing plan.",
+      "expected_today": null,
+      "ideal": null,
+      "note": "T-207 R1: an inverted 'How/What will you ...' question without '?' is an earlier question, not a heading"
     }
   ]
 }
