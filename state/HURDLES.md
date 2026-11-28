@@ -75,3 +75,5 @@ Two builders working in the same clone switch branches under each other, so comm
 - Impact: D1 and D3 (answer keys) cannot finish; builder slices S4-S9 are unaffected (they run on ScriptedFakeAI and generated fixtures).
 - Recommended fix: Vishal downloads the attachments for P01-P12 in a normal browser (about 20 minutes, list in SOURCES.md) and drops them in a private place the studio can read, or a later run tries the documented API attachment route if one exists. Logged as Q-20.
 - Needs Vishal: yes for the browser download. Status: open.
+
+- 2026-11-28T04:55Z run 8368: a builder subagent left the main checkout on a detached HEAD (its branch commit), so the Lead's state commit landed off main and didn't push. Caught and redone on main; nothing lost. Fix: builder briefs must say "work only in your own worktree; never check out another ref in the main checkout", and the Lead runs `git branch --show-current` before committing state.
