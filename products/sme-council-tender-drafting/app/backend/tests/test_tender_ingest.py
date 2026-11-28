@@ -307,6 +307,22 @@ def test_top_8_with_at_most_3_per_document(client, db):
     assert max(Counter(h.document_id for h in hits).values()) == 3
 
 
+def test_rare_words_outrank_common_question_words(client, db):
+    common = "\n\n".join(f"Arrangements {i}\n\n" + tf.words(60, f"describe arrangements approach item{i}") for i in range(6))
+    assert up(client, "/api/evidence/documents", common.encode(), "common.txt").status_code == 201
+    assert up(client, "/api/evidence/documents", b"Lone Heading\n\n" + tf.words(60, "gritting salting winter").encode(), "rare.txt").status_code == 201
+    tid = db.scalar(select(Tenant.id))
+    hits = search_evidence(db, tid, "Describe your approach and arrangements for gritting", limit=3)
+    assert hits and hits[0].document_name == "rare.txt" and 0 < hits[0].rank <= 1
+
+
+def test_domain_synonyms_find_the_other_wording(client, db):
+    assert up(client, "/api/evidence/documents", b"Handover\n\n" + tf.words(40, "transition handover plan weeks").encode(), "h.txt").status_code == 201
+    tid = db.scalar(select(Tenant.id))
+    assert [h.document_name for h in search_evidence(db, tid, "Describe your mobilisation")] == ["h.txt"]
+    assert search_evidence(db, tid, "Describe your catering") == []
+
+
 def test_no_cross_tenant_retrieval(client, new_client, db):
     seed_iso(client)
     other = new_client(); sign_up(other, email="b@b.test", company="B")

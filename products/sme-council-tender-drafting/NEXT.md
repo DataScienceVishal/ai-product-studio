@@ -1,3 +1,24 @@
+# STATUS (T-214) - retrieval recall raised past the 0.8 trigger at k=8; k=5 still 0.64 - code done, awaiting reviewer
+
+Branch `p/sme-council-tender-drafting/T-214` (off main). Not merged. No migrations, no model calls. Tuned only on the demo-pack labels (S04, S08, S12); `eval/keys` untouched; no held-out pack used.
+- Tried (pooled recall, k=5 / k=8): baseline OR plainto_tsquery + ts_rank_cd 0.524 / 0.682. (1) BM25 rescoring of the OR candidates (rare words outweigh "describe", "arrangements"; k1 1.2, b 0.75, df and length from the tenant's own passages): 0.632 / 0.760. (2) plus domain synonym expansion at 0.3 weight (`SYNONYMS` in `evidence.py`, stemmed with the same english config): 0.642 / 0.817. Weight sweep 0.2 / 0.4 / 0.5 gave k5 0.642 / 0.667 / 0.692 and k8 0.801 / 0.817 / 0.811, so flat; kept 0.3 rather than chase the best number.
+- Per-document cap: no effect (demo docs are one passage each; per_doc 3 vs 8 identical). Left at 3 for multi-passage docs (test kept).
+- Sub-bullet expansion: not done. The labelled text is the one-line question; the app's `Requirement.text` is already what is searched, so there are no extra bullets to add without a parser change. Left for later if extracted text carries sub-bullets.
+- Must-have token boost kept; `Hit.rank` is now BM25 divided by the best candidate's (0 to 1), so a code boost of 1.0 still beats any rank. `CANDIDATES` 100 to 300.
+
+Before / after (recall, `python -m eval.run retrieval`, result in `eval/results/retrieval.json`):
+| pack | k=5 before | k=5 after | k=8 before | k=8 after |
+|---|---|---|---|---|
+| S04 | 0.537 | 0.581 | 0.657 | 0.735 |
+| S08 | 0.657 | 0.731 | 0.787 | 0.852 |
+| S12 | 0.392 | 0.617 | 0.608 | 0.858 |
+| pooled | 0.524 | 0.642 | 0.682 | 0.817 |
+Primary hit rate: k=8 0.86 to 1.00; k=5 0.79 to 0.89.
+
+- Overfitting caveat (reviewer, read this): the synonym map was written after reading the misses and the library headings, so its gain is partly in-sample. BM25 alone (0.632 / 0.760) is the unbiased part. The map is general bid vocabulary (no pack, client or question terms) but the true gain on held-out packs is unknown; check with a fresh pack before trusting 0.817.
+- Left: k=5 still 0.64 (draft shows 5): options are raising `APP_PASSAGES` to 6 to 8 (token cost, DESIGN 4.3), a rerank pass, or a better label-independent synonym source; run on a held-out pack once, after the freeze, to report. Update EVAL.md "Retrieval diagnostic" row with the after numbers (not done) and DESIGN 4.2 text. Performance: three extra small queries per search, BM25 in Python over at most 300 candidates; fine for a library of hundreds, re-measure at thousands.
+- Tests: new `test_rare_words_outrank_common_question_words` and `test_domain_synonyms_find_the_other_wording` in `tests/test_tender_ingest.py`; test status is in the report below this block's commit (see the git log message).
+
 # STATUS (T-206 part B) - keys for all 9 held-out packs written; awaiting independent checker
 
 Branch `p/sme-council-tender-drafting/T-206`. Part A is committed (1c2f77e); part B is not. No model calls; keys hand-derived from `demo-data/pack-sources/*.md`.
