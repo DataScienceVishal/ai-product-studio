@@ -51,11 +51,13 @@ for _ in $(seq 1 60); do
 done
 curl -fsS "http://127.0.0.1:$web_port/healthz" >/dev/null || { echo "servers did not start; logs in $logs"; cat "$logs/api.log" | tail -20; exit 1; }
 
+status=0
 fixtures="$logs/fixtures"
 "$python" "$here/tests/e2e/make_fixtures.py" "$fixtures"
 E2E_BASE_URL="http://127.0.0.1:$web_port" E2E_SCREENSHOT="$logs/tender-failure.png" E2E_FIXTURES="$fixtures" PYTHON="$python" \
-  node "$here/tests/e2e/tender_flow.cjs"
-status=0
-E2E_BASE_URL="http://127.0.0.1:$web_port" E2E_SCREENSHOT="$logs/failure.png" node "$here/tests/e2e/core_flow.cjs" || status=$?
+  node "$here/tests/e2e/tender_flow.cjs" || status=$?
+core=0
+E2E_BASE_URL="http://127.0.0.1:$web_port" E2E_SCREENSHOT="$logs/failure.png" node "$here/tests/e2e/core_flow.cjs" || core=$?
+[ "$status" -ne 0 ] || status=$core
 echo "logs: $logs"
 exit $status
