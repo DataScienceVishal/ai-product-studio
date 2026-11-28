@@ -28,3 +28,11 @@ Read: packs S04, S08, S12 (pack-sources), `eval/keys/README.md`, evidence files 
 - S12 10: E-20 is one of four equally eligible non-grounds case studies (20, 21, 23, 24). Note in the derivation that the second case study was picked by size or council relevance, or label all four.
 - S12 5 (gap): E-6 ("any subcontractor must show insurance and a risk assessment before starting") and E-27 ("We would tell the client before any subcontracting begins and remain responsible") only touch the gas/electrical sub-contracting route in general terms. Keeping it as a gap is right. The gap note could say these were considered.
 - S08 Q5 `text` keeps only part (a). The gap note does cover (b), so this is fine; including the (b) sentence would match rule 3's "text holds both".
+
+## Re-check (commit 3cd3a5c): PASS
+
+I had no shell in this session, so I checked the working-tree file instead of running `git show`.
+1. E-28 `why` now reads "direct recruitment, apprenticeships, pay floor" (S04 4.8) and "apprenticeship starts, direct recruitment" (S12 11). No E-28 `why` contains "local" any more; the word now appears only in question texts and E-14 `why`s, where it is correct.
+2. S08 Q2 `relevant` is now [12, 13, 18, 24]. `primary` is still [18, 24]. E-13's `why` is "depot holds a duplicate set of site keys in a secure store", which matches E-13 line 8.
+
+Both required changes are done. Leaving out the nits is acceptable, since they are judgement calls. Limit: without the diff I could not confirm that the commit touched nothing else. The rest of the file looks unchanged in what I read.
