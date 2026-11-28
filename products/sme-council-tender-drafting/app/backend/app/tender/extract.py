@@ -137,7 +137,7 @@ def _heading_start(page_text: str, qstart: int) -> int:
     return base + start
 
 
-def _quote_window(page_text: str, near: str) -> str | None:
+def _quote_window(page_text: str, near: str, with_offset: bool = False):
     """The raw text of the item's own question: from its heading (see `_heading_start`) through the quote to the next
     numbered question (at most 400 characters past the quote). The quote is found on the raw text with whitespace-tolerant
     matching, so offsets never drift."""
@@ -151,12 +151,20 @@ def _quote_window(page_text: str, near: str) -> str | None:
     end = min(len(page_text), m.start() + max(len(near), m.end() - m.start()) + 400)
     window = page_text[start:end]
     nxt = _NEXT_QUESTION.search(window, m.end() - start)
-    return window[:nxt.start()] if nxt else window
+    window = window[:nxt.start()] if nxt else window
+    return (window, m.start() - start) if with_offset else window
 
 
 def _stated(pattern: re.Pattern, page_text: str, near: str) -> int | None:
-    window = _quote_window(page_text, near) if near else None
-    found = pattern.search(window if window is not None else page_text)  # no page-wide guess once the quote is located
+    located = _quote_window(page_text, near, True) if near else None
+    if located is None:
+        found = pattern.search(page_text)  # no quote to locate: as before
+    else:
+        window, qoff = located
+        # the question's own text wins; a heading's limit is used only when the question states none (T-207 C1)
+        blank = re.search(r"\n[ \t]*\n", window[max(qoff, 0):])  # own text: the quote to the end of its block
+        own = window[:max(qoff, 0) + blank.start()] if blank else window
+        found = pattern.search(own, max(qoff, 0)) or pattern.search(window)
     return int(found.group(1).replace(",", "")) if found else None
 
 

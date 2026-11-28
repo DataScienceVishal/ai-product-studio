@@ -403,3 +403,49 @@ def test_extraction_write_takes_the_pack_lock_first_so_a_concurrent_user_row_is_
     db.expire_all()
     rows = list(db.scalars(select(Requirement).where(Requirement.pack_id == pid)))
     assert len(rows) == 1 and rows[0].origin == "user"  # no duplicate proposal beside the user's row
+
+
+def test_an_earlier_question_ending_in_a_bracketed_limit_never_lends_it_to_the_next_question():
+    """T-207 re-review 3: a bracketed-limit heading rule was tried and removed because it borrowed earlier questions'
+    limits. A bidder-addressed heading ("How you will deliver ...") stays a known false negative (KL-1a/1b)."""
+    q = "Describe your staffing plan."
+    for prev in ("What training will your staff receive (max 200 words)",
+                 "What steps will you take to reduce emissions (max 300 words)",
+                 "How many staff will you deploy (max 200 words)",
+                 "Describe your approach in no more than 200 words",
+                 "Tell us about you (max 300 words)."):
+        assert ex.stated_word_limit(prev + "\n\n" + q, q) is None, prev
+    assert ex.stated_word_limit("How you will deliver social value (max 300 words)\n\n" + q, q) is None  # KL-1a, open
+
+
+def test_known_limit_cases_hold():
+    """The cases in eval/extraction_known_limits.json (EVAL.md "Known limits") say what the rule does today."""
+    import json
+    from pathlib import Path
+    f = Path(__file__).resolve().parents[3] / "eval" / "extraction_known_limits.json"
+    cases = json.loads(f.read_text())["cases"]
+    assert len(cases) >= 4
+    for c in cases:
+        assert ex.stated_word_limit(c["page"], c["quote"]) == c["expected_today"], c["id"]
+        if c["status"] == "fixed":
+            assert c["expected_today"] == c["ideal"], c["id"]
+
+
+def test_an_instruction_ending_in_a_bracketed_limit_is_not_the_next_questions_heading():
+    """T-207 C1 (reviewer probes): the previous question's own limit must not be borrowed or override the next one's."""
+    assert ex.stated_word_limit("Describe your approach to social value (max 300 words)\n\nDescribe your staffing plan.",
+                                "Describe your staffing plan.") is None
+    assert ex.stated_word_limit("Describe your approach to social value (max 300 words)\n\n"
+                                "Describe your staffing plan (max 500 words)", "Describe your staffing plan (max 500 words)") == 500
+    assert ex.stated_word_limit("Explain how you will mobilise (maximum 250 words)\n\n"
+                                "What is your approach to TUPE? Answers should not exceed 600 words.",
+                                "What is your approach to TUPE?") == 600
+    assert ex.stated_word_limit("1. Describe your approach (max 300 words)\n\n2. Describe your staffing plan.",
+                                "Describe your staffing plan.") is None
+    assert ex.stated_word_limit("What is your approach? (max 300 words)\n\nDescribe your staffing plan.",
+                                "Describe your staffing plan.") is None
+
+
+def test_the_questions_own_limit_wins_over_a_heading_limit():
+    page = "Social value (max 300 words)\n\nDescribe the social value you will deliver. Maximum 500 words."
+    assert ex.stated_word_limit(page, "Describe the social value you will deliver.") == 500

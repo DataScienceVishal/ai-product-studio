@@ -199,6 +199,7 @@ def draft_answer(req_text: str, word_limit: int | None, marks: int | None, hits:
             tin, tout = tin + again.input_tokens, tout + again.output_tokens
         except (AppError, AIUnavailable) as error:  # a refused or failed retry falls through to the sentence drop
             log.info("shorten retry failed", extra={"code": getattr(error, "code", "ai_unavailable")})
+            tin, tout = tin + error.task_tokens[0], tout + error.task_tokens[1]  # a failed retry may have been billed
         if count_words(answer) > word_limit:
             answer, flags = fit_to_limit(answer, word_limit), [f for f in flags if f != "shortened"] + ["trimmed"]
     cited, outside, gaps = analyse(answer, set(retrieved))
@@ -262,7 +263,7 @@ def draft_handler(sessions: sessionmaker, task: AITask, heartbeat, provider) -> 
             d = draft_answer(rtext, limit, marks, hits, task.tenant_id, budget, provider=provider, sessions=sessions,
                              before_call=heartbeat)
         except AppError as error:  # keep the tokens the drafts already done used, for ai_tasks reporting (T-189 nit 9)
-            error.task_tokens = (tin, tout)
+            error.task_tokens = (tin + error.task_tokens[0], tout + error.task_tokens[1])  # earlier drafts + this call's own
             raise
         tin, tout = tin + d.input_tokens, tout + d.output_tokens
         with sessions() as db:

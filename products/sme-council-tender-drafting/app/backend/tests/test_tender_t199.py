@@ -180,3 +180,44 @@ def test_tokens_used_before_a_failure_are_kept_on_the_task(client, app, db):
     db.expire_all()
     t = db.scalar(select(AITask).where(AITask.kind == "draft").order_by(AITask.created_at.desc()))
     assert t.status == "failed" and t.error_code == "ai_daily_cap_reached" and (t.input_tokens, t.output_tokens) == (100, 50)
+
+
+def test_tokens_spent_inside_a_draft_call_that_then_fails_are_kept_on_the_task(client, app, db):
+    """T-207: the first model call returns an invalid answer (100 in, 50 out), the repair call is invalid too, so run_task
+    raises ai_invalid_output. Both calls were billed; the task must report them (before: 0)."""
+    import json
+    from app.ai import AIResult
+    from app.tender.scripted_ai import ScriptedFakeAI
+
+    class Bad(ScriptedFakeAI):
+        calls = 0
+
+        def complete(self, *a, **k):
+            Bad.calls += 1
+            return AIResult("{not json", 100, 50, "fake")
+    pid, rid = confirmed_pack(client, app)
+    draft_now(client, app, pid, Bad())
+    assert Bad.calls == 2
+    db.expire_all()
+    t = db.scalar(select(AITask).where(AITask.kind == "draft").order_by(AITask.created_at.desc()))
+    assert t.status == "failed" and t.error_code == "ai_invalid_output" and (t.input_tokens, t.output_tokens) == (200, 100)
+
+
+def test_a_failed_shorten_retry_keeps_the_draft_and_counts_its_tokens(client, app, db):
+    """T-207: the draft call succeeds (known tokens), the shorten retry then raises; the draft is kept (sentence drop) and the
+    failed retry's billed tokens are in the task total."""
+    import json
+    from app.ai import AIResult
+    from app.tender.scripted_ai import ScriptedFakeAI
+
+    class Long(ScriptedFakeAI):
+        def complete(self, system, user, *a, **k):
+            if "previous_answer" in user:  # the shorten call
+                return AIResult("{not json", 7, 3, "fake")
+            long_answer = " ".join(["word"] * 400) + ". End."
+            return AIResult(json.dumps({"answer": long_answer, "gaps": [], "used_ids": []}), 100, 50, "fake")
+    pid, rid = confirmed_pack(client, app)
+    draft_now(client, app, pid, Long())
+    db.expire_all()
+    t = db.scalar(select(AITask).where(AITask.kind == "draft").order_by(AITask.created_at.desc()))
+    assert t.status == "done" and (t.input_tokens, t.output_tokens) == (100 + 14, 50 + 6)  # the shorten step makes a call and one repair call, 7 in and 3 out each

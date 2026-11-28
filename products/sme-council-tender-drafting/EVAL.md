@@ -36,6 +36,14 @@ Recorded in T-201 item 9. No code was changed for these; they are decided with r
 2. **The no-figure, no-name residual.** A claim with no number, code or capitalised name (for example "We have never lost a contract") has nothing for the pure rules to check, so its verdict is the model's. The rules only downgrade; they cannot upgrade or catch a false `supported` here. A5 (human sample of cited claims) and A6a (seeded claims) measure this residual; L1 decides whether to add a rule for absolute words (never, always, all, every) that need a quote containing them.
 3. Both residuals fail toward a human reviewer: sign-off still requires the person to accept the responsibility statement, and nothing exports without it.
 
+## Known limits
+
+Recorded in T-207. Both are edges of the heading rule in `extract._is_heading` (the line above a quote that may carry its word limit). Cases are in `eval/extraction_known_limits.json` (no extraction case file existed, so this small data file is new; `tests/test_tender_extract.py::test_known_limit_cases_hold` reads it so it cannot drift). L1 decides whether to widen the rule using real tenders.
+
+1. **False negative: a heading that addresses the bidder.** "How you will deliver social value (max 300 words)" or "What we need from you (max 300 words)" opens with a question word and says you/us, so `_is_heading` takes it for the previous question and no limit is found (cases KL-1a, KL-1b, KL-2). T-207 tried a bracketed-limit heading rule and removed it after three review rounds: in 11 of 21 realistic question lines it lent an earlier question's limit to the next one ("What training will your staff receive (max 200 words)"), which is worse than a missed limit. The user confirms every limit at the checklist step. Kept from T-207: the question's own stated limit always wins over a heading's (`_stated`), and earlier questions ending in a bracketed limit are regression cases (KL-4 to KL-12).
+2. **False positive: an impersonal earlier question taken as a heading.** "Describe the proposed methodology in no more than 200 words" has no you/your/us, so it passes `_is_heading` and its limit is borrowed by the next, unnumbered question (case KL-3). A numbered next question is safe (the window starts at the numbered line). Left as is: telling it apart from a real heading such as "How we deliver social value (max 300 words)" needs more than a line-shape rule.
+3. The wrong-limit flag (`stated` vs the model's limit) is the safety net for both: a mismatch is shown to the user.
+
 ## Results
 
 TBD (L2). Per bar: value, bar, pass or fail, with the A6a misses by type and the model-checking-a-model caveat (SPEC section 6).
