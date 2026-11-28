@@ -144,3 +144,32 @@ That is the intended pattern. Observation for the strategist, not a defect: the 
 - N-X2 Three "Bracken-" buyers across the drafting held-out packs. MF-1 fixes one of them.
 - N-X3 Pages the builder splits automatically have no in-body banner, and the parser ignores the footer. Optionally have `build_docx.py` repeat the banner line after each automatic break.
 - N-X4 S11 l.43 says "including diagrams and tables", but S09 l.62 says tables count "only where the question says so". That is fine as variety, but make sure the keys record what each pack says.
+
+## Re-check 2026-11-28
+
+Checked on branch p/sme-council-tender-drafting/T-194, in the working tree, against the source files. I still had no shell, so I did not re-run the parser myself. The page counts come from the SOURCES.md table: 7 to 15 pages, all under 40.
+
+| Item | Result | Evidence |
+|---|---|---|
+| MF-1 S01 real place name | fixed | The buyer is "Fennickstead District Council (fictional)" (l.5). Ref FDC/FM/2027/014 (l.9). `fennickstead-dc.example` (l.14, l.15). l.43, l.125, l.128 and l.393 are renamed. A grep finds no "Brackenhall" left in any pack. My own web search for "Fennickstead" found no UK place. |
+| MF-2 SOURCES and pre-registration | fixed | SOURCES.md l.17 to l.38: a synthetic status line, the S01 to S12 table with parser page counts and source SHA-256, and the roles. P01 to P12 are moved under "Earlier real candidates (not used)" (l.40). EVAL.md amendment l.54 and SPEC.md "Amendment 2026-11-28 (T-194)" (l.146 to l.148) both say the packs are synthetic and that results must say so. |
+| MF-3 S06 Q5 labels | fixed | S06 l.162 reads "(a)" / "(b)". S08 l.179 has the same fix, and its limit now says "across parts (a) and (b)". |
+| MF-4 S06 PF11 | fixed | l.112 "PF11 (Pass/Fail) ... fails PF11" is now plainly pass/fail. |
+| MF-5 S09 sub-parts | fixed | l.64 "scored separately, each with its own weighting and limit as shown; together they make up the parent question". This matches 2.4(a) [2%] and (b) [1%]. |
+| MF-6 S05 date | fixed | l.36 "Weeks commencing 22 February and 1 March 2027". |
+| MF-7 key conventions | deferred to qa (T-206) | This is acceptable for this gate, because no key exists yet. **It is a precondition for D3**: the conventions (a) to (g) above must be in `eval/keys/README.md` before any held-out key is written, and the D3 checker should confirm them. |
+| MF-8 S01 site visit | fixed | l.23 "(strongly recommended, one representative per bidder)" and l.84 "should attend ... will not exclude" now agree. |
+
+Nits I spot-checked:
+- S05 l.231 now names Q2, Q5 and Q12, which matches the asterisks.
+- TUPE pay: S05 l.398 to 401 is £12.75 and up, S06 l.222 to 224 is £12.75 and up, S07 l.292 is £12.85 and up.
+- S09 M7 (l.82) now asks for an RPII-registered inspector.
+- S04 Aldermoor is now Pellwick Memorial Hall and Memorial Green (l.58, l.60).
+- S08 now says 4 halls (l.57, l.85, l.232), and l.186 now reads "together 60%; price 40%".
+
+Residual nits, which do not block:
+- (i) The S08 Appendix 1 note (l.224) says "section 2", but the counts are in section 3.2. Its "counted per system" explanation still leaves keyholding at 19 sites (l.73, l.77 to l.79) against the 14 sites listed. Before R1 recording, either list 19 sites or change the categories.
+- (ii) S01 l.159 still says "six highest-use sites", but Appendix A marks five.
+- (iii) The source SHA-256 values in SOURCES.md are for the .md files, not the .docx. That is fine because the build is deterministic from source, but say so in the table header.
+
+**Verdict: PASS.** All safety and eval-validity must-fix items are fixed. MF-7 carries over as a hard precondition on D3 (T-206).
