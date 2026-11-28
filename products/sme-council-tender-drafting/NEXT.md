@@ -1,24 +1,12 @@
-# STATUS (T-214) - retrieval recall raised past the 0.8 trigger at k=8; k=5 still 0.64 - code done, awaiting reviewer
+# STATUS (T-214) - retrieval rescoring: BM25 only, recall@8 0.73 (below the 0.8 trigger) - review CHANGES applied, awaiting re-review
 
-Branch `p/sme-council-tender-drafting/T-214` (off main). Not merged. No migrations, no model calls. Tuned only on the demo-pack labels (S04, S08, S12); `eval/keys` untouched; no held-out pack used.
-- Tried (pooled recall, k=5 / k=8): baseline OR plainto_tsquery + ts_rank_cd 0.524 / 0.682. (1) BM25 rescoring of the OR candidates (rare words outweigh "describe", "arrangements"; k1 1.2, b 0.75, df and length from the tenant's own passages): 0.632 / 0.760. (2) plus domain synonym expansion at 0.3 weight (`SYNONYMS` in `evidence.py`, stemmed with the same english config): 0.642 / 0.817. Weight sweep 0.2 / 0.4 / 0.5 gave k5 0.642 / 0.667 / 0.692 and k8 0.801 / 0.817 / 0.811, so flat; kept 0.3 rather than chase the best number.
-- Per-document cap: no effect (demo docs are one passage each; per_doc 3 vs 8 identical). Left at 3 for multi-passage docs (test kept).
-- Sub-bullet expansion: not done. The labelled text is the one-line question; the app's `Requirement.text` is already what is searched, so there are no extra bullets to add without a parser change. Left for later if extracted text carries sub-bullets.
-- Must-have token boost kept; `Hit.rank` is now BM25 divided by the best candidate's (0 to 1), so a code boost of 1.0 still beats any rank. `CANDIDATES` 100 to 300.
-
-Before / after (recall, `python -m eval.run retrieval`, result in `eval/results/retrieval.json`):
-| pack | k=5 before | k=5 after | k=8 before | k=8 after |
-|---|---|---|---|---|
-| S04 | 0.537 | 0.581 | 0.657 | 0.735 |
-| S08 | 0.657 | 0.731 | 0.787 | 0.852 |
-| S12 | 0.392 | 0.617 | 0.608 | 0.858 |
-| pooled | 0.524 | 0.642 | 0.682 | 0.817 |
-Primary hit rate: k=8 0.86 to 1.00; k=5 0.79 to 0.89.
-
-- Overfitting caveat (reviewer, read this): the synonym map was written after reading the misses and the library headings, so its gain is partly in-sample. BM25 alone (0.632 / 0.760) is the unbiased part. The map is general bid vocabulary (no pack, client or question terms) but the true gain on held-out packs is unknown; check with a fresh pack before trusting 0.817.
-- Left: k=5 still 0.64 (draft shows 5): options are raising `APP_PASSAGES` to 6 to 8 (token cost, DESIGN 4.3), a rerank pass, or a better label-independent synonym source; run on a held-out pack once, after the freeze, to report. Update EVAL.md "Retrieval diagnostic" row with the after numbers (not done) and DESIGN 4.2 text. Performance: three extra small queries per search, BM25 in Python over at most 300 candidates; fine for a library of hundreds, re-measure at thousands.
-- Candidate rule: a passage must contain a word of the question itself; synonyms only add score. (First version let synonyms admit passages and broke `test_delete_of_unrelated_evidence_leaves_a_ready_pack_ready`: a "wind turbine inspected" passage matched "inspection" for a quality question. Fixed; recall unchanged.)
-- Tests: new `test_rare_words_outrank_common_question_words` and `test_domain_synonyms_add_score_but_never_admit_a_passage_alone` in `tests/test_tender_ingest.py`. Seen: `tests/test_tender_ingest.py` 43 passed and the claimcheck test above passes. The full suite before the candidate-rule fix: 1262 passed, 1 failed (that claimcheck test), 1 skipped. Full suite after the fix: 1265 passed, 1 skipped (351 s).
+Branch `p/sme-council-tender-drafting/T-214` (off main). Not merged. No migrations, no model calls.
+- Done (reviewer findings 1 to 8): BM25 length now distinct lexemes on both sides; SYNONYMS map and expansion removed (BM25 only); `rank` is absolute (BM25 over the question's own ceiling, in (0, 1)) so `RETRIEVAL_FLOOR` works again (default 0.0 kept); 4 statements per search instead of about 43 (no per-word numnode, no restemming); stale boost comment fixed; DESIGN 4.2 and EVAL.md updated; `tenant_id` added to the `_DF` join.
+- Recall (pooled, `python -m eval.run retrieval`, seed with `UPLOADS_PER_HOUR=1000`): main 0.524 (k=5) / 0.682 (k=8); previous branch tip with synonyms 0.642 / 0.817; now **0.602 / 0.727**, primary hit k=8 0.93, k=5 0.89. **k=8 is below the 0.8 trigger**; that is the honest figure. Per pack k=8: S04 0.669, S08 0.778, S12 0.733.
+- Latency on the 32-passage demo tenant (30 questions): 11.9 ms and 43.5 statements per search before, 5.3 ms and 4.0 after.
+- Note: the +0.25 year/acronym boost now acts on an absolute rank (typically 0.2 to 0.5), so it is a larger share than before. Switching it off gives 0.745 / 0.626 on these labels, 0.1 gives the same as 0.25; left unchanged (not tuned on labels).
+- Tests: new `_bm25` length test, candidate rule, floor test, per-tenant df test in `tests/test_tender_ingest.py`; synonym test removed, rare-words test kept.
+- Left (follow-up): raise `APP_PASSAGES` against the token budget (DESIGN 4.3), a rerank pass, query expansion from scoring criteria or embeddings; STATS cache if a tenant reaches thousands of passages; the seed docs should say `UPLOADS_PER_HOUR=1000` is needed.
 
 # STATUS (T-206 part B) - keys for all 9 held-out packs written; awaiting independent checker
 

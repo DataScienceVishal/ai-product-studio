@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 
 TOP_K, PER_DOC, CANDIDATES = 8, 3, 300
-CODE_BOOST, TOKEN_BOOST, MAX_BOOST = 1.0, 0.25, 3.0  # ts_rank_cd(..., 32) is below 1, so a code match always wins
+CODE_BOOST, TOKEN_BOOST, MAX_BOOST = 1.0, 0.25, 3.0  # rank is BM25 over its own ceiling, so always below 1: a code match (+1.0) always wins
 _CODES = re.compile(r"(?i)\bISO\s?\d{4,5}(?:[-:]\d{1,4})?|\bCHAS\b|\bSafe\s?Contractor\b|\bConstructionline\b|\bCyber\s+Essentials(?:\s+Plus)?\b")
 _YEAR = re.compile(r"\b(?:19|20)\d{2}\b")
 _ACRONYM = re.compile(r"\b[A-Z]{3,6}\b")
@@ -60,44 +60,16 @@ class Hit:
     score: float
 
 
-# Domain synonyms (DESIGN 4.2): bid wording for the same thing. Words are stemmed with the same 'english' config as the
-# passages, so "mobilising" finds "mobilisation". Expansion terms count EXPANSION_WEIGHT of a question term. General
-# tender vocabulary only; never a product, client or question name.
-SYNONYMS: dict[str, str] = {
-    "mobilisation": "transition handover implementation tupe onboarding", "tupe": "mobilisation transfer",
-    "transition": "mobilisation", "complaint": "account management reporting escalation",
-    "report": "account management", "kpi": "account management reporting",
-    "supervision": "personnel roles management", "staffing": "personnel roles", "holiday": "cover absence personnel",
-    "sickness": "cover absence", "quality": "policy audit inspection", "training": "induction qualification",
-    "induction": "training", "continuity": "disaster recovery contingency",
-    "carbon": "emissions vehicles sustainability", "environmental": "sustainability emissions",
-    "safety": "risk policy", "social": "apprenticeship local community", "case": "client results challenge",
-    "references": "client results challenge", "safeguarding": "children dbs", "monitor": "inspection audit",
-    "recruit": "vetting induction",
-}
-EXPANSION_WEIGHT, BM25_K1, BM25_B = 0.3, 1.2, 0.75
+# BM25 over the full-text candidates (DESIGN 4.2). Terms are the question's own lexemes (to_tsvector('english'), so stopwords
+# are already gone and words are stemmed like the passages). df, document count and average length come from the tenant's
+# own passages. Length is the number of distinct lexemes in the passage on both sides (document length and the average).
+BM25_K1, BM25_B = 1.2, 0.75
 _LEX = re.compile(r"'((?:[^']|'')+)'")
 _TV = re.compile(r"'((?:[^']|'')+)':([0-9A-D,]+)")
-_WORD = re.compile(r"[a-z]+")
 
 
 def _lexemes(db: Session, s: str) -> list[str]:
     return [m.group(1).replace("''", "'") for m in _LEX.finditer(db.execute(text("SELECT to_tsvector('english', :s)::text"), {"s": s}).scalar_one())]
-
-
-def _expansions(db: Session, question: str, base: set[str]) -> list[str]:
-    keys = {}
-    for k in SYNONYMS:
-        for lex in _lexemes(db, k):
-            keys.setdefault(lex, k)
-    words = " ".join(w for w in dict.fromkeys(_WORD.findall(question.lower())))
-    asked = {k for lex in _lexemes(db, words) if (k := keys.get(lex))}
-    out: list[str] = []
-    for k in asked:
-        for lex in _lexemes(db, SYNONYMS[k]):
-            if lex not in base and lex not in out:
-                out.append(lex)
-    return out
 
 
 _STATS = text("""
@@ -109,7 +81,7 @@ _DF = text("""
 SELECT l.lex, count(e.id) AS df
 FROM unnest(CAST(:lexes AS text[])) AS l(lex)
 LEFT JOIN (evidence_items e JOIN source_documents d ON d.tenant_id = e.tenant_id AND d.id = e.document_id
-           AND d.kind = 'evidence' AND d.deleted_at IS NULL)
+           AND d.tenant_id = :tenant AND d.kind = 'evidence' AND d.deleted_at IS NULL)
   ON e.tenant_id = :tenant AND e.deleted_at IS NULL AND e.tsv @@ quote_literal(l.lex)::tsquery
 GROUP BY l.lex
 """)
@@ -119,44 +91,45 @@ FROM evidence_items e
 JOIN source_documents d ON d.tenant_id = e.tenant_id AND d.id = e.document_id
 WHERE e.tenant_id = :tenant AND e.deleted_at IS NULL AND d.tenant_id = :tenant AND d.kind = 'evidence' AND d.deleted_at IS NULL
   AND e.tsv @@ (SELECT string_agg(quote_literal(x), ' | ')::tsquery FROM unnest(CAST(:own AS text[])) AS u(x))
-ORDER BY ts_rank_cd(e.tsv, (SELECT string_agg(quote_literal(x), ' | ')::tsquery FROM unnest(CAST(:lexes AS text[])) AS u(x)), 32) DESC, e.display_no
+ORDER BY ts_rank_cd(e.tsv, (SELECT string_agg(quote_literal(x), ' | ')::tsquery FROM unnest(CAST(:own AS text[])) AS u(x)), 32) DESC, e.display_no
 LIMIT :cands
 """)
 
 
-def _bm25(tv: str, weights: dict[str, float], idf: dict[str, float], avg_len: float) -> float:
+def _bm25(tv: str, idf: dict[str, float], avg_len: float) -> float:
+    """BM25 of one passage (its tsvector text) for the question terms in `idf`. Length and `avg_len` are both counts of
+    distinct lexemes (what `length(tsvector)` gives in SQL)."""
     tf = {m.group(1).replace("''", "'"): m.group(2).count(",") + 1 for m in _TV.finditer(tv)}
-    length = sum(tf.values()) or 1
+    length = len(tf) or 1
     norm = BM25_K1 * (1 - BM25_B + BM25_B * length / (avg_len or length))
-    return sum(w * idf[t] * tf[t] * (BM25_K1 + 1) / (tf[t] + norm) for t, w in weights.items() if t in tf)
+    return sum(idf[t] * tf[t] * (BM25_K1 + 1) / (tf[t] + norm) for t in idf if t in tf)
 
 
 def search_evidence(db: Session, tenant_id: uuid.UUID, question: str, *, limit: int = TOP_K,
                     per_doc: int = PER_DOC, min_score: float = 0.0) -> list[Hit]:
-    """Top `limit` passages for the question: OR full-text candidates (a passage must hold a word of the question itself; synonyms only add score), rescored by
+    """Top `limit` passages for the question: OR full-text candidates (a passage must hold a word of the question), rescored by
     BM25 so rare words count more than "describe" and "arrangements", then the must-have token boost and a per-document cap.
-    `rank` is the BM25 score as a fraction of the best candidate's (0 to 1), so a code boost of 1.0 still beats any rank."""
+    `rank` is absolute: the BM25 score as a fraction of the most the question's terms could score (idf times k1+1, summed),
+    so it is in (0, 1) and a weak match stays low. A code boost of 1.0 therefore always beats any rank, and `min_score`
+    (RETRIEVAL_FLOOR) can reject a weak top hit. Four statements per search."""
     question = (question or "")[:2000]
     own = list(dict.fromkeys(_lexemes(db, question) if question.strip() else []))
-    own = [t for t in own if db.execute(text("SELECT numnode(plainto_tsquery('english', :t))"), {"t": t}).scalar_one() > 0]
     if not own:
         return []
-    weights = {t: 1.0 for t in own} | {t: EXPANSION_WEIGHT for t in _expansions(db, question, set(own))}
-    lexes = list(weights)
     st = db.execute(_STATS, {"tenant": tenant_id}).one()
     n = int(st.n)
-    df = {r.lex: int(r.df) for r in db.execute(_DF, {"lexes": lexes, "tenant": tenant_id})}
-    idf = {t: math.log(1 + (n - df.get(t, 0) + 0.5) / (df.get(t, 0) + 0.5)) for t in lexes}
-    rows = db.execute(_CAND, {"lexes": lexes, "own": own, "tenant": tenant_id, "cands": CANDIDATES}).all()
-    scored = [(_bm25(r.tv, weights, idf, float(st.avg_len)), r) for r in rows]
-    top = max((s for s, _ in scored), default=0.0) or 1.0
+    df = {r.lex: int(r.df) for r in db.execute(_DF, {"lexes": own, "tenant": tenant_id})}
+    idf = {t: math.log(1 + (n - df.get(t, 0) + 0.5) / (df.get(t, 0) + 0.5)) for t in own}
+    ceiling = sum(idf.values()) * (BM25_K1 + 1) or 1.0
+    rows = db.execute(_CAND, {"own": own, "tenant": tenant_id, "cands": CANDIDATES}).all()
     tokens = must_have_tokens(question)
     hits = []
-    for raw, r in scored:
+    for r in rows:
+        raw = _bm25(r.tv, idf, float(st.avg_len))
         if raw <= 0:
             continue
         boost = min(MAX_BOOST, sum(w for pat, w in tokens if pat.search(r.heading + " " + r.text)))
-        rank = raw / top
+        rank = raw / ceiling
         hits.append(Hit(r.id, r.display_no, r.document_id, r.filename, r.page_from, r.page_to, r.heading, r.text,
                         rank, rank + boost))
     hits.sort(key=lambda h: (-h.score, h.display_no))
